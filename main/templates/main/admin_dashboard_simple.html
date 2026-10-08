@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jalali_tags %}
+
+{% block title %}پنل مدیر سیستم - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+                        پنل مدیر سیستم
+                    </h2>
+                    <p class="text-muted mb-0">مدیریت کلی سامانه ملک آیدی</p>
+                </div>
+                <div>
+                    <span class="badge bg-success">آنلاین</span>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.pending_municipalities|persian_numbers }}</h4>
+                                    <p class="mb-0">درخواست شهرداری/دهیاری</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-building fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-primary bg-opacity-75">
+                            <a href="{% url 'main:manage_municipalities' %}" class="text-white text-decoration-none">
+                                <i class="fas fa-arrow-left me-2"></i>مشاهده همه
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.pending_verifications|persian_numbers }}</h4>
+                                    <p class="mb-0">کاربر در انتظار تایید</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-user-clock fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-warning bg-opacity-75">
+                            <a href="#pending-users" class="text-white text-decoration-none">
+                                <i class="fas fa-arrow-down me-2"></i>مشاهده لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.total_users|persian_numbers }}</h4>
+                                    <p class="mb-0">کل کاربران</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-users fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-success bg-opacity-75">
+                            <span class="text-white">
+                                <i class="fas fa-check me-2"></i>فعال
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.total_requests|persian_numbers }}</h4>
+                                    <p class="mb-0">کل درخواست‌ها</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-file-alt fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-info bg-opacity-75">
+                            <span class="text-white">
+                                <i class="fas fa-chart-line me-2"></i>آمار کلی
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bolt me-2"></i>
+                                اقدامات سریع
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <a href="{% url 'main:manage_municipalities' %}" class="btn btn-primary w-100">
+                                        <i class="fas fa-building me-2"></i>
+                                        مدیریت شهرداری‌ها
+                                        {% if stats.pending_municipalities > 0 %}
+                                            <span class="badge bg-warning ms-2">{{ stats.pending_municipalities|persian_numbers }}</span>
+                                        {% endif %}
+                                    </a>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <a href="#pending-users" class="btn btn-warning w-100">
+                                        <i class="fas fa-user-check me-2"></i>
+                                        تایید کاربران
+                                        {% if stats.pending_verifications > 0 %}
+                                            <span class="badge bg-danger ms-2">{{ stats.pending_verifications|persian_numbers }}</span>
+                                        {% endif %}
+                                    </a>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <a href="{% url 'admin:index' %}" class="btn btn-success w-100">
+                                        <i class="fas fa-cog me-2"></i>
+                                        پنل Django Admin
+                                    </a>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <a href="{% url 'main:services_catalog' %}" class="btn btn-info w-100">
+                                        <i class="fas fa-list me-2"></i>
+                                        مدیریت خدمات
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Users -->
+            {% if pending_users %}
+            <div class="row mb-4" id="pending-users">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user-clock me-2"></i>
+                                کاربران در انتظار تایید
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>نام کاربر</th>
+                                            <th>نقش</th>
+                                            <th>کد ملی</th>
+                                            <th>تلفن</th>
+                                            <th>تاریخ درخواست</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user_profile in pending_users %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ user_profile.user.get_full_name|default:user_profile.user.username }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ user_profile.user.email }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ user_profile.get_role_display }}</span>
+                                            </td>
+                                            <td>{{ user_profile.national_id|persian_numbers }}</td>
+                                            <td>{{ user_profile.mobile_number|persian_numbers }}</td>
+                                            <td>{{ user_profile.created_at|jalali_datetime }}</td>
+                                            <td>
+                                                <form method="post" style="display: inline-block;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="user_id" value="{{ user_profile.id }}">
+                                                    <button type="submit" name="action" value="approve" 
+                                                            class="btn btn-success btn-sm"
+                                                            onclick="return confirm('آیا از تایید این کاربر اطمینان دارید؟')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="submit" name="action" value="reject" 
+                                                            class="btn btn-danger btn-sm"
+                                                            onclick="return confirm('آیا از رد این کاربر اطمینان دارید؟')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Activity -->
+            {% if recent_requests %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>
+                                آخرین فعالیت‌ها
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>درخواست</th>
+                                            <th>کاربر</th>
+                                            <th>وضعیت</th>
+                                            <th>تاریخ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for request in recent_requests %}
+                                        <tr>
+                                            <td>{{ request.service.name }}</td>
+                                            <td>{{ request.user.get_full_name|default:request.user.username }}</td>
+                                            <td>
+                                                {% if request.status == 'pending' %}
+                                                    <span class="badge bg-warning">در انتظار</span>
+                                                {% elif request.status == 'approved' %}
+                                                    <span class="badge bg-success">تایید شده</span>
+                                                {% elif request.status == 'rejected' %}
+                                                    <span class="badge bg-danger">رد شده</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ request.created_at|jalali_datetime }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

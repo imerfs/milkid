@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>مرحله ۵: خدمات و اختتامیه - ملک آیدی</title>
+
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            body {
+                font-family: "Vazirmatn", sans-serif;
+                background-color: #f3f4f6;
+            }
+            .step-section {
+                max-height: 0;
+                overflow: hidden;
+                opacity: 0;
+                transition: all 0.6s ease-in-out;
+                margin-bottom: 0;
+            }
+            .step-section.active {
+                max-height: 1000px;
+                opacity: 1;
+                margin-bottom: 2rem;
+            }
+            .service-checkbox {
+                transform: scale(1.3);
+                margin-left: 10px;
+            }
+            .inspection-status {
+                border: 2px dashed #cbd5e1;
+                transition: all 0.3s ease;
+            }
+            .inspection-status.approved {
+                border-color: #16a34a;
+                background-color: #f0fdf4;
+            }
+            .inspection-status.violation {
+                border-color: #dc2626;
+                background-color: #fef2f2;
+            }
+        </style>
+    </head>
+    <body class="text-gray-800">
+        <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+            <div class="bg-white p-8 rounded-2xl shadow-lg">
+                <!-- Header -->
+                <div class="text-center border-b pb-6 mb-8">
+                    <i class="fas fa-cogs text-blue-600 text-4xl mb-4"></i>
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        درخواست خدمات شهری
+                    </h1>
+                    <p class="mt-2 text-gray-600">
+                        مرحله ۵ از ۶ - کد ساخت بدون پروانه #CWP-012
+                    </p>
+                </div>
+
+                <form id="services-form">
+                    <!-- 1. Service Selection -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-6 border-r-4 border-blue-500 pr-4">
+                            ۱. انتخاب خدمات مورد نیاز
+                        </h2>
+                        <div class="p-6 bg-blue-50 rounded-lg border border-blue-200">
+                            <p class="text-gray-700 mb-6">
+                                خدمات مورد نیاز خود را انتخاب کنید:
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <label class="flex items-center p-4 bg-white rounded-lg border hover:border-cyan-300 cursor-pointer transition-all">
+                                    <input type="checkbox" class="service-checkbox text-cyan-600" name="services" value="water" onchange="updateServices()">
+                                    <i class="fas fa-tint text-cyan-600 text-2xl mr-4"></i>
+                                    <span class="font-medium">آب</span>
+                                </label>
+                                <label class="flex items-center p-4 bg-white rounded-lg border hover:border-yellow-300 cursor-pointer transition-all">
+                                    <input type="checkbox" class="service-checkbox text-yellow-600" name="services" value="electricity" onchange="updateServices()">
+                                    <i class="fas fa-bolt text-yellow-600 text-2xl mr-4"></i>
+                                    <span class="font-medium">برق</span>
+                                </label>
+                                <label class="flex items-center p-4 bg-white rounded-lg border hover:border-orange-300 cursor-pointer transition-all">
+                                    <input type="checkbox" class="service-checkbox text-orange-600" name="services" value="gas" onchange="updateServices()">
+                                    <i class="fas fa-fire text-orange-600 text-2xl mr-4"></i>
+                                    <span class="font-medium">گاز</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Gas Special Requirements -->
+                    <div id="gas-requirements" class="step-section mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-orange-500 pr-4">
+                            ۲. پیش‌نیازهای گاز
+                        </h2>
+                        <div class="p-6 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="mb-6">
+                                <p class="font-medium text-gray-800 mb-4">آیا مالک علمک گاز دارد؟</p>
+                                <div class="flex gap-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="has_gas_marker" value="yes" class="ml-2" onchange="updateGasRequirements()">
+                                        <span>بله، علمک دارم</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="has_gas_marker" value="no" class="ml-2" onchange="updateGasRequirements()">
+                                        <span>خیر، علمک ندارم</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div id="gas-marker-required" class="hidden">
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-exclamation-triangle text-red-600 ml-3"></i>
+                                        <span class="font-medium text-red-800">فرآیند دریافت علمک گاز</span>
+                                    </div>
+                                    <p class="text-red-700 text-sm mb-4">
+                                        برای دریافت علمک گاز، مراحل زیر را به ترتیب طی کنید:
+                                    </p>
+                                    
+                                    <!-- Gas Marker Process Steps -->
+                                    <div class="space-y-4">
+                                        <!-- Step 1: Request Gas Marker -->
+                                        <div id="gas-step-1" class="gas-marker-step active">
+                                            <div class="flex items-center justify-between bg-white p-4 rounded-lg border-2 border-orange-300">
+                                                <div>
+                                                    <h4 class="font-bold text-orange-800 mb-2">مرحله ۱: درخواست علمک گاز</h4>
+                                                    <p class="text-gray-700 text-sm">ثبت درخواست اولیه علمک گاز</p>
+                                                </div>
+                                                <button type="button" onclick="submitGasMarkerRequest()" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-all">
+                                                    <i class="fas fa-paper-plane ml-2"></i>
+                                                    ثبت درخواست
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 2: Download Village Letter -->
+                                        <div id="gas-step-2" class="gas-marker-step hidden">
+                                            <div class="flex items-center justify-between bg-white p-4 rounded-lg border-2 border-blue-300">
+                                                <div>
+                                                    <h4 class="font-bold text-blue-800 mb-2">مرحله ۲: دانلود نامه دهیاری</h4>
+                                                    <p class="text-gray-700 text-sm">دانلود نامه دهیاری برای ارائه به شرکت گاز</p>
+                                                </div>
+                                                <button type="button" onclick="downloadVillageLetter()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all">
+                                                    <i class="fas fa-download ml-2"></i>
+                                                    دانلود نامه
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 3: Gas Company Inquiry -->
+                                        <div id="gas-step-3" class="gas-marker-step hidden">
+                                            <div class="bg-white p-4 rounded-lg border-2 border-cyan-300">
+                                                <div class="flex items-center mb-3">
+                                                    <i class="fas fa-building text-cyan-600 ml-3"></i>
+                                                    <h4 class="font-bold text-cyan-800">مرحله ۳: استعلام حفاری از شرکت گاز</h4>
+                                                </div>
+                                                <p class="text-gray-700 text-sm mb-3">
+                                                    نامه دهیاری را به شرکت گاز ببرید و استعلام حفاری دریافت کنید
+                                                </p>
+                                                <button type="button" onclick="confirmGasInquiry()" class="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition-all">
+                                                    <i class="fas fa-check-circle ml-2"></i>
+                                                    انجام شد
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 4: Asphalt Cutting Fee -->
+                                        <div id="gas-step-4" class="gas-marker-step hidden">
+                                            <div class="bg-white p-4 rounded-lg border-2 border-yellow-300">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <div>
+                                                        <h4 class="font-bold text-yellow-800 mb-2">مرحله ۴: پرداخت هزینه آسفالت شکافی</h4>
+                                                        <p class="text-gray-700 text-sm">پرداخت هزینه اعلام شده توسط دهیاری</p>
+                                                        <p class="text-xl font-bold text-yellow-700 mt-2" id="asphalt-fee">250,000 تومان</p>
+                                                    </div>
+                                                    <i class="fas fa-credit-card text-yellow-600 text-2xl"></i>
+                                                </div>
+                                                <button type="button" onclick="payAsphaltFee()" class="w-full bg-yellow-600 text-white px-4 py-3 rounded-lg hover:bg-yellow-700 transition-all font-bold">
+                                                    <i class="fas fa-money-check-alt ml-2"></i>
+                                                    پرداخت هزینه
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 5: Submit to Gas Company -->
+                                        <div id="gas-step-5" class="gas-marker-step hidden">
+                                            <div class="bg-white p-4 rounded-lg border-2 border-purple-300">
+                                                <div class="flex items-center mb-3">
+                                                    <i class="fas fa-file-invoice text-purple-600 ml-3"></i>
+                                                    <h4 class="font-bold text-purple-800">مرحله ۵: ارائه مجوز حفاری به شرکت گاز</h4>
+                                                </div>
+                                                <p class="text-gray-700 text-sm mb-3">
+                                                    مجوز حفاری و رسید پرداخت را به شرکت گاز ارائه دهید
+                                                </p>
+                                                <button type="button" onclick="submitExcavationPermit()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-all">
+                                                    <i class="fas fa-paper-plane ml-2"></i>
+                                                    ارائه مدارک
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 6: Gas Marker Installation -->
+                                        <div id="gas-step-6" class="gas-marker-step hidden">
+                                            <div class="bg-white p-4 rounded-lg border-2 border-green-300">
+                                                <div class="flex items-center mb-3">
+                                                    <i class="fas fa-tools text-green-600 ml-3"></i>
+                                                    <h4 class="font-bold text-green-800">مرحله ۶: نصب علمک گاز</h4>
+                                                </div>
+                                                <p class="text-gray-700 text-sm mb-3">
+                                                    منتظر نصب علمک گاز توسط تیم فنی شرکت گاز
+                                                </p>
+                                                <div class="flex items-center justify-center py-4">
+                                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                                                    <span class="mr-3 text-green-700">در حال نصب...</span>
+                                                </div>
+                                                <button type="button" onclick="confirmGasMarkerInstallation()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all">
+                                                    <i class="fas fa-check ml-2"></i>
+                                                    نصب تکمیل شد
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 7: Gas Service Letter -->
+                                        <div id="gas-step-7" class="gas-marker-step hidden">
+                                            <div class="bg-white p-4 rounded-lg border-2 border-indigo-300">
+                                                <div class="flex items-center justify-between">
+                                                    <div>
+                                                        <h4 class="font-bold text-indigo-800 mb-2">مرحله ۷: دریافت نامه گازکشی</h4>
+                                                        <p class="text-gray-700 text-sm">نامه گازکشی آماده دانلود است</p>
+                                                    </div>
+                                                    <button type="button" onclick="downloadGasServiceLetter()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-all">
+                                                        <i class="fas fa-download ml-2"></i>
+                                                        دانلود نامه گازکشی
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Technical Inspection Request -->
+                    <div id="inspection-request" class="step-section mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-green-500 pr-4">
+                            ۳. درخواست بازدید کارشناس فنی
+                        </h2>
+                        <div class="p-6 bg-green-50 rounded-lg border border-green-200">
+                            <p class="text-gray-700 mb-6">
+                                برای بررسی عدم خلاف، نوبت بازدید کارشناس فنی را رزرو کنید:
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block font-medium mb-2">تاریخ مورد نظر</label>
+                                    <input type="text" placeholder="1403/01/01" pattern="[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}" class="w-full p-3 border border-gray-300 rounded-lg focus:border-green-500 persian-date-input">
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-2">بازه زمانی</label>
+                                    <select class="w-full p-3 border border-gray-300 rounded-lg focus:border-green-500">
+                                        <option value="">انتخاب کنید</option>
+                                        <option value="morning">صبح (8-12)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="button" class="bg-green-600 text-white font-bold px-8 py-4 rounded-lg hover:bg-green-700 transition-all shadow-lg" onclick="bookInspection()">
+                                <i class="fas fa-calendar-check ml-3"></i>
+                                رزرو نوبت بازدید
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4. Inspection Results -->
+                    <div id="inspection-results" class="step-section mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-purple-500 pr-4">
+                            ۴. نتایج بازدید کارشناس
+                        </h2>
+                        <div class="p-6 bg-purple-50 rounded-lg border border-purple-200">
+                            <p class="text-gray-700 mb-6">شبیه‌سازی نتایج بازدید کارشناس فنی:</p>
+                            <div class="grid grid-cols-1 gap-4" id="inspection-status-list">
+                                <!-- خدمات انتخاب شده به صورت داینامیک اینجا نمایش داده می‌شوند -->
+                            </div>
+                            <div class="mt-6">
+                                <button type="button" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-all" onclick="simulateInspection()">
+                                    <i class="fas fa-search ml-2"></i>
+                                    شبیه‌سازی نتایج بازدید
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Violation Payment -->
+                    <div id="violation-payment" class="step-section mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-red-500 pr-4">
+                            ۵. پرداخت هزینه آسفالت شکافی
+                        </h2>
+                        <div class="p-6 bg-red-50 rounded-lg border border-red-200">
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <p class="text-red-800 font-medium mb-2">خدماتی با خلاف شناسایی شدند.</p>
+                                    <p class="text-gray-700">ابتدا هزینه آسفالت شکافی را پرداخت کنید:</p>
+                                    <p class="text-2xl font-bold text-red-700 mt-2" id="violation-cost">۰ تومان</p>
+                                </div>
+                                <i class="fas fa-exclamation-circle text-red-600 text-4xl"></i>
+                            </div>
+                            <button type="button" id="violation-payment-btn" class="w-full bg-red-600 text-white font-bold px-6 py-4 rounded-lg hover:bg-red-700 transition-all shadow-lg" onclick="processViolationPayment()">
+                                <i class="fas fa-credit-card ml-3"></i>
+                                پرداخت هزینه آسفالت شکافی
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 6. Service Letters Download -->
+                    <div id="service-downloads" class="step-section mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-indigo-500 pr-4">
+                            ۶. دانلود نامه‌های خدمات
+                        </h2>
+                        <div class="p-6 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <p class="text-gray-700 mb-6">نامه‌های زیر آماده دانلود است:</p>
+                            <div class="grid grid-cols-1 gap-4" id="download-buttons">
+                                <!-- دکمه‌های دانلود به صورت داینامیک اینجا اضافه می‌شوند -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7. Navigation Buttons -->
+                    <div class="mt-10 pt-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <button type="button" class="w-full sm:w-auto text-gray-600 font-semibold hover:bg-gray-100 px-6 py-3 rounded-lg">
+                            بازگشت به مرحله قبل
+                        </button>
+                        <button type="button" id="complete-btn" class="hidden w-full sm:w-auto bg-green-600 text-white font-bold px-8 py-4 rounded-lg hover:bg-green-700 transition-all shadow-lg" onclick="completeProcess()">
+                            تکمیل فرآیند
+                            <i class="fas fa-check mr-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            let selectedServices = [];
+            let inspectionResults = {};
+            let hasViolations = false;
+            let violationPaymentComplete = false;
+            let currentGasStep = 1;
+            let gasMarkerProcess = {
+                requestSubmitted: false,
+                letterDownloaded: false,
+                inquiryCompleted: false,
+                feesPaid: false,
+                permitSubmitted: false,
+                markerInstalled: false,
+                letterReceived: false
+            };
+
+            function updateServices() {
+                const checkboxes = document.querySelectorAll('input[name="services"]:checked');
+                selectedServices = Array.from(checkboxes).map(cb => cb.value);
+                
+                // Show/hide gas requirements
+                const gasRequirements = document.getElementById('gas-requirements');
+                if (selectedServices.includes('gas')) {
+                    gasRequirements.classList.add('active');
+                } else {
+                    gasRequirements.classList.remove('active');
+                }
+                
+                // Show inspection request if any service is selected
+                const inspectionRequest = document.getElementById('inspection-request');
+                if (selectedServices.length > 0) {
+                    inspectionRequest.classList.add('active');
+                    updateInspectionStatusList();
+                } else {
+                    inspectionRequest.classList.remove('active');
+                }
+            }
+
+            function updateGasRequirements() {
+                const hasMarker = document.querySelector('input[name="has_gas_marker"]:checked').value;
+                const gasMarkerRequired = document.getElementById('gas-marker-required');
+                
+                if (hasMarker === 'no') {
+                    gasMarkerRequired.classList.remove('hidden');
+                } else {
+                    gasMarkerRequired.classList.add('hidden');
+                }
+            }
+
+            function updateInspectionStatusList() {
+                const statusList = document.getElementById('inspection-status-list');
+                statusList.innerHTML = '';
+                
+                const serviceNames = {
+                    'water': { name: 'آب', icon: 'fas fa-tint', color: 'cyan' },
+                    'electricity': { name: 'برق', icon: 'fas fa-bolt', color: 'yellow' },
+                    'gas': { name: 'گاز', icon: 'fas fa-fire', color: 'orange' }
+                };
+                
+                selectedServices.forEach(service => {
+                    const serviceInfo = serviceNames[service];
+                    const div = document.createElement('div');
+                    div.className = `inspection-status p-4 rounded-lg`;
+                    div.id = `inspection-${service}`;
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="${serviceInfo.icon} text-${serviceInfo.color}-600 text-xl ml-3"></i>
+                                <span class="font-medium">${serviceInfo.name}</span>
+                            </div>
+                            <div class="inspection-result">
+                                <i class="fas fa-clock text-gray-400"></i>
+                                <span class="text-gray-500 text-sm">در انتظار بازدید</span>
+                            </div>
+                        </div>
+                    `;
+                    statusList.appendChild(div);
+                });
+            }
+
+            function bookInspection() {
+                // Simulate booking
+                alert('نوبت بازدید با موفقیت رزرو شد. کد رهگیری: #INS-' + Math.random().toString(36).substr(2, 6).toUpperCase());
+                document.getElementById('inspection-results').classList.add('active');
+            }
+
+            function simulateInspection() {
+                hasViolations = false;
+                let violationCost = 0;
+                
+                selectedServices.forEach(service => {
+                    // Random inspection result (70% approved, 30% violation)
+                    const isApproved = Math.random() > 0.3;
+                    inspectionResults[service] = isApproved;
+                    
+                    const statusDiv = document.getElementById(`inspection-${service}`);
+                    const resultDiv = statusDiv.querySelector('.inspection-result');
+                    
+                    if (isApproved) {
+                        statusDiv.classList.add('approved');
+                        resultDiv.innerHTML = `
+                            <i class="fas fa-check-circle text-green-600"></i>
+                            <span class="text-green-700 font-medium">عدم خلاف</span>
+                        `;
+                    } else {
+                        statusDiv.classList.add('violation');
+                        resultDiv.innerHTML = `
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                            <span class="text-red-700 font-medium">خلاف شناسایی شد</span>
+                        `;
+                        hasViolations = true;
+                        violationCost += 150000; // 150k per violation
+                    }
+                });
+                
+                if (hasViolations) {
+                    document.getElementById('violation-cost').textContent = violationCost.toLocaleString('fa-IR') + ' تومان';
+                    document.getElementById('violation-payment').classList.add('active');
+                } else {
+                    showServiceDownloads();
+                }
+            }
+
+            function processViolationPayment() {
+                const paymentBtn = document.getElementById('violation-payment-btn');
+                paymentBtn.disabled = true;
+                paymentBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-3"></i>در حال پردازش...';
+                
+                setTimeout(() => {
+                    paymentBtn.innerHTML = '<i class="fas fa-check ml-3"></i>پرداخت موفق';
+                    paymentBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    paymentBtn.classList.add('bg-green-600');
+                    violationPaymentComplete = true;
+                    showServiceDownloads();
+                }, 2000);
+            }
+
+            function showServiceDownloads() {
+                document.getElementById('service-downloads').classList.add('active');
+                
+                const downloadButtons = document.getElementById('download-buttons');
+                downloadButtons.innerHTML = '';
+                
+                const serviceNames = {
+                    'water': { name: 'نامه اداره آب', icon: 'fas fa-tint', color: 'cyan' },
+                    'electricity': { name: 'نامه اداره برق', icon: 'fas fa-bolt', color: 'yellow' },
+                    'gas': { name: 'نامه اداره گاز', icon: 'fas fa-fire', color: 'orange' }
+                };
+                
+                selectedServices.forEach(service => {
+                    if (!hasViolations || inspectionResults[service] || violationPaymentComplete) {
+                        const serviceInfo = serviceNames[service];
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = `bg-${serviceInfo.color}-600 text-white font-bold px-6 py-4 rounded-lg hover:bg-${serviceInfo.color}-700 transition-all shadow-lg flex items-center justify-center`;
+                        button.innerHTML = `
+                            <i class="${serviceInfo.icon} ml-3"></i>
+                            دانلود ${serviceInfo.name}
+                        `;
+                        downloadButtons.appendChild(button);
+                    }
+                });
+                
+                document.getElementById('complete-btn').classList.remove('hidden');
+            }
+
+            // Gas Marker Process Functions
+            function submitGasMarkerRequest() {
+                gasMarkerProcess.requestSubmitted = true;
+                currentGasStep = 2;
+                updateGasMarkerSteps();
+            }
+
+            function downloadVillageLetter() {
+                gasMarkerProcess.letterDownloaded = true;
+                currentGasStep = 3;
+                updateGasMarkerSteps();
+                // Simulate file download
+                const link = document.createElement('a');
+                link.href = 'data:application/pdf;base64,JVBERi0xLjQKJeKAnecKMS4uLg==';
+                link.download = 'نامه-دهیاری-علمک-گاز.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert('نامه دهیاری دانلود شد. این نامه را به شرکت گاز ارائه دهید.');
+            }
+
+            function confirmGasInquiry() {
+                gasMarkerProcess.inquiryCompleted = true;
+                currentGasStep = 4;
+                updateGasMarkerSteps();
+            }
+
+            function payAsphaltFee() {
+                const payButton = event.target;
+                payButton.disabled = true;
+                payButton.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>در حال پردازش...';
+                
+                setTimeout(() => {
+                    payButton.innerHTML = '<i class="fas fa-check ml-2"></i>پرداخت موفق';
+                    payButton.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+                    payButton.classList.add('bg-green-600');
+                    gasMarkerProcess.feesPaid = true;
+                    currentGasStep = 5;
+                    updateGasMarkerSteps();
+                }, 2000);
+            }
+
+            function submitExcavationPermit() {
+                gasMarkerProcess.permitSubmitted = true;
+                currentGasStep = 6;
+                updateGasMarkerSteps();
+            }
+
+            function confirmGasMarkerInstallation() {
+                gasMarkerProcess.markerInstalled = true;
+                currentGasStep = 7;
+                updateGasMarkerSteps();
+            }
+
+            function downloadGasServiceLetter() {
+                gasMarkerProcess.letterReceived = true;
+                // Simulate file download
+                const link = document.createElement('a');
+                link.href = 'data:application/pdf;base64,JVBERi0xLjQKJeKAnecKMS4uLg==';
+                link.download = 'نامه-گازکشی.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert('نامه گازکشی دانلود شد. حالا می‌توانید ادامه فرآیند را طی کنید.');
+                // Enable normal gas service process
+                document.querySelector('input[name="has_gas_marker"][value="yes"]').checked = true;
+                updateGasRequirements();
+            }
+
+            function updateGasMarkerSteps() {
+                for (let i = 1; i <= 7; i++) {
+                    const step = document.getElementById(`gas-step-${i}`);
+                    if (i <= currentGasStep) {
+                        step.classList.remove('hidden');
+                        step.classList.add('active');
+                    } else {
+                        step.classList.add('hidden');
+                        step.classList.remove('active');
+                    }
+                }
+            }
+
+            function completeProcess() {
+                alert('فرآیند درخواست خدمات با موفقیت تکمیل شد!');
+                window.location.href = '/services/construction-without-permit/step6/';
+            }
+        </script>
+    </body>
+</html>

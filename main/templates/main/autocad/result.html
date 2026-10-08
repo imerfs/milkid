@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}نتایج استخراج اطلاعات - MelkID{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .result-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    .property-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        min-width: 150px;
+    }
+    
+    .info-value {
+        flex: 1;
+        text-align: left;
+    }
+    
+    .info-value input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 15px;
+    }
+    
+    .boundaries-section {
+        margin-top: 30px;
+    }
+    
+    .boundary-card {
+        background: white;
+        border: 1px solid #e3e6ea;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .boundary-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #007bff;
+        margin-bottom: 15px;
+    }
+    
+    .boundary-fields {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 15px;
+    }
+    
+    .field-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .field-group label {
+        font-size: 13px;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    
+    .edit-mode input {
+        background: white;
+        border-color: #007bff;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .success-icon {
+        color: #28a745;
+        font-size: 48px;
+        margin-bottom: 20px;
+    }
+    
+    .raw-data-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f1f3f4;
+        border-radius: 8px;
+    }
+    
+    .raw-data-toggle {
+        cursor: pointer;
+        color: #007bff;
+        text-decoration: none;
+    }
+    
+    .raw-data-content {
+        display: none;
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <div class="result-card text-center">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h2 class="mb-3">اطلاعات با موفقیت استخراج شد</h2>
+        <p class="text-muted">
+            اطلاعات زیر از فایل اتوکد شما استخراج شده است. می‌توانید آنها را بررسی و در صورت نیاز ویرایش کنید.
+        </p>
+    </div>
+    
+    <form method="post" id="propertyForm">
+        {% csrf_token %}
+        
+        <div class="result-card">
+            <h3 class="mb-4">
+                <i class="fas fa-ruler-combined"></i>
+                مشخصات کلی ملک
+            </h3>
+            
+            <div class="property-info">
+                <div class="info-row">
+                    <div class="info-label">مساحت زمین:</div>
+                    <div class="info-value">
+                        <input type="number" step="0.01" name="area" 
+                               value="{{ property_data.area|default:'' }}" 
+                               placeholder="وارد کنید (متر مربع)">
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">متراژ معبر:</div>
+                    <div class="info-value">
+                        <input type="number" step="0.01" name="street_width" 
+                               value="{{ property_data.street_width|default:'' }}" 
+                               placeholder="وارد کنید (متر)">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="result-card">
+            <h3 class="mb-4">
+                <i class="fas fa-compass"></i>
+                حدود اربعه
+            </h3>
+            
+            <div class="boundaries-section">
+                <!-- شمال -->
+                <div class="boundary-card">
+                    <div class="boundary-title">
+                        <i class="fas fa-arrow-up"></i> شمالاً
+                    </div>
+                    <div class="boundary-fields">
+                        <div class="field-group">
+                            <label>طول (متر)</label>
+                            <input type="number" step="0.01" name="north_length" 
+                                   value="{{ property_data.north_length|default:'' }}" 
+                                   placeholder="طول ضلع شمالی">
+                        </div>
+                        <div class="field-group">
+                            <label>مجاورت با</label>
+                            <input type="text" name="north_boundary" 
+                                   value="{{ property_data.north_boundary|default:'' }}" 
+                                   placeholder="مثال: قطعه 12">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- جنوب -->
+                <div class="boundary-card">
+                    <div class="boundary-title">
+                        <i class="fas fa-arrow-down"></i> جنوباً
+                    </div>
+                    <div class="boundary-fields">
+                        <div class="field-group">
+                            <label>طول (متر)</label>
+                            <input type="number" step="0.01" name="south_length" 
+                                   value="{{ property_data.south_length|default:'' }}" 
+                                   placeholder="طول ضلع جنوبی">
+                        </div>
+                        <div class="field-group">
+                            <label>مجاورت با</label>
+                            <input type="text" name="south_boundary" 
+                                   value="{{ property_data.south_boundary|default:'' }}" 
+                                   placeholder="مثال: معبر">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- شرق -->
+                <div class="boundary-card">
+                    <div class="boundary-title">
+                        <i class="fas fa-arrow-right"></i> شرقاً
+                    </div>
+                    <div class="boundary-fields">
+                        <div class="field-group">
+                            <label>طول (متر)</label>
+                            <input type="number" step="0.01" name="east_length" 
+                                   value="{{ property_data.east_length|default:'' }}" 
+                                   placeholder="طول ضلع شرقی">
+                        </div>
+                        <div class="field-group">
+                            <label>مجاورت با</label>
+                            <input type="text" name="east_boundary" 
+                                   value="{{ property_data.east_boundary|default:'' }}" 
+                                   placeholder="مثال: قطعه 158">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- غرب -->
+                <div class="boundary-card">
+                    <div class="boundary-title">
+                        <i class="fas fa-arrow-left"></i> غرباً
+                    </div>
+                    <div class="boundary-fields">
+                        <div class="field-group">
+                            <label>طول (متر)</label>
+                            <input type="number" step="0.01" name="west_length" 
+                                   value="{{ property_data.west_length|default:'' }}" 
+                                   placeholder="طول ضلع غربی">
+                        </div>
+                        <div class="field-group">
+                            <label>مجاورت با</label>
+                            <input type="text" name="west_boundary" 
+                                   value="{{ property_data.west_boundary|default:'' }}" 
+                                   placeholder="مثال: قطعه 156">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-save"></i> ذخیره اطلاعات
+            </button>
+            <a href="{% url 'main:autocad_upload' %}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-upload"></i> آپلود فایل جدید
+            </a>
+            <button type="button" class="btn btn-outline-secondary btn-lg" onclick="window.print()">
+                <i class="fas fa-print"></i> چاپ
+            </button>
+        </div>
+    </form>
+    
+    {% if property_data.is_verified %}
+    <div class="alert alert-success mt-3">
+        <i class="fas fa-check"></i> این اطلاعات توسط شما تایید شده است.
+    </div>
+    {% endif %}
+    
+    <!-- نمایش داده‌های خام برای دیباگ -->
+    <div class="raw-data-section">
+        <a href="#" class="raw-data-toggle" onclick="toggleRawData(event)">
+            <i class="fas fa-code"></i> مشاهده داده‌های خام
+        </a>
+        <div class="raw-data-content" id="rawData">
+            {{ property_data.raw_data|default:"داده‌ای موجود نیست" }}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleRawData(e) {
+    e.preventDefault();
+    const rawDataContent = document.getElementById('rawData');
+    if (rawDataContent.style.display === 'none' || rawDataContent.style.display === '') {
+        rawDataContent.style.display = 'block';
+    } else {
+        rawDataContent.style.display = 'none';
+    }
+}
+
+// Auto-save notification
+document.getElementById('propertyForm').addEventListener('submit', function(e) {
+    // Form will submit normally, just show a loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

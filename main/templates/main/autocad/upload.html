@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}آپلود فایل اتوکد - MelkID{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .upload-card {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .upload-area {
+        border: 3px dashed #007bff;
+        border-radius: 15px;
+        padding: 60px 20px;
+        text-align: center;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .upload-area:hover {
+        background: #e3f2ff;
+        border-color: #0056b3;
+    }
+    
+    .upload-area.drag-over {
+        background: #cce5ff;
+        border-color: #004085;
+    }
+    
+    .upload-icon {
+        font-size: 64px;
+        color: #007bff;
+        margin-bottom: 20px;
+    }
+    
+    .file-input {
+        display: none;
+    }
+    
+    .file-info {
+        margin-top: 20px;
+        padding: 15px;
+        background: #e8f4fd;
+        border-radius: 8px;
+        display: none;
+    }
+    
+    .file-info.show {
+        display: block;
+    }
+    
+    .history-section {
+        margin-top: 40px;
+    }
+    
+    .history-table {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .history-table table {
+        width: 100%;
+    }
+    
+    .history-table th {
+        background: #f8f9fa;
+        padding: 12px;
+        text-align: right;
+        font-weight: 600;
+    }
+    
+    .history-table td {
+        padding: 12px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-processing {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-pending {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="upload-card">
+        <h2 class="mb-4">
+            <i class="fas fa-file-alt"></i> 
+            آپلود فایل اتوکد
+        </h2>
+        
+        <p class="text-muted mb-4">
+            فایل نقشه اتوکد خود را آپلود کنید تا اطلاعات ملک به صورت خودکار استخراج شود.
+        </p>
+        
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h4>فایل خود را اینجا بکشید و رها کنید</h4>
+                <p class="text-muted">یا برای انتخاب فایل کلیک کنید</p>
+                <input type="file" name="cad_file" id="fileInput" class="file-input" accept=".dxf,.dwg" required>
+                <p class="mt-3">
+                    <small class="text-muted">فرمت‌های پشتیبانی شده: DXF, DWG</small>
+                </p>
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                <h5>فایل انتخاب شده:</h5>
+                <p id="fileName"></p>
+                <p id="fileSize"></p>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" style="display: none;">
+                    <i class="fas fa-upload"></i> آپلود و پردازش فایل
+                </button>
+            </div>
+        </form>
+        
+        <div class="alert alert-info mt-4">
+            <h5><i class="fas fa-info-circle"></i> اطلاعاتی که استخراج می‌شود:</h5>
+            <ul class="mb-0">
+                <li>مساحت زمین (متر مربع)</li>
+                <li>متراژ معبر</li>
+                <li>حدود اربعه (شمال، جنوب، شرق، غرب)</li>
+                <li>طول هر ضلع و مجاورت‌ها</li>
+            </ul>
+        </div>
+    </div>
+    
+    {% if user_files %}
+    <div class="history-section">
+        <h3 class="mb-3">
+            <i class="fas fa-history"></i> 
+            فایل‌های اخیر شما
+        </h3>
+        
+        <div class="history-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>تاریخ آپلود</th>
+                        <th>نام فایل</th>
+                        <th>نوع</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in user_files %}
+                    <tr>
+                        <td>{{ file.upload_date|date:"Y/m/d H:i" }}</td>
+                        <td>{{ file.original_file.name|slice:"-30:" }}</td>
+                        <td>{{ file.file_type|upper }}</td>
+                        <td>
+                            <span class="status-badge status-{{ file.status }}">
+                                {% if file.status == 'completed' %}
+                                    پردازش شده
+                                {% elif file.status == 'processing' %}
+                                    در حال پردازش
+                                {% elif file.status == 'failed' %}
+                                    خطا
+                                {% else %}
+                                    در انتظار
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if file.status == 'completed' %}
+                            <a href="{% url 'main:autocad_result' file.id %}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i> مشاهده
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="{% url 'main:autocad_history' %}" class="btn btn-outline-primary">
+                مشاهده همه فایل‌ها
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Drag and drop functionality
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const fileSize = document.getElementById('fileSize');
+const submitBtn = document.getElementById('submitBtn');
+
+uploadArea.addEventListener('click', () => {
+    fileInput.click();
+});
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        displayFileInfo(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        displayFileInfo(e.target.files[0]);
+    }
+});
+
+function displayFileInfo(file) {
+    fileName.textContent = file.name;
+    fileSize.textContent = `حجم فایل: ${(file.size / 1024 / 1024).toFixed(2)} مگابایت`;
+    fileInfo.classList.add('show');
+    submitBtn.style.display = 'inline-block';
+}
+</script>
+{% endblock %}

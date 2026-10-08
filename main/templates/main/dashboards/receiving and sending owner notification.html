@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اطلاعیه‌ها و گزارشات - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <i class="fas fa-bullhorn text-blue-600 text-4xl mb-4"></i>
+            <h1 class="text-3xl font-bold text-gray-800">اطلاعیه‌ها و گزارشات مردمی</h1>
+            <p class="mt-2 text-gray-600">در این بخش از آخرین اخبار مطلع شوید و با دهیاری در ارتباط باشید.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Announcements List (Main Column) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-2xl shadow-lg h-full">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">بخش ۲ – اطلاعیه‌های دریافتی</h2>
+                        <div>
+                            <label for="scope-filter" class="text-sm font-medium">فیلتر:</label>
+                            <select id="scope-filter" class="p-2 border border-gray-300 rounded-lg bg-white">
+                                <option value="all">همه اطلاعیه‌ها</option>
+                                <option value="my-area">فقط محله من</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Announcement Card 1 -->
+                        <div class="p-6 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-bold text-xl text-blue-800">اطلاعیه قطعی آب</h3>
+                                    <p class="text-sm text-gray-500 mt-1">منتشر شده در: ۱۴۰۳/۰۵/۲۰ - ۱۰:۰۰</p>
+                                </div>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">کل روستا</span>
+                            </div>
+                            <p class="mt-4 text-gray-700">به اطلاع ساکنین محترم می‌رساند به دلیل تعمیرات خط لوله اصلی، آب شرب روستا در روز سه‌شنبه مورخ ۱۴۰۳/۰۵/۲۲ از ساعت ۸ صبح الی ۱۴ قطع خواهد بود. لطفاً تمهیدات لازم را در نظر بگیرید.</p>
+                            <div class="text-left mt-4">
+                                <button class="text-blue-600 font-semibold text-sm hover:underline">مشاهده جزئیات</button>
+                            </div>
+                        </div>
+
+                        <!-- Announcement Card 2 -->
+                        <div class="p-6 bg-gray-50 rounded-lg border">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-bold text-xl">جلسه ماهانه شورا</h3>
+                                    <p class="text-sm text-gray-500 mt-1">منتشر شده در: ۱۴۰۳/۰۴/۱۵ - ۱۸:۰۰</p>
+                                </div>
+                                <span class="bg-gray-200 text-gray-800 text-xs px-3 py-1 rounded-full">کل روستا</span>
+                            </div>
+                            <p class="mt-4 text-gray-700">جلسه ماهانه شورای اسلامی روستا جهت بررسی مشکلات و پیشنهادات شما عزیزان در تاریخ ۱۴۰۳/۰۴/۲۰ در محل دهیاری برگزار خواهد شد.</p>
+                             <div class="text-left mt-4">
+                                <button class="text-blue-600 font-semibold text-sm hover:underline">مشاهده جزئیات</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Actions (Sidebar Column) -->
+            <div class="space-y-8">
+                <!-- Submit Report Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">ثبت پیام یا گزارش حادثه</h2>
+                    <form id="report-form" class="space-y-4">
+                        <div>
+                            <label for="report-type" class="block font-medium mb-1">نوع پیام</label>
+                            <select id="report-type" required class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                                <option value="incident">حادثه (ترکیدگی لوله، قطعی برق و...)</option>
+                                <option value="suggestion">پیشنهاد</option>
+                                <option value="complaint">شکایت (تخلف ساختمانی و...)</option>
+                                <option value="other">سایر موارد</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="report-message" class="block font-medium mb-1">متن گزارش</label>
+                            <textarea id="report-message" rows="4" required class="w-full p-3 border border-gray-300 rounded-lg"></textarea>
+                        </div>
+                        <div>
+                            <label for="report-attachment" class="block font-medium mb-1">ضمیمه کردن عکس یا ویدئو</label>
+                            <input type="file" id="report-attachment" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                        </div>
+                        <div class="text-left pt-2">
+                            <button type="submit" class="bg-green-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-green-700 transition-all">
+                                <i class="fas fa-paper-plane mr-2"></i>ارسال به دهیاری
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Track Reports -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">پیگیری گزارش‌های ارسالی</h2>
+                    <ul class="space-y-4">
+                        <li class="p-4 bg-gray-50 rounded-lg border">
+                            <div class="flex justify-between items-center">
+                                <p class="font-semibold">گزارش ترکیدگی لوله</p>
+                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">انجام شد</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">تاریخ ثبت: ۱۴۰۳/۰۵/۱۸</p>
+                        </li>
+                        <li class="p-4 bg-gray-50 rounded-lg border">
+                            <div class="flex justify-between items-center">
+                                <p class="font-semibold">شکایت از ساخت و ساز غیرمجاز</p>
+                                <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">در حال بررسی</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">تاریخ ثبت: ۱۴۰۳/۰۵/۱۵</p>
+                        </li>
+                         <li class="p-4 bg-gray-50 rounded-lg border">
+                            <div class="flex justify-between items-center">
+                                <p class="font-semibold">پیشنهاد نصب سطل زباله</p>
+                                <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">رد شد</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">تاریخ ثبت: ۱۴۰۳/۰۴/۳۰</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('report-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            alert('گزارش شما با موفقیت برای دهیاری ارسال شد. (نسخه نمایشی)');
+            this.reset();
+        });
+    </script>
+</body>
+</html>

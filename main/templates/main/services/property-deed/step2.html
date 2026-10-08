@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله ۲: استعلام و امضای فرم‌ها - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .file-preview {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            background-color: #f9fafb; /* gray-50 */
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست صدور سند</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 50%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۲ از ۴: استعلام بنیاد و امضای فرم‌ها</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                <form id="main-form">
+                    <div class="border-b pb-6 mb-8">
+                        <i class="fas fa-file-signature text-blue-600 text-3xl mb-4"></i>
+                        <h1 class="text-3xl font-bold text-gray-800">استعلام بنیاد مسکن و امضای فرم‌های سند</h1>
+                        <p class="mt-2 text-gray-600">لطفاً پاسخ استعلام و فرم‌های امضاشده را بارگذاری نمایید.</p>
+                    </div>
+
+                    <!-- Property Type Classification -->
+                    <fieldset class="mb-8">
+                        <legend class="text-xl font-semibold mb-4 border-r-4 border-purple-500 pr-4">نوع سند</legend>
+                        <div class="p-6 bg-purple-50 rounded-lg border border-purple-200">
+                            <p class="text-gray-700 mb-4 font-medium">سند مربوط به چه نوع ملکی است؟</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-purple-100 has-[:checked]:border-purple-500">
+                                    <input type="radio" name="propertyType" value="land" class="ml-3" checked>
+                                    <i class="fas fa-mountain text-green-600 ml-2"></i>
+                                    <span>زمین</span>
+                                </label>
+                                <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-purple-100 has-[:checked]:border-purple-500">
+                                    <input type="radio" name="propertyType" value="building" class="ml-3">
+                                    <i class="fas fa-building text-blue-600 ml-2"></i>
+                                    <span>ساختمان</span>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Content for Land -->
+                    <div id="land-content">
+                        <!-- Bonyad Maskan Inquiry Block -->
+                        <fieldset class="mb-8">
+                            <legend class="text-xl font-semibold mb-4 border-r-4 border-blue-500 pr-4">۱. استعلام بنیاد مسکن</legend>
+                        <div class="p-6 bg-blue-50 rounded-lg border border-blue-200">
+                             <div class="mb-4">
+                                <a href="#" class="inline-block bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+                                    <i class="fas fa-download mr-2"></i>دانلود نامه دهیاری به بنیاد مسکن
+                                </a>
+                            </div>
+                             <div class="mb-4 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm flex items-start">
+                                <i class="fas fa-info-circle ml-3 mt-1"></i>
+                                <div>
+                                    <p class="font-bold">راهنما:</p>
+                                    <p>دهیاری استعلام به شما می دهد؛ شما پس از دریافت پاسخ، فایل آن را اینجا آپلود کنید.</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="bonyad-response-upload" class="block font-medium mb-2">آپلود جوابیه بنیاد مسکن<span class="text-red-500">*</span></label>
+                                <input type="file" id="bonyad-response-upload" required accept=".pdf" class="w-full text-sm">
+                                <div class="file-preview-container"></div>
+                            </div>
+                            <!-- Conditional Fence Permit Download -->
+                            <div id="fence-permit-section" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <p class="font-semibold text-green-800 mb-2">مجوز حصارکشی آماده است</p>
+                                <p class="text-sm text-gray-600 mb-3">پس از تایید جوابیه بنیاد، مجوز حصارکشی برای ملک شما صادر شده است.</p>
+                                <a href="#" class="inline-block bg-green-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-green-700">
+                                    <i class="fas fa-download mr-2"></i>دانلود مجوز حصار
+                                </a>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Deed Forms Block -->
+                    <fieldset class="mb-8">
+                        <legend class="text-xl font-semibold mb-4 border-r-4 border-blue-500 pr-4">۲. فرم‌های سند</legend>
+                        <div class="p-6 bg-gray-50 rounded-lg border">
+                            <div class="mb-6">
+                                <p class="font-semibold mb-2">دانلود فرم‌های لازم:</p>
+                                <div class="flex flex-wrap gap-x-6 gap-y-3">
+                                    <a href="#" class="text-blue-600 hover:underline"><i class="fas fa-download mr-2"></i>فرم درخواست سند</a>
+                                    <a href="#" class="text-blue-600 hover:underline"><i class="fas fa-download mr-2"></i>فرم تعهد مالکیت و حدود اربعه</a>
+                                    <a href="#" class="text-blue-600 hover:underline"><i class="fas fa-download mr-2"></i>فرم تقاضای اجرای قانون الحاق</a>
+                                    <a href="#" class="text-blue-600 hover:underline"><i class="fas fa-download mr-2"></i>فرم اعطای نمایندگی به بنیاد</a>
+                                    <a href="#" class="text-blue-600 hover:underline"><i class="fas fa-download mr-2"></i>فرم گزارش کارشناسی</a>
+                                </div>
+                            </div>
+                            <div class="border-t pt-6">
+                                <p class="font-semibold mb-2">امضای فرم‌ها:</p>
+                                <div class="space-y-4">
+                                    <div class="p-4 border rounded-lg">
+                                        <label for="signed-forms-upload" class="block font-medium mb-2">آپلود فرم‌های امضاشده<span class="text-red-500">*</span></label>
+                                        <p class="text-xs text-gray-500 mb-2">فرم‌ها را چاپ، امضا و سپس اسکن کرده و در قالب یک فایل PDF بارگذاری کنید.</p>
+                                        <input type="file" id="signed-forms-upload" required accept=".pdf" class="w-full text-sm">
+                                        <div class="file-preview-container"></div>
+                                    </div>
+                                    <div class="p-4 border rounded-lg flex items-center justify-between bg-gray-100 opacity-60">
+                                        <div>
+                                            <p class="font-medium text-gray-500">امضای دیجیتال</p>
+                                            <p class="text-xs text-gray-400">این قابلیت در فاز بعدی اضافه خواهد شد.</p>
+                                        </div>
+                                        <button type="button" class="bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-sm cursor-not-allowed">امضا آنلاین</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </fieldset>
+                    </div>
+
+                    <!-- Content for Building -->
+                    <div id="building-content" class="hidden">
+                        <fieldset class="mb-8">
+                            <legend class="text-xl font-semibold mb-4 border-r-4 border-orange-500 pr-4">۱. رای کمیسیون</legend>
+                            <div class="p-6 bg-orange-50 rounded-lg border border-orange-200">
+                                <div class="mb-4 p-3 bg-orange-100 text-orange-800 rounded-lg text-sm flex items-start">
+                                    <i class="fas fa-info-circle ml-3 mt-1"></i>
+                                    <div>
+                                        <p class="font-bold">توجه:</p>
+                                        <p>برای ساختمان‌ها فقط رای کمیسیون مورد نیاز است.</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="commission-decision-upload" class="block font-medium mb-2">آپلود رای کمیسیون<span class="text-red-500">*</span></label>
+                                    <input type="file" id="commission-decision-upload" required accept=".pdf" class="w-full text-sm">
+                                    <div class="file-preview-container"></div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-10 pt-6 border-t text-left">
+                        <button type="submit" id="submit-btn" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg opacity-50 cursor-not-allowed" disabled>
+                            ثبت پاسخ بنیاد و فرم‌های امضا شده
+                        </button>
+                    </div>
+
+                     <!-- Payment Section (Initially Hidden) -->
+                    <div id="payment-section" class="hidden mt-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-green-500 pr-4">۳. پرداخت عوارض</h2>
+                        <div class="p-6 bg-green-50 rounded-lg border border-green-200">
+                            <p class="text-gray-700 mb-4">مدارک شما تایید شد. لطفاً هزینه عوارض را برای ادامه فرآیند پرداخت نمایید.</p>
+                            <ul class="space-y-3 text-gray-800">
+                                <li class="flex justify-between items-center border-b pb-2"><span>هزینه کارشناسی:</span><span class="font-bold text-lg">۲۵۰,۰۰۰ تومان</span></li>
+                                <li class="flex justify-between items-center border-b pb-2"><span>عوارض صدور سند:</span><span class="font-bold text-lg">۷۵۰,۰۰۰ تومان</span></li>
+                                <li class="flex justify-between items-center pt-3"><span class="text-xl font-bold">مبلغ نهایی:</span><span class="font-extrabold text-2xl text-green-700">۱,۰۰۰,۰۰۰ تومان</span></li>
+                            </ul>
+                            <div class="mt-6 text-left">
+                                <button type="button" id="payment-btn" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg">
+                                    پرداخت و ادامه
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                 <!-- Checklist Card -->
+                 <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-list-check text-green-500 mr-3"></i>چک‌لیست مدارک</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>سند یا قولنامه ملک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>فایل شمیم</span></li>
+                    </ul>
+                </div>
+
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">شناسه پرونده:</p><p class="text-gray-600">#DEED-1001</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p id="case-status" class="text-amber-600 font-bold">در انتظار پاسخ بنیاد مسکن</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bonyadResponseUpload = document.getElementById('bonyad-response-upload');
+        const signedFormsUpload = document.getElementById('signed-forms-upload');
+        const commissionDecisionUpload = document.getElementById('commission-decision-upload');
+        const submitBtn = document.getElementById('submit-btn');
+        const fencePermitSection = document.getElementById('fence-permit-section');
+        const paymentSection = document.getElementById('payment-section');
+        const landContent = document.getElementById('land-content');
+        const buildingContent = document.getElementById('building-content');
+
+        // Property type selection handler
+        document.querySelectorAll('input[name="propertyType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'land') {
+                    landContent.classList.remove('hidden');
+                    buildingContent.classList.add('hidden');
+                } else if (this.value === 'building') {
+                    landContent.classList.add('hidden');
+                    buildingContent.classList.remove('hidden');
+                }
+                checkFormCompleteness();
+            });
+        });
+
+        function checkFormCompleteness() {
+            const selectedPropertyType = document.querySelector('input[name="propertyType"]:checked').value;
+            
+            if (selectedPropertyType === 'land') {
+                if (bonyadResponseUpload.files.length > 0 && signedFormsUpload.files.length > 0) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            } else if (selectedPropertyType === 'building') {
+                if (commissionDecisionUpload.files.length > 0) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const container = e.target.closest('div').querySelector('.file-preview-container');
+                if (container) {
+                    container.innerHTML = ''; // Clear previous preview
+                    if (e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        const preview = document.createElement('div');
+                        preview.className = 'file-preview';
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle text-green-500 ml-2';
+                        preview.appendChild(icon);
+                        const text = document.createElement('span');
+                        text.textContent = file.name;
+                        preview.appendChild(text);
+                        container.appendChild(preview);
+                    }
+                }
+
+                // Show conditional fence permit section
+                if(e.target.id === 'bonyad-response-upload') {
+                    if (e.target.files.length > 0) {
+                        fencePermitSection.classList.remove('hidden');
+                    } else {
+                        fencePermitSection.classList.add('hidden');
+                    }
+                }
+
+                checkFormCompleteness();
+            });
+        });
+
+        document.getElementById('main-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Redirect to step 3
+            window.location.href = '/services/property-deed-issuance/step3/';
+        });
+
+        document.getElementById('payment-btn').addEventListener('click', function() {
+            alert('پرداخت با موفقیت انجام شد. پرونده به مرحله بعد ارسال می‌شود. (نسخه نمایشی)');
+            this.textContent = 'پرداخت شد';
+            this.disabled = true;
+            document.getElementById('case-status').textContent = 'پرداخت شد - در انتظار بازدید';
+        });
+    </script>
+</body>
+</html>
+

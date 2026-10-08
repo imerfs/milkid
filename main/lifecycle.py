@@ -1,0 +1,157 @@
+"""ServiceRequest lifecycle: the only place that changes a request's status.
+
+Views call a verb (``approve``, ``reject``, ...) and render the outcome. Each
+verb checks the transition is allowed, updates status / workflow stage, writes
+the workflow history entry and notifies the people involved.
+
+``authority`` selects the wording used for the municipality head ('mayor') or
+for the municipal expert ('expert').
+"""
+from django.utils import timezone
+
+from main.models import Inspection, ServiceRequest
+from main.notifications import notify
+
+FINAL_STATUSES = {'completed'}
+VALID_STATUSES = {value for value, _ in ServiceRequest.STATUS_CHOICES}
+
+REFERRAL_STAGES = {
+    'council': ('council_review', 'شورای اسلامی روستا'),
+    'inspector': ('inspection', 'ناظر فنی'),
+    'accountant': ('finance_review', 'مسئول مالی'),
+    'dehyari': ('mayor_review', 'دهیار / شهردار'),
+    'engineer': ('expert_review', 'کارشناس دهیاری'),
+}
+
+
+class TransitionError(Exception):
+    """The requested change is not allowed for this request."""
+
+
+def _ensure_open(sr):
+    if sr.status in FINAL_STATUSES:
+        raise TransitionError('درخواست تکمیل شده است و قابل تغییر نیست.')
+
+
+def _finish(sr, actor, *, status, stage, action, notes='', to_role='citizen', reviewed=False):
+    sr.status = status
+    sr.workflow_stage = stage
+    if reviewed:
+        sr.reviewed_at = timezone.now()
+    sr.add_workflow_step(action=action, from_user=actor, to_role=to_role, notes=notes)
+    sr.save()
+
+
+def approve(sr, actor, *, notes='', completed=False, authority='expert'):
+    _ensure_open(sr)
+    if authority == 'mayor':
+        _finish(sr, actor, status='approved', stage='approved', reviewed=True,
+                action='approved', notes='تایید نهایی توسط دهیار/شهردار انجام شد.')
+        notify(sr.user, 'درخواست تایید شد',
+               f'درخواست "{sr.title}" شما توسط دهیاری تایید شد.', request=sr)
+        return
+    sr.staff_comments = (sr.staff_comments or '') + f"\n[تایید کارشناس: {notes}]"
+    _finish(sr, actor, status='completed' if completed else 'approved', stage='approved',
+            reviewed=True, action='تایید پرونده توسط کارشناس دهیاری', notes=notes)
+    notify(sr.user, f'تایید درخواست: {sr.title}',
+           f'درخواست شما توسط کارشناس دهیاری تایید گردید. {notes}', request=sr)
+
+
+def reject(sr, actor, reason, *, authority='expert'):
+    _ensure_open(sr)
+    if authority == 'mayor':
+        sr.staff_comments = reason
+        _finish(sr, actor, status='rejected', stage='rejected', reviewed=True,
+                action='rejected', notes=f'درخواست توسط دهیار/شهردار رد شد: {reason}')
+        notify(sr.user, 'درخواست رد شد',
+               f'درخواست "{sr.title}" شما رد شد. دلیل: {reason}', request=sr)
+        return
+    sr.staff_comments = (sr.staff_comments or '') + f"\n[رد کارشناس: {reason}]"
+    _finish(sr, actor, status='rejected', stage='rejected',
+            action='رد پرونده توسط کارشناس دهیاری', notes=reason)
+    notify(sr.user, f'رد درخواست: {sr.title}',
+           f'درخواست شما توسط کارشناس دهیاری رد شد. دلیل: {reason}', request=sr)
+
+
+def request_documents(sr, actor, notes):
+    _ensure_open(sr)
+    sr.staff_comments = (sr.staff_comments or '') + f"\n[نیاز به مدارک: {notes}]"
+    _finish(sr, actor, status='requires_documents', stage='requires_documents',
+            action='اعلام نقص مدارک به متقاضی', notes=notes)
+    notify(sr.user, f'نیاز به رفع نقص مدارک: {sr.title}',
+           f'کارشناس دهیاری اعلام نقص مدارک نمود: {notes}. '
+           'لطفاً مدارک خواسته شده را در پنل کاربری بارگذاری نمایید.', request=sr)
+
+
+def refer(sr, actor, target_role, *, notes='', assigned_user=None):
+    """Forward the request to another panel. Returns (new_stage, target_name)."""
+    _ensure_open(sr)
+    if target_role not in REFERRAL_STAGES:
+        raise TransitionError('نقش مقصد نامعتبر است.')
+    new_stage, target_name = REFERRAL_STAGES[target_role]
+    if assigned_user:
+        sr.assigned_to = assigned_user
+    sr.referral_target = target_role
+    sr.referral_notes = notes
+    sr.referral_date = timezone.now()
+    if target_role == 'inspector' and assigned_user:
+        Inspection.objects.get_or_create(
+            request=sr, inspector=assigned_user,
+            defaults={'status': 'pending',
+                      'notes': notes or 'ارجاع شده از کارشناس دهیاری جهت بازرسی میدانی'},
+        )
+    _finish(sr, actor, status='in_review', stage=new_stage,
+            action=f'ارجاع پرونده به {target_name}', notes=notes, to_role=target_role)
+    suffix = f' دستور: {notes}' if notes else ''
+    notify(sr.user, f'ارجاع درخواست: {sr.title}',
+           f'پرونده شما توسط کارشناس دهیاری جهت بررسی به «{target_name}» ارجاع گردید.' + suffix,
+           request=sr)
+    if assigned_user:
+        notify(assigned_user, f'پرونده ارجاعی جدید: {sr.title}',
+               f'پرونده کد #{sr.id} ({sr.get_request_type_display()}) توسط کارشناس دهیاری '
+               'جهت اقدام برای شما ارسال شد.' + suffix, request=sr)
+    return new_stage, target_name
+
+
+def assign(sr, actor, staff_user):
+    """Mayor hands the request to a staff member for review."""
+    _ensure_open(sr)
+    sr.assigned_to = staff_user
+    sr.status = 'in_review'
+    sr.add_workflow_step(action='ارجاع به کارشناس', from_user=actor, to_role='engineer')
+    sr.save()
+    notify(staff_user, 'درخواست جدید ارجاع شده',
+           f'درخواست "{sr.title}" به شما ارجاع شد.', request=sr)
+    notify(sr.user, 'درخواست در حال بررسی',
+           f'درخواست "{sr.title}" شما به کارشناس ارجاع شد و در حال بررسی است.', request=sr)
+
+
+def set_status(sr, actor, new_status, notes=''):
+    """Generic staff status change (status screen)."""
+    if new_status not in VALID_STATUSES:
+        raise TransitionError('وضعیت نامعتبر است.')
+    _ensure_open(sr)
+    sr.status = new_status
+    sr.workflow_stage = new_status if new_status in dict(sr.WORKFLOW_STAGES) else sr.workflow_stage
+    if notes:
+        sr.staff_comments = (sr.staff_comments or '') + f'\n[{notes}]'
+    sr.add_workflow_step(action=f'تغییر وضعیت به {sr.get_status_display()}',
+                         from_user=actor, to_role='citizen', notes=notes)
+    sr.save()
+    notify(sr.user, 'وضعیت درخواست به‌روز شد',
+           f'وضعیت درخواست {sr.title} به {sr.get_status_display()} تغییر کرد.', request=sr)
+
+
+def record_inspection(sr, inspector, *, approved, reason=''):
+    """The inspector's outcome decides the request (approved / rejected)."""
+    _ensure_open(sr)
+    if approved:
+        _finish(sr, inspector, status='approved', stage='approved', reviewed=True,
+                action='تایید بازرسی توسط ناظر فنی', to_role='citizen')
+        notify(sr.user, 'بازرسی تکمیل شد',
+               f'بازرسی درخواست {sr.title} با موفقیت تکمیل شد.', request=sr)
+    else:
+        _finish(sr, inspector, status='rejected', stage='rejected', reviewed=True,
+                action='رد بازرسی توسط ناظر فنی', notes=reason, to_role='citizen')
+        notify(sr.user, 'بازرسی رد شد',
+               f'بازرسی درخواست {sr.title} رد شد. دلیل: {reason}', request=sr)

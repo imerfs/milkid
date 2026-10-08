@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله ۷: پروانه، نظارت و خدمات - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست پروانه ساخت</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 100%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۷ از ۷: صدور پروانه، نظارت و خدمات</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- 1. Permit Issued Block -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <div class="border-b pb-6 mb-6">
+                        <i class="fas fa-file-check text-green-600 text-3xl mb-4"></i>
+                        <h1 class="text-3xl font-bold text-gray-800">پروانه ساخت صادر شد</h1>
+                        <p class="mt-2 text-gray-600">پروانه ساخت شما آماده است. می‌توانید فایل نهایی را مشاهده و دانلود نمایید.</p>
+                    </div>
+                    
+                    <!-- Important Notice about Permit Validity -->
+                    <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl mt-1 ml-3"></i>
+                            <div>
+                                <h3 class="font-bold text-yellow-800 mb-2">توجه مهم:</h3>
+                                <ul class="text-yellow-700 text-sm space-y-1">
+                                    <li>• پروانه شما فقط یک سال اعتبار دارد</li>
+                                    <li>• برای تمدید آن پس از یک سال دوباره باید هزینه عوارض پرداخت کنید</li>
+                                    <li>• برای تحویل گرفتن پوشه پروانه به دهیاری مراجعه فرمایید</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="w-full sm:w-auto bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all flex items-center justify-center">
+                        <i class="fas fa-download mr-3"></i>
+                        دانلود پروانه صادر شده (PDF)
+                    </button>
+                </div>
+
+                <!-- 2. Supervision Forms Block -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">فرم‌های نظارت مرحله‌ای</h2>
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
+                        <p class="font-semibold mb-2">دانلود قالب‌ها:</p>
+                        <p class="text-sm text-gray-600 mb-4">فرم‌های زیر را دانلود کرده و پس از تکمیل و امضا توسط ناظر، در بخش بعدی بارگذاری کنید.</p>
+                        <div class="flex flex-wrap gap-x-6 gap-y-2">
+                            <a href="#" class="text-blue-600 hover:underline text-sm">فرم شروع به کار</a>
+                            <a href="#" class="text-blue-600 hover:underline text-sm">فرم مرحله سفت‌کاری</a>
+                            <a href="#" class="text-blue-600 hover:underline text-sm">فرم پایان کار</a>
+                            <a href="#" class="text-blue-600 hover:underline text-sm">گزارش مرحله اول بعد از بتن ریزی پی</a>
+                            <a href="#" class="text-blue-600 hover:underline text-sm">گزارش مرحله دوم اجرای اسکلت</a>
+                            <a href="#" class="text-blue-600 hover:underline text-sm">گزارش مرحله سوم سفت کاری و نازک کاری</a>
+                            <a href="#" class="text-blue-600 hover:underline text-sm">گزارش مرحله چهارم (نهایی)</a>
+                            <a href="#" class="text-blue-600 hover:underline text-sm">گزارش پیشرفت عملیات ساختمانی</a>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="supervision-docs-upload" class="block font-medium mb-2">آپلود فرم‌های امضاشده نظارت<span class="text-red-500">*</span></label>
+                        <input type="file" id="supervision-docs-upload" multiple class="w-full text-sm">
+                    </div>
+                    <div class="text-left mt-6">
+                        <button type="button" onclick="submitSupervisionDocs()" class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700">ثبت مدارک نظارت</button>
+                    </div>
+                </div>
+
+                <!-- 3. Service Request Block -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">درخواست خدمات</h2>
+                    <p class="text-gray-600 mb-6">در صورت نیاز به خدمات اضافی مانند انشعابات، می‌توانید از طریق این بخش درخواست خود را ثبت کنید.</p>
+                    <div class="text-left">
+                        <button type="button" onclick="submitServiceRequest()" class="bg-purple-600 text-white font-bold px-8 py-3 rounded-lg transition-all shadow-lg hover:bg-purple-700">ارسال درخواست خدمات</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">کد نوسازی:</p><p class="text-gray-600">#P-157</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p id="case-status" class="text-green-600 font-bold">پروانه صادر شد</p></div>
+                        <div><p class="font-semibold">مسئول فعلی:</p><p id="responsible-party" class="text-gray-600">شما (متقاضی)</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const caseStatus = document.getElementById('case-status');
+        const responsibleParty = document.getElementById('responsible-party');
+
+        function submitSupervisionDocs() {
+            const supervisionDocs = document.getElementById('supervision-docs-upload');
+            if (supervisionDocs.files.length === 0) {
+                showNotification('لطفاً حداقل یک فرم نظارت امضاشده را بارگذاری کنید.', 'error');
+                return;
+            }
+
+            showNotification('مدارک نظارت با موفقیت ثبت شد.', 'success');
+
+            // Update status after submitting supervision docs
+            caseStatus.textContent = 'نظارت در حال انجام';
+            caseStatus.className = 'font-bold text-blue-600';
+            responsibleParty.textContent = 'ناظر فنی';
+        }
+
+        function submitServiceRequest() {
+            // Redirect to step 8
+            window.location.href = '/services/building-permit/step8/';
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.right = '20px';
+            notification.style.backgroundColor = type === 'success' ? '#28a745' : '#dc3545';
+            notification.style.color = 'white';
+            notification.style.padding = '15px';
+            notification.style.borderRadius = '8px';
+            notification.style.zIndex = '1000';
+            notification.style.transition = 'opacity 0.5s';
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

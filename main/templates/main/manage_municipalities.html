@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jalali_tags %}
+
+{% block title %}مدیریت درخواست‌های شهرداری/دهیاری - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .municipality-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #e9ecef;
+    }
+    
+    .municipality-card.pending {
+        border-left-color: #ffc107;
+        background: linear-gradient(135deg, #fff8e1 0%, #fff3c4 100%);
+    }
+    
+    .municipality-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .action-buttons .btn {
+        margin: 0 0.25rem;
+        min-width: 80px;
+    }
+    
+    .municipality-details {
+        font-size: 0.9rem;
+    }
+    
+    .municipality-details .detail-item {
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .municipality-details .detail-label {
+        font-weight: 600;
+        color: var(--text-secondary, #64748b);
+        min-width: 120px;
+        display: inline-block;
+    }
+    
+    .municipality-details .detail-value {
+        color: var(--text-primary, #1e293b);
+    }
+    
+    .document-preview {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .document-preview:hover {
+        border-color: var(--primary-color, #2563eb);
+        transform: scale(1.05);
+    }
+    
+    .manager-info {
+        background: var(--bg-secondary, #f8fafc);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, var(--primary-color, #2563eb) 0%, var(--primary-dark, #1d4ed8) 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-building me-2 text-primary"></i>
+                        مدیریت درخواست‌های شهرداری/دهیاری
+                    </h2>
+                    <p class="text-muted mb-0">بررسی و تایید درخواست‌های ثبت نام شهرداری‌ها و دهیاری‌ها</p>
+                </div>
+                <div>
+                    <a href="{% url 'main:municipality_history' %}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-history me-2"></i>
+                        تاریخچه
+                    </a>
+                    <button class="btn btn-outline-primary" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        بروزرسانی
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            {% if municipalities %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">{{ municipalities|length }}</div>
+                        <div class="stats-label">درخواست در انتظار</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Municipalities List -->
+            {% if municipalities %}
+                <div class="row" id="municipalities-container">
+                    {% for municipality in municipalities %}
+                    <div class="col-lg-6 col-xl-4 mb-4" id="municipality-card-{{ municipality.id }}">
+                        <div class="card municipality-card pending h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">{{ municipality.name }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        {{ municipality.get_full_address }}
+                                    </small>
+                                </div>
+                                <span class="status-badge status-pending">
+                                    <i class="fas fa-clock me-1"></i>
+                                    در انتظار
+                                </span>
+                            </div>
+                            
+                            <div class="card-body">
+                                <div class="municipality-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">نوع:</span>
+                                        <span class="detail-value">{{ municipality.get_municipality_type_display }}</span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <span class="detail-label">تاریخ تأسیس:</span>
+                                        <span class="detail-value">{{ municipality.establishment_date|jalali_date }}</span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <span class="detail-label">جمعیت:</span>
+                                        <span class="detail-value">{{ municipality.population|persian_numbers }} نفر</span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <span class="detail-label">مساحت:</span>
+                                        <span class="detail-value">{{ municipality.area_hectares|persian_numbers }} هکتار</span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <span class="detail-label">تلفن:</span>
+                                        <span class="detail-value">{{ municipality.official_phone|persian_numbers }}</span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <span class="detail-label">ایمیل:</span>
+                                        <span class="detail-value">{{ municipality.official_email }}</span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <span class="detail-label">تاریخ درخواست:</span>
+                                        <span class="detail-value">{{ municipality.created_at|jalali_datetime }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Manager Information -->
+                                {% if municipality.manager_user %}
+                                <div class="manager-info">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-user-tie me-2"></i>
+                                        اطلاعات مدیر سیستم
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">نام:</small><br>
+                                            <strong>{{ municipality.manager_name }}</strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">کد ملی:</small><br>
+                                            <strong>{{ municipality.manager_national_id|persian_numbers }}</strong>
+                                        </div>
+                                        <div class="col-6 mt-2">
+                                            <small class="text-muted">تلفن:</small><br>
+                                            <strong>{{ municipality.manager_phone|persian_numbers }}</strong>
+                                        </div>
+                                        <div class="col-6 mt-2">
+                                            <small class="text-muted">نام کاربری:</small><br>
+                                            <strong>{{ municipality.manager_user.username }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Governor Decree -->
+                                {% if municipality.governor_decree %}
+                                <div class="mt-3">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-file-alt me-2"></i>
+                                        حکم فرماندار
+                                    </h6>
+                                    <a href="{{ municipality.governor_decree.url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-download me-2"></i>
+                                        مشاهده فایل
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-footer bg-transparent">
+                                <div class="action-buttons text-center">
+                                    <form method="post" style="display: inline-block;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="municipality_id" value="{{ municipality.id }}">
+                                        <button type="submit" name="action" value="approve" 
+                                                class="btn btn-success btn-sm"
+                                                onclick="return confirm('آیا از تایید این درخواست اطمینان دارید؟\n\nدر صورت تایید:\n✅ درخواست به دیتابیس شهرها/روستاها اضافه می‌شود\n✅ مدیر دسترسی به پنل پیدا می‌کند\n✅ درخواست از این لیست حذف می‌شود')">
+                                            <i class="fas fa-check me-1"></i>
+                                            تایید
+                                        </button>
+                                        <button type="submit" name="action" value="reject" 
+                                                class="btn btn-danger btn-sm"
+                                                onclick="return confirm('آیا از رد این درخواست اطمینان دارید؟\n\nدر صورت رد:\n❌ درخواست کاملاً از سیستم حذف می‌شود\n❌ حساب کاربری مدیر غیرفعال می‌شود\n❌ امکان بازگشت وجود ندارد')">
+                                            <i class="fas fa-times me-1"></i>
+                                            رد
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-info btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#detailModal{{ municipality.id }}">
+                                        <i class="fas fa-eye me-1"></i>
+                                        جزئیات
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail Modal -->
+                    <div class="modal fade" id="detailModal{{ municipality.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-building me-2"></i>
+                                        جزئیات {{ municipality.name }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-primary mb-3">اطلاعات پایه</h6>
+                                            <table class="table table-sm">
+                                                <tr>
+                                                    <td><strong>نام:</strong></td>
+                                                    <td>{{ municipality.name }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>نوع:</strong></td>
+                                                    <td>{{ municipality.get_municipality_type_display }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>استان:</strong></td>
+                                                    <td>{{ municipality.province }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>شهرستان:</strong></td>
+                                                    <td>{{ municipality.county }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>بخش:</strong></td>
+                                                    <td>{{ municipality.district }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>شهر/روستا:</strong></td>
+                                                    <td>{{ municipality.city_village }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="text-primary mb-3">اطلاعات تماس</h6>
+                                            <table class="table table-sm">
+                                                <tr>
+                                                    <td><strong>تلفن:</strong></td>
+                                                    <td>{{ municipality.official_phone|persian_numbers }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>ایمیل:</strong></td>
+                                                    <td>{{ municipality.official_email }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>کد پستی:</strong></td>
+                                                    <td>{{ municipality.postal_code|persian_numbers }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>آدرس:</strong></td>
+                                                    <td>{{ municipality.address }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <h6 class="text-primary mb-3">اطلاعات اداری</h6>
+                                            <table class="table table-sm">
+                                                <tr>
+                                                    <td><strong>تاریخ تأسیس:</strong></td>
+                                                    <td>{{ municipality.establishment_date|jalali_date }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>جمعیت:</strong></td>
+                                                    <td>{{ municipality.population|persian_numbers }} نفر</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>مساحت:</strong></td>
+                                                    <td>{{ municipality.area_hectares|persian_numbers }} هکتار</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>شماره پروانه:</strong></td>
+                                                    <td>{{ municipality.license_number|default:"ندارد" }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-inbox fa-4x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">درخواستی در انتظار وجود ندارد</h4>
+                    <p class="text-muted">
+                        در حال حاضر هیچ درخواست ثبت نام شهرداری یا دهیاری در انتظار تایید نیست.
+                    </p>
+                    <a href="{% url 'main:admin_dashboard' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به داشبورد
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto refresh every 30 seconds to check for new requests
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله ۶: بیمه تأمین اجتماعی - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست پروانه ساخت</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 100%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۶ از ۷: بیمه تأمین اجتماعی</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                <form id="ssi-form">
+                    <div class="border-b pb-6 mb-8">
+                        <i class="fas fa-shield-alt text-blue-600 text-3xl mb-4"></i>
+                        <h1 class="text-3xl font-bold text-gray-800">بیمه تأمین اجتماعی</h1>
+                        <p class="mt-2 text-gray-600">لطفاً پاسخ دریافت شده از سازمان تأمین اجتماعی را بارگذاری نمایید.</p>
+                    </div>
+
+                    <!-- Guidance Text -->
+                    <div class="mb-8 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm flex items-start">
+                        <i class="fas fa-info-circle ml-3 mt-1"></i>
+                        <div>
+                            <p class="font-bold">راهنما:</p>
+                            <p>نامه به تأمین اجتماعی توسط دهیاری ارسال می‌شود. پس از دریافت، پاسخ را بارگذاری کنید.</p>
+                        </div>
+                    </div>
+
+                    <!-- Download Social Security Letter -->
+                    <div class="mb-8 p-6 bg-green-50 rounded-lg border border-green-200">
+                        <div class="flex items-start">
+                            <i class="fas fa-file-download text-green-600 text-xl mt-1 ml-3"></i>
+                            <div>
+                                <h3 class="font-bold text-green-800 mb-2">دانلود نامه دهیاری به تأمین اجتماعی</h3>
+                                <p class="text-green-700 text-sm mb-4">نامه اعتبارسنجی که دهیاری برای ارسال به سازمان تأمین اجتماعی آماده کرده است را دانلود کنید.</p>
+                                <button type="button" class="inline-flex items-center bg-green-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-download mr-2"></i>دانلود نامه دهیاری به تامین اجتماعی
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="mb-8">
+                        <label for="ssi-response-upload" class="block font-medium mb-2 text-lg">
+                            <i class="fas fa-file-upload text-gray-600 ml-2"></i>آپلود پاسخ بیمه<span class="text-red-500">*</span>
+                        </label>
+                        <p class="text-sm text-gray-500 mb-2">فایل باید با فرمت PDF باشد.</p>
+                        <input type="file" id="ssi-response-upload" required accept=".pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                    </div>
+
+                    <!-- Architectural Supervision Form Section -->
+                    <div class="border-t pt-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">فرم نظارت و تعهد معماری</h2>
+                        <div class="p-6 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="mb-6 border-b pb-4">
+                                <h3 class="font-semibold text-gray-800 mb-2">۱. دانلود فرم</h3>
+                                <p class="text-sm text-gray-600 mb-4">ابتدا فرم نظارت و تعهد معماری را دانلود کرده و توسط معمار ناظر تکمیل نمایید.</p>
+                                <button type="button" class="inline-flex items-center bg-orange-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-orange-700">
+                                    <i class="fas fa-download mr-2"></i>دانلود فرم نظارت و تعهد معماری
+                                </button>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800 mb-2">۲. آپلود فرم تکمیل شده</h3>
+                                <p class="text-sm text-gray-600 mb-4">فرم تکمیل و امضا شده توسط معمار ناظر را در اینجا بارگذاری کنید.</p>
+                                <input type="file" id="architectural-form-upload" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                                <p class="text-xs text-gray-500 mt-2">حداکثر ۱۰ مگابایت - فرمت‌های PDF، JPG، PNG</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-10 pt-6 border-t text-left">
+                        <button type="submit" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg">
+                            ثبت و ادامه
+                            <i class="fas fa-arrow-left mr-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">شناسه پرونده:</p><p class="text-gray-600">#P-157</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p id="case-status" class="text-amber-600 font-bold">در انتظار پاسخ بیمه</p></div>
+                        <div><p class="font-semibold">مسئول فعلی:</p><p class="text-gray-600">شما (متقاضی)</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('ssi-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('ssi-response-upload');
+            if (fileInput.files.length === 0) {
+                alert('لطفاً فایل پاسخ بیمه را بارگذاری کنید.');
+                return;
+            }
+
+            // Update status on the page
+            const statusElement = document.getElementById('case-status');
+            statusElement.textContent = 'پاسخ بیمه تأیید شد (SSI_OK)';
+            statusElement.classList.remove('text-amber-600');
+            statusElement.classList.add('text-green-600');
+
+            // Redirect to step 7
+            window.location.href = '/services/building-permit/step7/';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل کارشناس دهیاری - سامانه ملک آیدی</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Persian Font: Vazirmatn -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'vazir': ['Vazirmatn', 'sans-serif']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f8fafc;
+        }
+        .pulse-live {
+            animation: pulse-ring 2s infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .notification-toast {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            z-index: 9999;
+            padding: 14px 20px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(-150%);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            max-width: 420px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .notification-toast.show {
+            transform: translateX(0);
+        }
+        .notification-toast.success {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .notification-toast.error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .notification-toast.info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen bg-slate-50">
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Hidden CSRF Token -->
+    <form id="global-csrf-form" style="display:none;" aria-hidden="true">
+        {% csrf_token %}
+    </form>
+
+    <!-- App Wrapper -->
+    <div class="flex min-h-screen">
+
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-slate-200 hidden md:flex flex-col justify-between shrink-0 shadow-2xl relative z-20">
+            <div>
+                <!-- Brand Header -->
+                <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                        <i class="fas fa-drafting-compass text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-base tracking-wide text-white">ملک آیدی</h1>
+                        <span class="text-[11px] font-medium text-indigo-400 block -mt-0.5">پنل کارشناس دهیاری</span>
+                    </div>
+                </div>
+
+                <!-- User Short Info -->
+                <div class="p-4 mx-3 my-4 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-bold flex items-center justify-center shadow-md">
+                        {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <h3 class="font-bold text-sm text-white truncate">{{ user.get_full_name|default:user.username }}</h3>
+                        <p class="text-[11px] text-slate-400 truncate flex items-center gap-1 mt-0.5">
+                            <i class="fas fa-map-marker-alt text-emerald-400 text-[10px]"></i>
+                            <span>{{ user_village }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="px-3 space-y-1.5 text-xs font-semibold">
+                    <a href="#requests-section" onclick="filterByStage('all')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition">
+                        <i class="fas fa-inbox text-sm"></i>
+                        <span>کارتابل درخواست‌ها</span>
+                        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-indigo-800 text-white font-mono">{{ stats.total_requests }}</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="filterByStage('expert_review')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-clock text-amber-400 text-sm"></i>
+                        <span>بررسی کارشناس (جدید)</span>
+                        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 font-mono">{{ stats.expert_pending }}</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="filterByStage('council_review')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-users-cog text-cyan-400 text-sm"></i>
+                        <span>ارجاع‌شده به شورا</span>
+                        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-cyan-500/20 text-cyan-300 font-mono">{{ stats.council_count }}</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="filterByStage('inspection')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-clipboard-check text-blue-400 text-sm"></i>
+                        <span>ارجاع‌شده به ناظر فنی</span>
+                        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-blue-500/20 text-blue-300 font-mono">{{ stats.inspection_count }}</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="filterByStage('finance_review')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-file-invoice-dollar text-emerald-400 text-sm"></i>
+                        <span>ارجاع به واحد مالی</span>
+                        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-mono">{{ stats.finance_count }}</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="filterByStage('mayor_review')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-signature text-purple-400 text-sm"></i>
+                        <span>آماده امضای دهیار</span>
+                        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-purple-500/20 text-purple-300 font-mono">{{ stats.mayor_count }}</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="filterByStage('approved')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-check-double text-emerald-400 text-sm"></i>
+                        <span>تایید و مختومه شده</span>
+                        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-mono">{{ stats.approved_count }}</span>
+                    </a>
+
+                    <div class="pt-4 border-t border-slate-800 my-3"></div>
+
+                    <a href="{% url 'main:messaging_dashboard' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-comments text-sm"></i>
+                        <span>پیام‌ها و مکاتبات</span>
+                    </a>
+
+                    <a href="{% url 'main:user_profile' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-user-circle text-sm"></i>
+                        <span>پروفایل کاربری</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Footer Controls -->
+            <div class="p-4 border-t border-slate-800 flex items-center justify-between text-xs">
+                <a href="{% url 'main:logout' %}" class="flex items-center gap-2 text-rose-400 hover:text-rose-300 transition font-bold">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>خروج از حساب</span>
+                </a>
+                <span class="text-[10px] text-slate-500 font-mono">v2.4 Dehyari</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+
+            <!-- Top Header Bar -->
+            <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-6 py-4 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <button class="md:hidden p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200" onclick="alert('منو در موبایل فعال است')">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                            <span>کارتابل کارشناس دهیاری</span>
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-live"></span>
+                                برخط
+                            </span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            مدیریت و گردش کار درخواست‌های صدور پروانه، بدون پروانه، تایید سکونت، صدور سند، تغییر کاربری و سایر خدمات دهیاری
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Village Area Badge -->
+                    <div class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
+                        <i class="fas fa-landmark text-indigo-600"></i>
+                        <span>{{ user_village }}</span>
+                    </div>
+
+                    <!-- Live Refresh Button -->
+                    <button type="button" onclick="window.location.reload()" class="p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="تازه‌سازی کارتابل">
+                        <i class="fas fa-sync-alt text-sm"></i>
+                    </button>
+
+                    <!-- Notifications Dropdown -->
+                    <div class="relative">
+                        <button type="button" onclick="document.getElementById('notif-dropdown').classList.toggle('hidden')" class="p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition relative">
+                            <i class="fas fa-bell text-sm"></i>
+                            {% if unread_notifications %}
+                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+                            {% endif %}
+                        </button>
+                        <div id="notif-dropdown" class="hidden absolute left-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50">
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <h4 class="font-bold text-xs text-slate-800">اعلانات کارشناس</h4>
+                                <span class="text-[10px] text-indigo-600 font-bold">{{ unread_notifications|length }} جدید</span>
+                            </div>
+                            <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto mt-2 text-xs">
+                                {% for n in unread_notifications %}
+                                <div class="py-2.5">
+                                    <p class="font-bold text-slate-800">{{ n.title }}</p>
+                                    <p class="text-slate-500 text-[11px] mt-0.5">{{ n.message }}</p>
+                                    <span class="text-[10px] text-slate-400 mt-1 block">{{ n.created_at|date:"Y/m/d H:i" }}</span>
+                                </div>
+                                {% empty %}
+                                <div class="py-6 text-center text-slate-400 text-xs">اعلانی موجود نیست</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Scrollable Body -->
+            <div class="p-6 md:p-8 space-y-8">
+
+                <!-- 5 Strategic KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <!-- Total Requests -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition cursor-pointer" onclick="filterByStage('all')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-400">کل درخواست‌ها</span>
+                                <h3 class="text-2xl font-black text-slate-800 mt-1.5 font-mono" id="kpi-total">{{ stats.total_requests }}</h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">ثبت شده توسط اهالی</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Expert Review -->
+                    <div class="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-5 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer" onclick="filterByStage('expert_review')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-amber-100 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                    اقدام کارشناس دهیاری
+                                </span>
+                                <h3 class="text-2xl font-black text-white mt-1.5 font-mono" id="kpi-pending">{{ stats.expert_pending }}</h3>
+                                <p class="text-[11px] text-amber-100 mt-0.5">در انتظار بررسی فنی اولیه</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-white/20 text-white flex items-center justify-center text-xl backdrop-blur-sm">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- In Referral (Other Panels) -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition cursor-pointer" onclick="filterByStage('in_referral')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-cyan-700">در گردش در سایر پنل‌ها</span>
+                                <h3 class="text-2xl font-black text-cyan-600 mt-1.5 font-mono" id="kpi-referred">{{ stats.in_referral }}</h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">شورا، ناظر، مالی، دهیار</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-random"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ready for Dehyar Signature -->
+                    <div class="bg-white p-5 rounded-2xl border border-purple-200 shadow-xs hover:shadow-md transition cursor-pointer" onclick="filterByStage('mayor_review')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-purple-700">آماده امضای دهیار</span>
+                                <h3 class="text-2xl font-black text-purple-600 mt-1.5 font-mono">{{ stats.mayor_count }}</h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">در انتظار صدور پروانه/مجوز</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-stamp"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Completed / Approved -->
+                    <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs hover:shadow-md transition cursor-pointer" onclick="filterByStage('approved')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-emerald-700">تایید و صادر شده</span>
+                                <h3 class="text-2xl font-black text-emerald-600 mt-1.5 font-mono">{{ stats.approved_count }}</h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">مختومه موفق</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow Stage Filter Chips -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-filter text-indigo-600"></i>
+                            <span>فیلتر مرحله گردش کار:</span>
+                        </span>
+                        <button type="button" onclick="resetFilters()" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1">
+                            <i class="fas fa-undo text-[11px]"></i>
+                            <span>نمایش همه</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-2" id="stage-filter-chips">
+                        <button type="button" onclick="filterByStage('all', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">
+                            همه پرونده‌ها ({{ stats.total_requests }})
+                        </button>
+                        <button type="button" onclick="filterByStage('expert_review', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            ⏳ بررسی کارشناس دهیاری ({{ stats.expert_pending }})
+                        </button>
+                        <button type="button" onclick="filterByStage('council_review', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            🏛️ شورای روستا ({{ stats.council_count }})
+                        </button>
+                        <button type="button" onclick="filterByStage('inspection', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            📐 ناظر فنی / بازرسی ({{ stats.inspection_count }})
+                        </button>
+                        <button type="button" onclick="filterByStage('finance_review', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            💳 مسئول مالی / عوارض ({{ stats.finance_count }})
+                        </button>
+                        <button type="button" onclick="filterByStage('mayor_review', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            🖋️ تایید و امضای دهیار ({{ stats.mayor_count }})
+                        </button>
+                        <button type="button" onclick="filterByStage('approved', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            ✅ تایید شده ({{ stats.approved_count }})
+                        </button>
+                        <button type="button" onclick="filterByStage('requires_documents', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            ⚠️ نقص مدارک ({{ stats.requires_docs_count }})
+                        </button>
+                        <button type="button" onclick="filterByStage('rejected', this)" class="stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            ❌ رد شده ({{ stats.rejected_count }})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Live Search & Table Filters -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+                    <!-- Text Search -->
+                    <div class="relative w-full md:w-96">
+                        <i class="fas fa-search absolute right-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input
+                            type="text"
+                            id="search-input"
+                            oninput="applyFilters()"
+                            placeholder="جستجوی نام متقاضی، کدملی، شماره پرونده یا آدرس..."
+                            class="w-full pr-10 pl-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                        >
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <!-- Request Type Filter -->
+                        <div class="flex items-center gap-1.5">
+                            <label for="filter-type" class="text-xs font-bold text-slate-600 whitespace-nowrap">نوع خدمت:</label>
+                            <select id="filter-type" onchange="applyFilters()" class="border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white">
+                                <option value="all">همه خدمات</option>
+                                <option value="building_permit">صدور پروانه ساختمان</option>
+                                <option value="no_permit">بدون پروانه</option>
+                                <option value="residence_confirmation">تایید سکونت</option>
+                                <option value="property_deed">صدور سند ملک</option>
+                                <option value="land_use_change">تغییر کاربری زمین</option>
+                                <option value="zoning_inclusion">ورود به طرح هادی</option>
+                                <option value="excavation_permit">مجوز حفاری</option>
+                                <option value="other">سایر خدمات</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="flex items-center gap-1.5">
+                            <label for="filter-status" class="text-xs font-bold text-slate-600 whitespace-nowrap">وضعیت:</label>
+                            <select id="filter-status" onchange="applyFilters()" class="border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white">
+                                <option value="all">همه وضعیت‌ها</option>
+                                <option value="pending">در انتظار بررسی</option>
+                                <option value="in_review">در حال بررسی</option>
+                                <option value="approved">تایید شده</option>
+                                <option value="rejected">رد شده</option>
+                                <option value="completed">تکمیل شده</option>
+                                <option value="requires_documents">نیاز به مدارک</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Requests Management Table -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden" id="requests-section">
+                    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                <i class="fas fa-tasks text-indigo-600"></i>
+                                <span>کارتابل جامع پرونده‌های دهیاری</span>
+                            </h3>
+                            <span id="filtered-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
+                                نمایش {{ requests|length }} از {{ requests|length }} پرونده
+                            </span>
+                        </div>
+                        <span class="text-xs text-slate-400">تمام درخواست‌های متقاضیان مستقیماً وارد این کارتابل می‌شوند</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right" id="requests-table">
+                            <thead>
+                                <tr class="border-b bg-slate-50/80 text-slate-600 text-xs font-bold uppercase tracking-wider">
+                                    <th class="py-3.5 px-4">کد پرونده</th>
+                                    <th class="py-3.5 px-4">متقاضی</th>
+                                    <th class="py-3.5 px-4">نوع درخواست</th>
+                                    <th class="py-3.5 px-4">مشخصات و آدرس ملک</th>
+                                    <th class="py-3.5 px-4">مرحله گردش کار</th>
+                                    <th class="py-3.5 px-4">وضعیت</th>
+                                    <th class="py-3.5 px-4">تاریخ ثبت</th>
+                                    <th class="py-3.5 px-4 text-center">اقدامات کارشناس</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-sm" id="requests-tbody">
+                                {% for req in requests %}
+                                <tr
+                                    class="hover:bg-indigo-50/40 transition request-row"
+                                    id="req-row-{{ req.id }}"
+                                    data-id="{{ req.id }}"
+                                    data-applicant="{{ req.user.get_full_name|default:req.user.username }}"
+                                    data-username="{{ req.user.username }}"
+                                    data-type="{{ req.request_type }}"
+                                    data-stage="{{ req.workflow_stage }}"
+                                    data-status="{{ req.status }}"
+                                    data-target="{{ req.referral_target }}"
+                                    data-address="{{ req.property_address|default:'' }}"
+                                    data-title="{{ req.title }}"
+                                >
+                                    <!-- Column 1: ID -->
+                                    <td class="py-3.5 px-4 font-mono font-bold text-xs text-slate-600">
+                                        #{{ req.id }}
+                                    </td>
+
+                                    <!-- Column 2: Applicant -->
+                                    <td class="py-3.5 px-4">
+                                        <div class="font-bold text-slate-900 text-xs">
+                                            {{ req.user.get_full_name|default:req.user.username }}
+                                        </div>
+                                        <div class="text-[11px] text-slate-400 font-mono mt-0.5" dir="ltr">
+                                            {{ req.user.profile.mobile_number|default:req.user.username }}
+                                        </div>
+                                    </td>
+
+                                    <!-- Column 3: Request Type -->
+                                    <td class="py-3.5 px-4">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold
+                                            {% if req.request_type == 'building_permit' %}bg-blue-100 text-blue-800 border border-blue-200
+                                            {% elif req.request_type == 'no_permit' %}bg-amber-100 text-amber-800 border border-amber-200
+                                            {% elif req.request_type == 'residence_confirmation' %}bg-emerald-100 text-emerald-800 border border-emerald-200
+                                            {% elif req.request_type == 'property_deed' %}bg-purple-100 text-purple-800 border border-purple-200
+                                            {% elif req.request_type == 'land_use_change' %}bg-orange-100 text-orange-800 border border-orange-200
+                                            {% elif req.request_type == 'zoning_inclusion' %}bg-teal-100 text-teal-800 border border-teal-200
+                                            {% else %}bg-slate-100 text-slate-800 border border-slate-200{% endif %}"
+                                        >
+                                            <i class="fas fa-file-alt text-[10px]"></i>
+                                            <span>{{ req.get_request_type_display }}</span>
+                                        </span>
+                                        <div class="text-[11px] text-slate-500 mt-1 line-clamp-1 max-w-[180px]">{{ req.title }}</div>
+                                    </td>
+
+                                    <!-- Column 4: Location -->
+                                    <td class="py-3.5 px-4 text-xs">
+                                        <div class="font-medium text-slate-800 line-clamp-1 max-w-[200px]" title="{{ req.property_address }}">
+                                            {{ req.property_address|default:"آدرس ثبت نشده" }}
+                                        </div>
+                                        <div class="text-[11px] text-slate-400 mt-0.5">
+                                            {% if req.property_area %}مساحت: {{ req.property_area }} متر{% endif %}
+                                            {% if req.parcel_number %} | پلاک: {{ req.parcel_number }}{% endif %}
+                                        </div>
+                                    </td>
+
+                                    <!-- Column 5: Workflow Stage -->
+                                    <td class="py-3.5 px-4" id="stage-badge-cell-{{ req.id }}">
+                                        {% if req.workflow_stage == 'expert_review' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                            <i class="fas fa-user-clock text-amber-600"></i>بررسی کارشناس دهیاری
+                                        </span>
+                                        {% elif req.workflow_stage == 'council_review' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
+                                            <i class="fas fa-landmark text-cyan-600"></i>ارجاع به شورای روستا
+                                        </span>
+                                        {% elif req.workflow_stage == 'inspection' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                            <i class="fas fa-ruler-combined text-blue-600"></i>ارجاع به ناظر فنی
+                                        </span>
+                                        {% elif req.workflow_stage == 'finance_review' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            <i class="fas fa-coins text-emerald-600"></i>ارجاع به مسئول مالی
+                                        </span>
+                                        {% elif req.workflow_stage == 'mayor_review' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                                            <i class="fas fa-stamp text-purple-600"></i>آماده امضای دهیار
+                                        </span>
+                                        {% elif req.workflow_stage == 'approved' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            <i class="fas fa-check-circle text-emerald-600"></i>تایید نهایی شده
+                                        </span>
+                                        {% elif req.workflow_stage == 'requires_documents' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                            <i class="fas fa-exclamation-triangle text-rose-600"></i>نقص مدارک
+                                        </span>
+                                        {% elif req.workflow_stage == 'rejected' %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                                            <i class="fas fa-times-circle text-red-600"></i>رد شده
+                                        </span>
+                                        {% else %}
+                                        <span class="text-xs text-slate-500">{{ req.get_workflow_stage_display }}</span>
+                                        {% endif %}
+
+                                        {% if req.referral_notes %}
+                                        <div class="text-[10px] text-slate-500 mt-1 line-clamp-1 italic" title="{{ req.referral_notes }}">
+                                            دستور: {{ req.referral_notes }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Column 6: Overall Status -->
+                                    <td class="py-3.5 px-4 text-xs font-bold" id="status-cell-{{ req.id }}">
+                                        {% if req.status == 'pending' %}
+                                        <span class="text-amber-600">در انتظار</span>
+                                        {% elif req.status == 'in_review' %}
+                                        <span class="text-blue-600">در حال بررسی</span>
+                                        {% elif req.status == 'approved' or req.status == 'completed' %}
+                                        <span class="text-emerald-600">تکمیل / تایید</span>
+                                        {% elif req.status == 'rejected' %}
+                                        <span class="text-rose-600">رد شده</span>
+                                        {% elif req.status == 'requires_documents' %}
+                                        <span class="text-amber-700">نقص مدارک</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Column 7: Date -->
+                                    <td class="py-3.5 px-4 text-xs text-slate-400 font-mono">
+                                        {{ req.created_at|date:"Y/m/d" }}
+                                    </td>
+
+                                    <!-- Column 8: Action Buttons -->
+                                    <td class="py-3.5 px-4 text-center">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <!-- View Details & Documents -->
+                                            <button
+                                                type="button"
+                                                onclick="openDetailsModal({{ req.id }})"
+                                                class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                                                title="مشاهده جزییات پرونده و مدارک"
+                                            >
+                                                <i class="fas fa-eye text-xs"></i>
+                                                <span class="hidden lg:inline">بررسی</span>
+                                            </button>
+
+                                            <!-- Forward / Referral to another Panel -->
+                                            <button
+                                                type="button"
+                                                onclick="openForwardModal({{ req.id }}, '{{ req.title|escapejs }}', '{{ req.workflow_stage }}')"
+                                                class="px-2.5 py-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                                                title="ارجاع به پنل دیگر (شورا، ناظر، مالی، دهیار)"
+                                            >
+                                                <i class="fas fa-share text-xs"></i>
+                                                <span class="hidden lg:inline">ارجاع</span>
+                                            </button>
+
+                                            <!-- Direct Approve -->
+                                            <button
+                                                type="button"
+                                                onclick="approveRequest({{ req.id }})"
+                                                class="p-1.5 hover:bg-emerald-50 text-emerald-600 rounded-lg transition"
+                                                title="تایید کارشناسی"
+                                            >
+                                                <i class="fas fa-check text-sm"></i>
+                                            </button>
+
+                                            <!-- Request Documents -->
+                                            <button
+                                                type="button"
+                                                onclick="openRequestDocsModal({{ req.id }})"
+                                                class="p-1.5 hover:bg-amber-50 text-amber-600 rounded-lg transition"
+                                                title="اعلام نقص مدارک"
+                                            >
+                                                <i class="fas fa-exclamation text-sm"></i>
+                                            </button>
+
+                                            <!-- Reject Request -->
+                                            <button
+                                                type="button"
+                                                onclick="openRejectModal({{ req.id }})"
+                                                class="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition"
+                                                title="رد پرونده"
+                                            >
+                                                <i class="fas fa-times text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="py-16 text-center text-slate-400">
+                                        <i class="fas fa-inbox text-5xl text-slate-200 mb-3 block"></i>
+                                        هیچ درخواستی در این کارتابل ثبت نشده است.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== MODAL 1: Case Details & History Modal ==================== -->
+    <div id="details-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg font-bold">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-800" id="modal-title">جزییات پرونده</h3>
+                        <p class="text-xs text-slate-500" id="modal-subtitle">شماره پرونده و متقاضی</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeDetailsModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Modal Tabs -->
+            <div class="px-6 border-b border-slate-100 flex gap-4 text-xs font-bold text-slate-500">
+                <button type="button" onclick="switchDetailTab('info', this)" class="detail-tab-btn py-3 border-b-2 border-indigo-600 text-indigo-600">مشخصات متقاضی و ملک</button>
+                <button type="button" onclick="switchDetailTab('docs', this)" class="detail-tab-btn py-3 border-b-2 border-transparent hover:text-slate-700">مدارک و نقشه‌ها (<span id="modal-docs-count">0</span>)</button>
+                <button type="button" onclick="switchDetailTab('history', this)" class="detail-tab-btn py-3 border-b-2 border-transparent hover:text-slate-700">گردش کار و ارجاعات</button>
+                <button type="button" onclick="switchDetailTab('reports', this)" class="detail-tab-btn py-3 border-b-2 border-transparent hover:text-slate-700">گزارشات فنی و بازرسی</button>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-6 text-xs text-slate-700" id="modal-body-container">
+                <!-- Tab: Info -->
+                <div id="tab-content-info" class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div>
+                            <span class="text-slate-400 block mb-1">نام متقاضی:</span>
+                            <span class="font-bold text-slate-800 text-sm" id="detail-applicant-name">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">شماره تماس:</span>
+                            <span class="font-bold text-slate-800 font-mono" id="detail-applicant-mobile">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">کد ملی:</span>
+                            <span class="font-bold text-slate-800 font-mono" id="detail-applicant-national">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">نوع خدمت:</span>
+                            <span class="font-bold text-indigo-600" id="detail-request-type">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">مساحت ملک:</span>
+                            <span class="font-bold text-slate-800" id="detail-property-area">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">پلاک ثبتی:</span>
+                            <span class="font-bold text-slate-800 font-mono" id="detail-parcel">-</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-2">آدرس دقیق ملک:</h4>
+                        <p class="p-3 bg-slate-50 rounded-xl border border-slate-100 font-medium" id="detail-address">-</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-2">توضیحات و شرح درخواست متقاضی:</h4>
+                        <p class="p-3 bg-slate-50 rounded-xl border border-slate-100 leading-relaxed" id="detail-description">-</p>
+                    </div>
+
+                    <div id="detail-form-data-box" class="hidden">
+                        <h4 class="font-bold text-slate-800 mb-2">داده‌های تکمیلی فرم الکترونیکی:</h4>
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1 font-mono text-[11px]" id="detail-form-data-content"></div>
+                    </div>
+                </div>
+
+                <!-- Tab: Docs -->
+                <div id="tab-content-docs" class="hidden space-y-4">
+                    <div id="modal-docs-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </div>
+
+                <!-- Tab: History -->
+                <div id="tab-content-history" class="hidden space-y-4">
+                    <div class="relative border-r-2 border-indigo-200 mr-4 space-y-6 py-2" id="modal-history-timeline"></div>
+                </div>
+
+                <!-- Tab: Reports -->
+                <div id="tab-content-reports" class="hidden space-y-4">
+                    <div id="modal-reports-list" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <button type="button" onclick="closeDetailsModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition">
+                    بستن
+                </button>
+                <div class="flex items-center gap-2" id="modal-quick-actions"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL 2: Forward / Referral Modal ==================== -->
+    <div id="forward-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-slide-up">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-cyan-600 to-indigo-600 text-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-base">ارجاع پرونده به پنل دیگر</h3>
+                        <p class="text-xs text-cyan-100 mt-0.5" id="forward-modal-case-title">-</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeForwardModal()" class="text-white/80 hover:text-white">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <form id="forward-form" onsubmit="submitForward(event)" class="p-6 space-y-4 text-xs">
+                <input type="hidden" id="forward-request-id" value="">
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">انتخاب پنل و نقش مقصد جهت اقدام یا تایید: *</label>
+                    <select id="forward-target-role" required onchange="handleTargetRoleChange(this.value)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-indigo-500 bg-white">
+                        <option value="">-- انتخاب پنل مقصد --</option>
+                        <option value="council">🏛️ شورای اسلامی روستا (استعلام محلی / موافقت شورا)</option>
+                        <option value="inspector">📐 ناظر فنی (بازدید میدانی / تایید فنی نقشه و اسکلت)</option>
+                        <option value="accountant">💳 مسئول مالی / حسابداری (محاسبه و وصول عوارض)</option>
+                        <option value="dehyari">🖋️ دهیار / شهردار (تایید نهایی و صدور مجوز / پروانه)</option>
+                    </select>
+                </div>
+
+                <!-- Assigned User (Optional peer selector) -->
+                <div id="peer-selector-container" class="hidden">
+                    <label class="block font-bold text-slate-700 mb-1.5" id="peer-selector-label">تخصیص به کاربر خاص (اختیاری):</label>
+                    <select id="forward-assigned-user" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white">
+                        <option value="">کلیه اعضای این پنل</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">دستور کارشناس دهیاری / یادداشت ارجاع: *</label>
+                    <textarea
+                        id="forward-notes"
+                        rows="4"
+                        required
+                        placeholder="دستور کار، علت ارجاع، یا درخواست بررسی را به صورت دقیق بنویسید..."
+                        class="w-full border border-slate-300 rounded-xl p-3 text-xs focus:outline-none focus:border-indigo-500 transition leading-relaxed"
+                    ></textarea>
+                </div>
+
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+                    <i class="fas fa-info-circle ml-1"></i>
+                    با ارجاع این پرونده، نوتیفیکیشن برای متقاضی و مسئول پنل مقصد ارسال شده و پرونده در کارتابل بخش مربوطه قرار می‌گیرد.
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeForwardModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">انصراف</button>
+                    <button type="submit" id="btn-submit-forward" class="px-5 py-2 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center gap-1.5">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                        <span>ارسال و ارجاع پرونده</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL 3: Request Documents Modal ==================== -->
+    <div id="request-docs-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-up">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-amber-500 text-white">
+                <h3 class="font-extrabold text-sm flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>اعلام نقص مدارک به متقاضی</span>
+                </h3>
+                <button type="button" onclick="closeRequestDocsModal()" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="request-docs-form" onsubmit="submitRequestDocs(event)" class="p-6 space-y-4 text-xs">
+                <input type="hidden" id="reqdocs-request-id" value="">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">مدارک ناقص یا توضیحات مورد نیاز: *</label>
+                    <textarea id="reqdocs-notes" rows="4" required placeholder="لطفاً مواردی که متقاضی باید مجدداً آپلود کند را بنویسید (مثلاً: نقشه معماری با تایید نظام مهندسی، سند اصلاحی)..." class="w-full border border-slate-300 rounded-xl p-3 text-xs focus:outline-none focus:border-amber-500 transition leading-relaxed"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeRequestDocsModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl">انصراف</button>
+                    <button type="submit" id="btn-submit-reqdocs" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow transition">ثبت و ارسال پیام نقص</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL 4: Reject Request Modal ==================== -->
+    <div id="reject-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-up">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-600 text-white">
+                <h3 class="font-extrabold text-sm flex items-center gap-2">
+                    <i class="fas fa-ban"></i>
+                    <span>رد پرونده توسط کارشناس</span>
+                </h3>
+                <button type="button" onclick="closeRejectModal()" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="reject-form" onsubmit="submitReject(event)" class="p-6 space-y-4 text-xs">
+                <input type="hidden" id="reject-request-id" value="">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">دلیل مستند رد درخواست: *</label>
+                    <textarea id="reject-reason" rows="4" required placeholder="علت قانونی یا فنی رد پرونده را درج نمایید..." class="w-full border border-slate-300 rounded-xl p-3 text-xs focus:outline-none focus:border-rose-500 transition leading-relaxed"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeRejectModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl">انصراف</button>
+                    <button type="submit" id="btn-submit-reject" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition">تایید و رد پرونده</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+    <script>
+        // CSRF Token Helper
+        function getCsrfToken() {
+            let token = document.querySelector('#global-csrf-form [name=csrfmiddlewaretoken]')?.value;
+            if (!token) {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const c = cookies[i].trim();
+                    if (c.startsWith('csrftoken=')) {
+                        token = decodeURIComponent(c.substring(10));
+                        break;
+                    }
+                }
+            }
+            return token || '';
+        }
+
+        // Toast Notification System
+        function showToast(type, message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `notification-toast ${type}`;
+            const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            toast.innerHTML = `<i class="fas ${icon} text-lg"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 20);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
+        }
+
+        // Filter by stage chip
+        let currentStageFilter = 'all';
+        function filterByStage(stage, btnElement) {
+            currentStageFilter = stage;
+            if (btnElement) {
+                document.querySelectorAll('#stage-filter-chips .stage-chip').forEach(btn => {
+                    btn.className = "stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition";
+                });
+                btnElement.className = "stage-chip px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition";
+            }
+            applyFilters();
+        }
+
+        function resetFilters() {
+            currentStageFilter = 'all';
+            document.getElementById('search-input').value = '';
+            document.getElementById('filter-type').value = 'all';
+            document.getElementById('filter-status').value = 'all';
+            const firstChip = document.querySelector('#stage-filter-chips .stage-chip');
+            if (firstChip) filterByStage('all', firstChip);
+            applyFilters();
+        }
+
+        // Live Filter function
+        function applyFilters() {
+            const query = (document.getElementById('search-input').value || '').trim().toLowerCase();
+            const typeFilter = document.getElementById('filter-type').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            const rows = document.querySelectorAll('#requests-tbody .request-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const rowId = row.getAttribute('data-id') || '';
+                const applicant = (row.getAttribute('data-applicant') || '').toLowerCase();
+                const username = (row.getAttribute('data-username') || '').toLowerCase();
+                const title = (row.getAttribute('data-title') || '').toLowerCase();
+                const address = (row.getAttribute('data-address') || '').toLowerCase();
+                const type = row.getAttribute('data-type') || '';
+                const stage = row.getAttribute('data-stage') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                // Text query match
+                const matchesQuery = !query || 
+                    applicant.includes(query) || 
+                    username.includes(query) || 
+                    title.includes(query) || 
+                    address.includes(query) || 
+                    rowId.includes(query);
+
+                // Type match
+                const matchesType = (typeFilter === 'all') || (type === typeFilter);
+
+                // Status match
+                const matchesStatus = (statusFilter === 'all') || (status === statusFilter);
+
+                // Stage chip match
+                let matchesStage = true;
+                if (currentStageFilter === 'in_referral') {
+                    matchesStage = ['council_review', 'inspection', 'finance_review', 'mayor_review'].includes(stage);
+                } else if (currentStageFilter !== 'all') {
+                    matchesStage = (stage === currentStageFilter);
+                }
+
+                if (matchesQuery && matchesType && matchesStatus && matchesStage) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const badge = document.getElementById('filtered-count-badge');
+            if (badge) {
+                badge.textContent = `نمایش ${visibleCount} از ${rows.length} پرونده`;
+            }
+        }
+
+        // Tab Switcher inside Detail Modal
+        function switchDetailTab(tabName, btn) {
+            document.querySelectorAll('.detail-tab-btn').forEach(b => {
+                b.className = "detail-tab-btn py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+            });
+            btn.className = "detail-tab-btn py-3 border-b-2 border-indigo-600 text-indigo-600 font-bold";
+
+            ['info', 'docs', 'history', 'reports'].forEach(t => {
+                const content = document.getElementById(`tab-content-${t}`);
+                if (content) content.classList.add('hidden');
+            });
+            const activeContent = document.getElementById(`tab-content-${tabName}`);
+            if (activeContent) activeContent.classList.remove('hidden');
+        }
+
+        // Open Case Details Modal
+        async function openDetailsModal(requestId) {
+            const modal = document.getElementById('details-modal');
+            modal.classList.remove('hidden');
+
+            // Reset tabs
+            const firstTab = document.querySelector('.detail-tab-btn');
+            if (firstTab) switchDetailTab('info', firstTab);
+
+            document.getElementById('modal-title').textContent = `بارگذاری پرونده #${requestId}...`;
+
+            try {
+                const res = await fetch(`/api/expert/requests/${requestId}/details/`);
+                const data = await res.json();
+
+                if (data.success) {
+                    const req = data.request;
+                    const app = data.applicant;
+
+                    document.getElementById('modal-title').textContent = `پرونده #${req.id} - ${req.title}`;
+                    document.getElementById('modal-subtitle').textContent = `متقاضی: ${app.name} (${app.mobile || '-'}) | مرحله: ${req.workflow_stage_display}`;
+
+                    // Info Tab
+                    document.getElementById('detail-applicant-name').textContent = app.name;
+                    document.getElementById('detail-applicant-mobile').textContent = app.mobile || 'ثبت نشده';
+                    document.getElementById('detail-applicant-national').textContent = app.national_id || '-';
+                    document.getElementById('detail-request-type').textContent = req.request_type_display;
+                    document.getElementById('detail-property-area').textContent = req.property_area ? `${req.property_area} متر مربع` : 'ثبت نشده';
+                    document.getElementById('detail-parcel').textContent = req.parcel_number || req.deed_number || '-';
+                    document.getElementById('detail-address').textContent = req.property_address || 'آدرس ثبت نشده';
+                    document.getElementById('detail-description').textContent = req.description || 'بدون شرح';
+
+                    // Form Data Box
+                    const formBox = document.getElementById('detail-form-data-box');
+                    const formContent = document.getElementById('detail-form-data-content');
+                    formContent.innerHTML = '';
+                    if (req.form_data && Object.keys(req.form_data).length > 0) {
+                        formBox.classList.remove('hidden');
+                        for (const [k, v] of Object.entries(req.form_data)) {
+                            formContent.innerHTML += `<div><span class="text-indigo-600 font-bold">${k}:</span> <span class="text-slate-800">${v}</span></div>`;
+                        }
+                    } else {
+                        formBox.classList.add('hidden');
+                    }
+
+                    // Docs Tab
+                    document.getElementById('modal-docs-count').textContent = data.documents.length;
+                    const docsList = document.getElementById('modal-docs-list');
+                    docsList.innerHTML = '';
+                    if (data.documents.length === 0) {
+                        docsList.innerHTML = '<div class="col-span-2 py-8 text-center text-slate-400">هیچ مدرکی پیوست نشده است.</div>';
+                    } else {
+                        data.documents.forEach(doc => {
+                            docsList.innerHTML += `
+                                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                                    <div class="flex items-center gap-2 overflow-hidden">
+                                        <i class="fas fa-file-pdf text-rose-500 text-lg"></i>
+                                        <div class="truncate">
+                                            <p class="font-bold text-slate-800 truncate">${doc.name}</p>
+                                            <span class="text-[10px] text-slate-400">${doc.uploaded_at}</span>
+                                        </div>
+                                    </div>
+                                    <a href="${doc.url}" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0">
+                                        <i class="fas fa-download text-[10px]"></i><span>دریافت</span>
+                                    </a>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    // History Timeline
+                    const timeline = document.getElementById('modal-history-timeline');
+                    timeline.innerHTML = '';
+                    if (!req.workflow_history || req.workflow_history.length === 0) {
+                        timeline.innerHTML = '<p class="text-slate-400 mr-4">هیچ سابقه ارجاعی ثبت نشده است.</p>';
+                    } else {
+                        req.workflow_history.forEach(item => {
+                            timeline.innerHTML += `
+                                <div class="relative mr-4 pr-4">
+                                    <div class="absolute -right-[23px] top-1 w-3.5 h-3.5 rounded-full bg-indigo-600 border-2 border-white"></div>
+                                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-bold text-slate-800">${item.action}</span>
+                                            <span class="text-[10px] text-slate-400 font-mono">${item.date_shamsi || ''}</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">توسط: ${item.from_user || 'سیستم'}</p>
+                                        ${item.notes ? `<p class="mt-2 text-xs text-slate-700 p-2 bg-white rounded-lg border border-slate-200">دستور: ${item.notes}</p>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    // Reports Tab
+                    const reportsList = document.getElementById('modal-reports-list');
+                    reportsList.innerHTML = '';
+                    if (data.technical_reports.length === 0 && data.inspections.length === 0) {
+                        reportsList.innerHTML = '<div class="py-8 text-center text-slate-400">هیچ گزارش فنی یا بازرسی ثبت نشده است.</div>';
+                    } else {
+                        data.technical_reports.forEach(r => {
+                            reportsList.innerHTML += `
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-indigo-700">${r.title} (${r.report_type})</span>
+                                        <span class="text-[10px] text-slate-400 font-mono">${r.created_at}</span>
+                                    </div>
+                                    <p class="text-slate-700 text-xs">${r.content}</p>
+                                    ${r.recommendations ? `<p class="text-amber-800 bg-amber-50 p-2 rounded-lg text-[11px]">توصیه‌ها: ${r.recommendations}</p>` : ''}
+                                </div>
+                            `;
+                        });
+                        data.inspections.forEach(insp => {
+                            reportsList.innerHTML += `
+                                <div class="p-4 bg-blue-50/60 border border-blue-200 rounded-2xl space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-blue-900">بازرسی میدانی توسط ${insp.inspector_name}</span>
+                                        <span class="text-[10px] font-bold ${insp.is_approved ? 'text-emerald-700' : 'text-amber-700'}">${insp.status}</span>
+                                    </div>
+                                    <p class="text-slate-700 text-xs">${insp.report || 'بدون گزارش مکتوب'}</p>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    // Quick Actions
+                    const qa = document.getElementById('modal-quick-actions');
+                    qa.innerHTML = `
+                        <button type="button" onclick="closeDetailsModal(); openForwardModal(${req.id}, '${req.title.replace(/'/g, "\\'")}', '${req.workflow_stage}')" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold transition flex items-center gap-1">
+                            <i class="fas fa-share text-xs"></i><span>ارجاع پرونده</span>
+                        </button>
+                        <button type="button" onclick="closeDetailsModal(); approveRequest(${req.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition flex items-center gap-1">
+                            <i class="fas fa-check text-xs"></i><span>تایید کارشناسی</span>
+                        </button>
+                    `;
+                } else {
+                    showToast('error', data.message || 'خطا در دریافت پرونده');
+                }
+            } catch (err) {
+                showToast('error', 'خطا در برقراری ارتباط با سرور');
+            }
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('details-modal').classList.add('hidden');
+        }
+
+        // Forward Modal
+        function openForwardModal(requestId, title, currentStage) {
+            document.getElementById('forward-request-id').value = requestId;
+            document.getElementById('forward-modal-case-title').textContent = `پرونده #${requestId} - ${title}`;
+            document.getElementById('forward-notes').value = '';
+            document.getElementById('forward-target-role').value = '';
+            document.getElementById('peer-selector-container').classList.add('hidden');
+            document.getElementById('forward-modal').classList.remove('hidden');
+        }
+
+        function closeForwardModal() {
+            document.getElementById('forward-modal').classList.add('hidden');
+        }
+
+        function handleTargetRoleChange(role) {
+            const container = document.getElementById('peer-selector-container');
+            const select = document.getElementById('forward-assigned-user');
+            select.innerHTML = '<option value="">کلیه اعضای این پنل</option>';
+
+            // Peers lists injected from Django context
+            const councilPeers = [{% for p in council_members %}{id: {{ p.user.id }}, name: "{{ p.user.get_full_name|default:p.user.username|escapejs }}"},{% endfor %}];
+            const inspectorPeers = [{% for p in inspectors %}{id: {{ p.user.id }}, name: "{{ p.user.get_full_name|default:p.user.username|escapejs }}"},{% endfor %}];
+            const accountantPeers = [{% for p in accountants %}{id: {{ p.user.id }}, name: "{{ p.user.get_full_name|default:p.user.username|escapejs }}"},{% endfor %}];
+            const dehyarPeers = [{% for p in dehyars %}{id: {{ p.user.id }}, name: "{{ p.user.get_full_name|default:p.user.username|escapejs }}"},{% endfor %}];
+
+            let activePeers = [];
+            if (role === 'council') activePeers = councilPeers;
+            else if (role === 'inspector') activePeers = inspectorPeers;
+            else if (role === 'accountant') activePeers = accountantPeers;
+            else if (role === 'dehyari') activePeers = dehyarPeers;
+
+            if (activePeers.length > 0) {
+                activePeers.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                });
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // Submit Forward AJAX
+        async function submitForward(e) {
+            e.preventDefault();
+            const requestId = document.getElementById('forward-request-id').value;
+            const targetRole = document.getElementById('forward-target-role').value;
+            const assignedUserId = document.getElementById('forward-assigned-user').value;
+            const notes = document.getElementById('forward-notes').value.trim();
+
+            const btn = document.getElementById('btn-submit-forward');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>در حال ارجاع...</span>';
+
+            try {
+                const res = await fetch(`/api/expert/requests/${requestId}/forward/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        target_role: targetRole,
+                        assigned_user_id: assignedUserId || null,
+                        notes: notes
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast('success', data.message);
+                    closeForwardModal();
+
+                    // Update Row in Table
+                    const row = document.getElementById(`req-row-${requestId}`);
+                    if (row) {
+                        row.setAttribute('data-stage', data.new_stage);
+                        row.setAttribute('data-target', data.target_role);
+                        const cell = document.getElementById(`stage-badge-cell-${requestId}`);
+                        if (cell) {
+                            let badgeHtml = '';
+                            if (data.new_stage === 'council_review') {
+                                badgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-100 text-cyan-800 border border-cyan-200"><i class="fas fa-landmark text-cyan-600"></i>ارجاع به شورای روستا</span>`;
+                            } else if (data.new_stage === 'inspection') {
+                                badgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200"><i class="fas fa-ruler-combined text-blue-600"></i>ارجاع به ناظر فنی</span>`;
+                            } else if (data.new_stage === 'finance_review') {
+                                badgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fas fa-coins text-emerald-600"></i>ارجاع به مسئول مالی</span>`;
+                            } else if (data.new_stage === 'mayor_review') {
+                                badgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200"><i class="fas fa-stamp text-purple-600"></i>آماده امضای دهیار</span>`;
+                            }
+                            if (notes) {
+                                badgeHtml += `<div class="text-[10px] text-slate-500 mt-1 line-clamp-1 italic">دستور: ${notes}</div>`;
+                            }
+                            cell.innerHTML = badgeHtml;
+                        }
+                    }
+                } else {
+                    showToast('error', data.message || 'خطا در ارجاع پرونده');
+                }
+            } catch (err) {
+                showToast('error', 'خطا در برقراری ارتباط با سرور');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane text-xs"></i><span>ارسال و ارجاع پرونده</span>';
+            }
+        }
+
+        // Direct Approve AJAX
+        async function approveRequest(requestId) {
+            if (!confirm(`آیا از تایید کارشناسی پرونده #${requestId} اطمینان دارید؟`)) return;
+
+            try {
+                const res = await fetch(`/api/expert/requests/${requestId}/approve/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: 'تایید کارشناسی صادر گردید.' })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast('success', data.message);
+                    const row = document.getElementById(`req-row-${requestId}`);
+                    if (row) {
+                        row.setAttribute('data-stage', 'approved');
+                        row.setAttribute('data-status', 'approved');
+                        const statusCell = document.getElementById(`status-cell-${requestId}`);
+                        if (statusCell) statusCell.innerHTML = '<span class="text-emerald-600">تایید شده</span>';
+                    }
+                } else {
+                    showToast('error', data.message);
+                }
+            } catch (err) {
+                showToast('error', 'خطا در برقراری ارتباط');
+            }
+        }
+
+        // Request Documents Modal
+        function openRequestDocsModal(requestId) {
+            document.getElementById('reqdocs-request-id').value = requestId;
+            document.getElementById('reqdocs-notes').value = '';
+            document.getElementById('request-docs-modal').classList.remove('hidden');
+        }
+        function closeRequestDocsModal() {
+            document.getElementById('request-docs-modal').classList.add('hidden');
+        }
+        async function submitRequestDocs(e) {
+            e.preventDefault();
+            const requestId = document.getElementById('reqdocs-request-id').value;
+            const notes = document.getElementById('reqdocs-notes').value.trim();
+
+            const btn = document.getElementById('btn-submit-reqdocs');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/expert/requests/${requestId}/request-documents/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notes: notes })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('success', data.message);
+                    closeRequestDocsModal();
+                    const statusCell = document.getElementById(`status-cell-${requestId}`);
+                    if (statusCell) statusCell.innerHTML = '<span class="text-amber-700">نقص مدارک</span>';
+                } else {
+                    showToast('error', data.message);
+                }
+            } catch (err) {
+                showToast('error', 'خطا در ارتباط با سرور');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Reject Modal
+        function openRejectModal(requestId) {
+            document.getElementById('reject-request-id').value = requestId;
+            document.getElementById('reject-reason').value = '';
+            document.getElementById('reject-modal').classList.remove('hidden');
+        }
+        function closeRejectModal() {
+            document.getElementById('reject-modal').classList.add('hidden');
+        }
+        async function submitReject(e) {
+            e.preventDefault();
+            const requestId = document.getElementById('reject-request-id').value;
+            const reason = document.getElementById('reject-reason').value.trim();
+
+            const btn = document.getElementById('btn-submit-reject');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/expert/requests/${requestId}/reject/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('success', data.message);
+                    closeRejectModal();
+                    const statusCell = document.getElementById(`status-cell-${requestId}`);
+                    if (statusCell) statusCell.innerHTML = '<span class="text-rose-600">رد شده</span>';
+                } else {
+                    showToast('error', data.message);
+                }
+            } catch (err) {
+                showToast('error', 'خطا در ارتباط با سرور');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

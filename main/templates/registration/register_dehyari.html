@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ثبت‌نام {{ role_name }} - ملک آیدی</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Persian Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        
+        /* RTL input styling */
+        input[type="text"], input[type="email"], input[type="password"], select {
+            direction: rtl;
+        }
+        
+        /* Custom focus styles */
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Form field styling */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 bg-gradient-to-br from-orange-50 to-red-50 opacity-50"></div>
+    
+    <!-- Main Content -->
+    <div class="relative min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-2xl">
+            
+            <!-- Header Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-gradient-to-br from-orange-600 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-user-shield text-3xl text-white"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-3">ملک آیدی</h1>
+                    <h2 class="text-xl font-semibold text-gray-700 mb-2">ثبت‌نام {{ role_name }}</h2>
+                    <p class="text-gray-600">ثبت‌نام در این بخش نیاز به تایید مدیر سیستم دارد</p>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                
+                <!-- Error Messages -->
+                {% if form.errors %}
+                    <div class="bg-red-50 border-b border-red-200 p-6">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-exclamation-triangle text-red-600 ml-2"></i>
+                            <h3 class="text-red-800 font-semibold">خطاهای فرم:</h3>
+                        </div>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <div class="bg-red-100 border border-red-300 rounded-lg p-3 mb-2">
+                                    <p class="text-red-700">{{ error }}</p>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post" class="p-8">
+                    {% csrf_token %}
+                    
+                    <!-- اطلاعات شخصی -->
+                    <div class="mb-12">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                            <div class="w-1 h-6 bg-orange-600 rounded-full ml-3"></div>
+                            <i class="fas fa-user text-orange-600 ml-2"></i>
+                            اطلاعات شخصی
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.first_name.id_for_label }}" class="block text-gray-700 font-medium mb-3">نام <span class="text-red-500">*</span></label>
+                                {{ form.first_name }}
+                            </div>
+                            <div>
+                                <label for="{{ form.last_name.id_for_label }}" class="block text-gray-700 font-medium mb-3">نام خانوادگی <span class="text-red-500">*</span></label>
+                                {{ form.last_name }}
+                            </div>
+                            <div>
+                                <label for="{{ form.national_id.id_for_label }}" class="block text-gray-700 font-medium mb-3">کد ملی <span class="text-red-500">*</span></label>
+                                {{ form.national_id }}
+                            </div>
+                            <div>
+                                <label for="{{ form.mobile_number.id_for_label }}" class="block text-gray-700 font-medium mb-3">شماره موبایل <span class="text-red-500">*</span></label>
+                                {{ form.mobile_number }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- اطلاعات حساب کاربری -->
+                    <div class="mb-12">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                            <div class="w-1 h-6 bg-blue-600 rounded-full ml-3"></div>
+                            <i class="fas fa-cog text-blue-600 ml-2"></i>
+                            اطلاعات حساب کاربری
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.username.id_for_label }}" class="block text-gray-700 font-medium mb-3">نام کاربری <span class="text-red-500">*</span></label>
+                                {{ form.username }}
+                            </div>
+                            <div>
+                                <label for="{{ form.email.id_for_label }}" class="block text-gray-700 font-medium mb-3">ایمیل <span class="text-red-500">*</span></label>
+                                {{ form.email }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نقش کاربری -->
+                    <div class="mb-12">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                            <div class="w-1 h-6 bg-indigo-600 rounded-full ml-3"></div>
+                            <i class="fas fa-id-badge text-indigo-600 ml-2"></i>
+                            نقش کاربری
+                        </h2>
+                        
+                        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+                            <div class="flex items-center">
+                                <i class="fas fa-user-tie text-indigo-600 text-2xl ml-3"></i>
+                                <div>
+                                    <p class="text-indigo-900 font-semibold text-lg">{{ role_name }}</p>
+                                    <p class="text-indigo-700 text-sm mt-1">شما در حال ثبت‌نام به عنوان {{ role_name }} هستید</p>
+                                </div>
+                            </div>
+                            <!-- Hidden field for role -->
+                            <input type="hidden" name="role" value="{{ role }}">
+                        </div>
+                    </div>
+
+                    <!-- موقعیت جغرافیایی -->
+                    <div class="mb-12">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                            <div class="w-1 h-6 bg-green-600 rounded-full ml-3"></div>
+                            <i class="fas fa-map-marker-alt text-green-600 ml-2"></i>
+                            موقعیت جغرافیایی
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.province.id_for_label }}" class="block text-gray-700 font-medium mb-3">استان</label>
+                                {{ form.province }}
+                            </div>
+                            <div>
+                                <label for="{{ form.county.id_for_label }}" class="block text-gray-700 font-medium mb-3">شهرستان</label>
+                                {{ form.county }}
+                            </div>
+                            <div>
+                                <label for="{{ form.district.id_for_label }}" class="block text-gray-700 font-medium mb-3">بخش</label>
+                                {{ form.district }}
+                            </div>
+                            <div>
+                                <label for="{{ form.city_village.id_for_label }}" class="block text-gray-700 font-medium mb-3">شهر/روستا (انتخاب از لیست)</label>
+                                {{ form.city_village }}
+                                {% if form.city_village.help_text %}
+                                <small class="text-gray-500">{{ form.city_village.help_text }}</small>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.new_city_village_name.id_for_label }}" class="block text-gray-700 font-medium mb-3">یا نام شهر/روستای جدید</label>
+                                {{ form.new_city_village_name }}
+                                <small class="text-gray-500">اگر شهر/روستا در لیست بالا نیست، اینجا بنویسید</small>
+                            </div>
+                            <div class="md:col-span-2">
+                                <div class="flex items-center">
+                                    {{ form.is_village }}
+                                    <label for="{{ form.is_village.id_for_label }}" class="mr-2 text-gray-700">در روستا قرار دارد</label>
+                                </div>
+                            </div>
+                            <div id="dehestan_field" style="display: none;">
+                                <label for="{{ form.dehestan.id_for_label }}" class="block text-gray-700 font-medium mb-3">دهستان</label>
+                                {{ form.dehestan }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- رمز عبور -->
+                    <div class="mb-12">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                            <div class="w-1 h-6 bg-purple-600 rounded-full ml-3"></div>
+                            <i class="fas fa-lock text-purple-600 ml-2"></i>
+                            رمز عبور
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.password1.id_for_label }}" class="block text-gray-700 font-medium mb-3">رمز عبور <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    {{ form.password1 }}
+                                </div>
+                            </div>
+                            <div>
+                                <label for="{{ form.password2.id_for_label }}" class="block text-gray-700 font-medium mb-3">تکرار رمز عبور <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    {{ form.password2 }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Management Role Info Box -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-300 rounded-lg p-6 mb-8">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-yellow-600 text-xl mt-1 ml-3"></i>
+                            <div>
+                                <h3 class="text-yellow-900 font-semibold mb-3">توجه مهم:</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-clock text-yellow-600 ml-2 mt-1"></i>
+                                        <span class="text-yellow-800">حساب کاربری شما پس از بررسی و تایید مدیر سیستم فعال خواهد شد</span>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <i class="fas fa-user-check text-yellow-600 ml-2 mt-1"></i>
+                                        <span class="text-yellow-800">لطفاً اطلاعات صحیح و کامل وارد نمایید</span>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <i class="fas fa-bell text-yellow-600 ml-2 mt-1"></i>
+                                        <span class="text-yellow-800">از نتیجه بررسی از طریق ایمیل یا پیامک مطلع خواهید شد</span>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 bg-yellow-100 rounded-lg">
+                                    <p class="text-yellow-800 text-sm font-medium">
+                                        <i class="fas fa-shield-alt ml-1"></i>
+                                        این نقش نیاز به دسترسی‌های مدیریتی دارد و تایید آن ضروری است.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه ها -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-gray-200">
+                        <a href="{% url 'main:register' %}" class="w-full sm:w-auto px-8 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all flex items-center justify-center">
+                            <i class="fas fa-arrow-right ml-2"></i>
+                            بازگشت
+                        </a>
+                        <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold rounded-lg hover:from-orange-700 hover:to-red-700 transition-all shadow-lg flex items-center justify-center">
+                            <i class="fas fa-paper-plane ml-2"></i>
+                            ارسال درخواست ثبت‌نام
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Footer Link -->
+            <div class="text-center mt-6">
+                <p class="text-gray-600">
+                    قبلاً ثبت نام کرده‌اید؟ 
+                    <a href="{% url 'main:login' %}" class="text-blue-600 hover:text-blue-700 font-semibold">ورود به حساب کاربری</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // National ID validation
+        const nationalIdField = document.querySelector('input[name="national_id"]');
+        if (nationalIdField) {
+            nationalIdField.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+            });
+        }
+
+        // Mobile number validation
+        const mobileField = document.querySelector('input[name="mobile_number"]');
+        if (mobileField) {
+            mobileField.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+            });
+        }
+
+        // Username validation (no Persian characters)
+        const usernameField = document.querySelector('input[name="username"]');
+        if (usernameField) {
+            usernameField.addEventListener('input', function() {
+                this.value = this.value.replace(/[^\w\d_.]/g, '');
+            });
+        }
+        
+        // Cascading dropdowns for geographic fields
+        const provinceSelect = document.getElementById('id_province_role');
+        const countySelect = document.getElementById('id_county_role');
+        const districtSelect = document.getElementById('id_district_role');
+        const dehestanSelect = document.getElementById('id_dehestan_role');
+        const isVillageCheckbox = document.getElementById('id_is_village_role');
+        const dehestanField = document.getElementById('dehestan_field');
+        
+        // Toggle dehestan field based on village checkbox
+        if (isVillageCheckbox) {
+            isVillageCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    dehestanField.style.display = 'block';
+                } else {
+                    dehestanField.style.display = 'none';
+                    dehestanSelect.value = '';
+                }
+            });
+        }
+        
+        // Province change handler
+        if (provinceSelect) {
+            console.log('Province select found, attaching event listener');
+            provinceSelect.addEventListener('change', function() {
+                const provinceId = this.value;
+                console.log('Province changed to:', provinceId);
+                
+                // Reset dependent dropdowns
+                countySelect.innerHTML = '<option value="">ابتدا استان را انتخاب کنید</option>';
+                districtSelect.innerHTML = '<option value="">ابتدا شهرستان را انتخاب کنید</option>';
+                dehestanSelect.innerHTML = '<option value="">ابتدا بخش را انتخاب کنید</option>';
+                countySelect.disabled = true;
+                districtSelect.disabled = true;
+                dehestanSelect.disabled = true;
+                
+                if (provinceId) {
+                    // Fetch counties
+                    const apiUrl = `/api/provinces/${provinceId}/counties/`;
+                    console.log('Fetching from:', apiUrl);
+                    
+                    fetch(apiUrl)
+                        .then(response => {
+                            console.log('Response status:', response.status);
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Response data:', data);
+                            if (data.success && data.data) {
+                                console.log('Found', data.data.length, 'counties');
+                                countySelect.disabled = false;
+                                data.data.forEach(county => {
+                                    const option = document.createElement('option');
+                                    option.value = county.id;
+                                    option.textContent = county.name;
+                                    countySelect.appendChild(option);
+                                });
+                            } else {
+                                console.warn('No data.success or data.data in response');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('خطا در دریافت شهرستان‌ها:', error);
+                        });
+                }
+            });
+        } else {
+            console.error('Province select element NOT found!');
+        }
+        
+        // County change handler
+        if (countySelect) {
+            countySelect.addEventListener('change', function() {
+                const countyId = this.value;
+                
+                // Reset dependent dropdowns
+                districtSelect.innerHTML = '<option value="">ابتدا شهرستان را انتخاب کنید</option>';
+                dehestanSelect.innerHTML = '<option value="">ابتدا بخش را انتخاب کنید</option>';
+                districtSelect.disabled = true;
+                dehestanSelect.disabled = true;
+                
+                if (countyId) {
+                    // Fetch districts
+                    fetch(`/api/counties/${countyId}/districts/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.data) {
+                                districtSelect.disabled = false;
+                                data.data.forEach(district => {
+                                    const option = document.createElement('option');
+                                    option.value = district.id;
+                                    option.textContent = district.name;
+                                    districtSelect.appendChild(option);
+                                });
+                            }
+                        })
+                        .catch(error => console.error('خطا در دریافت بخش‌ها:', error));
+                }
+            });
+        }
+        
+        // District change handler
+        const cityVillageSelect = document.getElementById('id_city_village_role');
+        if (districtSelect) {
+            districtSelect.addEventListener('change', function() {
+                const districtId = this.value;
+                
+                // Reset dependent dropdowns
+                dehestanSelect.innerHTML = '<option value="">ابتدا بخش را انتخاب کنید</option>';
+                dehestanSelect.disabled = true;
+                if (cityVillageSelect) {
+                    cityVillageSelect.innerHTML = '<option value="">انتخاب کنید</option>';
+                    cityVillageSelect.disabled = true;
+                }
+                
+                if (districtId) {
+                    if (isVillageCheckbox.checked) {
+                        // Fetch dehestans for villages
+                        fetch(`/api/districts/${districtId}/dehestans/`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && data.data) {
+                                    dehestanSelect.disabled = false;
+                                    data.data.forEach(dehestan => {
+                                        const option = document.createElement('option');
+                                        option.value = dehestan.id;
+                                        option.textContent = dehestan.name;
+                                        dehestanSelect.appendChild(option);
+                                    });
+                                }
+                            })
+                            .catch(error => console.error('خطا در دریافت دهستان‌ها:', error));
+                    } else {
+                        // Fetch cities/villages directly for district
+                        if (cityVillageSelect) {
+                            fetch(`/api/geo/cities-villages/?district_id=${districtId}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const items = Array.isArray(data) ? data : (data.data || []);
+                                    if (items.length > 0) {
+                                        cityVillageSelect.disabled = false;
+                                        items.forEach(cv => {
+                                            const option = document.createElement('option');
+                                            option.value = cv.id;
+                                            option.textContent = cv.name + ' (' + cv.type_display + ')';
+                                            cityVillageSelect.appendChild(option);
+                                        });
+                                    }
+                                })
+                                .catch(error => console.error('خطا در دریافت شهرها/روستاها:', error));
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Dehestan change handler
+        if (dehestanSelect && cityVillageSelect) {
+            dehestanSelect.addEventListener('change', function() {
+                const dehestanId = this.value;
+                const districtId = districtSelect.value;
+                
+                cityVillageSelect.innerHTML = '<option value="">انتخاب کنید</option>';
+                cityVillageSelect.disabled = true;
+                
+                if (dehestanId && districtId) {
+                    fetch(`/api/geo/cities-villages/?district_id=${districtId}&dehestan_id=${dehestanId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const items = Array.isArray(data) ? data : (data.data || []);
+                            if (items.length > 0) {
+                                cityVillageSelect.disabled = false;
+                                items.forEach(cv => {
+                                    const option = document.createElement('option');
+                                    option.value = cv.id;
+                                    option.textContent = cv.name + ' (' + cv.type_display + ')';
+                                    cityVillageSelect.appendChild(option);
+                                });
+                            }
+                        })
+                        .catch(error => console.error('خطا در دریافت شهرها/روستاها:', error));
+                }
+            });
+        }
+        
+        // Village checkbox handler update
+        if (isVillageCheckbox) {
+            const oldHandler = isVillageCheckbox.onchange;
+            isVillageCheckbox.addEventListener('change', function() {
+                const districtId = districtSelect ? districtSelect.value : null;
+                if (districtId) {
+                    // Trigger district change to reload appropriate dropdowns
+                    districtSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

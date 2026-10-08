@@ -1,0 +1,1212 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}سامانه خدمات شهری ملک آیدی{% endblock %}</title>
+    
+    <!-- Bootstrap RTL CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts - Vazir -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Improvements CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/improvements.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern-ui.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile-enhancements.css' %}">
+    <link rel="stylesheet" href="{% static 'css/contrast-fixes.css' %}">
+    <link rel="stylesheet" href="{% static 'css/theme-system-complete.css' %}">
+    <link rel="stylesheet" href="{% static 'css/global-theme-fixes.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jalali-datepicker.css' %}">
+    
+    <!-- Theme Initialization Script - Load early to prevent flash -->
+    <script src="{% static 'js/theme-init.js' %}"></script>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="MelkID">
+    
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'icons/icon-512x512.png' %}">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #059669;
+            --accent-color: #dc2626;
+            --light-bg: #f8fafc;
+            --dark-text: #1e293b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+
+        .navbar-brand .brand-icon {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white !important;
+        }
+
+        .navbar-toggler {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Card Enhancements */
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            padding: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* Button Enhancements */
+        .btn {
+            border-radius: 0.75rem;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #34d399 100%);
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* Service Icons */
+        .service-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Form Enhancements */
+        .form-control, .form-select {
+            border: 2px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Alert Enhancements */
+        .alert {
+            border: none;
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-right: 4px solid;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-right-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-right-color: var(--warning-color);
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: rgba(220, 38, 38, 0.1);
+            border-right-color: var(--accent-color);
+            color: #991b1b;
+        }
+
+        /* Footer */
+        .footer {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 3rem 0 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-section h5 {
+            color: #60a5fa;
+            margin-bottom: 1rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section ul li {
+            padding: 0.25rem 0;
+        }
+
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section ul li a:hover {
+            color: #60a5fa;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 4rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            background-size: 50px 50px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Dashboard Widgets */
+        .widget {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .widget-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .widget-icon {
+            font-size: 1.5rem;
+            margin-left: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+
+        .widget-title {
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+        /* Notification Dot */
+        .notification-dot {
+            position: absolute;
+            top: -0.25rem;
+            right: -0.25rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            background: var(--accent-color);
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+
+        /* Notification & Message Dropdowns */
+        .notification-icon, .message-icon {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.25rem;
+        }
+
+        .notification-badge, .message-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .notification-dropdown, .message-dropdown {
+            min-width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: none;
+            border-radius: 0.75rem;
+        }
+
+        .notification-item, .message-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .notification-item:hover, .message-item:hover {
+            background-color: rgba(37, 99, 235, 0.05);
+        }
+
+        .notification-item.unread {
+            background-color: rgba(37, 99, 235, 0.08);
+            border-right: 3px solid var(--primary-color);
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 0.25rem;
+        }
+
+        .notification-message {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .notification-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .notification-actions button {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+        }
+
+        .dropdown-header-custom {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.75rem 0.75rem 0 0;
+            font-weight: 600;
+        }
+
+        .dropdown-footer {
+            padding: 0.75rem;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'main:home' %}">
+                <span class="brand-icon">
+                    <i class="fas fa-city"></i>
+                </span>
+                ملک آیدی
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:home' %}">
+                            <i class="fas fa-home ms-1"></i>
+                            خانه
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:services_catalog' %}">
+                            <i class="fas fa-clipboard-list ms-1"></i>
+                            خدمات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:property_marketplace' %}">
+                            <i class="fas fa-building ms-1"></i>
+                            املاک
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:messaging_dashboard' %}">
+                            <i class="fas fa-comments ms-1"></i>
+                            پیام‌رسانی
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:about' %}">
+                            <i class="fas fa-info-circle ms-1"></i>
+                            درباره ما
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:contact' %}">
+                            <i class="fas fa-phone ms-1"></i>
+                            تماس
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <!-- Theme Toggle Button -->
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link border-0" onclick="toggleTheme()" id="themeToggle" title="تغییر تم (Ctrl + Shift + T)">
+                            <i class="fas fa-moon" id="themeIcon"></i>
+                        </button>
+                    </li>
+                    
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link position-relative notification-icon" href="#" id="notificationDropdown" 
+                               role="button" data-bs-toggle="dropdown" onclick="loadNotifications()">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationList">
+                                <li class="dropdown-header-custom d-flex justify-content-between align-items-center">
+                                    <span>اعلان‌ها</span>
+                                    <button class="btn btn-sm btn-light" onclick="markAllNotificationsRead()">
+                                        <i class="fas fa-check-double ms-1"></i>
+                                        همه خوانده شد
+                                    </button>
+                                </li>
+                                <li>
+                                    <div id="notificationItems" class="text-center p-3">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        در حال بارگذاری...
+                                    </div>
+                                </li>
+                                <li class="dropdown-footer">
+                                    <a href="{% url 'main:notifications' %}" class="text-primary text-decoration-none">
+                                        مشاهده همه اعلان‌ها
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Accessibility Menu -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="accessibilityDropdown" role="button" data-bs-toggle="dropdown" title="تنظیمات دسترسی‌پذیری">
+                                <i class="fas fa-universal-access"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header">تنظیمات دسترسی‌پذیری</li>
+                                <li>
+                                    <button class="dropdown-item" onclick="toggleTheme()" id="themeToggleMenu">
+                                        <i class="fas fa-moon me-2" id="themeIconMenu"></i>
+                                        تغییر تم
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" onclick="toggleHighContrast()">
+                                        <i class="fas fa-adjust me-2"></i>
+                                        کنتراست بالا
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="dropdown-header">اندازه فونت</li>
+                                <li>
+                                    <button class="dropdown-item" onclick="decreaseFontSize()">
+                                        <i class="fas fa-minus me-2"></i>
+                                        کوچک‌تر (Ctrl + -)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" onclick="increaseFontSize()">
+                                        <i class="fas fa-plus me-2"></i>
+                                        بزرگ‌تر (Ctrl + +)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" onclick="window.fontSizeController?.resetFontSize()">
+                                        <i class="fas fa-undo me-2"></i>
+                                        بازنشانی (Ctrl + 0)
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="dropdown-header">میانبرهای کیبورد</li>
+                                <li>
+                                    <span class="dropdown-item-text small text-muted">
+                                        Ctrl + Shift + T: تغییر تم<br>
+                                        Ctrl + Shift + C: کنتراست بالا<br>
+                                        Ctrl + +/-/0: اندازه فونت
+                                    </span>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link position-relative message-icon" href="#" id="messageDropdown" 
+                               role="button" data-bs-toggle="dropdown" onclick="loadMessages()">
+                                <i class="fas fa-envelope"></i>
+                                <span class="message-badge" id="messageCount" style="display: none;">0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end message-dropdown" id="messageList">
+                                <li class="dropdown-header-custom">
+                                    پیام‌ها
+                                </li>
+                                <li>
+                                    <div id="messageItems" class="text-center p-3">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        در حال بارگذاری...
+                                    </div>
+                                </li>
+                                <li class="dropdown-footer">
+                                    <a href="{% url 'main:messaging_dashboard' %}" class="text-primary text-decoration-none">
+                                        مشاهده همه پیام‌ها
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" 
+                               role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle ms-1"></i>
+                                {{ user.get_full_name|default:user.username }}
+                                {% if user.profile.role in 'admin,village_head' %}
+                                    <span class="badge bg-warning ms-1">مدیر</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'main:dashboard' %}">
+                                    <i class="fas fa-tachometer-alt ms-1"></i>
+                                    پیشخوان
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'main:user_profile' %}">
+                                    <i class="fas fa-user ms-1"></i>
+                                    پروفایل
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'main:my_requests' %}">
+                                    <i class="fas fa-file-alt ms-1"></i>
+                                    درخواست‌ها
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'main:notifications' %}">
+                                    <i class="fas fa-bell ms-1"></i>
+                                    اعلان‌ها
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'main:logout' %}">
+                                    <i class="fas fa-sign-out-alt ms-1"></i>
+                                    خروج
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'main:login' %}">
+                                <i class="fas fa-sign-in-alt ms-1"></i>
+                                ورود
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'main:register' %}">
+                                <i class="fas fa-user-plus ms-1"></i>
+                                ثبت نام
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show fade-in" role="alert">
+                    <i class="fas fa-info-circle ms-1"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 footer-section">
+                    <h5>
+                        <i class="fas fa-city ms-1"></i>
+                        ملک آیدی
+                    </h5>
+                    <p class="text-light">
+                        سامانه جامع خدمات شهری و روستایی برای تسهیل در ارائه خدمات الکترونیک به شهروندان عزیز
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-light"><i class="fab fa-telegram fa-lg"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-whatsapp fa-lg"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-2 footer-section">
+                    <h5>خدمات</h5>
+                    <ul>
+                        <li><a href="{% url 'main:services_catalog' %}">پروانه ساختمان</a></li>
+                        <li><a href="{% url 'main:services_catalog' %}">تایید سکونت</a></li>
+                        <li><a href="{% url 'main:services_catalog' %}">صدور سند</a></li>
+                        <li><a href="{% url 'main:property_marketplace' %}">جستجوی املاک</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 footer-section">
+                    <h5>دسترسی سریع</h5>
+                    <ul>
+                        <li><a href="{% url 'main:about' %}">درباره ما</a></li>
+                        <li><a href="{% url 'main:contact' %}">تماس با ما</a></li>
+                        <li><a href="#">راهنمای استفاده</a></li>
+                        <li><a href="#">سوالات متداول</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 footer-section">
+                    <h5>اطلاعات تماس</h5>
+                    <ul>
+                        <li><i class="fas fa-phone ms-1"></i> ۰۲۱-۱۲۳۴۵۶۷۸</li>
+                        <li><i class="fas fa-envelope ms-1"></i> info@behrangaar.ir</li>
+                        <li><i class="fas fa-map-marker-alt ms-1"></i> سمندآباد، خیابان اصلی</li>
+                        <li><i class="fas fa-clock ms-1"></i> ۸:۰۰ تا ۱۶:۰۰</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">© ۱۴۰۳ سامانه ملک آیدی. تمامی حقوق محفوظ است.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">نسخه ۱.۰.۰ | طراحی شده با ❤️ برای شهروندان</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Modern UI JavaScript -->
+    <script src="{% static 'js/modern-interactions.js' %}"></script>
+    <script src="{% static 'js/voice-ui.js' %}"></script>
+    <script src="{% static 'js/gesture-navigation.js' %}"></script>
+    <script src="{% static 'js/onboarding.js' %}"></script>
+    <script src="{% static 'js/keyboard-shortcuts.js' %}"></script>
+    <!-- Temporarily disabled due to SyntaxError -->
+    <!-- <script src="{% static 'js/accessibility-improvements.js' %}"></script> -->
+    <script src="{% static 'js/jalali-datepicker.js' %}"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('{% static "sw.js" %}')
+                    .then((registration) => {
+                        console.log('🎉 Service Worker registered successfully:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // Show update notification
+                                    showUpdateNotification();
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
+        
+        // Show update notification
+        function showUpdateNotification() {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--primary-color);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: var(--border-radius);
+                box-shadow: var(--shadow-lg);
+                z-index: 10000;
+                animation: slideInUp 0.3s ease-out;
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span>نسخه جدید در دسترس است!</span>
+                    <button onclick="window.location.reload()" style="
+                        background: rgba(255,255,255,0.2);
+                        border: none;
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">به‌روزرسانی</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        cursor: pointer;
+                        font-size: 1.2rem;
+                    ">✕</button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+        }
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallPrompt();
+        });
+        
+        function showInstallPrompt() {
+            const installPrompt = document.createElement('div');
+            installPrompt.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--glass-bg);
+                backdrop-filter: blur(16px);
+                border: 1px solid var(--glass-border);
+                border-radius: var(--border-radius-lg);
+                padding: 1.5rem;
+                max-width: 300px;
+                z-index: 10000;
+                animation: slideInRight 0.3s ease-out;
+                box-shadow: var(--glass-shadow);
+            `;
+            installPrompt.innerHTML = `
+                <div style="color: var(--text-primary); margin-bottom: 1rem;">
+                    <h6 style="margin: 0 0 0.5rem 0;">📱 نصب اپلیکیشن</h6>
+                    <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">
+                        MelkID را روی دستگاه خود نصب کنید
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="installPWA()" style="
+                        background: var(--primary-color);
+                        border: none;
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: var(--border-radius-sm);
+                        cursor: pointer;
+                        font-size: 0.9rem;
+                    ">نصب</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: none;
+                        border: 1px solid var(--border-color);
+                        color: var(--text-secondary);
+                        padding: 0.5rem 1rem;
+                        border-radius: var(--border-radius-sm);
+                        cursor: pointer;
+                        font-size: 0.9rem;
+                    ">بعداً</button>
+                </div>
+            `;
+            document.body.appendChild(installPrompt);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (installPrompt.parentNode) {
+                    installPrompt.remove();
+                }
+            }, 10000);
+        }
+        
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`PWA install outcome: ${outcome}`);
+                deferredPrompt = null;
+                
+                // Remove install prompt
+                document.querySelectorAll('[onclick="installPWA()"]').forEach(el => {
+                    el.closest('div').remove();
+                });
+            }
+        }
+    </script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        // Add animation classes to cards on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        });
+
+        document.querySelectorAll('.card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // Get CSRF token
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        }
+
+        // Fetch and display notifications
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications/');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayNotifications(data.notifications);
+                    updateNotificationBadge(data.unread_count);
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                document.getElementById('notificationItems').innerHTML = `
+                    <div class="text-center text-danger p-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        خطا در بارگذاری اعلان‌ها
+                    </div>
+                `;
+            }
+        }
+
+        // Display notifications in dropdown
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notificationItems');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted p-3">
+                        <i class="fas fa-bell-slash"></i>
+                        <p class="mb-0 mt-2">اعلانی وجود ندارد</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notifications.map(notif => `
+                <div class="notification-item ${!notif.is_read ? 'unread' : ''}" data-id="${notif.id}">
+                    <div class="notification-title">${notif.title}</div>
+                    <div class="notification-message">${notif.message}</div>
+                    <div class="notification-time">
+                        <i class="fas fa-clock ms-1"></i>
+                        ${formatDateTime(notif.created_at)}
+                    </div>
+                    <div class="notification-actions">
+                        ${!notif.is_read ? `
+                            <button class="btn btn-sm btn-primary" onclick="markNotificationRead(${notif.id})">
+                                <i class="fas fa-check ms-1"></i>
+                                خوانده شد
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNotification(${notif.id})">
+                            <i class="fas fa-trash ms-1"></i>
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationCount');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Mark notification as read
+        async function markNotificationRead(id) {
+            try {
+                const response = await fetch(`/api/notifications/${id}/mark-read/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        // Mark all notifications as read
+        async function markAllNotificationsRead() {
+            try {
+                const response = await fetch('/api/notifications/mark-all-read/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+            }
+        }
+
+        // Delete notification
+        async function deleteNotification(id) {
+            if (!confirm('آیا از حذف این اعلان اطمینان دارید؟')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/notifications/${id}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+            }
+        }
+
+        // Fetch and display messages
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/messages/');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayMessages(data.conversations);
+                    updateMessageBadge(data.total_unread);
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messageItems').innerHTML = `
+                    <div class="text-center text-danger p-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        خطا در بارگذاری پیام‌ها
+                    </div>
+                `;
+            }
+        }
+
+        // Display messages in dropdown
+        function displayMessages(conversations) {
+            const container = document.getElementById('messageItems');
+            
+            if (conversations.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted p-3">
+                        <i class="fas fa-envelope-open"></i>
+                        <p class="mb-0 mt-2">پیامی وجود ندارد</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = conversations.map(conv => `
+                <div class="message-item ${conv.unread_count > 0 ? 'unread' : ''}" onclick="viewConversation(${conv.id})">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="notification-title">${conv.subject}</div>
+                            ${conv.last_message ? `
+                                <div class="notification-message">
+                                    <strong>${conv.last_message.sender}:</strong>
+                                    ${conv.last_message.body}
+                                </div>
+                            ` : ''}
+                            <div class="notification-time">
+                                <i class="fas fa-clock ms-1"></i>
+                                ${formatDateTime(conv.updated_at)}
+                            </div>
+                        </div>
+                        ${conv.unread_count > 0 ? `
+                            <span class="badge bg-primary rounded-pill">${conv.unread_count}</span>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update message badge
+        function updateMessageBadge(count) {
+            const badge = document.getElementById('messageCount');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // View conversation
+        function viewConversation(conversationId) {
+            window.location.href = `/messages/${conversationId}/`;
+        }
+
+        // Format datetime for Persian display
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return 'همین الان';
+            if (diff < 3600) return `${Math.floor(diff / 60)} دقیقه پیش`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} ساعت پیش`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)} روز پیش`;
+            
+            return date.toLocaleDateString('fa-IR');
+        }
+
+        // Auto-refresh notifications and messages every 30 seconds
+        {% if user.is_authenticated %}
+        setInterval(() => {
+            loadNotifications();
+            loadMessages();
+        }, 30000);
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications();
+            loadMessages();
+            initializeTheme();
+        });
+        {% endif %}
+
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const themeIcon = document.getElementById('themeIcon');
+            if (themeIcon) {
+                if (theme === 'dark') {
+                    themeIcon.className = 'fas fa-sun';
+                    themeIcon.parentElement.title = 'تغییر به تم روشن';
+                } else {
+                    themeIcon.className = 'fas fa-moon';
+                    themeIcon.parentElement.title = 'تغییر به تم تاریک';
+                }
+            }
+        }
+
+        function initializeTheme() {
+            // Check for saved theme preference or default to 'light'
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            
+            // Check for system preference if no saved theme
+            if (!localStorage.getItem('theme')) {
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const initialTheme = systemPrefersDark ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', initialTheme);
+                updateThemeIcon(initialTheme);
+            } else {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeIcon(savedTheme);
+            }
+        }
+
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', initializeTheme);
+    </script>
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

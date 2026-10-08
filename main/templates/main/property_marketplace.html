@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}بازار املاک - ملک آیدی{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+/>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+    href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+/>
+
+<style>
+    body {
+        font-family: "Vazirmatn", sans-serif;
+        background: #f8fafc;
+    }
+    .ad-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+    .ad-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        border-color: #cbd5e1;
+    }
+    .filter-section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .price-tag {
+        background: linear-gradient(135deg, #059669, #10b981);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    .ad-type-badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+    .sale-badge { background: #fef2f2; color: #dc2626; }
+    .rent-badge { background: #eff6ff; color: #2563eb; }
+    .both-badge { background: #f0fdf4; color: #16a34a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-building text-blue-600 ml-3"></i>
+                بازار املاک ملک آیدی
+            </h1>
+            <p class="text-xl text-gray-600">جستجو در میان هزاران آگهی ملک</p>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="filter-section p-6 mb-8">
+            <form method="get" class="space-y-6">
+                
+                <!-- Main Search -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2">
+                        <input 
+                            type="text" 
+                            name="query" 
+                            value="{{ current_filters.query }}"
+                            placeholder="جستجو در آدرس، نام یا شهر..."
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                        >
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors">
+                            <i class="fas fa-search ml-2"></i>جستجو
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">نوع آگهی</label>
+                        <select name="ad_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">همه</option>
+                            <option value="sale" {% if current_filters.ad_type == 'sale' %}selected{% endif %}>فروش</option>
+                            <option value="rent" {% if current_filters.ad_type == 'rent' %}selected{% endif %}>اجاره</option>
+                            <option value="both" {% if current_filters.ad_type == 'both' %}selected{% endif %}>فروش و اجاره</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">نوع ملک</label>
+                        <select name="property_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">همه</option>
+                            <option value="residential" {% if current_filters.property_type == 'residential' %}selected{% endif %}>مسکونی</option>
+                            <option value="commercial" {% if current_filters.property_type == 'commercial' %}selected{% endif %}>تجاری</option>
+                            <option value="land" {% if current_filters.property_type == 'land' %}selected{% endif %}>زمین</option>
+                            <option value="agricultural" {% if current_filters.property_type == 'agricultural' %}selected{% endif %}>کشاورزی</option>
+                            <option value="industrial" {% if current_filters.property_type == 'industrial' %}selected{% endif %}>صنعتی</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">شهر</label>
+                        <select name="city" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">همه شهرها</option>
+                            {% for city in cities %}
+                            <option value="{{ city }}" {% if current_filters.city == city %}selected{% endif %}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">متراژ</label>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <input 
+                                type="number" 
+                                name="min_area" 
+                                value="{{ current_filters.min_area }}"
+                                placeholder="از"
+                                class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            >
+                            <input 
+                                type="number" 
+                                name="max_area" 
+                                value="{{ current_filters.max_area }}"
+                                placeholder="تا"
+                                class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Range -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">حداقل قیمت (تومان)</label>
+                        <input 
+                            type="number" 
+                            name="min_price" 
+                            value="{{ current_filters.min_price }}"
+                            placeholder="مثلاً 1000000000"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">حداکثر قیمت (تومان)</label>
+                        <input 
+                            type="number" 
+                            name="max_price" 
+                            value="{{ current_filters.max_price }}"
+                            placeholder="مثلاً 5000000000"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Count -->
+        <div class="mb-6">
+            <p class="text-gray-600">
+                <span class="font-semibold text-gray-900">{{ ads.paginator.count }}</span> آگهی یافت شد
+            </p>
+        </div>
+
+        <!-- Property Ads Grid -->
+        {% if ads %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+            {% for ad in ads %}
+            <div class="ad-card bg-white rounded-xl overflow-hidden">
+                <!-- Ad Image (placeholder) -->
+                <div class="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center relative">
+                    <i class="fas fa-home text-4xl text-blue-400"></i>
+                    
+                    <!-- Ad Type Badge -->
+                    <div class="absolute top-3 right-3">
+                        <span class="ad-type-badge 
+                            {% if ad.ad_type == 'sale' %}sale-badge
+                            {% elif ad.ad_type == 'rent' %}rent-badge
+                            {% else %}both-badge{% endif %}">
+                            {{ ad.get_ad_type_display }}
+                        </span>
+                    </div>
+                    
+                    <!-- Property Type -->
+                    <div class="absolute top-3 left-3">
+                        <span class="bg-white bg-opacity-90 text-gray-700 text-xs px-2 py-1 rounded-lg font-medium">
+                            {{ ad.get_property_type_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Ad Details -->
+                <div class="p-4">
+                    <h3 class="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
+                        {{ ad.address|truncatechars:60 }}
+                    </h3>
+                    
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-map-marker-alt ml-2 text-red-500"></i>
+                            {{ ad.city_village }}
+                        </div>
+                        
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-expand-arrows-alt ml-2 text-blue-500"></i>
+                            {{ ad.total_area }} متر مربع
+                        </div>
+                        
+                        {% if ad.bedrooms %}
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-bed ml-2 text-purple-500"></i>
+                            {{ ad.bedrooms }} خواب
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-user ml-2 text-green-500"></i>
+                            {{ ad.contact_name }}
+                        </div>
+                    </div>
+
+                    <!-- Price Information -->
+                    <div class="space-y-2 mb-4">
+                        {% if ad.sale_price %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">قیمت فروش:</span>
+                            <span class="price-tag">{{ ad.sale_price|floatformat:0 }} تومان</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if ad.rent_price %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">قیمت اجاره:</span>
+                            <span class="price-tag">{{ ad.rent_price|floatformat:0 }} تومان</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div class="border-t pt-3">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-500">
+                                {{ ad.created_at|date:"Y/m/d" }}
+                            </div>
+                            <a href="tel:{{ ad.contact_phone }}" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-phone ml-1"></i>تماس
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if ads.has_other_pages %}
+        <div class="flex justify-center">
+            <nav class="flex space-x-2 space-x-reverse">
+                {% if ads.has_previous %}
+                <a href="?{% for key, value in current_filters.items %}{% if value %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ ads.previous_page_number }}" 
+                   class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    قبلی
+                </a>
+                {% endif %}
+                
+                <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                    صفحه {{ ads.number }} از {{ ads.paginator.num_pages }}
+                </span>
+                
+                {% if ads.has_next %}
+                <a href="?{% for key, value in current_filters.items %}{% if value %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ ads.next_page_number }}" 
+                   class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    بعدی
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- No Results -->
+        <div class="text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-search text-6xl text-gray-300"></i>
+            </div>
+            <h3 class="text-2xl font-semibold text-gray-900 mb-2">آگهی‌ای یافت نشد</h3>
+            <p class="text-gray-600 mb-6">متأسفانه با فیلترهای انتخابی شما، آگهی‌ای پیدا نکردیم</p>
+            <a href="{% url 'main:property_marketplace' %}" 
+               class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                مشاهده همه آگهی‌ها
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- Quick Contact Modal (for future use) -->
+<div id="contact-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-xl max-w-md mx-4 w-full">
+        <h3 class="text-xl font-bold mb-4">تماس با آگهی‌دهنده</h3>
+        <div id="contact-info" class="space-y-3">
+            <!-- Contact information will be populated here -->
+        </div>
+        <button onclick="closeContactModal()" 
+                class="mt-4 w-full bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+            بستن
+        </button>
+    </div>
+</div>
+
+<script>
+function showContactModal(name, phone) {
+    document.getElementById('contact-info').innerHTML = `
+        <p><strong>نام:</strong> ${name}</p>
+        <p><strong>تلفن:</strong> <a href="tel:${phone}" class="text-blue-600">${phone}</a></p>
+    `;
+    document.getElementById('contact-modal').classList.remove('hidden');
+    document.getElementById('contact-modal').classList.add('flex');
+}
+
+function closeContactModal() {
+    document.getElementById('contact-modal').classList.add('hidden');
+    document.getElementById('contact-modal').classList.remove('flex');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="container py-4" dir="rtl">
+  <h1 class="h4 mb-3">ویرایش پروفایل / محل سکونت</h1>
+
+  {% if messages %}
+    {% for m in messages %}<div class="alert alert-info">{{ m }}</div>{% endfor %}
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      {% for field in form %}
+        <div class="col-md-6">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">ذخیره</button>
+    <a href="{% url 'main:user_profile' %}" class="btn btn-outline-secondary mt-3">انصراف</a>
+  </form>
+</section>
+{% endblock %}

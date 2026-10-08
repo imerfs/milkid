@@ -1,0 +1,300 @@
+
+{% extends 'base.html' %}
+{% load persian_filters %}
+{% load jalali_tags %}
+
+{% block title %}پیگیری درخواست‌ها - سامانه خدمات روستایی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        border-radius: 12px;
+        border: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    .request-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #e9ecef;
+    }
+    .request-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+    }
+    .request-card.pending { border-left-color: #ffc107; }
+    .request-card.in_review { border-left-color: #17a2b8; }
+    .request-card.approved { border-left-color: #28a745; }
+    .request-card.completed { border-left-color: #007bff; }
+    .request-card.rejected { border-left-color: #dc3545; }
+    .request-card.requires_documents { border-left-color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-tasks me-2 text-primary"></i>
+                        پیگیری درخواست‌ها
+                    </h2>
+                    <p class="text-muted mb-0">مشاهده و پیگیری تمام درخواست‌های ثبت شده</p>
+                </div>
+                <a href="{% url 'main:services_catalog' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus me-2"></i>
+                    درخواست جدید
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2 mb-3">
+            <div class="card stats-card text-center bg-primary text-white">
+                <div class="card-body">
+                    <div class="stats-number">{{ stats.total|persian_numbers }}</div>
+                    <div>کل درخواست‌ها</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stats-card text-center bg-warning text-dark">
+                <div class="card-body">
+                    <div class="stats-number">{{ stats.pending|persian_numbers }}</div>
+                    <div>در انتظار</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stats-card text-center bg-info text-white">
+                <div class="card-body">
+                    <div class="stats-number">{{ stats.in_review|persian_numbers }}</div>
+                    <div>در حال بررسی</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stats-card text-center bg-success text-white">
+                <div class="card-body">
+                    <div class="stats-number">{{ stats.approved|persian_numbers }}</div>
+                    <div>تایید شده</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stats-card text-center" style="background: #007bff; color: white;">
+                <div class="card-body">
+                    <div class="stats-number">{{ stats.completed|persian_numbers }}</div>
+                    <div>تکمیل شده</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stats-card text-center bg-danger text-white">
+                <div class="card-body">
+                    <div class="stats-number">{{ stats.rejected|persian_numbers }}</div>
+                    <div>رد شده</div>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+    <!-- Filters and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        جستجو و فیلتر
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">جستجو</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="جستجو در عنوان، توضیحات..." 
+                                   value="{{ search_query|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">وضعیت</label>
+                            <select name="status" class="form-select">
+                                <option value="">همه وضعیت‌ها</option>
+                                {% for status_code, status_name in status_choices %}
+                                    <option value="{{ status_code }}" {% if status_code == current_status %}selected{% endif %}>
+                                        {{ status_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">نوع درخواست</label>
+                            <select name="request_type" class="form-select">
+                                <option value="">همه انواع</option>
+                                {% for type_code, type_name in request_type_choices %}
+                                    <option value="{{ type_code }}" {% if type_code == current_request_type %}selected{% endif %}>
+                                        {{ type_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                اعمال
+                            </button>
+                        </div>
+                        {% if current_status or current_request_type or search_query %}
+                        <div class="col-12">
+                            <a href="{% url 'main:my_requests' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-times me-1"></i>
+                                پاک کردن فیلترها
+                            </a>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+    <!-- Requests List -->
+    <div class="row">
+        <div class="col-12">
+            {% if requests %}
+                <div class="row">
+                    {% for req in requests %}
+                    <div class="col-lg-6 col-xl-4 mb-4">
+                        <div class="card request-card h-100 {{ req.status }}">
+                            <div class="card-header d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-bold">{{ req.title }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-hashtag"></i>
+                                        {{ req.id|persian_numbers }}
+                                    </small>
+                                </div>
+                                <span class="badge {{ req.get_status_badge_class }}">
+                                    {{ req.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <i class="fas fa-layer-group text-muted me-2"></i>
+                                    <strong>نوع:</strong> 
+                                    {{ req.get_request_type_display }}
+                                </div>
+                                {% if req.city_village %}
+                                <div class="mb-2">
+                                    <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                    <strong>محل:</strong> 
+                                    {{ req.city_village.name }}، {{ req.district.name }}
+                                </div>
+                                {% endif %}
+                                <div class="mb-2">
+                                    <i class="fas fa-clock text-muted me-2"></i>
+                                    <strong>ثبت:</strong> 
+                                    {{ req.created_at|jalali_datetime }}
+                                </div>
+                                <div class="mb-2">
+                                    <i class="fas fa-sync text-muted me-2"></i>
+                                    <strong>به‌روزرسانی:</strong> 
+                                    {{ req.updated_at|jalali_datetime }}
+                                </div>
+                                {% if req.assigned_to %}
+                                <div class="mb-2">
+                                    <i class="fas fa-user-tie text-muted me-2"></i>
+                                    <strong>مسئول:</strong> 
+                                    {{ req.assigned_to.get_full_name }}
+                                </div>
+                                {% endif %}
+                                {% if req.status == 'requires_documents' %}
+                                <div class="alert alert-warning py-2 px-3 mb-0 mt-2">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    <small>نیاز به بارگذاری مدارک</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <a href="{% url 'main:request_detail' req.id %}" class="btn btn-primary btn-sm w-100">
+                                    <i class="fas fa-eye me-1"></i>
+                                    مشاهده جزئیات
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                        
+                <!-- Pagination -->
+                {% if requests.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if requests.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ requests.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_request_type %}&request_type={{ current_request_type }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in requests.paginator.page_range %}
+                            {% if requests.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num|persian_numbers }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_request_type %}&request_type={{ current_request_type }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num|persian_numbers }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if requests.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ requests.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_request_type %}&request_type={{ current_request_type }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-inbox fa-4x text-muted mb-4"></i>
+                        <h4 class="text-muted mb-3">درخواستی یافت نشد</h4>
+                        {% if current_status or current_request_type or search_query %}
+                            <p class="text-muted mb-3">با فیلترهای انتخابی درخواستی یافت نشد.</p>
+                            <a href="{% url 'main:my_requests' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-times me-1"></i>
+                                پاک کردن فیلترها
+                            </a>
+                        {% else %}
+                            <p class="text-muted mb-3">هنوز درخواستی ثبت نکرده‌اید.</p>
+                            <a href="{% url 'main:services_catalog' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus me-2"></i>
+                                ثبت اولین درخواست
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

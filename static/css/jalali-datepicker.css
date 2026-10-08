@@ -1,0 +1,185 @@
+/* Jalali Date Picker Styles */
+
+.jalali-date,
+.jalali-datetime {
+    position: relative;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23666'%3e%3cpath d='M8 1a.5.5 0 0 1 .5.5V3h4a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h4V1.5A.5.5 0 0 1 8 1zM2 4v8h12V4H2z'/%3e%3cpath d='M4.5 6.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: left 0.75rem center;
+    background-size: 16px 12px;
+    padding-left: 2.5rem;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+[dir="rtl"] .jalali-date,
+[dir="rtl"] .jalali-datetime {
+    background-position: right 0.75rem center;
+    padding-left: 0.75rem;
+    padding-right: 2.5rem;
+}
+
+.jalali-datetime {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23666'%3e%3cpath d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/%3e%3cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/%3e%3c/svg%3e");
+}
+
+/* Focus states */
+.jalali-date:focus,
+.jalali-datetime:focus {
+    border-color: var(--primary-color, #2563eb);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+}
+
+/* Validation states */
+.jalali-date.is-valid,
+.jalali-datetime.is-valid {
+    border-color: var(--success-color, #059669);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23059669'%3e%3cpath d='M8 1a.5.5 0 0 1 .5.5V3h4a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h4V1.5A.5.5 0 0 1 8 1zM2 4v8h12V4H2z'/%3e%3cpath d='M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z'/%3e%3c/svg%3e");
+}
+
+.jalali-date.is-invalid,
+.jalali-datetime.is-invalid {
+    border-color: var(--danger-color, #dc2626);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23dc2626'%3e%3cpath d='M8 1a.5.5 0 0 1 .5.5V3h4a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h4V1.5A.5.5 0 0 1 8 1zM2 4v8h12V4H2z'/%3e%3cpath d='M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z'/%3e%3c/svg%3e");
+}
+
+/* Help text styling */
+.jalali-date + .form-text,
+.jalali-datetime + .form-text {
+    font-size: 0.875rem;
+    color: var(--text-muted, #6c757d);
+    margin-top: 0.25rem;
+}
+
+.jalali-date + .form-text::before,
+.jalali-datetime + .form-text::before {
+    content: "📅 ";
+    margin-left: 0.25rem;
+}
+
+/* Today button styling */
+.jalali-date-today-btn,
+.jalali-datetime-today-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    margin-top: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.jalali-date-today-btn:hover,
+.jalali-datetime-today-btn:hover {
+    background-color: var(--primary-color, #2563eb);
+    border-color: var(--primary-color, #2563eb);
+    color: white;
+}
+
+/* Placeholder styling */
+.jalali-date::placeholder,
+.jalali-datetime::placeholder {
+    color: var(--text-muted, #6c757d);
+    opacity: 0.7;
+    font-style: italic;
+}
+
+/* Dark theme support */
+[data-theme="dark"] .jalali-date,
+[data-theme="dark"] .jalali-datetime {
+    background-color: var(--bg-card, #1e293b);
+    border-color: var(--border-color, #334155);
+    color: var(--text-primary, #f1f5f9);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23cbd5e1'%3e%3cpath d='M8 1a.5.5 0 0 1 .5.5V3h4a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h4V1.5A.5.5 0 0 1 8 1zM2 4v8h12V4H2z'/%3e%3cpath d='M4.5 6.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z'/%3e%3c/svg%3e");
+}
+
+[data-theme="dark"] .jalali-datetime {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23cbd5e1'%3e%3cpath d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/%3e%3cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/%3e%3c/svg%3e");
+}
+
+[data-theme="dark"] .jalali-date::placeholder,
+[data-theme="dark"] .jalali-datetime::placeholder {
+    color: var(--text-muted, #94a3b8);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .jalali-date,
+    .jalali-datetime {
+        font-size: 0.9rem;
+        padding-left: 2.25rem;
+    }
+    
+    [dir="rtl"] .jalali-date,
+    [dir="rtl"] .jalali-datetime {
+        padding-right: 2.25rem;
+        padding-left: 0.75rem;
+    }
+}
+
+/* Animation for validation feedback */
+.invalid-feedback,
+.valid-feedback {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Input group styling */
+.input-group .jalali-date,
+.input-group .jalali-datetime {
+    background-position: left 0.75rem center;
+    padding-left: 2.5rem;
+}
+
+.input-group .jalali-date:not(:first-child),
+.input-group .jalali-datetime:not(:first-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group .jalali-date:not(:last-child),
+.input-group .jalali-datetime:not(:last-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* High contrast mode */
+.high-contrast .jalali-date,
+.high-contrast .jalali-datetime {
+    border-width: 2px;
+    border-color: #000000;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+[data-theme="dark"].high-contrast .jalali-date,
+[data-theme="dark"].high-contrast .jalali-datetime {
+    border-color: #ffffff;
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Print styles */
+@media print {
+    .jalali-date,
+    .jalali-datetime {
+        background-image: none;
+        padding-left: 0.75rem;
+        border: 1px solid #000;
+        color: #000;
+        background-color: #fff;
+    }
+    
+    .jalali-date-today-btn,
+    .jalali-datetime-today-btn {
+        display: none;
+    }
+}

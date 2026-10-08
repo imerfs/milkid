@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jalali_tags %}
+
+{% block title %}تاریخچه درخواست‌های شهرداری/دهیاری - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #e9ecef;
+    }
+    
+    .history-card.approved {
+        border-left-color: #28a745;
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    }
+    
+    .history-card.rejected {
+        border-left-color: #dc3545;
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+    }
+    
+    .status-approved {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-history me-2 text-primary"></i>
+                        تاریخچه درخواست‌های شهرداری/دهیاری
+                    </h2>
+                    <p class="text-muted mb-0">مشاهده درخواست‌های تایید شده و رد شده</p>
+                </div>
+                <div>
+                    <a href="{% url 'main:manage_municipalities' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        درخواست‌های در انتظار
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3 class="mb-1">{{ approved_count }}</h3>
+                            <p class="mb-0">تایید شده</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h3 class="mb-1">{{ rejected_count }}</h3>
+                            <p class="mb-0">رد شده</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h3 class="mb-1">{{ total_processed }}</h3>
+                            <p class="mb-0">کل پردازش شده</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <ul class="nav nav-tabs mb-4" id="historyTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                        <i class="fas fa-list me-2"></i>همه
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab">
+                        <i class="fas fa-check me-2"></i>تایید شده
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab">
+                        <i class="fas fa-times me-2"></i>رد شده
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="historyTabsContent">
+                <!-- All Tab -->
+                <div class="tab-pane fade show active" id="all" role="tabpanel">
+                    {% if processed_municipalities %}
+                        <div class="row">
+                            {% for municipality in processed_municipalities %}
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="card history-card {% if municipality.status == 'active' %}approved{% else %}rejected{% endif %} h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">{{ municipality.name }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                {{ municipality.city_village }}، {{ municipality.county }}
+                                            </small>
+                                        </div>
+                                        <span class="status-badge {% if municipality.status == 'active' %}status-approved{% else %}status-rejected{% endif %}">
+                                            {% if municipality.status == 'active' %}
+                                                <i class="fas fa-check me-1"></i>تایید شده
+                                            {% else %}
+                                                <i class="fas fa-times me-1"></i>رد شده
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <small class="text-muted">نوع:</small><br>
+                                            <strong>{{ municipality.get_municipality_type_display }}</strong>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <small class="text-muted">مدیر:</small><br>
+                                            <strong>{{ municipality.manager_name }}</strong>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <small class="text-muted">تاریخ درخواست:</small><br>
+                                            <strong>{{ municipality.created_at|jalali_datetime }}</strong>
+                                        </div>
+                                        
+                                        {% if municipality.status == 'active' and municipality.verified_at %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">تاریخ تایید:</small><br>
+                                            <strong>{{ municipality.verified_at|jalali_datetime }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if municipality.verified_by %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">{% if municipality.status == 'active' %}تایید شده توسط:{% else %}پردازش شده توسط:{% endif %}</small><br>
+                                            <strong>{{ municipality.verified_by.get_full_name|default:municipality.verified_by.username }}</strong>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">هیچ درخواست پردازش شده‌ای وجود ندارد</h4>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Approved Tab -->
+                <div class="tab-pane fade" id="approved" role="tabpanel">
+                    {% if approved_municipalities %}
+                        <div class="row">
+                            {% for municipality in approved_municipalities %}
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="card history-card approved h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-1 fw-bold">{{ municipality.name }}</h6>
+                                        <small class="text-muted">تایید شده در {{ municipality.verified_at|jalali_datetime }}</small>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><strong>نوع:</strong> {{ municipality.get_municipality_type_display }}</p>
+                                        <p><strong>مدیر:</strong> {{ municipality.manager_name }}</p>
+                                        <p><strong>شهر/روستا:</strong> {{ municipality.city_village }}</p>
+                                        {% if municipality.verified_by %}
+                                        <p><strong>تایید شده توسط:</strong> {{ municipality.verified_by.get_full_name|default:municipality.verified_by.username }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                            <h4 class="text-muted">هیچ درخواست تایید شده‌ای وجود ندارد</h4>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Rejected Tab -->
+                <div class="tab-pane fade" id="rejected" role="tabpanel">
+                    {% if rejected_municipalities %}
+                        <div class="row">
+                            {% for municipality in rejected_municipalities %}
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="card history-card rejected h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-1 fw-bold">{{ municipality.name }}</h6>
+                                        <small class="text-muted">رد شده در {{ municipality.updated_at|jalali_datetime }}</small>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><strong>نوع:</strong> {{ municipality.get_municipality_type_display }}</p>
+                                        <p><strong>مدیر:</strong> {{ municipality.manager_name }}</p>
+                                        <p><strong>شهر/روستا:</strong> {{ municipality.city_village }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                            <h4 class="text-muted">هیچ درخواست رد شده‌ای وجود ندارد</h4>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد مسئول مالی - ملک آیدی</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Flatpickr for date picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fa.js"></script>
+
+    <!-- Google Fonts: Vazirmatn -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // Customizing Tailwind theme to match MelkID's design
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'vazir': ['Vazirmatn', 'sans-serif']
+                    },
+                    colors: {
+                        primary: { // Blue as main color
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
+                            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
+                            800: '#075985', 900: '#0c4a6e'
+                        },
+                        success: { // Green for success
+                            50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac',
+                            400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d',
+                            800: '#166534', 900: '#14532d'
+                        },
+                        accent: { // Purple as complementary
+                            50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe',
+                            400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce',
+                            800: '#6b21a8', 900: '#581c87'
+                        },
+                        warning: { // Yellow/amber for warnings
+                            50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d',
+                            400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309',
+                            800: '#92400e', 900: '#78350f'
+                        },
+                        error: { // Red for errors
+                            50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5',
+                            400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c',
+                            800: '#991b1b', 900: '#7f1d1d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; }
+        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
+        details[open] .submenu { max-height: 500px; }
+        details summary::-webkit-details-marker { display: none; }
+        
+        /* Custom animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        /* Chart containers */
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        
+        /* Custom toggle switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #0284c7;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* Sparkline chart style */
+        .sparkline {
+            width: 100%;
+            height: 40px;
+        }
+        
+        /* Notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #0284c7;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Card hover effects */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Table row hover */
+        .table-row-hover:hover {
+            background-color: rgba(14, 165, 233, 0.05);
+        }
+        
+        /* Dark mode styles */
+        .dark {
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+        
+        .dark .bg-white {
+            background-color: #334155;
+        }
+        
+        .dark .text-gray-800 {
+            color: #e2e8f0;
+        }
+        
+        .dark .text-gray-500 {
+            color: #cbd5e1;
+        }
+        
+        .dark .text-gray-600 {
+            color: #94a3b8;
+        }
+        
+        .dark .text-gray-300 {
+            color: #cbd5e1;
+        }
+        
+        .dark .bg-slate-100 {
+            background-color: #1e293b;
+        }
+        
+        .dark .border-gray-200 {
+            border-color: #334155;
+        }
+        
+        .dark .border-gray-700 {
+            border-color: #475569;
+        }
+        
+        .dark .bg-gray-800 {
+            background-color: #0f172a;
+        }
+        
+        .dark .bg-gray-700 {
+            background-color: #1e293b;
+        }
+        
+        .dark .bg-gray-700\/50 {
+            background-color: rgba(30, 41, 59, 0.5);
+        }
+        
+        .dark .hover\:bg-gray-700:hover {
+            background-color: #1e293b;
+        }
+        
+        .dark .hover\:bg-gray-600:hover {
+            background-color: #334155;
+        }
+        
+        .dark .bg-yellow-50 {
+            background-color: #334155;
+        }
+        
+        .dark .border-b {
+            border-color: #334155;
+        }
+        
+        .dark .bg-primary-100 {
+            background-color: rgba(14, 132, 199, 0.2);
+        }
+        
+        .dark .bg-success-100 {
+            background-color: rgba(22, 163, 74, 0.2);
+        }
+        
+        .dark .bg-error-100 {
+            background-color: rgba(220, 38, 38, 0.2);
+        }
+        
+        .dark .bg-warning-100 {
+            background-color: rgba(217, 119, 6, 0.2);
+        }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .dark .skeleton {
+            background: linear-gradient(90deg, #4b5563 25%, #6b7280 50%, #4b5563 75%);
+            background-size: 200% 100%;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        /* Virtual scroll */
+        .virtual-scroll-container {
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* Focus styles for keyboard navigation */
+        *:focus {
+            outline: 2px solid #0284c7;
+            outline-offset: 2px;
+        }
+        
+        /* Skip to content link for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #0284c7;
+            color: white;
+            padding: 8px;
+            z-index: 100;
+            transition: top 0.3s;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        /* Stepper styles */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: 0;
+            left: 0;
+            height: 2px;
+            background-color: #e5e7eb;
+            z-index: -1;
+        }
+        
+        .stepper-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stepper-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .stepper-step.active .stepper-circle {
+            background-color: #0284c7;
+            color: white;
+            border-color: #0284c7;
+        }
+        
+        .stepper-step.completed .stepper-circle {
+            background-color: #16a34a;
+            color: white;
+            border-color: #16a34a;
+        }
+        
+        .stepper-label {
+            font-size: 14px;
+            text-align: center;
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-gray-900 transition-colors duration-300">
+    <a href="#main-content" class="skip-link">رفتن به محتوای اصلی</a>
+    
+    <div class="flex h-screen">
+        <!-- ===== Sidebar ===== -->
+        <aside id="sidebar" class="fixed right-0 top-0 z-40 h-screen w-64 bg-gray-800 dark:bg-gray-900 text-white shadow-lg transition-transform translate-x-0 md:translate-x-0 sidebar-scroll overflow-y-auto" role="navigation" aria-label="منوی اصلی">
+            <div class="flex items-center justify-between p-6 border-b border-gray-700">
+                <div class="flex items-center">
+                    <i class="fas fa-wallet text-2xl text-primary-400" aria-hidden="true"></i>
+                    <h1 class="text-xl font-bold text-white mr-3">پنل مالی</h1>
+                </div>
+                <button id="sidebar-close" class="md:hidden text-gray-400 hover:text-white" aria-label="بستن منو">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            
+            <!-- Search in menu -->
+            <div class="px-4 py-3">
+                <div class="relative">
+                    <input type="text" id="menu-search" placeholder="جستجو در منو..." class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="جستجو در منو">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i>
+                </div>
+            </div>
+            
+            <nav class="mt-2">
+                <a href="#" class="flex items-center py-3 px-6 text-white bg-primary-600" aria-current="page">
+                    <i class="fas fa-tachometer-alt w-5 h-5" aria-hidden="true"></i>
+                    <span class="mr-3 font-semibold">داشبورد</span>
+                </a>
+                
+                <!-- Accounting Section -->
+                <details class="group">
+                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
+                        <div class="flex items-center">
+                            <i class="fas fa-calculator w-5 h-5" aria-hidden="true"></i>
+                            <span class="mr-3">حسابداری</span>
+                        </div>
+                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
+                    </summary>
+                    <div class="submenu bg-gray-700/50">
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">عملیات ابتدای سال مالی</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ثبت اسناد</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تغییر وضعیت اسناد</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پیش نویس سند</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تصاویر اسناد</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">طرف حسابها</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تامین اعتبار</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">خزانه اسناد پرداختی</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">قرار داد ها</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ضمانت نامه ها</a>
+                    </div>
+                </details>
+
+                 <!-- Payroll Section -->
+                 <details class="group">
+                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
+                        <div class="flex items-center">
+                            <i class="fas fa-money-check-alt w-5 h-5" aria-hidden="true"></i>
+                            <span class="mr-3">حقوق دستمزد</span>
+                        </div>
+                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
+                    </summary>
+                    <div class="submenu bg-gray-700/50">
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">اصلی مزایا بدهی</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">کاردکرد</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ماموریت</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">مزایا مخصوص</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">بدهی مخصوص</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پرداخت های متفرقه</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">کارگران روزمزد</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">اطلاعات عیدی</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">نحوه محاسبات فردی</a>
+                    </div>
+                </details>
+                
+                <!-- Income Section -->
+                 <details class="group">
+                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-line w-5 h-5" aria-hidden="true"></i>
+                            <span class="mr-3">درآمد</span>
+                        </div>
+                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
+                    </summary>
+                    <div class="submenu bg-gray-700/50">
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">فیش های نقدی</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پرداختی ها</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">درآمد حمل و نقل</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تقسیط</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تغییر وضعیت</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">خزانه</a>
+                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تصاویر پرونده تقسیط</a>
+                    </div>
+                </details>
+
+                <a href="#" class="flex items-center py-3 px-6 text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <i class="fas fa-chart-pie w-5 h-5" aria-hidden="true"></i>
+                    <span class="mr-3">گزارش‌گیری</span>
+                </a>
+                 <a href="#" class="flex items-center py-3 px-6 text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <i class="fas fa-cogs w-5 h-5" aria-hidden="true"></i>
+                    <span class="mr-3">تنظیمات مالی</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ===== Main Content ===== -->
+        <div class="flex-1 flex flex-col overflow-hidden md:mr-64">
+            <!-- Top Bar -->
+            <header class="flex justify-between items-center p-4 bg-white dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <button id="sidebar-toggle" class="text-gray-500 dark:text-gray-300 focus:outline-none md:hidden" aria-label="باز کردن منو">
+                        <i class="fas fa-bars w-6 h-6" aria-hidden="true"></i>
+                    </button>
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 ml-4 hidden sm:block">داشبورد مسئول مالی</h2>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <!-- Dark mode toggle -->
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-300 ml-2">حالت تاریک</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="dark-mode-toggle" aria-label="تغییر حالت تاریک/روشن">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button class="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 tooltip" aria-label="اعلان‌ها">
+                            <i class="fas fa-bell w-6 h-6" aria-hidden="true"></i>
+                            <span class="notification-badge" aria-hidden="true">3</span>
+                            <span class="tooltiptext">اعلان‌های جدید</span>
+                        </button>
+                    </div>
+                    
+                    <!-- User profile -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold" aria-hidden="true">
+                            م
+                        </div>
+                        <span class="mr-2 text-sm text-gray-700 dark:text-gray-300">مدیر مالی</span>
+                    </div>
+                    
+                    <a href="{% url 'main:logout' %}" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm tooltip inline-block" aria-label="خروج از سیستم">
+                        <i class="fas fa-sign-out-alt ml-1" aria-hidden="true"></i>
+                        خروج
+                        <span class="tooltiptext">خروج از سیستم</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Main Panel -->
+            <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 dark:bg-gray-900 p-4 md:p-8">
+                <div class="container mx-auto">
+                    <!-- Stepper for multi-step processes -->
+                    <div class="stepper mb-8">
+                        <div class="stepper-step completed">
+                            <div class="stepper-circle">1</div>
+                            <div class="stepper-label">ورود اطلاعات</div>
+                        </div>
+                        <div class="stepper-step completed">
+                            <div class="stepper-circle">2</div>
+                            <div class="stepper-label">تایید حساب</div>
+                        </div>
+                        <div class="stepper-step active">
+                            <div class="stepper-circle">3</div>
+                            <div class="stepper-label">پرداخت</div>
+                        </div>
+                        <div class="stepper-step">
+                            <div class="stepper-circle">4</div>
+                            <div class="stepper-label">تکمیل</div>
+                        </div>
+                    </div>
+
+                    <!-- Date filter and search -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div class="flex flex-wrap gap-3">
+                            <div class="relative">
+                                <input type="text" id="date-range" placeholder="انتخاب بازه زمانی" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="انتخاب بازه زمانی">
+                                <i class="fas fa-calendar-alt absolute left-3 top-3 text-gray-400" aria-hidden="true"></i>
+                            </div>
+                            <select class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="فیلتر بر اساس بخش">
+                                <option>همه بخش‌ها</option>
+                                <option>درآمد</option>
+                                <option>هزینه</option>
+                                <option>حقوق</option>
+                            </select>
+                            <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm tooltip" aria-label="اعمال فیلترها">
+                                <i class="fas fa-filter ml-1" aria-hidden="true"></i>
+                                فیلتر
+                                <span class="tooltiptext">اعمال فیلترها</span>
+                            </button>
+                        </div>
+                        <div class="relative w-full md:w-64">
+                            <input type="text" placeholder="جستجو در تراکنش‌ها..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="جستجو در تراکنش‌ها">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">موجودی کل</p>
+                                <p class="text-2xl font-bold text-primary-600 dark:text-primary-400">۱,۲۴۵,۰۰۰ تومان</p>
+                                <div class="mt-2 h-8">
+                                    <canvas id="balance-sparkline" class="sparkline" aria-label="نمودار روند موجودی"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-full tooltip">
+                                <i class="fas fa-wallet w-6 h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+                                <span class="tooltiptext">موجودی کل حساب</span>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">درآمد ماه جاری</p>
+                                <p class="text-2xl font-bold text-success-600">۸۵,۳۰۰ تومان</p>
+                                <div class="mt-2 h-8">
+                                    <canvas id="income-sparkline" class="sparkline" aria-label="نمودار روند درآمد"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-success-100 dark:bg-success-900/30 p-3 rounded-full tooltip">
+                                <i class="fas fa-arrow-down w-6 h-6 text-success-600" aria-hidden="true"></i>
+                                <span class="tooltiptext">درآمد ماه جاری</span>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">هزینه ماه جاری</p>
+                                <p class="text-2xl font-bold text-error-500">۱۲,۵۰۰ تومان</p>
+                                <div class="mt-2 h-8">
+                                    <canvas id="expense-sparkline" class="sparkline" aria-label="نمودار روند هزینه"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-error-100 dark:bg-error-900/30 p-3 rounded-full tooltip">
+                                <i class="fas fa-arrow-up w-6 h-6 text-error-500" aria-hidden="true"></i>
+                                <span class="tooltiptext">هزینه ماه جاری</span>
+                            </div>
+                        </div>
+                         <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">چک‌های در انتظار وصول</p>
+                                <p class="text-2xl font-bold text-warning-500">۳</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">مجموع ۴۵۰,۰۰۰ تومان</p>
+                            </div>
+                            <div class="bg-warning-100 dark:bg-warning-900/30 p-3 rounded-full tooltip">
+                                <i class="fas fa-hourglass-half w-6 h-6 text-warning-500" aria-hidden="true"></i>
+                                <span class="tooltiptext">چک‌های در انتظار وصول</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <!-- Income vs Expense Chart -->
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg lg:col-span-2 p-6">
+                             <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-primary-500 pr-4">نمودار درآمد و هزینه (۶ ماه اخیر)</h2>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <button class="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-md">ماهانه</button>
+                                    <button class="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-3 py-1 rounded-md">فصلی</button>
+                                    <button class="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-md">سالانه</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="financial-chart" aria-label="نمودار درآمد و هزینه"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Expense Distribution Chart -->
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-warning-500 pr-4">توزیع هزینه‌ها</h2>
+                            <div class="chart-container">
+                                <canvas id="expense-distribution-chart" aria-label="نمودار توزیع هزینه‌ها"></canvas>
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-primary-500 rounded-full ml-2" aria-hidden="true"></div>
+                                        <span>حقوق و دستمزد</span>
+                                    </div>
+                                    <span class="font-semibold">۴۵٪</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-error-500 rounded-full ml-2" aria-hidden="true"></div>
+                                        <span>هزینه‌های عملیاتی</span>
+                                    </div>
+                                    <span class="font-semibold">۳۰٪</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-warning-500 rounded-full ml-2" aria-hidden="true"></div>
+                                        <span>تعمیرات و نگهداری</span>
+                                    </div>
+                                    <span class="font-semibold">۱۵٪</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-success-500 rounded-full ml-2" aria-hidden="true"></div>
+                                        <span>سایر هزینه‌ها</span>
+                                    </div>
+                                    <span class="font-semibold">۱۰٪</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Forecast -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8">
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-accent-500 pr-4">پیش‌بینی مالی</h2>
+                        <div class="chart-container" style="height: 200px;">
+                            <canvas id="forecast-chart" aria-label="نمودار پیش‌بینی مالی"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <!-- Pending Payments -->
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-warning-500 pr-4">پرداخت‌های در انتظار تایید</h2>
+                                <span class="bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-200 text-xs font-medium px-2 py-1 rounded-full">۳ مورد</span>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="bg-warning-50 dark:bg-gray-700 p-3 rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p class="font-semibold">هزینه تنخواه دفتر</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">۲,۵۰۰ تومان</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500">ارسال شده: ۱۴۰۳/۰۷/۱۰</p>
+                                    </div>
+                                    <div class="flex flex-col space-y-1">
+                                        <button class="bg-warning-500 hover:bg-warning-600 text-white px-3 py-1 rounded-md text-xs tooltip" aria-label="بررسی هزینه تنخواه دفتر">
+                                            بررسی
+                                            <span class="tooltiptext">بررسی هزینه تنخواه دفتر</span>
+                                        </button>
+                                        <button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xs tooltip" aria-label="رد هزینه تنخواه دفتر">
+                                            رد
+                                            <span class="tooltiptext">رد هزینه تنخواه دفتر</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="bg-warning-50 dark:bg-gray-700 p-3 rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p class="font-semibold">پرداخت به پیمانکار</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">۱۵۰,۰۰۰ تومان</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500">ارسال شده: ۱۴۰۳/۰۷/۰۹</p>
+                                    </div>
+                                    <div class="flex flex-col space-y-1">
+                                        <button class="bg-warning-500 hover:bg-warning-600 text-white px-3 py-1 rounded-md text-xs tooltip" aria-label="بررسی پرداخت به پیمانکار">
+                                            بررسی
+                                            <span class="tooltiptext">بررسی پرداخت به پیمانکار</span>
+                                        </button>
+                                        <button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xs tooltip" aria-label="رد پرداخت به پیمانکار">
+                                            رد
+                                            <span class="tooltiptext">رد پرداخت به پیمانکار</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="bg-warning-50 dark:bg-gray-700 p-3 rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p class="font-semibold">خرید تجهیزات</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">۴۵,۰۰۰ تومان</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500">ارسال شده: ۱۴۰۳/۰۷/۰۸</p>
+                                    </div>
+                                    <div class="flex flex-col space-y-1">
+                                        <button class="bg-warning-500 hover:bg-warning-600 text-white px-3 py-1 rounded-md text-xs tooltip" aria-label="بررسی خرید تجهیزات">
+                                            بررسی
+                                            <span class="tooltiptext">بررسی خرید تجهیزات</span>
+                                        </button>
+                                        <button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xs tooltip" aria-label="رد خرید تجهیزات">
+                                            رد
+                                            <span class="tooltiptext">رد خرید تجهیزات</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="w-full mt-4 text-center text-primary-600 dark:text-primary-400 text-sm font-medium">مشاهده همه</button>
+                        </div>
+
+                        <!-- Recent Notifications -->
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 lg:col-span-2">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-accent-500 pr-4">اعلان‌های اخیر</h2>
+                                <span class="bg-accent-100 dark:bg-accent-900/30 text-accent-800 dark:text-accent-200 text-xs font-medium px-2 py-1 rounded-full">۳ جدید</span>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="flex items-start p-3 bg-primary-50 dark:bg-gray-700 rounded-lg">
+                                    <div class="bg-primary-100 dark:bg-primary-900/30 p-2 rounded-full ml-3">
+                                        <i class="fas fa-info-circle text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-medium">هزینه‌های ماه جاری افزایش یافته‌اند</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">هزینه‌های ماه جاری ۲۰٪ نسبت به ماه گذشته افزایش داشته‌اند.</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">۲ ساعت پیش</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start p-3 bg-success-50 dark:bg-gray-700 rounded-lg">
+                                    <div class="bg-success-100 dark:bg-success-900/30 p-2 rounded-full ml-3">
+                                        <i class="fas fa-check-circle text-success-600 dark:text-success-400" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-medium">پرداخت به پیمانکار تایید شد</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">پرداخت به مبلغ ۱۵۰,۰۰۰ تومان با موفقیت تایید شد.</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">۵ ساعت پیش</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start p-3 bg-warning-50 dark:bg-gray-700 rounded-lg">
+                                    <div class="bg-warning-100 dark:bg-warning-900/30 p-2 rounded-full ml-3">
+                                        <i class="fas fa-exclamation-triangle text-warning-600 dark:text-warning-400" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-medium">موجودی حساب نزدیک به حداقل مجاز</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">موجودی حساب شما به ۱۰۰,۰۰۰ تومان کاهش یافته است.</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">۱ روز پیش</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="w-full mt-4 text-center text-accent-600 dark:text-accent-400 text-sm font-medium">مشاهده همه اعلان‌ها</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Transactions Table -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-accent-500 pr-4">آخرین تراکنش‌ها</h2>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-md tooltip" aria-label="دانلود داده‌ها">
+                                    <i class="fas fa-download ml-1" aria-hidden="true"></i>
+                                    خروجی
+                                    <span class="tooltiptext">دانلود داده‌ها</span>
+                                </button>
+                                <button class="text-sm bg-accent-100 dark:bg-accent-900/30 text-accent-600 dark:text-accent-400 px-3 py-1 rounded-md tooltip" aria-label="به‌روزرسانی داده‌ها">
+                                    <i class="fas fa-sync-alt ml-1" aria-hidden="true"></i>
+                                    به‌روزرسانی
+                                    <span class="tooltiptext">به‌روزرسانی داده‌ها</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead class="border-b-2">
+                                    <tr>
+                                        <th class="py-3 px-2 font-semibold text-sm">شناسه</th>
+                                        <th class="py-3 px-2 font-semibold text-sm">شرح</th>
+                                        <th class="py-3 px-2 font-semibold text-sm">مبلغ</th>
+                                        <th class="py-3 px-2 font-semibold text-sm">تاریخ</th>
+                                        <th class="py-3 px-2 font-semibold text-sm">وضعیت</th>
+                                        <th class="py-3 px-2 font-semibold text-sm">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b table-row-hover">
+                                        <td class="py-4 px-2">#T89761</td>
+                                        <td class="py-4 px-2">جریمه کمیسیون ۹۹ - پرونده #NP-012</td>
+                                        <td class="py-4 px-2 font-semibold text-success-600">+۵,۰۰۰ تومان</td>
+                                        <td class="py-4 px-2 text-gray-600 dark:text-gray-400">۱۴۰۳/۰۷/۱۰</td>
+                                        <td class="py-4 px-2"><span class="bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-200 text-xs font-medium px-3 py-1 rounded-full">ورودی</span></td>
+                                        <td class="py-4 px-2">
+                                            <button class="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 tooltip" aria-label="مشاهده جزئیات تراکنش">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                                <span class="tooltiptext">مشاهده جزئیات</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b table-row-hover">
+                                        <td class="py-4 px-2">#T89760</td>
+                                        <td class="py-4 px-2">پرداخت قبض برق</td>
+                                        <td class="py-4 px-2 font-semibold text-error-500">-۷۵۰ تومان</td>
+                                        <td class="py-4 px-2 text-gray-600 dark:text-gray-400">۱۴۰۳/۰۷/۰۹</td>
+                                        <td class="py-4 px-2"><span class="bg-error-100 dark:bg-error-900/30 text-error-800 dark:text-error-200 text-xs font-medium px-3 py-1 rounded-full">خروجی</span></td>
+                                        <td class="py-4 px-2">
+                                            <button class="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 tooltip" aria-label="مشاهده جزئیات تراکنش">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                                <span class="tooltiptext">مشاهده جزئیات</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                     <tr class="border-b table-row-hover">
+                                        <td class="py-4 px-2">#T89759</td>
+                                        <td class="py-4 px-2">عوارض صدور پروانه - پرونده #P-157</td>
+                                        <td class="py-4 px-2 font-semibold text-success-600">+۱,۸۵۰ تومان</td>
+                                        <td class="py-4 px-2 text-gray-600 dark:text-gray-400">۱۴۰۳/۰۷/۰۹</td>
+                                        <td class="py-4 px-2"><span class="bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-200 text-xs font-medium px-3 py-1 rounded-full">ورودی</span></td>
+                                        <td class="py-4 px-2">
+                                            <button class="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 tooltip" aria-label="مشاهده جزئیات تراکنش">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                                <span class="tooltiptext">مشاهده جزئیات</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                     <tr class="table-row-hover">
+                                        <td class="py-4 px-2">#T89758</td>
+                                        <td class="py-4 px-2">هزینه تعمیرات دفتر</td>
+                                        <td class="py-4 px-2 font-semibold text-error-500">-۱,۲۰۰ تومان</td>
+                                        <td class="py-4 px-2 text-gray-600 dark:text-gray-400">۱۴۰۳/۰۷/۰۸</td>
+                                        <td class="py-4 px-2"><span class="bg-error-100 dark:bg-error-900/30 text-error-800 dark:text-error-200 text-xs font-medium px-3 py-1 rounded-full">خروجی</span></td>
+                                        <td class="py-4 px-2">
+                                            <button class="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 tooltip" aria-label="مشاهده جزئیات تراکنش">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                                <span class="tooltiptext">مشاهده جزئیات</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-between items-center mt-4">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                نمایش ۱ تا ۴ از ۴۰ تراکنش
+                            </div>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-md" aria-label="صفحه قبلی">
+                                    قبلی
+                                </button>
+                                <button class="text-sm bg-accent-100 dark:bg-accent-900/30 text-accent-600 dark:text-accent-400 px-3 py-1 rounded-md" aria-current="page">
+                                    ۱
+                                </button>
+                                <button class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-md" aria-label="صفحه ۲">
+                                    ۲
+                                </button>
+                                <button class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-md" aria-label="صفحه ۳">
+                                    ۳
+                                </button>
+                                <button class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-md" aria-label="صفحه بعدی">
+                                    بعدی
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Sidebar Toggle for Mobile ---
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebarClose = document.getElementById('sidebar-close');
+            
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('translate-x-full');
+                sidebar.classList.toggle('translate-x-0');
+            });
+            
+            sidebarClose.addEventListener('click', () => {
+                sidebar.classList.add('translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+            });
+
+            // --- Dark Mode Toggle ---
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            darkModeToggle.addEventListener('change', () => {
+                document.body.classList.toggle('dark');
+                // Update charts for dark mode
+                updateChartsForDarkMode();
+                // Save user preference
+                localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+            });
+            
+            // Check for saved dark mode preference
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark');
+                darkModeToggle.checked = true;
+            }
+
+            // --- Date Picker ---
+            flatpickr("#date-range", {
+                mode: "range",
+                dateFormat: "Y/m/d",
+                locale: "fa",
+                defaultDate: ["2023/10/01", "2023/10/31"],
+            });
+
+            // --- Chart.js Bar Chart ---
+            const ctx = document.getElementById('financial-chart').getContext('2d');
+            const financialChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر'],
+                    datasets: [
+                        {
+                            label: 'درآمد (هزار تومان)',
+                            data: [120, 190, 150, 250, 220, 85],
+                            backgroundColor: 'rgba(14, 132, 199, 0.6)', // Blue-600 with opacity
+                            borderColor: 'rgba(14, 132, 199, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        },
+                        {
+                            label: 'هزینه (هزار تومان)',
+                            data: [80, 90, 60, 110, 70, 12],
+                             backgroundColor: 'rgba(220, 38, 38, 0.6)', // Red-600 with opacity
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                font: { family: 'Vazirmatn' },
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#4b5563'
+                            },
+                            grid: {
+                                color: document.body.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: { 
+                                font: { family: 'Vazirmatn' },
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#4b5563'
+                            },
+                            grid: {
+                                color: document.body.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: { family: 'Vazirmatn' },
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#4b5563'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + ' هزار تومان';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Expense Distribution Pie Chart ---
+            const expenseCtx = document.getElementById('expense-distribution-chart').getContext('2d');
+            const expenseChart = new Chart(expenseCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['حقوق و دستمزد', 'هزینه‌های عملیاتی', 'تعمیرات و نگهداری', 'سایر هزینه‌ها'],
+                    datasets: [{
+                        data: [45, 30, 15, 10],
+                        backgroundColor: [
+                            'rgba(14, 132, 199, 0.8)', // Blue
+                            'rgba(220, 38, 38, 0.8)',  // Red
+                            'rgba(217, 119, 6, 0.8)',  // Yellow/amber
+                            'rgba(22, 163, 74, 0.8)'   // Green
+                        ],
+                        borderColor: [
+                            'rgba(14, 132, 199, 1)',
+                            'rgba(220, 38, 38, 1)',
+                            'rgba(217, 119, 6, 1)',
+                            'rgba(22, 163, 74, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Financial Forecast Line Chart ---
+            const forecastCtx = document.getElementById('forecast-chart').getContext('2d');
+            const forecastChart = new Chart(forecastCtx, {
+                type: 'line',
+                data: {
+                    labels: ['مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+                    datasets: [
+                        {
+                            label: 'درآمد پیش‌بینی شده',
+                            data: [85, 120, 150, 180, 200, 220],
+                            borderColor: 'rgba(14, 132, 199, 1)',
+                            backgroundColor: 'rgba(14, 132, 199, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'هزینه پیش‌بینی شده',
+                            data: [12, 25, 30, 35, 40, 45],
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                font: { family: 'Vazirmatn' },
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#4b5563'
+                            },
+                            grid: {
+                                color: document.body.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: { 
+                                font: { family: 'Vazirmatn' },
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#4b5563'
+                            },
+                            grid: {
+                                color: document.body.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: { family: 'Vazirmatn' },
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#4b5563'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + ' هزار تومان';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Sparkline Charts ---
+            // Balance Sparkline
+            const balanceSparkCtx = document.getElementById('balance-sparkline').getContext('2d');
+            new Chart(balanceSparkCtx, {
+                type: 'line',
+                data: {
+                    labels: ['', '', '', '', '', ''],
+                    datasets: [{
+                        data: [1000, 1100, 1050, 1200, 1180, 1245],
+                        borderColor: 'rgba(14, 132, 199, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+
+            // Income Sparkline
+            const incomeSparkCtx = document.getElementById('income-sparkline').getContext('2d');
+            new Chart(incomeSparkCtx, {
+                type: 'line',
+                data: {
+                    labels: ['', '', '', '', '', ''],
+                    datasets: [{
+                        data: [60, 75, 65, 80, 90, 85],
+                        borderColor: 'rgba(22, 163, 74, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+
+            // Expense Sparkline
+            const expenseSparkCtx = document.getElementById('expense-sparkline').getContext('2d');
+            new Chart(expenseSparkCtx, {
+                type: 'line',
+                data: {
+                    labels: ['', '', '', '', '', ''],
+                    datasets: [{
+                        data: [20, 15, 25, 10, 15, 12],
+                        borderColor: 'rgba(220, 38, 38, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+
+            // Function to update charts for dark mode
+            function updateChartsForDarkMode() {
+                const isDarkMode = document.body.classList.contains('dark');
+                const textColor = isDarkMode ? '#e2e8f0' : '#4b5563';
+                const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                
+                // Update financial chart
+                financialChart.options.scales.y.ticks.color = textColor;
+                financialChart.options.scales.x.ticks.color = textColor;
+                financialChart.options.scales.y.grid.color = gridColor;
+                financialChart.options.scales.x.grid.color = gridColor;
+                financialChart.options.plugins.legend.labels.color = textColor;
+                financialChart.update();
+                
+                // Update forecast chart
+                forecastChart.options.scales.y.ticks.color = textColor;
+                forecastChart.options.scales.x.ticks.color = textColor;
+                forecastChart.options.scales.y.grid.color = gridColor;
+                forecastChart.options.scales.x.grid.color = gridColor;
+                forecastChart.options.plugins.legend.labels.color = textColor;
+                forecastChart.update();
+            }
+
+            // Add fade-in animation to cards
+            const cards = document.querySelectorAll('.card-hover');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+            
+            // Menu search functionality
+            const menuSearch = document.getElementById('menu-search');
+            const menuItems = document.querySelectorAll('nav a');
+            
+            menuSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                menuItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Simulate data loading with skeleton screens
+            function simulateDataLoading() {
+                // This would be replaced with actual data loading in a real application
+                const skeletons = document.querySelectorAll('.skeleton');
+                skeletons.forEach(skeleton => {
+                    setTimeout(() => {
+                        skeleton.classList.remove('skeleton');
+                    }, 1500);
+                });
+            }
+            
+            // Initialize data loading simulation
+            simulateDataLoading();
+            
+            // Keyboard navigation enhancement
+            document.addEventListener('keydown', function(e) {
+                // Alt + D for dark mode toggle
+                if (e.altKey && e.key === 'd') {
+                    darkModeToggle.click();
+                }
+                
+                // Alt + S for search focus
+                if (e.altKey && e.key === 's') {
+                    e.preventDefault();
+                    const searchInput = document.querySelector('input[type="text"]');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }
+            });
+            
+            // Initialize tooltips
+            const tooltips = document.querySelectorAll('.tooltip');
+            tooltips.forEach(tooltip => {
+                tooltip.addEventListener('focus', function() {
+                    const tooltipText = this.querySelector('.tooltiptext');
+                    if (tooltipText) {
+                        tooltipText.style.visibility = 'visible';
+                        tooltipText.style.opacity = '1';
+                    }
+                });
+                
+                tooltip.addEventListener('blur', function() {
+                    const tooltipText = this.querySelector('.tooltiptext');
+                    if (tooltipText) {
+                        tooltipText.style.visibility = 'hidden';
+                        tooltipText.style.opacity = '0';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

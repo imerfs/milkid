@@ -1,0 +1,2268 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>پنل کارشناس - ملک آیدی</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body {
+                font-family: "Vazirmatn", sans-serif;
+                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .main-content > div {
+                display: none;
+            }
+            .main-content > div.active {
+                display: block;
+            }
+            .sidebar-link.active {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                color: white;
+                font-weight: bold;
+                box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+            }
+            .sidebar-link {
+                transition: all 0.3s ease;
+            }
+            .sidebar-link:hover {
+                background-color: rgba(5, 150, 105, 0.1);
+                transform: translateX(-3px);
+            }
+            .notification-badge {
+                animation: pulse 2s infinite;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.05);
+                }
+            }
+            .mobile-sidebar {
+                transform: translateX(100%);
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                z-index: 50;
+                transition: transform 0.3s ease;
+            }
+            .mobile-sidebar.active {
+                transform: translateX(0);
+            }
+            .stat-card {
+                transition: all 0.3s ease;
+            }
+            .stat-card:hover {
+                transform: translateY(-5px) scale(1.02);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            }
+            .search-box {
+                transition: all 0.3s ease;
+            }
+            .search-box:focus-within {
+                box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+            }
+            .filter-dropdown {
+                transition: all 0.3s ease;
+            }
+            .calendar-day {
+                transition: all 0.2s ease;
+            }
+            .calendar-day:hover {
+                background-color: rgba(5, 150, 105, 0.1);
+                cursor: pointer;
+            }
+            .calendar-day.selected {
+                background-color: #059669;
+                color: white;
+            }
+            .notification-item {
+                transition: all 0.3s ease;
+            }
+            .notification-item:hover {
+                transform: translateX(-5px);
+                background-color: rgba(5, 150, 105, 0.05);
+            }
+            .tab-button {
+                transition: all 0.3s ease;
+            }
+            .tab-button.active {
+                border-bottom: 3px solid #059669;
+                color: #059669;
+            }
+            .progress-bar {
+                transition: width 1s ease-in-out;
+            }
+            .weather-widget {
+                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            }
+            .map-container {
+                height: 300px;
+                background-color: #e5e7eb;
+                border-radius: 0.5rem;
+                position: relative;
+                overflow: hidden;
+            }
+            .map-placeholder {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                color: #6b7280;
+            }
+            .status-indicator {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                margin-left: 8px;
+            }
+            .status-online {
+                background-color: #10b981;
+                box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+            }
+            .status-offline {
+                background-color: #ef4444;
+                box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+            }
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.25rem 0.75rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            .badge-primary {
+                background-color: #dbeafe;
+                color: #1d4ed8;
+            }
+            .badge-success {
+                background-color: #dcfce7;
+                color: #166534;
+            }
+            .badge-warning {
+                background-color: #fef3c7;
+                color: #92400e;
+            }
+            .badge-danger {
+                background-color: #fee2e2;
+                color: #991b1b;
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            }
+            .animate-pulse-slow {
+                animation: pulse-slow 3s infinite;
+            }
+            @keyframes pulse-slow {
+                0%, 100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.7;
+                }
+            }
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 44px;
+                height: 24px;
+            }
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+                border-radius: 24px;
+            }
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
+            }
+            input:checked + .slider {
+                background-color: #059669;
+            }
+            input:checked + .slider:before {
+                transform: translateX(20px);
+            }
+        </style>
+    </head>
+    <body class="text-gray-800">
+        <!-- Mobile Menu Overlay -->
+        <div
+            id="mobile-overlay"
+            class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"
+            onclick="toggleMobileMenu()"
+        ></div>
+        <div class="flex min-h-screen">
+            <!-- Mobile Menu Button -->
+            <button
+                class="fixed top-5 right-5 z-50 bg-white p-2 rounded-full shadow-lg md:hidden"
+                onclick="toggleMobileMenu()"
+            >
+                <i
+                    id="hamburger-icon"
+                    class="fas fa-bars text-gray-700 text-xl"
+                ></i>
+            </button>
+            <!-- Sidebar -->
+            <aside
+                id="sidebar"
+                class="w-72 bg-white text-gray-800 shadow-2xl mobile-sidebar md:relative md:transform-none"
+            >
+                <div
+                    class="p-6 border-b flex items-center justify-center relative"
+                >
+                    <div class="relative">
+                        <i class="fas fa-user-tie text-green-600 text-2xl"></i>
+                        <span class="status-indicator status-online absolute -bottom-1 -left-1"></span>
+                    </div>
+                    <h1 class="text-xl font-bold text-green-600 mr-3">
+                        پنل کارشناس
+                    </h1>
+                </div>
+                <nav class="mt-6">
+                    <a
+                        href="#dashboard"
+                        class="sidebar-link active flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('dashboard', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-tachometer-alt ml-3"></i>داشبورد
+                        </div>
+                        <span
+                            class="notification-badge bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                            >6</span
+                        >
+                    </a>
+                    <a
+                        href="#requests"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('requests', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-file-alt ml-3"></i>بررسی درخواست‌ها
+                        </div>
+                        <span
+                            class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                            >12</span
+                        >
+                    </a>
+                    <a
+                        href="#documents"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('documents', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-folder ml-3"></i>مدیریت اسناد
+                        </div>
+                    </a>
+                    <a
+                        href="#inspections"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('inspections', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-search ml-3"></i>بازرسی‌ها
+                        </div>
+                    </a>
+                    <a
+                        href="#reports"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('reports', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-line ml-3"></i>گزارش‌دهی
+                        </div>
+                    </a>
+                    <a
+                        href="#calendar"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('calendar', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-alt ml-3"></i>تقویم کاری
+                        </div>
+                    </a>
+                    <a
+                        href="#notifications"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('notifications', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-bell ml-3"></i>اطلاعیه‌ها
+                        </div>
+                        <span
+                            class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                            >3</span
+                        >
+                    </a>
+                    <a
+                        href="#profile"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('profile', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-user-cog ml-3"></i>پروفایل کاربر
+                        </div>
+                    </a>
+                    <a
+                        href="#settings"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('settings', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-cog ml-3"></i>تنظیمات
+                        </div>
+                    </a>
+                    <a
+                        href="#help"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('help', this); return false;"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-question-circle ml-3"></i>راهنما و پشتیبانی
+                        </div>
+                    </a>
+                </nav>
+                <div class="absolute bottom-0 w-full p-4 border-t">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="relative">
+                                <i class="fas fa-user text-gray-600 text-xl"></i>
+                                <span class="status-indicator status-online absolute -bottom-1 -left-1"></span>
+                            </div>
+                            <div class="mr-3">
+                                <p class="text-sm font-medium">کارشناس </p>
+                                <p class="text-xs text-gray-500">آنلاین</p>
+                            </div>
+                        </div>
+                        <a
+                            href="{% url 'main:logout' %}"
+                            class="text-red-500 hover:text-red-600 transition-colors flex items-center"
+                        >
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+            <!-- Main Content -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header
+                    class="bg-white flex justify-between items-center p-4 border-b"
+                >
+                    <div class="flex items-center">
+                        <h2 class="text-lg font-semibold text-gray-700">
+                            پنل کارشناس 
+                        </h2>
+                    </div>
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <!-- Search Box -->
+                        <div class="search-box hidden md:flex items-center bg-gray-100 rounded-lg px-3 py-2">
+                            <i class="fas fa-search text-gray-500 ml-2"></i>
+                            <input type="text" placeholder="جستجو..." class="bg-transparent outline-none text-sm w-40" />
+                        </div>
+                        <!-- Weather Widget -->
+                        <div class="weather-widget text-white rounded-lg px-3 py-2 hidden sm:flex items-center">
+                            <i class="fas fa-sun text-yellow-300 ml-2"></i>
+                            <span class="text-sm">۲۸°C</span>
+                        </div>
+                        <!-- Date -->
+                        <div class="text-sm text-gray-600 hidden sm:block">
+                            <i class="fas fa-calendar-alt ml-1"></i>
+                            <span id="current-date"></span>
+                        </div>
+                        <!-- Notifications -->
+                        <div class="relative">
+                            <button class="text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-bell text-xl"></i>
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                            </button>
+                        </div>
+                        <!-- User Profile -->
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
+                                ا
+                            </div>
+                        </div>
+                        <a
+                            href="{% url 'main:logout' %}"
+                            class="text-red-500 hover:text-red-600 transition-colors flex items-center"
+                        >
+                            <i class="fas fa-sign-out-alt ml-2"></i>خروج
+                        </a>
+                    </div>
+                </header>
+                <main class="flex-1 overflow-y-auto p-6 md:p-8 main-content">
+                    <!-- Dashboard Tab -->
+                    <div id="dashboard-tab" class="active">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800">
+                                داشبورد کارشناس 
+                            </h2>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-download ml-2"></i> گزارش
+                                </button>
+                                <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-plus ml-2"></i> جدید
+                                </button>
+                            </div>
+                        </div>
+                        <div
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+                        >
+                            <div
+                                class="stat-card bg-white p-6 rounded-xl shadow"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600 mb-1">
+                                            درخواست‌های جدید
+                                        </p>
+                                        <p
+                                            class="text-3xl font-bold text-blue-600"
+                                        >
+                                            ۱۲
+                                        </p>
+                                        <p class="text-xs text-green-600 mt-1">
+                                            <i class="fas fa-arrow-up"></i> ۱۵% نسبت به هفته گذشته
+                                        </p>
+                                    </div>
+                                    <i
+                                        class="fas fa-file-alt text-blue-500 text-2xl opacity-50"
+                                    ></i>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>رشد نسبت به هفته گذشته</span>
+                                        <span>12%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-blue-500 h-2 rounded-full progress-bar" style="width: 65%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="stat-card bg-white p-6 rounded-xl shadow"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600 mb-1">
+                                            در حال بررسی
+                                        </p>
+                                        <p
+                                            class="text-3xl font-bold text-yellow-600"
+                                        >
+                                            ۸
+                                        </p>
+                                        <p class="text-xs text-red-600 mt-1">
+                                            <i class="fas fa-arrow-down"></i> ۵% نسبت به هفته گذشته
+                                        </p>
+                                    </div>
+                                    <i
+                                        class="fas fa-clock text-yellow-500 text-2xl opacity-50"
+                                    ></i>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>میانگین زمان بررسی</span>
+                                        <span>2.5 روز</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-yellow-500 h-2 rounded-full progress-bar" style="width: 45%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="stat-card bg-white p-6 rounded-xl shadow"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600 mb-1">
+                                            تایید شده امروز
+                                        </p>
+                                        <p
+                                            class="text-3xl font-bold text-green-600"
+                                        >
+                                            ۵
+                                        </p>
+                                        <p class="text-xs text-green-600 mt-1">
+                                            <i class="fas fa-arrow-up"></i> ۲۵% نسبت به دیروز
+                                        </p>
+                                    </div>
+                                    <i
+                                        class="fas fa-check-circle text-green-500 text-2xl opacity-50"
+                                    ></i>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>درصد موفقیت</span>
+                                        <span>85%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full progress-bar" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="stat-card bg-white p-6 rounded-xl shadow"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600 mb-1">
+                                            نیاز به بازرسی
+                                        </p>
+                                        <p
+                                            class="text-3xl font-bold text-red-500"
+                                        >
+                                            ۳
+                                        </p>
+                                        <p class="text-xs text-yellow-600 mt-1">
+                                            <i class="fas fa-minus"></i> بدون تغییر
+                                        </p>
+                                    </div>
+                                    <i
+                                        class="fas fa-search text-red-500 text-2xl opacity-50"
+                                    ></i>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>اولویت بالا</span>
+                                        <span>3 از 12</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-red-500 h-2 rounded-full progress-bar" style="width: 25%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-2xl font-bold text-gray-800">
+                                        کارهای امروز
+                                    </h3>
+                                    <button class="text-blue-500 hover:text-blue-700 text-sm">
+                                        مشاهده همه
+                                    </button>
+                                </div>
+                                <ul class="space-y-4">
+                                    <li
+                                        class="flex items-center p-3 bg-gray-50 rounded-lg card-hover"
+                                    >
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-building text-blue-500 text-xl"></i>
+                                        </div>
+                                        <div class="mr-4 flex-1">
+                                            <p class="font-medium">
+                                                بررسی پروانه ساخت
+                                                <span class="font-bold text-blue-600">احمد رضایی</span>
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1">آدرس: تهران، خیابان ولیعصر، پلاک 123</p>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <span class="badge badge-danger">فوری</span>
+                                            <span class="text-xs text-gray-500 mt-1">۱۴:۰۰</span>
+                                        </div>
+                                    </li>
+                                    <li
+                                        class="flex items-center p-3 bg-gray-50 rounded-lg card-hover"
+                                    >
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-search text-green-500 text-xl"></i>
+                                        </div>
+                                        <div class="mr-4 flex-1">
+                                            <p class="font-medium">
+                                                بازرسی ملک
+                                                <span class="font-bold text-green-600">مریم احمدی</span>
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1">آدرس: تهران، شهرک غرب، فاز ۳، بلوک ب</p>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <span class="badge badge-warning">متوسط</span>
+                                            <span class="text-xs text-gray-500 mt-1">۱۴:۰۰</span>
+                                        </div>
+                                    </li>
+                                    <li
+                                        class="flex items-center p-3 bg-gray-50 rounded-lg card-hover"
+                                    >
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-file-signature text-purple-500 text-xl"></i>
+                                        </div>
+                                        <div class="mr-4 flex-1">
+                                            <p class="font-medium">
+                                                تایید نهایی پایان کار
+                                                <span class="font-bold text-purple-600">حسن کریمی</span>
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1">آدرس: تهران، منطقه ۲۲، خیابان شهید رجایی</p>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <span class="badge badge-primary">عادی</span>
+                                            <span class="text-xs text-gray-500 mt-1">در انتظار</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-2xl font-bold mb-6 text-gray-800">
+                                    وضعیت کلی
+                                </h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-sm font-medium">پیشرفت کارهای امروز</span>
+                                            <span class="text-sm font-medium">65%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3">
+                                            <div class="bg-blue-500 h-3 rounded-full progress-bar" style="width: 65%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-sm font-medium">درخواست‌های تایید شده</span>
+                                            <span class="text-sm font-medium">82%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3">
+                                            <div class="bg-green-500 h-3 rounded-full progress-bar" style="width: 82%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-sm font-medium">زمان پاسخگویی</span>
+                                            <span class="text-sm font-medium">24h</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3">
+                                            <div class="bg-yellow-500 h-3 rounded-full progress-bar" style="width: 40%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="pt-4 border-t">
+                                        <h4 class="font-bold mb-3">آمار هفتگی</h4>
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between">
+                                                <span class="text-sm">درخواست‌های جدید:</span>
+                                                <span class="text-sm font-bold text-blue-600">42</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-sm">بررسی شده:</span>
+                                                <span class="text-sm font-bold text-green-600">38</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-sm">در انتظار:</span>
+                                                <span class="text-sm font-bold text-yellow-600">4</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-2xl font-bold mb-6 text-gray-800">
+                                    اولویت‌های هفته
+                                </h3>
+                                <div class="space-y-4">
+                                    <div
+                                        class="border-l-4 border-red-500 bg-red-50 p-4 rounded card-hover"
+                                    >
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="font-bold text-red-700">
+                                                    ۳ مورد بازرسی فوری
+                                                </p>
+                                                <p class="text-sm text-red-600 mt-1">
+                                                    نیاز به انجام تا پایان هفته
+                                                </p>
+                                            </div>
+                                            <span class="badge badge-danger">فوری</span>
+                                        </div>
+                                        <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-red-500 h-2 rounded-full progress-bar" style="width: 65%"></div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded card-hover"
+                                    >
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="font-bold text-yellow-700">
+                                                    ۸ پرونده در انتظار بررسی
+                                                </p>
+                                                <p class="text-sm text-yellow-600 mt-1">
+                                                    اسناد دریافت شده نیاز به بررسی
+                                                </p>
+                                            </div>
+                                            <span class="badge badge-warning">متوسط</span>
+                                        </div>
+                                        <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-yellow-500 h-2 rounded-full progress-bar" style="width: 40%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-2xl font-bold mb-6 text-gray-800">
+                                    اعلان‌ها
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-info-circle text-blue-500"></i>
+                                            </div>
+                                            <div class="mr-3">
+                                                <p class="text-sm font-medium text-blue-800">به‌روزرسانی سیستم</p>
+                                                <p class="text-xs text-blue-700 mt-1">سیستم در ساعت 2 الی 4 شب به‌روزرسانی خواهد شد.</p>
+                                                <p class="text-xs text-gray-500 mt-2">۲ ساعت پیش</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 bg-green-50 rounded-lg border border-green-100">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-check-circle text-green-500"></i>
+                                            </div>
+                                            <div class="mr-3">
+                                                <p class="text-sm font-medium text-green-800">درخواست تایید شد</p>
+                                                <p class="text-xs text-green-700 mt-1">درخواست احمد رضایی با موفقیت تایید شد.</p>
+                                                <p class="text-xs text-gray-500 mt-2">۳ ساعت پیش</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                                            </div>
+                                            <div class="mr-3">
+                                                <p class="text-sm font-medium text-yellow-800">نیاز به بازرسی</p>
+                                                <p class="text-xs text-yellow-700 mt-1">ملک مریم احمدی نیاز به بازرسی فوری دارد.</p>
+                                                <p class="text-xs text-gray-500 mt-2">۵ ساعت پیش</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-bold mb-4 text-gray-800">
+                                    نمودار عملکرد ماهانه
+                                </h3>
+                                <canvas id="monthlyChart" height="200"></canvas>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-bold mb-4 text-gray-800">
+                                    توزیع درخواست‌ها
+                                </h3>
+                                <canvas id="requestTypeChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Requests Tab -->
+                    <div id="requests-tab">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800">
+                                بررسی درخواست‌ها
+                            </h2>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <div class="relative">
+                                    <input 
+                                        type="text" 
+                                        placeholder="جستجو..." 
+                                        class="search-box pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                </div>
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-filter ml-2"></i> فیلتر
+                                </button>
+                                <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-plus ml-2"></i> درخواست جدید
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-right">
+                                    <thead>
+                                        <tr class="border-b">
+                                            <th class="py-3 px-4">کد درخواست</th>
+                                            <th class="py-3 px-4">متقاضی</th>
+                                            <th class="py-3 px-4">نوع درخواست</th>
+                                            <th class="py-3 px-4">تاریخ ثبت</th>
+                                            <th class="py-3 px-4">وضعیت</th>
+                                            <th class="py-3 px-4">اولویت</th>
+                                            <th class="py-3 px-4">عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="py-4 px-4">#12345</td>
+                                            <td class="py-4 px-4">
+                                                <div class="flex items-center">
+                                                    <div class="relative mr-3">
+                                                        <i class="fas fa-user text-gray-600"></i>
+                                                        <span class="status-indicator status-online absolute -bottom-1 -left-1"></span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-medium">احمد رضایی</p>
+                                                        <p class="text-xs text-gray-500">تهران، ولیعصر</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="badge badge-primary">پروانه ساختمان</span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                ۱۴۰۳/۰۵/۱۰
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
+                                                    در حال بررسی
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
+                                                    فوری
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <div class="flex space-x-2 space-x-reverse">
+                                                    <button
+                                                        class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                                                    >
+                                                        بررسی
+                                                    </button>
+                                                    <button
+                                                        class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                                                    >
+                                                        تایید
+                                                    </button>
+                                                    <button
+                                                        class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300"
+                                                    >
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="bg-gray-50 hover:bg-gray-100">
+                                            <td class="py-4 px-4">#12346</td>
+                                            <td class="py-4 px-4">
+                                                <div class="flex items-center">
+                                                    <div class="relative mr-3">
+                                                        <i class="fas fa-user text-gray-600"></i>
+                                                        <span class="status-indicator status-online absolute -bottom-1 -left-1"></span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-medium">مریم احمدی</p>
+                                                        <p class="text-xs text-gray-500">شهرک غرب</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="badge badge-success">تایید سکونت</span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                ۱۴۰۳/۰۵/۰۹
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                                                    جدید
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                                                    عادی
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <div class="flex space-x-2 space-x-reverse">
+                                                    <button
+                                                        class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                                                    >
+                                                        بررسی
+                                                    </button>
+                                                    <button
+                                                        class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                                                    >
+                                                        تایید
+                                                    </button>
+                                                    <button
+                                                        class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300"
+                                                    >
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="py-4 px-4">#12347</td>
+                                            <td class="py-4 px-4">
+                                                <div class="flex items-center">
+                                                    <div class="relative mr-3">
+                                                        <i class="fas fa-user text-gray-600"></i>
+                                                        <span class="status-indicator status-offline absolute -bottom-1 -left-1"></span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-medium">حسن کریمی</p>
+                                                        <p class="text-xs text-gray-500">منطقه ۲۲</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="badge badge-warning">پایان کار</span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                ۱۴۰۳/۰۵/۰۸
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm">
+                                                    نیاز به بازرسی
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
+                                                    متوسط
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-4">
+                                                <div class="flex space-x-2 space-x-reverse">
+                                                    <button
+                                                        class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
+                                                    >
+                                                        بازرسی
+                                                    </button>
+                                                    <button
+                                                        class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                                                    >
+                                                        بررسی
+                                                    </button>
+                                                    <button
+                                                        class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300"
+                                                    >
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Pagination -->
+                            <div class="flex justify-between items-center mt-6">
+                                <div class="text-sm text-gray-600">
+                                    نمایش ۱ تا ۳ از ۱۲ مورد
+                                </div>
+                                <div class="flex gap-1">
+                                    <button class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                    <button class="px-3 py-1 rounded bg-green-500 text-white">1</button>
+                                    <button class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">2</button>
+                                    <button class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">3</button>
+                                    <button class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Documents Tab -->
+                    <div id="documents-tab">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800">
+                                مدیریت اسناد
+                            </h2>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-upload ml-2"></i> آپلود سند
+                                </button>
+                                <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-folder-plus ml-2"></i> پوشه جدید
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Search and Filter Section -->
+                        <div class="bg-white p-4 rounded-xl shadow mb-6">
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <div class="search-box flex-1 flex items-center bg-gray-100 rounded-lg px-3 py-2">
+                                    <i class="fas fa-search text-gray-500 ml-2"></i>
+                                    <input type="text" placeholder="جستجوی اسناد..." class="bg-transparent outline-none flex-1" />
+                                </div>
+                                <div class="flex gap-2">
+                                    <select class="bg-gray-100 rounded-lg px-3 py-2">
+                                        <option>نوع سند</option>
+                                        <option>سند مالکیت</option>
+                                        <option>نقشه معماری</option>
+                                        <option>مجوز ساخت</option>
+                                    </select>
+                                    <select class="bg-gray-100 rounded-lg px-3 py-2">
+                                        <option>وضعیت</option>
+                                        <option>بررسی شده</option>
+                                        <option>در انتظار بررسی</option>
+                                        <option>نیاز به تکمیل</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-xl font-semibold">اسناد در انتظار بررسی</h3>
+                                    <div class="relative">
+                                        <input 
+                                            type="text" 
+                                            placeholder="جستجو در اسناد..." 
+                                            class="search-box pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg card-hover">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
+                                            </div>
+                                            <div class="mr-4">
+                                                <p class="font-semibold">سند مالکیت - احمد رضایی</p>
+                                                <div class="flex items-center text-xs text-gray-500 mt-1">
+                                                    <span>۱ ساعت پیش</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span>۲.۴ مگابایت</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-blue-500 hover:text-blue-700">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-700">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="text-red-500 hover:text-red-700">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg card-hover">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-file-image text-blue-500 text-2xl"></i>
+                                            </div>
+                                            <div class="mr-4">
+                                                <p class="font-semibold">نقشه معماری - مریم احمدی</p>
+                                                <div class="flex items-center text-xs text-gray-500 mt-1">
+                                                    <span>۳ ساعت پیش</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span>۱.۸ مگابایت</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-blue-500 hover:text-blue-700">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-700">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="text-red-500 hover:text-red-700">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg card-hover">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-file-word text-blue-600 text-2xl"></i>
+                                            </div>
+                                            <div class="mr-4">
+                                                <p class="font-semibold">گواهی سکونت - حسن کریمی</p>
+                                                <div class="flex items-center text-xs text-gray-500 mt-1">
+                                                    <span>۶ ساعت پیش</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span>۰.۹ مگابایت</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-blue-500 hover:text-blue-700">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-700">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="text-red-500 hover:text-red-700">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-8">
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-4">
+                                        آمار اسناد
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between">
+                                            <span>اسناد بررسی شده امروز:</span>
+                                            <span class="font-bold text-green-600">۱۲</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>در انتظار بررسی:</span>
+                                            <span class="font-bold text-yellow-600">۸</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>نیاز به تکمیل:</span>
+                                            <span class="font-bold text-red-600">۳</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>تایید شده:</span>
+                                            <span class="font-bold text-blue-600">۲۴</span>
+                                        </div>
+                                        <div class="pt-4 border-t">
+                                            <div class="flex justify-between mb-2">
+                                                <span class="text-sm">پیشرفت بررسی اسناد</span>
+                                                <span class="text-sm">60%</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div class="bg-blue-500 h-2 rounded-full progress-bar" style="width: 60%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <canvas id="documentStatsChart" height="150" class="mt-4"></canvas>
+                                </div>
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-4">
+                                        پوشه‌ها
+                                    </h3>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100">
+                                            <i class="fas fa-folder text-blue-500 text-xl ml-3"></i>
+                                            <span>پرونده‌های جاری</span>
+                                            <span class="mr-auto text-sm text-gray-500">۱۲ مورد</span>
+                                        </div>
+                                        <div class="flex items-center p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100">
+                                            <i class="fas fa-folder text-green-500 text-xl ml-3"></i>
+                                            <span>پرونده‌های تکمیل شده</span>
+                                            <span class="mr-auto text-sm text-gray-500">۴۵ مورد</span>
+                                        </div>
+                                        <div class="flex items-center p-3 bg-yellow-50 rounded-lg cursor-pointer hover:bg-yellow-100">
+                                            <i class="fas fa-folder text-yellow-500 text-xl ml-3"></i>
+                                            <span>پرونده‌های در انتظار</span>
+                                            <span class="mr-auto text-sm text-gray-500">۸ مورد</span>
+                                        </div>
+                                        <div class="flex items-center p-3 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100">
+                                            <i class="fas fa-folder text-red-500 text-xl ml-3"></i>
+                                            <span>پرونده‌های رد شده</span>
+                                            <span class="mr-auto text-sm text-gray-500">۳ مورد</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Inspections Tab -->
+                    <div id="inspections-tab">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800">
+                                برنامه بازرسی‌ها
+                            </h2>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button
+                                    class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center"
+                                >
+                                    <i class="fas fa-calendar-plus ml-2"></i>برنامه‌ریزی جدید
+                                </button>
+                                <button
+                                    class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center"
+                                >
+                                    <i class="fas fa-map-marker-alt ml-2"></i>نقشه
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-xl font-semibold">بازرسی‌های امروز</h3>
+                                    <div class="relative">
+                                        <input 
+                                            type="text" 
+                                            placeholder="جستجو در بازرسی‌ها..." 
+                                            class="search-box pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="border rounded-lg p-4 bg-blue-50 card-hover">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <h4 class="font-bold text-blue-800">بازرسی پایان کار - حسن کریمی</h4>
+                                                <p class="text-sm text-blue-600 mt-1">آدرس: فشم، خیابان اصلی، پلاک ۱۲</p>
+                                                <div class="flex items-center text-sm text-blue-600 mt-1">
+                                                    <i class="fas fa-clock ml-1"></i>
+                                                    <span>ساعت: ۱۴:۰۰</span>
+                                                    <span class="mx-2">•</span>
+                                                    <i class="fas fa-user ml-1"></i>
+                                                    <span>کارشناس: محمدی</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col items-end">
+                                                <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">امروز</span>
+                                                <span class="text-xs text-gray-500 mt-1">۲ ساعت مانده</span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 flex space-x-2 space-x-reverse">
+                                            <button class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
+                                                تایید حضور
+                                            </button>
+                                            <button class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600">
+                                                تغییر زمان
+                                            </button>
+                                            <button class="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600">
+                                                مشاهده نقشه
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded-lg p-4 card-hover">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <h4 class="font-bold">بازرسی ملک - سارا حسینی</h4>
+                                                <p class="text-sm text-gray-600 mt-1">آدرس: لواسان، کوچه گلستان، پلاک ۵</p>
+                                                <div class="flex items-center text-sm text-gray-600 mt-1">
+                                                    <i class="fas fa-clock ml-1"></i>
+                                                    <span>ساعت: ۱۶:۳۰</span>
+                                                    <span class="mx-2">•</span>
+                                                    <i class="fas fa-user ml-1"></i>
+                                                    <span>کارشناس: رضایی</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col items-end">
+                                                <span class="bg-yellow-500 text-white px-2 py-1 rounded text-sm">برنامه‌ریزی شده</span>
+                                                <span class="text-xs text-gray-500 mt-1">۴.۵ ساعت مانده</span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 flex space-x-2 space-x-reverse">
+                                            <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                                                جهت‌یابی
+                                            </button>
+                                            <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300">
+                                                تغییر زمان
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded-lg p-4 bg-green-50 card-hover">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <h4 class="font-bold text-green-800">بازرسی پروانه - احمد رضایی</h4>
+                                                <p class="text-sm text-green-600 mt-1">آدرس: تهران، ولیعصر، پلاک ۱۲۳</p>
+                                                <div class="flex items-center text-sm text-green-600 mt-1">
+                                                    <i class="fas fa-clock ml-1"></i>
+                                                    <span>ساعت: ۱۸:۰۰</span>
+                                                    <span class="mx-2">•</span>
+                                                    <i class="fas fa-user ml-1"></i>
+                                                    <span>کارشناس: محمدی</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col items-end">
+                                                <span class="bg-green-500 text-white px-2 py-1 rounded text-sm">انجام شده</span>
+                                                <span class="text-xs text-gray-500 mt-1">۲ ساعت پیش</span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 flex space-x-2 space-x-reverse">
+                                            <button class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600">
+                                                مشاهده گزارش
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-8">
+                                    <h3 class="text-xl font-semibold mb-4">نقشه بازرسی‌ها</h3>
+                                    <div class="map-container">
+                                        <div class="map-placeholder">
+                                            <i class="fas fa-map-marked-alt text-4xl mb-2"></i>
+                                            <p>نقشه بازرسی‌های برنامه‌ریزی شده</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-semibold mb-6">
+                                    آمار بازرسی‌ها
+                                </h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-sm">بازرسی‌های انجام شده</span>
+                                            <span class="text-sm font-bold">۱۲</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-green-500 h-2 rounded-full progress-bar" style="width: 75%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-sm">بازرسی‌های برنامه‌ریزی شده</span>
+                                            <span class="text-sm font-bold">۸</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-blue-500 h-2 rounded-full progress-bar" style="width: 50%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-sm">بازرسی‌های لغو شده</span>
+                                            <span class="text-sm font-bold">۲</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-red-500 h-2 rounded-full progress-bar" style="width: 15%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="pt-4 border-t">
+                                        <h4 class="font-bold mb-3">بازرسی‌های هفته</h4>
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between">
+                                                <span class="text-sm">شنبه:</span>
+                                                <span class="text-sm font-bold text-green-600">۳</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-sm">یکشنبه:</span>
+                                                <span class="text-sm font-bold text-blue-600">۲</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-sm">دوشنبه:</span>
+                                                <span class="text-sm font-bold text-yellow-600">۱</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-sm">سه‌شنبه:</span>
+                                                <span class="text-sm font-bold text-gray-600">۰</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Reports Tab -->
+                    <div id="reports-tab">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800">
+                                گزارش‌دهی
+                            </h2>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-file-export ml-2"></i> خروجی گزارش
+                                </button>
+                                <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                    <i class="fas fa-chart-pie ml-2"></i> تحلیل داده
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 space-y-8">
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-6">
+                                        گزارش عملکرد هفتگی
+                                    </h3>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                                            <p class="text-2xl font-bold text-blue-600">۲۳</p>
+                                            <p class="text-sm text-gray-600">بررسی شده</p>
+                                        </div>
+                                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                                            <p class="text-2xl font-bold text-green-600">۸</p>
+                                            <p class="text-sm text-gray-600">بازرسی انجام شده</p>
+                                        </div>
+                                        <div class="bg-purple-50 p-4 rounded-lg text-center">
+                                            <p class="text-2xl font-bold text-purple-600">۱۵</p>
+                                            <p class="text-sm text-gray-600">مجوز صادر شده</p>
+                                        </div>
+                                        <div class="bg-red-50 p-4 rounded-lg text-center">
+                                            <p class="text-2xl font-bold text-red-600">۲</p>
+                                            <p class="text-sm text-gray-600">رد شده</p>
+                                        </div>
+                                    </div>
+                                    <div class="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                                        <p class="text-gray-500">نمودار عملکرد هفتگی</p>
+                                    </div>
+                                    <button class="w-full mt-6 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
+                                        گزارش تفصیلی
+                                    </button>
+                                </div>
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-6">
+                                        گزارش‌های اخیر
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <p class="font-medium">گزارش عملکرد روزانه</p>
+                                                <p class="text-sm text-gray-600">تاریخ: ۱۴۰۳/۰۵/۱۰</p>
+                                            </div>
+                                            <div class="flex space-x-2 space-x-reverse">
+                                                <button class="text-blue-500 hover:text-blue-700">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button class="text-gray-500 hover:text-gray-700">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <p class="font-medium">گزارش هفتگی</p>
+                                                <p class="text-sm text-gray-600">تاریخ: ۱۴۰۳/۰۵/۰۳ - ۱۴۰۳/۰۵/۱۰</p>
+                                            </div>
+                                            <div class="flex space-x-2 space-x-reverse">
+                                                <button class="text-blue-500 hover:text-blue-700">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button class="text-gray-500 hover:text-gray-700">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <p class="font-medium">گزارش عملکرد ماهانه</p>
+                                                <p class="text-sm text-gray-600">تاریخ: فروردین ۱۴۰۳</p>
+                                            </div>
+                                            <div class="flex space-x-2 space-x-reverse">
+                                                <button class="text-blue-500 hover:text-blue-700">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button class="text-gray-500 hover:text-gray-700">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-8">
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-4">
+                                        ارسال گزارش
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                نوع گزارش
+                                            </label>
+                                            <select class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option>گزارش روزانه</option>
+                                                <option>گزارش هفتگی</option>
+                                                <option>گزارش ماهانه</option>
+                                                <option>گزارش سفارشی</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                تاریخ
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                                placeholder="۱۴۰۳/۰۵/۱۰"
+                                            >
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                توضیحات اضافی
+                                            </label>
+                                            <textarea
+                                                class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                rows="3"
+                                                placeholder="توضیحات..."
+                                            ></textarea>
+                                        </div>
+                                        <button class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">
+                                            ارسال گزارش
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-4">
+                                        دسترسی سریع
+                                    </h3>
+                                    <div class="space-y-3">
+                                        <button class="w-full text-left p-3 bg-blue-50 rounded-lg hover:bg-blue-100 flex items-center">
+                                            <i class="fas fa-chart-line text-blue-500 ml-3"></i>
+                                            <span>آمار کلی</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-green-50 rounded-lg hover:bg-green-100 flex items-center">
+                                            <i class="fas fa-users text-green-500 ml-3"></i>
+                                            <span>آمار کاربران</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 flex items-center">
+                                            <i class="fas fa-file-alt text-yellow-500 ml-3"></i>
+                                            <span>آمار درخواست‌ها</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-purple-50 rounded-lg hover:bg-purple-100 flex items-center">
+                                            <i class="fas fa-search text-purple-500 ml-3"></i>
+                                            <span>آمار بازرسی‌ها</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 bg-white p-6 rounded-xl shadow">
+                            <h3 class="text-xl font-semibold mb-4">
+                                نمودار عملکرد
+                            </h3>
+                            <div class="flex border-b mb-4">
+                                <button class="tab-button active px-4 py-2 font-medium" onclick="switchChartTab('weekly')">هفتگی</button>
+                                <button class="tab-button px-4 py-2 font-medium" onclick="switchChartTab('monthly')">ماهانه</button>
+                                <button class="tab-button px-4 py-2 font-medium" onclick="switchChartTab('yearly')">سالانه</button>
+                            </div>
+                            <canvas id="performanceChart" height="100"></canvas>
+                        </div>
+                    </div>
+                    <!-- Calendar Tab -->
+                    <div id="calendar-tab">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
+                            تقویم کاری
+                        </h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-xl font-semibold">مهر ۱۴۰۳</h3>
+                                    <div class="flex gap-2">
+                                        <button class="p-2 rounded-full hover:bg-gray-100">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                        <button class="p-2 rounded-full hover:bg-gray-100">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-7 gap-1 mb-2">
+                                    <div class="text-center font-medium">ش</div>
+                                    <div class="text-center font-medium">ی</div>
+                                    <div class="text-center font-medium">د</div>
+                                    <div class="text-center font-medium">س</div>
+                                    <div class="text-center font-medium">چ</div>
+                                    <div class="text-center font-medium">پ</div>
+                                    <div class="text-center font-medium">ج</div>
+                                </div>
+                                <div class="grid grid-cols-7 gap-1">
+                                    <!-- Calendar days -->
+                                    <div class="calendar-day p-2 text-center rounded">۳۱</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲</div>
+                                    <div class="calendar-day p-2 text-center rounded">۳</div>
+                                    <div class="calendar-day p-2 text-center rounded">۴</div>
+                                    <div class="calendar-day p-2 text-center rounded">۵</div>
+                                    <div class="calendar-day p-2 text-center rounded">۶</div>
+                                    <div class="calendar-day p-2 text-center rounded">۷</div>
+                                    <div class="calendar-day p-2 text-center rounded">۸</div>
+                                    <div class="calendar-day p-2 text-center rounded">۹</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۰</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۱</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۲</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۳</div>
+                                    <div class="calendar-day p-2 text-center rounded selected">۱۴</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۵</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۶</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۷</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۸</div>
+                                    <div class="calendar-day p-2 text-center rounded">۱۹</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۰</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۱</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۲</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۳</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۴</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۵</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۶</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۷</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۸</div>
+                                    <div class="calendar-day p-2 text-center rounded">۲۹</div>
+                                    <div class="calendar-day p-2 text-center rounded">۳۰</div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-semibold mb-4">
+                                    رویدادهای امروز
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="border-r-4 border-blue-500 pr-3">
+                                        <h4 class="font-bold">بازرسی پایان کار</h4>
+                                        <p class="text-sm text-gray-600">حسن کریمی</p>
+                                        <p class="text-sm text-gray-600">۱۴:۰۰ - ۱۶:۰۰</p>
+                                    </div>
+                                    <div class="border-r-4 border-green-500 pr-3">
+                                        <h4 class="font-bold">جلسه بررسی پرونده</h4>
+                                        <p class="text-sm text-gray-600">مریم احمدی</p>
+                                        <p class="text-sm text-gray-600">۱۰:۰۰ - ۱۱:۰۰</p>
+                                    </div>
+                                    <button class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 mt-4">
+                                        افزودن رویداد جدید
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Notifications Tab -->
+                    <div id="notifications-tab">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
+                            اطلاعیه‌ها و پیام‌ها
+                        </h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-xl font-semibold">اطلاعیه‌های جدید</h3>
+                                    <button class="text-blue-500 hover:text-blue-700">
+                                        <i class="fas fa-cog"></i> تنظیمات
+                                    </button>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="notification-item p-4 border rounded-lg">
+                                        <div class="flex justify-between">
+                                            <div class="flex items-start">
+                                                <div class="bg-red-100 rounded-full p-2 mr-3">
+                                                    <i class="fas fa-exclamation text-red-500"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-bold">درخواست فوری</h4>
+                                                    <p class="text-sm text-gray-600">یک درخواست فوری برای بازرسی ملک ثبت شده است</p>
+                                                    <p class="text-xs text-gray-500 mt-1">۲ ساعت پیش</p>
+                                                </div>
+                                            </div>
+                                            <span class="bg-red-500 w-2 h-2 rounded-full"></span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item p-4 border rounded-lg">
+                                        <div class="flex justify-between">
+                                            <div class="flex items-start">
+                                                <div class="bg-blue-100 rounded-full p-2 mr-3">
+                                                    <i class="fas fa-info text-blue-500"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-bold">به‌روزرسانی سیستم</h4>
+                                                    <p class="text-sm text-gray-600">سیستم در تاریخ ۱۴۰۳/۰۵/۱۵ به‌روزرسانی خواهد شد</p>
+                                                    <p class="text-xs text-gray-500 mt-1">۵ ساعت پیش</p>
+                                                </div>
+                                            </div>
+                                            <span class="bg-red-500 w-2 h-2 rounded-full"></span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item p-4 border rounded-lg">
+                                        <div class="flex justify-between">
+                                            <div class="flex items-start">
+                                                <div class="bg-green-100 rounded-full p-2 mr-3">
+                                                    <i class="fas fa-check text-green-500"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-bold">تایید درخواست</h4>
+                                                    <p class="text-sm text-gray-600">درخواست شما با کد #12345 تایید شد</p>
+                                                    <p class="text-xs text-gray-500 mt-1">۱ روز پیش</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-semibold mb-4">
+                                    تنظیمات اطلاعیه‌ها
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span>اطلاعیه‌های سیستم</span>
+                                        <label class="switch">
+                                            <input type="checkbox" checked>
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span>درخواست‌های جدید</span>
+                                        <label class="switch">
+                                            <input type="checkbox" checked>
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span>یادآوری بازرسی‌ها</span>
+                                        <label class="switch">
+                                            <input type="checkbox" checked>
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span>پیام‌های داخلی</span>
+                                        <label class="switch">
+                                            <input type="checkbox">
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Profile Tab -->
+                    <div id="profile-tab">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
+                            پروفایل کاربر
+                        </h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <div class="flex flex-col items-center">
+                                    <div class="relative mb-4">
+                                        <div class="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center text-white text-3xl font-bold">
+                                            ا
+                                        </div>
+                                        <button class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600">
+                                            <i class="fas fa-camera text-sm"></i>
+                                        </button>
+                                    </div>
+                                    <h3 class="text-xl font-bold">احمد اکبری</h3>
+                                    <p class="text-gray-600">کارشناس خالی</p>
+                                    <div class="mt-4 flex space-x-2 space-x-reverse">
+                                        <span class="badge badge-success">فعال</span>
+                                        <span class="badge badge-primary">سطح ۳</span>
+                                    </div>
+                                    <div class="mt-6 w-full">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span>پیشرفت سطح</span>
+                                            <span>75%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-blue-500 h-2 rounded-full progress-bar" style="width: 75%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 text-center">
+                                        <p class="text-sm text-gray-600">کد کاربری: #12345</p>
+                                        <p class="text-sm text-gray-600">تاریخ عضویت: ۱۴۰۰/۰۳/۱۵</p>
+                                    </div>
+                                    <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                        ویرایش پروفایل
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-semibold mb-6">اطلاعات کاربری</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">نام و نام خانوادگی</label>
+                                        <input type="text" value="احمد اکبری" class="w-full p-2 border rounded" disabled>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">کد پرسنلی</label>
+                                        <input type="text" value="EMP-12345" class="w-full p-2 border rounded" disabled>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">شماره تماس</label>
+                                        <input type="text" value="۰۹۱۲۳۴۵۶۷۸۹" class="w-full p-2 border rounded" disabled>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">پست الکترونیک</label>
+                                        <input type="email" value="ahmad@example.com" class="w-full p-2 border rounded" disabled>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">سمت</label>
+                                        <input type="text" value="کارشناس خالی" class="w-full p-2 border rounded" disabled>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">آخرین ورود</label>
+                                        <input type="text" value="۱۴۰۳/۰۵/۱۰ - ۰۸:۳۰" class="w-full p-2 border rounded" disabled>
+                                    </div>
+                                </div>
+
+                                <h3 class="text-xl font-semibold mt-8 mb-6">تغییر رمز عبور</h3>
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">رمز عبور فعلی</label>
+                                        <input type="password" class="w-full p-2 border rounded">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">رمز عبور جدید</label>
+                                        <input type="password" class="w-full p-2 border rounded">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">تکرار رمز عبور جدید</label>
+                                        <input type="password" class="w-full p-2 border rounded">
+                                    </div>
+                                    <button class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                                        تغییر رمز عبور
+                                    </button>
+                                </div>
+
+                                <div class="mt-8">
+                                    <h3 class="text-xl font-semibold mb-4">
+                                        مهارت‌ها
+                                    </h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="badge badge-primary">بازرسی ملک</span>
+                                        <span class="badge badge-success">بررسی اسناد</span>
+                                        <span class="badge badge-warning">پروانه ساختمان</span>
+                                        <span class="badge badge-danger">تایید سکونت</span>
+                                        <span class="badge badge-primary">پایان کار</span>
+                                        <span class="badge badge-success">مجوز تجاری</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Settings Tab -->
+                    <div id="settings-tab">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
+                            تنظیمات
+                        </h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-semibold mb-6">
+                                    تنظیمات عمومی
+                                </h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            زبان سیستم
+                                        </label>
+                                        <select class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option>فارسی</option>
+                                            <option>English</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            تم نمایش
+                                        </label>
+                                        <div class="flex space-x-4 space-x-reverse">
+                                            <label class="flex items-center">
+                                                <input type="radio" name="theme" class="mr-2" checked>
+                                                <span>روشن</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="radio" name="theme" class="mr-2">
+                                                <span>تاریک</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="radio" name="theme" class="mr-2">
+                                                <span>خودکار</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            اعلان‌ها
+                                        </label>
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center">
+                                                <span>اعلان‌های ایمیل</span>
+                                                <label class="switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider round"></span>
+                                                </label>
+                                            </div>
+                                            <div class="flex justify-between items-center">
+                                                <span>اعلان‌های داخل سیستم</span>
+                                                <label class="switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider round"></span>
+                                                </label>
+                                            </div>
+                                            <div class="flex justify-between items-center">
+                                                <span>اعلان‌های پیامکی</span>
+                                                <label class="switch">
+                                                    <input type="checkbox">
+                                                    <span class="slider round"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            بازه زمانی اعلان‌ها
+                                        </label>
+                                        <select class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option>فوری</option>
+                                            <option>۱ ساعت</option>
+                                            <option>۲ ساعت</option>
+                                            <option>۶ ساعت</option>
+                                            <option>۱۲ ساعت</option>
+                                            <option>۲۴ ساعت</option>
+                                        </select>
+                                    </div>
+                                    <button class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                                        ذخیره تنظیمات
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-8">
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-4">
+                                        امنیت
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <button class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center">
+                                            <i class="fas fa-lock text-gray-600 ml-3"></i>
+                                            <span>تغییر رمز عبور</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center">
+                                            <i class="fas fa-shield-alt text-gray-600 ml-3"></i>
+                                            <span>احراز هویت دو مرحله‌ای</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center">
+                                            <i class="fas fa-history text-gray-600 ml-3"></i>
+                                            <span>فعالیت‌های اخیر</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center">
+                                            <i class="fas fa-sign-out-alt text-gray-600 ml-3"></i>
+                                            <span>خروج از حساب‌های دیگر</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="text-xl font-semibold mb-4">
+                                        پشتیبانی
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <button class="w-full text-left p-3 bg-blue-50 rounded-lg hover:bg-blue-100 flex items-center">
+                                            <i class="fas fa-question-circle text-blue-500 ml-3"></i>
+                                            <span>راهنمای استفاده</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-green-50 rounded-lg hover:bg-green-100 flex items-center">
+                                            <i class="fas fa-headset text-green-500 ml-3"></i>
+                                            <span>تماس با پشتیبانی</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 flex items-center">
+                                            <i class="fas fa-bug text-yellow-500 ml-3"></i>
+                                            <span>گزارش مشکل</span>
+                                        </button>
+                                        <button class="w-full text-left p-3 bg-purple-50 rounded-lg hover:bg-purple-100 flex items-center">
+                                            <i class="fas fa-comment-dots text-purple-500 ml-3"></i>
+                                            <span>ارسال نظر</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Help Tab -->
+                    <div id="help-tab">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
+                            راهنما و پشتیبانی
+                        </h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-semibold mb-4">سوالات متداول</h3>
+                                <div class="space-y-4">
+                                    <div class="border-b pb-3">
+                                        <h4 class="font-bold">چگونه درخواست جدید ثبت کنم؟</h4>
+                                        <p class="text-sm text-gray-600 mt-1">برای ثبت درخواست جدید، به بخش بررسی درخواست‌ها رفته و روی دکمه "درخواست جدید" کلیک کنید.</p>
+                                    </div>
+                                    <div class="border-b pb-3">
+                                        <h4 class="font-bold">چگونه اسناد را آپلود کنم؟</h4>
+                                        <p class="text-sm text-gray-600 mt-1">در بخش مدیریت اسناد، روی دکمه "آپلود سند" کلیک کرده و فایل مورد نظر را انتخاب کنید.</p>
+                                    </div>
+                                    <div class="border-b pb-3">
+                                        <h4 class="font-bold">چگونه گزارش‌ها را دریافت کنم؟</h4>
+                                        <p class="text-sm text-gray-600 mt-1">در بخش گزارش‌دهی، می‌توانید گزارش‌های روزانه، هفتگی و ماهانه را دریافت کنید.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+                                <h3 class="text-xl font-semibold mb-4">تماس با پشتیبانی</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">نام و نام خانوادگی</label>
+                                        <input type="text" class="w-full p-2 border rounded">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">پست الکترونیک</label>
+                                        <input type="email" class="w-full p-2 border rounded">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">موضوع</label>
+                                        <select class="w-full p-2 border rounded">
+                                            <option>مشکل فنی</option>
+                                            <option>پیشنهاد</option>
+                                            <option>سوال general</option>
+                                            <option>سایر</option>
+                                        </select>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">پیام</label>
+                                        <textarea class="w-full p-2 border rounded" rows="5"></textarea>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                            ارسال پیام
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-8">
+                                    <h3 class="text-xl font-semibold mb-4">اطلاعات تماس</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-phone text-green-500 ml-3"></i>
+                                            <div>
+                                                <p class="font-bold">تلفن</p>
+                                                <p class="text-sm text-gray-600">۰۲۱-۱۲۳۴۵۶۷۸</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-envelope text-green-500 ml-3"></i>
+                                            <div>
+                                                <p class="font-bold">پست الکترونیک</p>
+                                                <p class="text-sm text-gray-600">support@melakid.ir</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-clock text-green-500 ml-3"></i>
+                                            <div>
+                                                <p class="font-bold">ساعت کاری</p>
+                                                <p class="text-sm text-gray-600">شنبه تا چهارشنبه ۸-۱۷</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        <script>
+            function showTab(tabId, clickedLink) {
+                document
+                    .querySelectorAll(".main-content > div")
+                    .forEach((el) => el.classList.remove("active"));
+                const targetTab = document.getElementById(`${tabId}-tab`);
+                if (targetTab) targetTab.classList.add("active");
+                document
+                    .querySelectorAll(".sidebar-link")
+                    .forEach((link) => link.classList.remove("active"));
+                if (clickedLink) clickedLink.classList.add("active");
+                if (window.innerWidth < 768) {
+                    toggleMobileMenu();
+                }
+            }
+            function toggleMobileMenu() {
+                const sidebar = document.getElementById("sidebar");
+                const overlay = document.getElementById("mobile-overlay");
+                const icon = document.getElementById("hamburger-icon");
+                sidebar.classList.toggle("active");
+                overlay.classList.toggle("hidden");
+                icon.classList.toggle("fa-bars");
+                icon.classList.toggle("fa-times");
+            }
+            // Set current date
+            document.getElementById("current-date").textContent =
+                new Date().toLocaleDateString("fa-IR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                });
+
+            // Initialize Charts
+            window.onload = function() {
+                // Monthly Chart
+                const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+                const monthlyChart = new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+                        datasets: [{
+                            label: 'درخواست‌های بررسی شده',
+                            data: [65, 78, 90, 81, 96, 105],
+                            borderColor: '#059669',
+                            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }, {
+                            label: 'بازرسی‌های انجام شده',
+                            data: [28, 35, 40, 38, 45, 52],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        family: 'Vazirmatn'
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Request Type Chart
+                const requestTypeCtx = document.getElementById('requestTypeChart').getContext('2d');
+                const requestTypeChart = new Chart(requestTypeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['پروانه ساختمان', 'تایید سکونت', 'پایان کار', 'سایر'],
+                        datasets: [{
+                            data: [45, 25, 20, 10],
+                            backgroundColor: [
+                                '#059669',
+                                '#3b82f6',
+                                '#f59e0b',
+                                '#8b5cf6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    font: {
+                                        family: 'Vazirmatn'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Document Stats Chart
+                const documentStatsCtx = document.getElementById('documentStatsChart').getContext('2d');
+                const documentStatsChart = new Chart(documentStatsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['بررسی شده', 'در انتظار', 'نیاز به تکمیل'],
+                        datasets: [{
+                            label: 'تعداد اسناد',
+                            data: [12, 8, 3],
+                            backgroundColor: [
+                                '#059669',
+                                '#f59e0b',
+                                '#ef4444'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Performance Chart
+                const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+                const performanceChart = new Chart(performanceCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'],
+                        datasets: [{
+                            label: 'درخواست‌های بررسی شده',
+                            data: [12, 19, 15, 17, 22, 18, 8],
+                            backgroundColor: '#059669'
+                        }, {
+                            label: 'بازرسی‌های انجام شده',
+                            data: [5, 8, 6, 7, 9, 7, 3],
+                            backgroundColor: '#3b82f6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        family: 'Vazirmatn'
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            };
+
+            // Switch Chart Tabs
+            function switchChartTab(tab) {
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+
+                // In a real app, this would update the chart data based on the selected tab
+                // For demo purposes, we'll just log the selected tab
+                console.log('Selected tab:', tab);
+            }
+        </script>
+    </body>
+</html>

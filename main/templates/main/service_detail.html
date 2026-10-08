@@ -1,0 +1,122 @@
+
+{% extends 'base.html' %}
+
+{% block title %}{{ service.name }} - سامانه خدمات روستایی{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Service Header -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3>{{ service.icon }} {{ service.name }}</h3>
+                    <p class="mb-0">{{ service.get_category_display }}</p>
+                </div>
+                <div class="card-body" dir="rtl">
+                    <h5>📝 توضیحات خدمت:</h5>
+                    <p>{{ service.description }}</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>⏱️ مدت زمان تخمینی:</h6>
+                            <p><span class="badge bg-info">{{ service.estimated_duration }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>👤 نقش مورد نیاز:</h6>
+                            <p><span class="badge bg-primary">{{ service.get_required_role_display }}</span></p>
+                        </div>
+                    </div>
+                    
+                    <h6>📄 مدارک و اسناد مورد نیاز:</h6>
+                    <div class="alert alert-info">
+                        {{ service.required_documents|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Request Process Steps -->
+            {% if service.steps.all %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>📋 مراحل درخواست</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for step in service.steps.all %}
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    {{ step.step_number }}
+                                </div>
+                                <h6 class="mt-2">{{ step.title }}</h6>
+                                <small class="text-muted">{{ step.description }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Start Request Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>🚀 شروع درخواست</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        {% if user.profile.role == service.required_role or user.profile.is_staff_member %}
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="alert alert-info">
+                                    <strong>اطلاعات متقاضی:</strong><br>
+                                    نام: {{ user.get_full_name }}<br>
+                                    کد ملی: {{ user.profile.national_id }}<br>
+                                    موبایل: {{ user.profile.mobile_number }}
+                                </div>
+                                
+                                {% for field in form %}
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ field.label }}</label>
+                                        {{ field }}
+                                        {% if field.help_text %}
+                                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                                        {% endif %}
+                                        {% if field.errors %}
+                                            <div class="text-danger">
+                                                {% for error in field.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                                
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'main:services_catalog' %}" class="btn btn-secondary">انصراف</a>
+                                    <button type="submit" class="btn btn-success">ادامه و ثبت درخواست</button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-warning text-center">
+                                <h5>دسترسی محدود</h5>
+                                <p>این خدمت فقط برای کاربران با نقش "{{ service.get_required_role_display }}" قابل دسترسی است.</p>
+                                <p>نقش فعلی شما: <strong>{{ user.profile.get_role_display }}</strong></p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <h5>نیاز به ورود</h5>
+                            <p>برای درخواست این خدمت ابتدا وارد حساب کاربری خود شوید.</p>
+                            <a href="{% url 'main:login' %}" class="btn btn-primary">ورود به سیستم</a>
+                            <a href="{% url 'main:register' %}" class="btn btn-outline-primary">ثبت‌نام</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,264 @@
+/* Register Page Specific Contrast Fixes */
+
+/* Override any inline styles that might cause contrast issues */
+.choice-card * {
+    color: inherit !important;
+}
+
+/* Ensure proper text colors - Default Light Theme */
+.choice-card {
+    background-color: #ffffff !important;
+    border: 2px solid #e9ecef !important;
+}
+
+.choice-card .card-title {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+.choice-card .card-text {
+    color: #333333 !important;
+    font-weight: 500 !important;
+    line-height: 1.6 !important;
+}
+
+.choice-card .list-unstyled li {
+    color: #000000 !important;
+    font-weight: 500 !important;
+}
+
+.choice-card .fas.fa-check {
+    color: #059669 !important;
+}
+
+/* Button improvements */
+.choice-card .btn {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: white !important;
+    font-weight: 700 !important;
+    padding: 12px 24px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.choice-card .btn:hover,
+.choice-card .btn:focus,
+.choice-card .btn:active {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* Icon colors */
+.choice-card .choice-icon.text-primary {
+    color: #2563eb !important;
+}
+
+.choice-card .choice-icon.text-success {
+    color: #059669 !important;
+}
+
+.choice-card .choice-icon.text-info {
+    color: #0891b2 !important;
+}
+
+.choice-card .choice-icon.text-warning {
+    color: #d97706 !important;
+}
+
+.choice-card .choice-icon.text-danger {
+    color: #dc2626 !important;
+}
+
+.choice-card .choice-icon.text-secondary {
+    color: #64748b !important;
+}
+
+/* Alert improvements for this page */
+.alert-warning {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+    border-color: #ffeaa7 !important;
+    font-weight: 600 !important;
+}
+
+.alert-info {
+    background-color: #d1ecf1 !important;
+    color: #0c5460 !important;
+    border-color: #bee5eb !important;
+    font-weight: 600 !important;
+}
+
+.alert-danger {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+    border-color: #f5c6cb !important;
+    font-weight: 600 !important;
+}
+
+/* Dark theme specific overrides - ONLY apply in dark mode */
+[data-theme="dark"] .choice-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .choice-card .card-title {
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .choice-card .card-text {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .choice-card .list-unstyled li {
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .choice-card .choice-icon.text-primary {
+    color: #60a5fa !important;
+}
+
+[data-theme="dark"] .choice-card .choice-icon.text-success {
+    color: #34d399 !important;
+}
+
+[data-theme="dark"] .alert-warning {
+    background-color: #664d03 !important;
+    color: #ffecb5 !important;
+    border-color: #997404 !important;
+}
+
+[data-theme="dark"] .alert-info {
+    background-color: #055160 !important;
+    color: #b6effb !important;
+    border-color: #087990 !important;
+}
+
+[data-theme="dark"] .alert-danger {
+    background-color: #58151c !important;
+    color: #f1aeb5 !important;
+    border-color: #842029 !important;
+}
+
+/* High contrast mode overrides */
+.high-contrast .choice-card {
+    border-width: 3px !important;
+    border-color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+.high-contrast .choice-card .card-title,
+.high-contrast .choice-card .card-text,
+.high-contrast .choice-card .list-unstyled li {
+    color: #000000 !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+}
+
+.high-contrast .choice-card .btn {
+    background-color: #0000ff !important;
+    border-color: #0000ff !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.high-contrast .choice-card .choice-icon {
+    color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast .choice-card {
+    background-color: #000000 !important;
+    border-color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .choice-card .card-title,
+[data-theme="dark"].high-contrast .choice-card .card-text,
+[data-theme="dark"].high-contrast .choice-card .list-unstyled li {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="dark"].high-contrast .choice-card .choice-icon {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .choice-card .btn {
+    background-color: #66b3ff !important;
+    border-color: #66b3ff !important;
+    color: #000000 !important;
+}
+
+/* Ensure proper spacing and readability */
+.choice-card .card-body {
+    padding: 2rem !important;
+}
+
+.choice-card .list-unstyled {
+    margin-bottom: 1.5rem !important;
+}
+
+.choice-card .list-unstyled li {
+    margin-bottom: 0.75rem !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+}
+
+/* Hero section text contrast */
+.hero-section h1,
+.hero-section p {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Breadcrumb and other elements */
+.breadcrumb-item {
+    color: var(--text-medium-contrast, #666666) !important;
+}
+
+.breadcrumb-item.active {
+    color: var(--text-high-contrast, #000000) !important;
+}
+
+.breadcrumb-item a {
+    color: var(--primary-color, #2563eb) !important;
+}
+
+[data-theme="dark"] .breadcrumb-item {
+    color: var(--text-secondary, #cbd5e1) !important;
+}
+
+[data-theme="dark"] .breadcrumb-item.active {
+    color: var(--text-high-contrast, #f1f5f9) !important;
+}
+
+/* Additional text elements */
+.text-muted {
+    color: var(--text-low-contrast, #666666) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted, #94a3b8) !important;
+}
+
+/* Ensure all links have proper contrast */
+a {
+    color: var(--primary-color, #2563eb) !important;
+}
+
+a:hover,
+a:focus {
+    color: var(--primary-dark, #1d4ed8) !important;
+}
+
+[data-theme="dark"] a {
+    color: #66b3ff !important;
+}
+
+[data-theme="dark"] a:hover,
+[data-theme="dark"] a:focus {
+    color: #99ccff !important;
+}

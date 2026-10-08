@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خدمات دهیاری - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        .service-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-home text-white"></i>
+                    </div>
+                    <div class="mr-3">
+                        <h1 class="text-xl font-bold text-green-600">ملک آیدی</h1>
+                        <p class="text-xs text-gray-500">سامانه دیجیتال دهیاری</p>
+                    </div>
+                </div>
+                <nav class="flex items-center space-x-6 space-x-reverse">
+                    <a href="{% url 'main:home' %}" class="text-gray-700 hover:text-green-600 transition-colors">خانه</a>
+                    <a href="{% url 'main:dashboard' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">داشبورد</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Page Header -->
+        <div class="text-center mb-16">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">خدمات دهیاری</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                مجموعه کاملی از خدمات دهیاری و مدیریت املاک روستایی را از طریق سامانه آنلاین دریافت کنید
+            </p>
+        </div>
+
+        <!-- Services Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Building Permit Service -->
+            <div class="service-card bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 border border-gray-100">
+                <div class="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center mb-6 mx-auto">
+                    <i class="fas fa-hammer text-green-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">صدور پروانه ساختمان</h3>
+                <p class="text-gray-600 text-center mb-6">دریافت پروانه ساخت به صورت کاملاً آنلاین و سریع</p>
+                <div class="flex flex-col space-y-3">
+                    <a href="/services/building-permit/" class="bg-green-600 text-white text-center py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        درخواست پروانه ساخت
+                    </a>
+                    <a href="/services/construction-without-permit/" class="border-2 border-green-600 text-green-600 text-center py-3 px-6 rounded-lg hover:bg-green-50 transition-colors font-medium">
+                        <i class="fas fa-tools mr-2"></i>
+                        بدون پروانه
+                    </a>
+                </div>
+            </div>
+
+
+            <!-- Property Deed Request -->
+            <div class="service-card bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 border border-gray-100">
+                <div class="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-6 mx-auto">
+                    <i class="fas fa-file-contract text-purple-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">درخواست سند ملک</h3>
+                <p class="text-gray-600 text-center mb-6">فرآیند صدور سند برای املاک روستایی به صورت دیجیتال</p>
+                <a href="/services/property-deed-issuance/" class="block bg-purple-600 text-white text-center py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                    <i class="fas fa-scroll mr-2"></i>
+                    درخواست سند ملک
+                </a>
+            </div>
+
+            <!-- Land Use Change & Plan Integration -->
+            <div class="service-card bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 border border-gray-100">
+                <div class="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mb-6 mx-auto">
+                    <i class="fas fa-exchange-alt text-orange-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">تغییر کاربری و الحاق</h3>
+                <p class="text-gray-600 text-center mb-6">درخواست تغییر کاربری و الحاق به طرح‌های جامع</p>
+                <div class="flex flex-col space-y-3">
+                    <a href="/services/land-use-change/" class="bg-orange-600 text-white text-center py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors font-medium">
+                        <i class="fas fa-edit mr-2"></i>
+                        تغییر کاربری
+                    </a>
+                    <a href="/services/join-development-plan/" class="border-2 border-orange-600 text-orange-600 text-center py-3 px-6 rounded-lg hover:bg-orange-50 transition-colors font-medium">
+                        <i class="fas fa-sitemap mr-2"></i>
+                        الحاق به طرح هادی
+                    </a>
+                </div>
+            </div>
+
+            <!-- Residence Confirmation -->
+            <div class="service-card bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 border border-gray-100">
+                <div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6 mx-auto">
+                    <i class="fas fa-home text-blue-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">تایید سکونت</h3>
+                <p class="text-gray-600 text-center mb-6">صدور تایید سکونت برای شهروندان</p>
+                <a href="/services/residence-confirmation/" class="block bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <i class="fas fa-certificate mr-2"></i>
+                    درخواست تایید سکونت
+                </a>
+            </div>
+
+            <!-- User Management (Admin/Staff Only) -->
+            {% if user.is_authenticated and user.profile.role in "admin,staff,village_head" %}
+            <div class="service-card bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 border border-gray-100">
+                <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center mb-6 mx-auto">
+                    <i class="fas fa-users text-red-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">مدیریت کاربران</h3>
+                <p class="text-gray-600 text-center mb-6">مدیریت کاربران و درخواست‌های سیستم</p>
+                <div class="flex flex-col space-y-3">
+                    <a href="{% url 'main:manage_users' %}" class="bg-red-600 text-white text-center py-3 px-6 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                        <i class="fas fa-user-cog mr-2"></i>
+                        مدیریت کاربران
+                    </a>
+                    <a href="{% url 'main:manage_requests' %}" class="border-2 border-red-600 text-red-600 text-center py-3 px-6 rounded-lg hover:bg-red-50 transition-colors font-medium">
+                        <i class="fas fa-tasks mr-2"></i>
+                        مدیریت درخواست‌ها
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Other Services -->
+            <div class="service-card bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 border border-gray-100">
+                <div class="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center mb-6 mx-auto">
+                    <i class="fas fa-plus-circle text-indigo-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">سایر خدمات</h3>
+                <p class="text-gray-600 text-center mb-6">خدمات اضافی و مکمل دهیاری</p>
+                <div class="flex flex-col space-y-3">
+                    <a href="{% url 'main:announcements' %}" class="bg-indigo-600 text-white text-center py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                        <i class="fas fa-bullhorn mr-2"></i>
+                        اطلاعیه‌ها
+                    </a>
+                    <a href="{% url 'main:faq_center' %}" class="border-2 border-indigo-600 text-indigo-600 text-center py-3 px-6 rounded-lg hover:bg-indigo-50 transition-colors font-medium">
+                        <i class="fas fa-question-circle mr-2"></i>
+                        سوالات متداول
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-16 bg-white rounded-2xl shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">عملیات سریع</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <a href="{% url 'main:my_requests' %}" class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center ml-4">
+                        <i class="fas fa-list text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">درخواست‌های من</h4>
+                        <p class="text-sm text-gray-600">پیگیری درخواست‌ها</p>
+                    </div>
+                </a>
+
+                <a href="{% url 'main:user_profile' %}" class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center ml-4">
+                        <i class="fas fa-user text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">پروفایل کاربری</h4>
+                        <p class="text-sm text-gray-600">ویرایش اطلاعات</p>
+                    </div>
+                </a>
+
+                <a href="{% url 'main:notifications' %}" class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center ml-4">
+                        <i class="fas fa-bell text-yellow-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">اعلان‌ها</h4>
+                        <p class="text-sm text-gray-600">مشاهده پیام‌ها</p>
+                    </div>
+                </a>
+
+                <a href="{% url 'main:property_marketplace' %}" class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center ml-4">
+                        <i class="fas fa-search text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">جستجوی ملک</h4>
+                        <p class="text-sm text-gray-600">یافتن املاک</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; ۱۴۰۳ ملک آیدی - سامانه دیجیتال خدمات دهیاری و املاک</p>
+        </div>
+    </footer>
+</body>
+</html>

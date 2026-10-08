@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آگهی‌های من - ملک آیدی</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Vazirmatn -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        .custom-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Back Button -->
+        <div class="mb-4">
+            <a href="/dashboard/" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition duration-300">
+                <i class="fas fa-arrow-right ml-2"></i>
+                <span class="text-lg font-medium">بازگشت به داشبورد</span>
+            </a>
+        </div>
+
+        <!-- Header Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex justify-between items-center border-r-4 border-blue-600 pr-4">
+                <h1 class="text-3xl font-bold text-gray-800">
+                    <i class="fas fa-list-alt ml-3 text-blue-600"></i>آگهی‌های ملک من
+                </h1>
+                <a href="{% url 'main:property_advertisement_form' %}" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition duration-300 flex items-center shadow">
+                    <i class="fas fa-plus ml-2"></i>ثبت آگهی جدید
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Pending Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-amber-500">
+                <div class="flex items-center">
+                    <div class="bg-amber-100 p-3 rounded-full">
+                        <i class="fas fa-clock text-amber-600 text-xl"></i>
+                    </div>
+                    <div class="mr-4">
+                        <h3 class="text-xl font-semibold text-gray-800">در انتظار تایید</h3>
+                        <p class="text-3xl font-bold text-amber-600">{{ pending_count }} آگهی</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-green-500">
+                <div class="flex items-center">
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                    <div class="mr-4">
+                        <h3 class="text-xl font-semibold text-gray-800">تایید شده</h3>
+                        <p class="text-3xl font-bold text-green-600">{{ approved_count }} آگهی</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-purple-500">
+                <div class="flex items-center">
+                    <div class="bg-purple-100 p-3 rounded-full">
+                        <i class="fas fa-home text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="mr-4">
+                        <h3 class="text-xl font-semibold text-gray-800">کل آگهی‌ها</h3>
+                        <p class="text-3xl font-bold text-purple-600">{{ ads.count }} آگهی</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Stepper -->
+        <div class="bg-white rounded-2xl shadow-lg p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="mt-2 text-sm text-gray-600">انتخاب ملک</span>
+                </div>
+                <div class="flex-1 h-1 bg-blue-600 mx-2"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="mt-2 text-sm text-gray-600">ثبت اطلاعات</span>
+                </div>
+                <div class="flex-1 h-1 bg-blue-600 mx-2"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="mt-2 text-sm text-gray-600">آپلود مدارک</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white">
+                        4
+                    </div>
+                    <span class="mt-2 text-sm text-gray-600">تایید نهایی</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ads List Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="border-r-4 border-blue-600 pr-4 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800">لیست آگهی‌ها</h2>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نوع آگهی</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نوع ملک</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">موقعیت</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">مساحت</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">قیمت</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">وضعیت</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاریخ ثبت</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for ad in ads %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if ad.ad_type == 'sale' %}bg-red-100 text-red-800
+                                    {% elif ad.ad_type == 'rent' %}bg-amber-100 text-amber-800
+                                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                    {{ ad.get_ad_type_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ ad.get_property_type_display }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">
+                                <div>{{ ad.city_village|default:ad.county|default:"-" }}</div>
+                                {% if ad.is_village %}<span class="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">روستایی</span>{% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ ad.total_area|floatformat:0 }} متر</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if ad.sale_price %}
+                                    <div class="text-green-600 font-medium">فروش: {{ ad.sale_price|floatformat:0 }} تومان</div>
+                                {% endif %}
+                                {% if ad.rent_price %}
+                                    <div class="text-amber-600 font-medium">اجاره: {{ ad.rent_price|floatformat:0 }} تومان</div>
+                                {% endif %}
+                                {% if ad.deposit %}
+                                    <div class="text-blue-600 font-medium">رهن: {{ ad.deposit|floatformat:0 }} تومان</div>
+                                {% endif %}
+                                {% if not ad.sale_price and not ad.rent_price and not ad.deposit %}
+                                    <div class="text-gray-600 font-medium">قیمت توافقی</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if ad.status == 'approved' %}bg-green-100 text-green-800
+                                    {% elif ad.status == 'pending' %}bg-amber-100 text-amber-800
+                                    {% elif ad.status == 'rejected' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ ad.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ ad.created_at|date:"Y/m/d" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <a href="{% url 'main:view_property_ad' ad.id %}" class="text-blue-600 hover:text-blue-900" title="مشاهده">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if ad.pending_edit_requests %}
+                                        <span class="text-gray-400" title="درخواست ویرایش در انتظار تایید">
+                                            <i class="fas fa-clock"></i>
+                                        </span>
+                                    {% else %}
+                                        <a href="{% url 'main:edit_property_ad' ad.id %}" class="text-amber-600 hover:text-amber-900" title="ویرایش">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="px-6 py-12 text-center">
+                                <i class="fas fa-home text-5xl text-gray-300 mb-4"></i>
+                                <h3 class="text-xl font-semibold text-gray-500 mb-2">هنوز آگهی ثبت نکرده‌اید</h3>
+                                <p class="text-gray-500 mb-4">برای ثبت اولین آگهی ملک خود روی دکمه "ثبت آگهی جدید" کلیک کنید</p>
+                                <a href="{% url 'main:property_advertisement_form' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                    <i class="fas fa-plus ml-1.5"></i> ثبت آگهی جدید
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if ads.has_other_pages %}
+            <div class="flex justify-center items-center gap-2 mt-6 pt-4 border-t border-gray-200">
+                {% if ads.has_previous %}
+                    <a href="?page={{ ads.previous_page_number }}" class="px-3 py-1.5 border rounded-lg hover:bg-gray-50 text-sm">قبلی</a>
+                {% endif %}
+                <span class="text-sm text-gray-600">صفحه {{ ads.number }} از {{ ads.paginator.num_pages }}</span>
+                {% if ads.has_next %}
+                    <a href="?page={{ ads.next_page_number }}" class="px-3 py-1.5 border rounded-lg hover:bg-gray-50 text-sm">بعدی</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</body>
+</html>

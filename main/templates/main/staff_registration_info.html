@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}راهنمای ثبت‌نام کارمندان - ملک آیدی{% endblock %}
+
+{% block extra_head %}
+<style>
+    .info-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 0;
+    }
+    .step-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .step-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .step-number {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin: 0 auto 1rem;
+    }
+    .role-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="info-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mx-auto text-center">
+                <i class="fas fa-building fa-4x mb-4"></i>
+                <h1 class="display-5 fw-bold mb-4">راهنمای ثبت‌نام کارمندان</h1>
+                <p class="lead mb-0">برای دریافت دسترسی به پنل مدیریتی، لطفاً مراحل زیر را دنبال کنید</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <!-- مراحل ثبت‌نام -->
+    <div class="row mb-5">
+        <div class="col-12 mb-4">
+            <h2 class="text-center mb-4">مراحل دریافت دسترسی</h2>
+        </div>
+        
+        <!-- مرحله 1 -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card step-card h-100 text-center p-4">
+                <div class="step-number">1</div>
+                <h5 class="mb-3">آماده‌سازی مدارک</h5>
+                <p class="text-muted small">
+                    کارت ملی، حکم کاری، و سایر مدارک هویتی خود را آماده کنید
+                </p>
+            </div>
+        </div>
+        
+        <!-- مرحله 2 -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card step-card h-100 text-center p-4">
+                <div class="step-number">2</div>
+                <h5 class="mb-3">مراجعه به دهیاری</h5>
+                <p class="text-muted small">
+                    با مدارک خود به دهیاری مراجعه کرده و درخواست دسترسی دهید
+                </p>
+            </div>
+        </div>
+        
+        <!-- مرحله 3 -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card step-card h-100 text-center p-4">
+                <div class="step-number">3</div>
+                <h5 class="mb-3">تایید مدیر</h5>
+                <p class="text-muted small">
+                    مدیر سیستم هویت شما را تایید کرده و حساب کاربری ایجاد می‌کند
+                </p>
+            </div>
+        </div>
+        
+        <!-- مرحله 4 -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card step-card h-100 text-center p-4">
+                <div class="step-number">4</div>
+                <h5 class="mb-3">دریافت دسترسی</h5>
+                <p class="text-muted small">
+                    نام کاربری و رمز عبور خود را دریافت کرده و وارد پنل شوید
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نقش‌های قابل ثبت -->
+    <div class="row mb-5">
+        <div class="col-12 mb-4">
+            <h3 class="text-center mb-4">نقش‌های کارمندی قابل ثبت</h3>
+        </div>
+        
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <h6 class="mb-3">نقش‌های مدیریتی:</h6>
+                            <div>
+                                <span class="role-badge bg-info text-white">
+                                    <i class="fas fa-user-tie me-1"></i>دهیار
+                                </span>
+                                <span class="role-badge bg-danger text-white">
+                                    <i class="fas fa-users me-1"></i>عضو شورا
+                                </span>
+                                <span class="role-badge bg-purple text-white" style="background-color: #6f42c1;">
+                                    <i class="fas fa-user-shield me-1"></i>مدیر سیستم
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <h6 class="mb-3">نقش‌های تخصصی:</h6>
+                            <div>
+                                <span class="role-badge bg-warning text-dark">
+                                    <i class="fas fa-hard-hat me-1"></i>کارشناس فنی
+                                </span>
+                                <span class="role-badge bg-success text-white">
+                                    <i class="fas fa-calculator me-1"></i>مسئول مالی
+                                </span>
+                                <span class="role-badge bg-secondary text-white">
+                                    <i class="fas fa-clipboard-check me-1"></i>ناظر فنی
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- مدارک مورد نیاز -->
+    <div class="row mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-folder-open me-2"></i>
+                        مدارک مورد نیاز
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            کپی کارت ملی
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            حکم کاری یا معرفی‌نامه
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            مدرک تحصیلی (در صورت نیاز)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            تصویر شناسنامه
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            عکس پرسنلی
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-phone me-2"></i>
+                        اطلاعات تماس
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>آدرس دهیاری:</strong>
+                        <p class="text-muted mb-2">خیابان اصلی، ساختمان دهیاری</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>شماره تماس:</strong>
+                        <p class="text-muted mb-2">021-12345678</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>ساعات کاری:</strong>
+                        <p class="text-muted mb-2">شنبه تا چهارشنبه: 8 تا 16</p>
+                        <p class="text-muted mb-2">پنج‌شنبه: 8 تا 13</p>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="{% url 'main:contact' %}" class="btn btn-success">
+                            <i class="fas fa-phone me-1"></i>
+                            تماس با دهیاری
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- سوالات متداول -->
+    <div class="row mb-5">
+        <div class="col-12 mb-4">
+            <h3 class="text-center mb-4">سوالات متداول</h3>
+        </div>
+        
+        <div class="col-12">
+            <div class="accordion" id="faqAccordion">
+                <!-- سوال 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            چقدر طول می‌کشد تا دسترسی دریافت کنم؟
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            معمولاً پس از تایید مدارک توسط مدیر سیستم، ظرف 24 ساعت دسترسی شما فعال می‌شود.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- سوال 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            آیا می‌توانم خودم ثبت‌نام کنم؟
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            خیر، برای نقش‌های کارمندی حتماً باید توسط مدیر سیستم تایید شوید تا امنیت سامانه حفظ شود.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- سوال 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            اگر رمز عبورم را فراموش کنم چه کنم؟
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            با مدیر سیستم تماس بگیرید تا رمز عبور جدیدی برای شما تنظیم کند.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- دکمه‌های عملیات -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{% url 'main:register' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    بازگشت به انتخاب نوع ثبت‌نام
+                </a>
+                <a href="{% url 'main:login' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    ورود به حساب کاربری
+                </a>
+                <a href="{% url 'main:contact' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-envelope me-2"></i>
+                    تماس با پشتیبانی
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

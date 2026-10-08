@@ -1,0 +1,431 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% load persian_filters %}
+
+{% block title %}پروفایل کاربری - سامانه خدمات روستایی{% endblock %}
+
+{% block extra_head %}
+<!-- Geographic Selector JavaScript -->
+<script src="{% static 'js/geographic_selector.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4>👤 پروفایل کاربری</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" dir="rtl">
+                        {% csrf_token %}
+                        
+                        <h5 class="mb-3 text-primary">اطلاعات شخصی</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">{{ form.first_name.label }}</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">{{ form.last_name.label }}</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">نام پدر</label>
+                                <input type="text" class="form-control" value="{{ user_profile.father_name|default:'' }}" readonly>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">کد ملی</label>
+                                <input type="text" class="form-control" value="{{ user_profile.national_id }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.mobile_number.id_for_label }}" class="form-label">{{ form.mobile_number.label }}</label>
+                                {{ form.mobile_number }}
+                                {% if form.mobile_number.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.mobile_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-3 text-primary mt-4">موقعیت جغرافیایی (سلسله‌مراتبی)</h5>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>راهنما:</strong> ابتدا استان را انتخاب کنید، سپس به ترتیب شهرستان، بخش و دهستان نمایش داده می‌شوند.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.province.id_for_label }}" class="form-label">
+                                    <i class="fas fa-map me-1"></i> {{ form.province.label }}
+                                </label>
+                                {{ form.province }}
+                                {% if form.province.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.province.errors.0 }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">لطفا استان خود را انتخاب کنید</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.county.id_for_label }}" class="form-label">
+                                    <i class="fas fa-city me-1"></i> {{ form.county.label }}
+                                </label>
+                                {{ form.county }}
+                                {% if form.county.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.county.errors.0 }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">پس از انتخاب استان فعال می‌شود</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.district.id_for_label }}" class="form-label">
+                                    <i class="fas fa-map-signs me-1"></i> {{ form.district.label }}
+                                </label>
+                                {{ form.district }}
+                                {% if form.district.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.district.errors.0 }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">پس از انتخاب شهرستان فعال می‌شود</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.dehestan.id_for_label }}" class="form-label">
+                                    <i class="fas fa-home me-1"></i> {{ form.dehestan.label }} (اختیاری)
+                                </label>
+                                {{ form.dehestan }}
+                                {% if form.dehestan.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.dehestan.errors.0 }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">برای مناطق روستایی</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    {{ form.is_village }}
+                                    <label class="form-check-label" for="{{ form.is_village.id_for_label }}">
+                                        <i class="fas fa-tree me-1"></i> {{ form.is_village.label }}
+                                    </label>
+                                </div>
+                                {% if form.is_village.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.is_village.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.city_village.id_for_label }}" class="form-label">
+                                    <i class="fas fa-map-pin me-1"></i> {{ form.city_village.label }}
+                                </label>
+                                {{ form.city_village }}
+                                {% if form.city_village.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.city_village.errors.0 }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">پس از انتخاب بخش فعال می‌شود</small>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-3 text-primary mt-4">اطلاعات حساب کاربری</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">نام کاربری</label>
+                                <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">نقش کاربری</label>
+                                <input type="text" class="form-control" value="{{ user_profile.get_role_display }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">تاریخ عضویت</label>
+                                <input type="text" class="form-control" value="{{ user.date_joined|persian_date:'Y/m/d' }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>توجه:</strong> برای تغییر کد ملی، نام کاربری یا نقش کاربری، با مدیر سیستم تماس بگیرید.
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">به‌روزرسانی اطلاعات</button>
+                            <a href="{% url 'main:dashboard' %}" class="btn btn-secondary">بازگشت به داشبورد</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Password Change Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>🔐 تغییر رمز عبور</h5>
+                </div>
+                <div class="card-body">
+                    <p>برای تغییر رمز عبور خود از لینک زیر استفاده کنید:</p>
+                    <a href="/admin/password_change/" class="btn btn-warning">تغییر رمز عبور</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize geographic dropdowns on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== Profile Page Geographic Debug ===');
+    console.log('Initializing profile page geographic selectors...');
+    
+    // Get all dropdown elements
+    const provinceSelect = document.getElementById('id_province');
+    const countySelect = document.getElementById('id_county');
+    const districtSelect = document.getElementById('id_district');
+    const dehestanSelect = document.getElementById('id_dehestan');
+    const cityVillageSelect = document.getElementById('id_city_village');
+    const isVillageCheckbox = document.getElementById('id_is_village');
+    
+    // Province change handler
+    if (provinceSelect) {
+        provinceSelect.addEventListener('change', function() {
+            const provinceId = this.value;
+            console.log('Province changed:', provinceId);
+            
+            // Clear and disable dependent dropdowns
+            clearSelect(countySelect, 'ابتدا استان را انتخاب کنید');
+            clearSelect(districtSelect, 'ابتدا شهرستان را انتخاب کنید');
+            clearSelect(dehestanSelect, 'ابتدا بخش را انتخاب کنید');
+            clearSelect(cityVillageSelect, 'انتخاب کنید');
+            
+            if (provinceId) {
+                countySelect.disabled = false;
+                loadCounties(provinceId);
+            } else {
+                countySelect.disabled = true;
+                districtSelect.disabled = true;
+                dehestanSelect.disabled = true;
+                cityVillageSelect.disabled = true;
+            }
+        });
+    }
+    
+    // County change handler
+    if (countySelect) {
+        countySelect.addEventListener('change', function() {
+            const countyId = this.value;
+            console.log('County changed:', countyId);
+            
+            clearSelect(districtSelect, 'ابتدا شهرستان را انتخاب کنید');
+            clearSelect(dehestanSelect, 'ابتدا بخش را انتخاب کنید');
+            clearSelect(cityVillageSelect, 'انتخاب کنید');
+            
+            if (countyId) {
+                districtSelect.disabled = false;
+                loadDistricts(countyId);
+            } else {
+                districtSelect.disabled = true;
+                dehestanSelect.disabled = true;
+                cityVillageSelect.disabled = true;
+            }
+        });
+    }
+    
+    // District change handler
+    if (districtSelect) {
+        districtSelect.addEventListener('change', function() {
+            const districtId = this.value;
+            console.log('District changed:', districtId);
+            
+            clearSelect(dehestanSelect, 'ابتدا بخش را انتخاب کنید');
+            clearSelect(cityVillageSelect, 'انتخاب کنید');
+            
+            if (districtId) {
+                if (isVillageCheckbox && isVillageCheckbox.checked) {
+                    dehestanSelect.disabled = false;
+                    loadDehestans(districtId);
+                } else {
+                    // Load cities for district
+                    cityVillageSelect.disabled = false;
+                    loadCitiesVillages(districtId, null);
+                }
+            } else {
+                dehestanSelect.disabled = true;
+                cityVillageSelect.disabled = true;
+            }
+        });
+    }
+    
+    // Dehestan change handler
+    if (dehestanSelect) {
+        dehestanSelect.addEventListener('change', function() {
+            const dehestanId = this.value;
+            console.log('Dehestan changed:', dehestanId);
+            
+            clearSelect(cityVillageSelect, 'انتخاب کنید');
+            
+            if (dehestanId) {
+                cityVillageSelect.disabled = false;
+                const districtId = districtSelect.value;
+                loadCitiesVillages(districtId, dehestanId);
+            } else {
+                cityVillageSelect.disabled = true;
+            }
+        });
+    }
+    
+    // Village checkbox handler
+    if (isVillageCheckbox) {
+        isVillageCheckbox.addEventListener('change', function() {
+            const districtId = districtSelect.value;
+            
+            if (this.checked && districtId) {
+                dehestanSelect.disabled = false;
+                loadDehestans(districtId);
+                cityVillageSelect.disabled = true;
+                clearSelect(cityVillageSelect, 'انتخاب کنید');
+            } else if (districtId) {
+                dehestanSelect.disabled = true;
+                clearSelect(dehestanSelect, 'ابتدا بخش را انتخاب کنید');
+                cityVillageSelect.disabled = false;
+                loadCitiesVillages(districtId, null);
+            }
+        });
+    }
+    
+    // Helper function to clear a select
+    function clearSelect(selectElement, placeholderText) {
+        if (selectElement) {
+            selectElement.innerHTML = `<option value="">${placeholderText}</option>`;
+        }
+    }
+    
+    // Load counties for a province
+    function loadCounties(provinceId) {
+        console.log('Loading counties for province:', provinceId);
+        fetch(`/api/geo/counties/?province_id=${provinceId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Counties loaded:', data);
+                countySelect.innerHTML = '<option value="">شهرستان را انتخاب کنید</option>';
+                const counties = Array.isArray(data) ? data : (data.data || []);
+                counties.forEach(county => {
+                    const option = document.createElement('option');
+                    option.value = county.id;
+                    option.textContent = county.name;
+                    countySelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading counties:', error);
+                alert('خطا در بارگذاری شهرستان‌ها');
+            });
+    }
+    
+    // Load districts for a county
+    function loadDistricts(countyId) {
+        console.log('Loading districts for county:', countyId);
+        fetch(`/api/geo/districts/?county_id=${countyId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Districts loaded:', data);
+                districtSelect.innerHTML = '<option value="">بخش را انتخاب کنید</option>';
+                const districts = Array.isArray(data) ? data : (data.data || []);
+                districts.forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district.id;
+                    option.textContent = district.name;
+                    districtSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading districts:', error);
+                alert('خطا در بارگذاری بخش‌ها');
+            });
+    }
+    
+    // Load dehestans for a district
+    function loadDehestans(districtId) {
+        console.log('Loading dehestans for district:', districtId);
+        fetch(`/api/geo/dehestans/?district_id=${districtId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Dehestans loaded:', data);
+                dehestanSelect.innerHTML = '<option value="">دهستان را انتخاب کنید</option>';
+                const dehestans = Array.isArray(data) ? data : (data.data || []);
+                dehestans.forEach(dehestan => {
+                    const option = document.createElement('option');
+                    option.value = dehestan.id;
+                    option.textContent = dehestan.name;
+                    dehestanSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading dehestans:', error);
+                alert('خطا در بارگذاری دهستان‌ها');
+            });
+    }
+    
+    // Load cities/villages for a district or dehestan
+    function loadCitiesVillages(districtId, dehestanId) {
+        console.log('Loading cities/villages for district:', districtId, 'dehestan:', dehestanId);
+        let url = `/api/geo/cities-villages/?district_id=${districtId}`;
+        if (dehestanId) {
+            url += `&dehestan_id=${dehestanId}`;
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Cities/villages loaded:', data);
+                cityVillageSelect.innerHTML = '<option value="">انتخاب کنید</option>';
+                const citiesVillages = Array.isArray(data) ? data : (data.data || []);
+                citiesVillages.forEach(cv => {
+                    const option = document.createElement('option');
+                    option.value = cv.id;
+                    option.textContent = cv.name + ' (' + cv.type_display + ')';
+                    cityVillageSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading cities/villages:', error);
+                alert('خطا در بارگذاری شهرها/روستاها');
+            });
+    }
+});
+</script>
+{% endblock %}

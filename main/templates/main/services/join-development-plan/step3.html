@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله 3: نتیجه شورا و پیگیری الحاق - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .conditional-view {
+            display: none;
+        }
+        .conditional-view.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست الحاق به طرح</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 66.6%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۴ از ۶: نتیجه شورا و هیئت تطبیق</p>
+        </div>
+
+        <!-- Demo Controls -->
+        <div class="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm text-center">
+            <strong>نمایش آزمایشی:</strong> وضعیت پرونده را تغییر دهید:
+            <select id="case-status-selector" onchange="switchCaseView(this.value)" class="bg-white rounded p-1 mx-2">
+                <option value="council-approved">موافقت شورا و هیئت تطبیق</option>
+                <option value="board-rejected">موافقت شورا، رد هیئت تطبیق</option>
+                <option value="council-rejected">رد توسط شورا</option>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                <div class="border-b pb-6 mb-8">
+                    <i class="fas fa-balance-scale text-blue-600 text-3xl mb-4"></i>
+                    <h1 class="text-3xl font-bold text-gray-800">نتیجه شورا و مراحل بعدی</h1>
+                    <p class="mt-2 text-gray-600">وضعیت درخواست شما برای پرونده #A-001</p>
+                </div>
+
+                <!-- View for Approved by Council & Board -->
+                <div id="council-approved-view" class="conditional-view active">
+                    <div class="p-4 bg-green-50 text-green-800 rounded-lg mb-6 flex items-center">
+                        <i class="fas fa-check-circle text-2xl ml-3"></i>
+                        <div>
+                            <h3 class="font-bold">وضعیت شورای روستا: موافقت شد</h3>
+                            <p class="text-sm">درخواست شما در جلسه شورا تصویب شد.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">مرحله بعدی: هیئت تطبیق</h3>
+                            <div class="p-4 border rounded-lg bg-gray-50">
+                                <p><strong>وضعیت هیئت تطبیق:</strong> <span class="font-bold text-green-600">تایید شد</span></p>
+                                <p class="text-sm text-gray-600 mt-1">پرونده توسط هیئت تطبیق نیز تایید گردید.</p>
+                                <p class="text-xs text-gray-500 mt-2">یادداشت: ارسال به هیئت تطبیق توسط دهیاری انجام می‌شود.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">اقدام نهایی: معرفی به بنیاد مسکن و بخشداری</h3>
+                            <div class="p-4 border rounded-lg bg-blue-50 space-y-4">
+                                <p class="text-blue-800 font-semibold">معرفی نامه دهیاری را دانلود نمایید و   پاسخ بنیاد را پس از دریافت، بارگذاری کنید.</p>
+                                <button type="button" class="w-full sm:w-auto bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center">
+                                    <i class="fas fa-download mr-2"></i>
+                                    دانلود معرفی نامه
+                                </button>
+                                <div>
+                                    <label for="hbr-response-upload" class="block font-medium mb-2">آپلود پاسخ بنیاد مسکن<span class="text-red-500">*</span></label>
+                                    <input type="file" id="hbr-response-upload" required accept=".pdf" class="w-full text-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View for Approved by Council, Rejected by Board -->
+                <div id="board-rejected-view" class="conditional-view">
+                     <div class="p-4 bg-green-50 text-green-800 rounded-lg mb-6 flex items-center">
+                        <i class="fas fa-check-circle text-2xl ml-3"></i>
+                        <div>
+                            <h3 class="font-bold">وضعیت شورای روستا: موافقت شد</h3>
+                        </div>
+                    </div>
+                     <div class="p-4 bg-red-50 text-red-800 rounded-lg mb-6 flex items-center">
+                        <i class="fas fa-times-circle text-2xl ml-3"></i>
+                        <div>
+                            <h3 class="font-bold">وضعیت هیئت تطبیق: رد شد</h3>
+                            <p class="text-sm">پرونده به دلیل مغایرت با قوانین بالادستی رد گردید.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">متن مصوبه هیئت تطبیق</h3>
+                            <div class="p-4 border rounded-lg bg-gray-50 text-gray-600 leading-relaxed">
+                                <p>بر اساس بررسی‌های انجام شده و مغایرت مصوبه شورا با قوانین، امکان تایید درخواست وجود ندارد.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">راهنمای پیگیری</h3>
+                            <div class="p-4 border rounded-lg bg-gray-50 text-gray-600">
+                                <p>برای پیگیری بیشتر و یا رفع ایرادات، لطفاً به صورت حضوری به دهیاری مراجعه فرمایید.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View for Rejected by Council -->
+                <div id="council-rejected-view" class="conditional-view">
+                    <div class="p-4 bg-red-50 text-red-800 rounded-lg mb-6 flex items-center">
+                        <i class="fas fa-times-circle text-2xl ml-3"></i>
+                        <div>
+                            <h3 class="font-bold">وضعیت شورای روستا: رد شد</h3>
+                            <p class="text-sm">متاسفانه درخواست شما در جلسه شورا تصویب نشد.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">متن مصوبه شورا</h3>
+                            <div class="p-4 border rounded-lg bg-gray-50 text-gray-600 leading-relaxed">
+                                <p>بر اساس بررسی‌های انجام شده و مغایرت ملک با طرح جامع روستا، درخواست الحاق به طرح در حال حاضر مورد موافقت قرار نگرفت.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">راهنمای اعتراض/اصلاح</h3>
+                            <div class="p-4 border rounded-lg bg-gray-50 text-gray-600">
+                                <p>شما می‌توانید ظرف مدت ۲۰ روز کاری، اعتراض خود را به صورت کتبی به دهیاری تحویل دهید تا در هیئت حل اختلاف مطرح گردد.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <!-- Checklist Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-list-check text-green-500 mr-3"></i>چک‌لیست مدارک</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>سند یا قولنامه ملک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>فایل شمیم</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>گواهی تصرف</span></li>
+                    </ul>
+                </div>
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">شناسه پرونده:</p><p class="text-gray-600">#A-001</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p id="case-status" class="text-green-600 font-bold">در انتظار آپلود پاسخ بنیاد</p></div>
+                        <div><p class="font-semibold">مسئول فعلی:</p><p class="text-gray-600">شما (متقاضی)</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchCaseView(caseStatus) {
+            const approvedView = document.getElementById('council-approved-view');
+            const rejectedView = document.getElementById('council-rejected-view');
+            const boardRejectedView = document.getElementById('board-rejected-view');
+            const statusElement = document.getElementById('case-status');
+
+            // Hide all views first
+            approvedView.classList.remove('active');
+            rejectedView.classList.remove('active');
+            boardRejectedView.classList.remove('active');
+
+
+            if (caseStatus === 'council-approved') {
+                approvedView.classList.add('active');
+                statusElement.textContent = 'در انتظار آپلود پاسخ بنیاد';
+                statusElement.className = 'font-bold text-amber-600';
+            } else if (caseStatus === 'board-rejected') {
+                boardRejectedView.classList.add('active');
+                statusElement.textContent = 'پرونده مختومه شد';
+                statusElement.className = 'font-bold text-red-600';
+            } else { // council-rejected
+                rejectedView.classList.add('active');
+                statusElement.textContent = 'پرونده مختومه شد';
+                statusElement.className = 'font-bold text-red-600';
+            }
+        }
+
+        // Initialize view
+        document.addEventListener('DOMContentLoaded', () => {
+            switchCaseView('council-approved');
+        });
+    </script>
+</body>
+</html>
+

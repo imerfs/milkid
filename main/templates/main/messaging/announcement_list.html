@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}اطلاعیه‌ها - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .announcement-card {
+        transition: all 0.3s ease;
+        border-right: 4px solid transparent;
+    }
+    .announcement-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .priority-urgent {
+        border-right-color: #ef4444;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+    .priority-high {
+        border-right-color: #f59e0b;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+    .priority-medium {
+        border-right-color: #10b981;
+        background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
+    }
+    .priority-low {
+        border-right-color: #6b7280;
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    }
+    .filter-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-6">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-bullhorn text-primary me-2"></i>
+                        اطلاعیه‌ها
+                    </h1>
+                    <p class="text-muted mt-1">مشاهده اطلاعیه‌های عمومی</p>
+                </div>
+                <div>
+                    <a href="{% url 'main:messaging_dashboard' %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-right me-1"></i>
+                        بازگشت
+                    </a>
+                    {% if user.profile.role in 'dehyari,admin' %}
+                    <a href="{% url 'main:create_announcement' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i>
+                        اطلاعیه جدید
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- فیلترها -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card filter-card">
+                <div class="card-body py-3">
+                    <form method="get" class="row align-items-end">
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label text-white small">فیلتر بر اساس اولویت:</label>
+                            <select name="priority" class="form-select" onchange="this.form.submit()">
+                                <option value="">همه اولویت‌ها</option>
+                                {% for priority_code, priority_name in priority_choices %}
+                                <option value="{{ priority_code }}" {% if priority_filter == priority_code %}selected{% endif %}>
+                                    {{ priority_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label text-white small">جستجو در عنوان:</label>
+                            <input type="text" name="search" class="form-control" 
+                                   value="{{ request.GET.search }}" placeholder="جستجو...">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <button type="submit" class="btn btn-light">
+                                <i class="fas fa-search me-1"></i>
+                                جستجو
+                            </button>
+                            <a href="{% url 'main:announcement_list' %}" class="btn btn-outline-light">
+                                <i class="fas fa-times me-1"></i>
+                                پاک کردن
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لیست اطلاعیه‌ها -->
+    <div class="row">
+        <div class="col-12">
+            {% if announcements %}
+                {% for announcement in announcements %}
+                <div class="card announcement-card priority-{{ announcement.priority }} mb-4 shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">
+                                        <a href="{% url 'main:announcement_detail' announcement.id %}" 
+                                           class="text-decoration-none text-dark">
+                                            {{ announcement.title }}
+                                        </a>
+                                    </h5>
+                                    <span class="badge bg-{% if announcement.priority == 'urgent' %}danger{% elif announcement.priority == 'high' %}warning{% elif announcement.priority == 'medium' %}success{% else %}secondary{% endif %}">
+                                        {{ announcement.get_priority_display }}
+                                    </span>
+                                </div>
+                                
+                                <p class="card-text text-muted mb-3">
+                                    {{ announcement.content|truncatechars:200 }}
+                                </p>
+                                
+                                <div class="d-flex align-items-center text-muted small">
+                                    <i class="fas fa-user me-1"></i>
+                                    <span class="me-3">{{ announcement.created_by.get_full_name }}</span>
+                                    
+                                    <i class="fas fa-calendar me-1"></i>
+                                    <span class="me-3">{{ announcement.created_at|date:"Y/m/d H:i" }}</span>
+                                    
+                                    {% if announcement.expires_at %}
+                                    <i class="fas fa-clock me-1"></i>
+                                    <span class="me-3">انقضا: {{ announcement.expires_at|date:"Y/m/d" }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 text-end">
+                                <div class="mb-3">
+                                    {% if announcement.target_roles %}
+                                        <small class="text-muted d-block mb-1">گروه هدف:</small>
+                                        {% for role in announcement.target_roles %}
+                                            <span class="badge bg-light text-dark me-1">
+                                                {% if role == 'citizen' %}شهروند
+                                                {% elif role == 'dehyari' %}دهیار
+                                                {% elif role == 'engineer' %}کارشناس فنی
+                                                {% elif role == 'council' %}عضو شورا
+                                                {% elif role == 'accountant' %}مسئول مالی
+                                                {% elif role == 'inspector' %}ناظر فنی
+                                                {% elif role == 'admin' %}مدیر سیستم
+                                                {% else %}{{ role }}
+                                                {% endif %}
+                                            </span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="badge bg-primary">همه کاربران</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <a href="{% url 'main:announcement_detail' announcement.id %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye me-1"></i>
+                                        مشاهده کامل
+                                    </a>
+                                    
+                                    {% if announcement.created_by == user %}
+                                    <div class="btn-group mt-2">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                                data-bs-toggle="dropdown">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" href="#" 
+                                                   onclick="editAnnouncement({{ announcement.id }})">
+                                                    <i class="fas fa-edit me-1"></i>
+                                                    ویرایش
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="#" 
+                                                   onclick="deleteAnnouncement({{ announcement.id }})">
+                                                    <i class="fas fa-trash me-1"></i>
+                                                    حذف
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- صفحه‌بندی -->
+                {% if announcements.has_other_pages %}
+                <nav aria-label="صفحه‌بندی اطلاعیه‌ها">
+                    <ul class="pagination justify-content-center">
+                        {% if announcements.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ announcements.previous_page_number }}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                    قبلی
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in announcements.paginator.page_range %}
+                            {% if announcements.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > announcements.number|add:'-3' and num < announcements.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if announcements.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ announcements.next_page_number }}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                    بعدی
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">اطلاعیه‌ای یافت نشد</h5>
+                        <p class="text-muted">
+                            {% if priority_filter or request.GET.search %}
+                                هیچ اطلاعیه‌ای با فیلترهای انتخابی یافت نشد.
+                            {% else %}
+                                هنوز اطلاعیه‌ای منتشر نشده است.
+                            {% endif %}
+                        </p>
+                        {% if user.profile.role in 'dehyari,admin' %}
+                        <a href="{% url 'main:create_announcement' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            ایجاد اولین اطلاعیه
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal تایید حذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تایید حذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا مطمئن هستید که می‌خواهید این اطلاعیه را حذف کنید؟</p>
+                <p class="text-muted small">این عمل قابل بازگشت نیست.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">حذف</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let deleteAnnouncementId = null;
+
+function editAnnouncement(id) {
+    // TODO: پیاده‌سازی ویرایش اطلاعیه
+    alert('ویرایش اطلاعیه در نسخه بعدی پیاده‌سازی خواهد شد');
+}
+
+function deleteAnnouncement(id) {
+    deleteAnnouncementId = id;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+document.getElementById('confirmDelete').addEventListener('click', function() {
+    if (deleteAnnouncementId) {
+        // TODO: ارسال درخواست حذف به سرور
+        fetch(`/api/announcements/${deleteAnnouncementId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('خطا در حذف اطلاعیه: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('خطا در ارتباط با سرور');
+        });
+    }
+});
+
+// انیمیشن برای کارت‌ها
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.announcement-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

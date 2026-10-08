@@ -1,0 +1,485 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ثبت نام شهرداری/دهیاری - ملک آیدی{% endblock %}
+
+{% block extra_head %}
+<!-- Geographic Selector JavaScript -->
+<script src="{% static 'js/geographic_selector.js' %}" defer></script>
+
+<style>
+    .form-step {
+        display: none;
+    }
+    .form-step.active {
+        display: block;
+    }
+    .step-indicator {
+        margin-bottom: 2rem;
+    }
+    .step-indicator .step {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        text-align: center;
+        background: #dee2e6;
+        border-radius: 50%;
+        margin: 0 10px;
+        transition: all 0.3s ease;
+    }
+    .step-indicator .step.active {
+        background: #14b8a6;
+        color: white;
+    }
+    .step-indicator .step.completed {
+        background: #28a745;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-gradient-primary text-white text-center py-4">
+                    <h2 class="mb-0">
+                        <i class="fas fa-building me-3"></i>
+                        ثبت نام شهرداری / دهیاری در سامانه ملک آیدی
+                    </h2>
+                    <p class="mb-0 mt-2">پلتفرم دیجیتال مدیریت خدمات شهری و روستایی</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <!-- Step Indicator -->
+                    <div class="step-indicator text-center">
+                        <div class="step active" id="step-1"></div>
+                        <div class="step" id="step-2"></div>
+                        <div class="step" id="step-3"></div>
+                        <div class="step" id="step-4"></div>
+                    </div>
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>خطا در پر کردن فرم:</strong>
+                            <ul class="mb-0 mt-2">
+                            {% for field, errors in form.errors.items %}
+                                <li><strong>{{ form.field.label|default:field }}:</strong> {{ errors.0 }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data" id="municipality-form">
+                        {% csrf_token %}
+                        
+                        <!-- Step 1: Basic Info -->
+                        <div class="form-step active" id="form-step-1">
+                            <h4 class="mb-4 text-primary">
+                                <i class="fas fa-info-circle me-2"></i>اطلاعات پایه
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.name.label }}</label>
+                                    {{ form.name }}
+                                    {% if form.name.help_text %}
+                                        <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.municipality_type.label }}</label>
+                                    {{ form.municipality_type }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.province.label }}</label>
+                                    {{ form.province }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.county.label }}</label>
+                                    {{ form.county }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.district.label }}</label>
+                                    {{ form.district }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.settlement_type.label }}</label>
+                                    {{ form.settlement_type }}
+                                    {% if form.settlement_type.help_text %}
+                                        <small class="form-text text-muted">{{ form.settlement_type.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">{{ form.city_village.label }}</label>
+                                    {{ form.city_village }}
+                                    {% if form.city_village.help_text %}
+                                        <small class="form-text text-muted">{{ form.city_village.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+
+                        </div>
+                        
+                        <!-- Step 2: Contact Info -->
+                        <div class="form-step" id="form-step-2">
+                            <h4 class="mb-4 text-primary">
+                                <i class="fas fa-phone me-2"></i>اطلاعات تماس
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.official_phone.label }}</label>
+                                    {{ form.official_phone }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.official_email.label }}</label>
+                                    {{ form.official_email }}
+                                    {% if form.official_email.errors %}
+                                        <div class="text-danger mt-1">
+                                            <small><i class="fas fa-exclamation-circle"></i> {{ form.official_email.errors.0 }}</small>
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> هر فرمت ایمیلی قابل قبول است
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.postal_code.label }}</label>
+                                    {{ form.postal_code }}
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">{{ form.address.label }}</label>
+                                    {{ form.address }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3: Administrative Info -->
+                        <div class="form-step" id="form-step-3">
+                            <h4 class="mb-4 text-primary">
+                                <i class="fas fa-chart-bar me-2"></i>اطلاعات اداری
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.establishment_date.label }}</label>
+                                    {{ form.establishment_date }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.population.label }}</label>
+                                    {{ form.population }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.area_hectares.label }}</label>
+                                    {{ form.area_hectares }}
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">{{ form.license_number.label }}</label>
+                                    {{ form.license_number }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 4: Manager Info -->
+                        <div class="form-step" id="form-step-4">
+                            <h4 class="mb-4 text-primary">
+                                <i class="fas fa-user-tie me-2"></i>اطلاعات مدیر سیستم
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.manager_name.label }}</label>
+                                    {{ form.manager_name }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.manager_national_id.label }}</label>
+                                    {{ form.manager_national_id }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.manager_phone.label }}</label>
+                                    {{ form.manager_phone }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.manager_email.label }}</label>
+                                    {{ form.manager_email }}
+                                    {% if form.manager_email.errors %}
+                                        <div class="text-danger mt-1">
+                                            <small><i class="fas fa-exclamation-circle"></i> {{ form.manager_email.errors.0 }}</small>
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> هر فرمت ایمیلی قابل قبول است
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.manager_username.label }}</label>
+                                    {{ form.manager_username }}
+                                    {% if form.manager_username.help_text %}
+                                        <small class="form-text text-muted">{{ form.manager_username.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.manager_password.label }}</label>
+                                    {{ form.manager_password }}
+                                    {% if form.manager_password.help_text %}
+                                        <small class="form-text text-muted">{{ form.manager_password.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label text-danger">
+                                        <i class="fas fa-asterisk text-danger" style="font-size: 8px;"></i>
+                                        {{ form.governor_decree.label }} (ضروری)
+                                    </label>
+                                    {{ form.governor_decree }}
+                                    {% if form.governor_decree.errors %}
+                                        <div class="text-danger mt-1">
+                                            <small><i class="fas fa-exclamation-circle"></i> {{ form.governor_decree.errors.0 }}</small>
+                                        </div>
+                                    {% endif %}
+                                    {% if form.governor_decree.help_text %}
+                                        <small class="form-text text-muted">{{ form.governor_decree.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>توجه:</strong> پس از تایید درخواست توسط مدیریت سیستم، حساب کاربری مدیر با مشخصات وارد شده فعال خواهد شد.
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-upload me-2"></i>
+                                <strong>حکم فرماندار:</strong> ارائه حکم انتصاب از فرماندار استان الزامی است. فایل حکم باید واضح و خوانا باشد.
+                            </div>
+                        </div>
+                        
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" id="prev-btn" style="display: none;">
+                                <i class="fas fa-arrow-right me-2"></i>مرحله قبل
+                            </button>
+                            <button type="button" class="btn btn-primary" id="next-btn">
+                                مرحله بعد<i class="fas fa-arrow-left ms-2"></i>
+                            </button>
+                            <button type="button" class="btn btn-success" id="submit-btn" style="display: none;">
+                                <i class="fas fa-check me-2"></i>ثبت درخواست
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStep = 1;
+const totalSteps = 4;
+
+// Required fields for each step
+const requiredFieldsByStep = {
+    1: ['name', 'municipality_type', 'province', 'county', 'district', 'settlement_type', 'city_village'],
+    2: ['official_phone', 'official_email', 'postal_code', 'address'],
+    3: ['establishment_date', 'population', 'area_hectares'],
+    4: ['manager_name', 'manager_national_id', 'manager_phone', 'manager_email', 'manager_username', 'manager_password', 'governor_decree']
+};
+
+function validateStep(step) {
+    const requiredFields = requiredFieldsByStep[step] || [];
+    let isValid = true;
+    let firstInvalidField = null;
+    
+    requiredFields.forEach(fieldName => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            const value = field.type === 'file' ? field.files.length > 0 : field.value.trim();
+            
+            if (!value) {
+                isValid = false;
+                field.classList.add('is-invalid');
+                if (!firstInvalidField) {
+                    firstInvalidField = field;
+                }
+                
+                // Show error message
+                let errorDiv = field.parentNode.querySelector('.field-error');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.className = 'field-error text-danger mt-1';
+                    errorDiv.innerHTML = '<small><i class="fas fa-exclamation-circle"></i> این فیلد ضروری است</small>';
+                    field.parentNode.appendChild(errorDiv);
+                }
+            } else {
+                field.classList.remove('is-invalid');
+                const errorDiv = field.parentNode.querySelector('.field-error');
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+            }
+        }
+    });
+    
+    if (!isValid && firstInvalidField) {
+        firstInvalidField.focus();
+        
+        // Show alert
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-warning alert-dismissible fade show mt-3';
+        alert.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            لطفاً تمام فیلدهای ضروری را تکمیل کنید.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.form-step.active').insertBefore(alert, document.querySelector('.form-step.active').firstChild);
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 4000);
+    }
+    
+    return isValid;
+}
+
+function showStep(step) {
+    // Hide all steps
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.step').forEach(s => {
+        s.classList.remove('active');
+        if (parseInt(s.id.split('-')[1]) < step) {
+            s.classList.add('completed');
+        }
+    });
+    
+    // Show current step
+    document.getElementById(`form-step-${step}`).classList.add('active');
+    document.getElementById(`step-${step}`).classList.add('active');
+    
+    // Update buttons
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    prevBtn.style.display = step > 1 ? 'block' : 'none';
+    nextBtn.style.display = step < totalSteps ? 'block' : 'none';
+    submitBtn.style.display = step === totalSteps ? 'block' : 'none';
+}
+
+document.getElementById('next-btn').addEventListener('click', () => {
+    if (validateStep(currentStep) && currentStep < totalSteps) {
+        currentStep++;
+        showStep(currentStep);
+    }
+});
+
+document.getElementById('prev-btn').addEventListener('click', () => {
+    if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+    }
+});
+
+document.getElementById('submit-btn').addEventListener('click', () => {
+    if (validateStep(currentStep)) {
+        // Show loading
+        const submitBtn = document.getElementById('submit-btn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال ارسال...';
+        submitBtn.disabled = true;
+        
+        // Submit form
+        document.getElementById('municipality-form').submit();
+    }
+});
+
+// Clear validation errors on input
+document.addEventListener('input', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+        e.target.classList.remove('is-invalid');
+        const errorDiv = e.target.parentNode.querySelector('.field-error');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+});
+
+// Clear file validation errors on file change
+document.addEventListener('change', (e) => {
+    if (e.target.type === 'file') {
+        e.target.classList.remove('is-invalid');
+        const errorDiv = e.target.parentNode.querySelector('.field-error');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+});
+
+// Geographic Dropdown Handlers
+document.addEventListener('DOMContentLoaded', function() {
+    const provinceSelect = document.getElementById('id_province');
+    const countySelect = document.getElementById('id_county');
+    const districtSelect = document.getElementById('id_district');
+    
+    // Province change handler
+    if (provinceSelect) {
+        provinceSelect.addEventListener('change', function() {
+            const provinceId = this.value;
+            
+            // Reset dependent dropdowns
+            countySelect.innerHTML = '<option value="">ابتدا استان را انتخاب کنید</option>';
+            districtSelect.innerHTML = '<option value="">ابتدا شهرستان را انتخاب کنید</option>';
+            
+            if (provinceId) {
+                // Show loading
+                countySelect.innerHTML = '<option value="">در حال بارگذاری...</option>';
+                
+                // Fetch counties
+                fetch(`/api/get-counties/?province_id=${provinceId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        countySelect.innerHTML = '<option value="">انتخاب شهرستان</option>';
+                        data.forEach(county => {
+                            countySelect.innerHTML += `<option value="${county.id}">${county.name}</option>`;
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching counties:', error);
+                        countySelect.innerHTML = '<option value="">خطا در بارگذاری شهرستان‌ها</option>';
+                    });
+            }
+        });
+    }
+    
+    // County change handler
+    if (countySelect) {
+        countySelect.addEventListener('change', function() {
+            const countyId = this.value;
+            
+            // Reset district dropdown
+            districtSelect.innerHTML = '<option value="">ابتدا شهرستان را انتخاب کنید</option>';
+            
+            if (countyId) {
+                // Show loading
+                districtSelect.innerHTML = '<option value="">در حال بارگذاری...</option>';
+                
+                // Fetch districts
+                fetch(`/api/get-districts/?county_id=${countyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        districtSelect.innerHTML = '<option value="">انتخاب بخش</option>';
+                        data.forEach(district => {
+                            districtSelect.innerHTML += `<option value="${district.id}">${district.name}</option>`;
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching districts:', error);
+                        districtSelect.innerHTML = '<option value="">خطا در بارگذاری بخش‌ها</option>';
+                    });
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

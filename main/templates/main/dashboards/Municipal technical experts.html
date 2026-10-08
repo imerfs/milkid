@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل جامع کارشناس فنی شهرداری</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6750A4;
+            --primary-container: #EADDFF;
+            --on-primary: #FFFFFF;
+            --on-primary-container: #21005E;
+            --secondary: #625B71;
+            --secondary-container: #E8DEF8;
+            --on-secondary: #FFFFFF;
+            --on-secondary-container: #1D192B;
+            --tertiary: #7D5260;
+            --tertiary-container: #FFD8E4;
+            --on-tertiary: #FFFFFF;
+            --on-tertiary-container: #31111D;
+            --error: #BA1A1A;
+            --error-container: #FFDAD6;
+            --on-error: #FFFFFF;
+            --on-error-container: #410002;
+            --background: #FFFBFE;
+            --on-background: #1C1B1F;
+            --surface: #FFFBFE;
+            --on-surface: #1C1B1F;
+            --surface-variant: #E7E0EC;
+            --on-surface-variant: #49454F;
+            --outline: #79747E;
+            --outline-variant: #CAC4D0;
+            --shadow: #000000;
+        }
+        
+        .dark-mode {
+            --primary: #D0BCFF;
+            --primary-container: #4F378B;
+            --on-primary: #381E72;
+            --on-primary-container: #EADDFF;
+            --secondary: #CCC2DC;
+            --secondary-container: #4A4458;
+            --on-secondary: #332D41;
+            --on-secondary-container: #E8DEF8;
+            --tertiary: #EFB8C8;
+            --tertiary-container: #633B48;
+            --on-tertiary: #492532;
+            --on-tertiary-container: #FFD8E4;
+            --error: #FFB4AB;
+            --error-container: #93000A;
+            --on-error: #690005;
+            --on-error-container: #FFDAD6;
+            --background: #1C1B1F;
+            --on-background: #E6E1E5;
+            --surface: #1C1B1F;
+            --on-surface: #E6E1E5;
+            --surface-variant: #49454F;
+            --on-surface-variant: #CAC4D0;
+            --outline: #938F99;
+            --outline-variant: #49454F;
+            --shadow: #000000;
+        }
+        
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: var(--background);
+            color: var(--on-background);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            background-color: var(--surface);
+            color: var(--on-surface);
+        }
+        
+        .main-content {
+            background-color: var(--background);
+            color: var(--on-background);
+        }
+        
+        .card {
+            background-color: var(--surface);
+            color: var(--on-surface);
+            border: 1px solid var(--outline-variant);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--on-primary);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+        }
+        
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sidebar-link:hover {
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+        }
+        
+        .sidebar-link.active {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--error);
+            color: var(--on-error);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .mobile-sidebar {
+            transform: translateX(100%);
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            z-index: 50;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .stat-card {
+            border-radius: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: var(--surface);
+            border: 1px solid var(--outline-variant);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+            min-width: 200px;
+        }
+        
+        .dropdown-menu.active {
+            display: block;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            text-align: right;
+        }
+        
+        th {
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background-color: var(--surface-variant);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-approved {
+            background-color: var(--tertiary-container);
+            color: var(--on-tertiary-container);
+        }
+        
+        .status-pending {
+            background-color: var(--secondary-container);
+            color: var(--on-secondary-container);
+        }
+        
+        .status-rejected {
+            background-color: var(--error-container);
+            color: var(--on-error-container);
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-right: 40px;
+        }
+        
+        .search-box .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--outline);
+        }
+        
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 16px;
+            border-radius: 16px;
+            background-color: var(--surface-variant);
+            color: var(--on-surface-variant);
+            margin: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .filter-chip.active {
+            background-color: var(--primary);
+            color: var(--on-primary);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: var(--surface-variant);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background-color: var(--surface);
+            color: var(--on-surface);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .accordion-header {
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--outline-variant);
+        }
+        
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .accordion-content.active {
+            max-height: 500px;
+        }
+        
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--surface);
+            color: var(--on-surface);
+            border: 1px solid var(--outline-variant);
+            border-radius: 8px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .chart-bar {
+            width: 30px;
+            background: linear-gradient(to top, var(--primary), var(--on-primary-container));
+            border-radius: 4px 4px 0 0;
+            position: relative;
+        }
+        
+        .chart-bar::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .notification-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .poster-container {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            z-index: 10;
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--outline-variant);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sidebar-nav {
+            padding: 16px 0;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+        
+        .sidebar-section-title {
+            padding: 8px 24px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--on-surface-variant);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .sidebar-item {
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .sidebar-item-icon {
+            margin-left: 16px;
+            color: var(--on-surface-variant);
+        }
+        
+        .sidebar-item.active {
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+        }
+        
+        .sidebar-item.active .sidebar-item-icon {
+            color: var(--on-primary-container);
+        }
+        
+        .sidebar-badge {
+            margin-right: auto;
+            background-color: var(--error);
+            color: var(--on-error);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .stat-card-title {
+            font-size: 14px;
+            color: var(--on-surface-variant);
+        }
+        
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-color: var(--primary-container);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--on-primary-container);
+        }
+        
+        .content-card {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+        
+        .content-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .content-card-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .content-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .content-card-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--on-surface-variant);
+        }
+        
+        .content-card-action:hover {
+            background-color: var(--surface-variant);
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            text-align: right;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--on-surface-variant);
+            border-bottom: 1px solid var(--outline-variant);
+        }
+        
+        .data-table td {
+            text-align: right;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--outline-variant);
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge-success {
+            background-color: var(--tertiary-container);
+            color: var(--on-tertiary-container);
+        }
+        
+        .status-badge-warning {
+            background-color: var(--secondary-container);
+            color: var(--on-secondary-container);
+        }
+        
+        .status-badge-error {
+            background-color: var(--error-container);
+            color: var(--on-error-container);
+        }
+        
+        .action-button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background-color: var(--primary);
+            color: var(--on-primary);
+        }
+        
+        .action-button:hover {
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+        }
+        
+        .action-button-secondary {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        .action-button-secondary:hover {
+            background-color: var(--primary-container);
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .empty-state-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background-color: var(--surface-variant);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--on-surface-variant);
+            margin-bottom: 16px;
+        }
+        
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state-description {
+            color: var(--on-surface-variant);
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="poster-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="material-icons text-2xl" style="color: var(--primary);">engineering</i>
+                <h1 class="text-xl font-bold mr-3" style="color: var(--primary);">پنل کارشناس فنی</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">
+                    <a href="#" class="sidebar-item active" data-section="dashboard">
+                        <i class="material-icons sidebar-item-icon">dashboard</i>
+                        <span>داشبورد</span>
+                    </a>
+                    <a href="#" class="sidebar-item" data-section="cases">
+                        <i class="material-icons sidebar-item-icon">folder_open</i>
+                        <span>پرونده‌های ارجاعی</span>
+                        <span class="sidebar-badge">5</span>
+                    </a>
+                    <a href="#" class="sidebar-item" data-section="inspections">
+                        <i class="material-icons sidebar-item-icon">fact_check</i>
+                        <span>بازدیدهای میدانی</span>
+                        <span class="sidebar-badge">2</span>
+                    </a>
+                    <a href="#" class="sidebar-item" data-section="violations">
+                        <i class="material-icons sidebar-item-icon">gpp_bad</i>
+                        <span>تخلفات ساختمانی</span>
+                        <span class="sidebar-badge">3</span>
+                    </a>
+                    <a href="#" class="sidebar-item" data-section="inquiries">
+                        <i class="material-icons sidebar-item-icon">send</i>
+                        <span>استعلام‌ها</span>
+                    </a>
+                    <a href="#" class="sidebar-item" data-section="reports">
+                        <i class="material-icons sidebar-item-icon">description</i>
+                        <span>گزارش‌های فنی</span>
+                    </a>
+                </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">سیستم</div>
+                    <a href="#" class="sidebar-item" data-section="help">
+                        <i class="material-icons sidebar-item-icon">help_outline</i>
+                        <span>راهنما</span>
+                    </a>
+                    <a href="#" class="sidebar-item" data-section="settings">
+                        <i class="material-icons sidebar-item-icon">settings</i>
+                        <span>تنظیمات</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <header style="background-color: var(--surface);">
+                <div>
+                    <h2 class="text-lg font-semibold">کارشناس فنی شهرداری فشم</h2>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <div class="text-sm">
+                        <i class="material-icons ml-1 text-sm">calendar_today</i>
+                        <span id="current-date"></span>
+                    </div>
+                    <div class="relative">
+                        <button class="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <i class="material-icons">notifications</i>
+                            <span class="notification-badge">3</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="ml-2 text-right">
+                            <div class="font-medium">مهندس احمدی</div>
+                            <div class="text-xs opacity-75">کارشناس ارشد</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background-color: var(--primary);">
+                            <span class="text-white font-bold">م‌ا</span>
+                        </div>
+                    </div>
+                    <a href="{% url 'main:logout' %}" class="tooltip">
+                        <i class="material-icons">logout</i>
+                        <span class="tooltip-text">خروج از سیستم</span>
+                    </a>
+                </div>
+            </header>
+            
+            <main>
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="content-section active">
+                    <h2 class="text-3xl font-bold mb-8">داشبورد کارشناس فنی</h2>
+                    
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div>
+                                    <p class="stat-card-title">پرونده‌های جدید</p>
+                                    <p class="stat-card-value">5</p>
+                                </div>
+                                <div class="stat-card-icon">
+                                    <i class="material-icons">folder_open</i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-xs opacity-75 mb-1">افزایش نسبت به هفته گذشته</div>
+                                <div class="flex items-center">
+                                    <i class="material-icons text-green-500 text-sm">trending_up</i>
+                                    <span class="text-green-500 text-sm font-medium ml-1">12%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div>
+                                    <p class="stat-card-title">در حال بررسی</p>
+                                    <p class="stat-card-value">12</p>
+                                </div>
+                                <div class="stat-card-icon" style="background-color: var(--secondary-container); color: var(--on-secondary-container);">
+                                    <i class="material-icons">pending</i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: 65%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div>
+                                    <p class="stat-card-title">تایید شده</p>
+                                    <p class="stat-card-value">24</p>
+                                </div>
+                                <div class="stat-card-icon" style="background-color: var(--tertiary-container); color: var(--on-tertiary-container);">
+                                    <i class="material-icons">check_circle</i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-xs opacity-75 mb-1">میانگین زمان بررسی</div>
+                                <div class="font-medium">3.5 روز</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div>
+                                    <p class="stat-card-title">نیاز به بازدید</p>
+                                    <p class="stat-card-value">7</p>
+                                </div>
+                                <div class="stat-card-icon" style="background-color: var(--error-container); color: var(--on-error-container);">
+                                    <i class="material-icons">location_on</i>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="action-button w-full">برنامه‌ریزی بازدید</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts and Tasks -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <div class="content-card lg:col-span-2">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">آمار فعالیت‌ها</h3>
+                                <div class="content-card-actions">
+                                    <div class="content-card-action">
+                                        <i class="material-icons">more_vert</i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-container" style="height: 200px; display: flex; align-items: flex-end; justify-content: space-between; padding: 20px 0;">
+                                <div class="chart-bar" data-value="15" style="height: 80%"></div>
+                                <div class="chart-bar" data-value="12" style="height: 65%"></div>
+                                <div class="chart-bar" data-value="18" style="height: 95%"></div>
+                                <div class="chart-bar" data-value="9" style="height: 50%"></div>
+                                <div class="chart-bar" data-value="14" style="height: 75%"></div>
+                                <div class="chart-bar" data-value="11" style="height: 60%"></div>
+                                <div class="chart-bar" data-value="16" style="height: 85%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs opacity-75 mt-2">
+                                <span>فروردین</span>
+                                <span>اردیبهشت</span>
+                                <span>خرداد</span>
+                                <span>تیر</span>
+                                <span>مرداد</span>
+                                <span>شهریور</span>
+                                <span>مهر</span>
+                            </div>
+                        </div>
+                        
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">وظایف امروز</h3>
+                                <div class="content-card-actions">
+                                    <div class="content-card-action">
+                                        <i class="material-icons">more_vert</i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <div class="p-2 rounded-full mr-3" style="background-color: var(--primary-container);">
+                                        <i class="material-icons" style="color: var(--on-primary-container);">search</i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold">بازدید پروانه ساخت</h4>
+                                        <p class="text-sm opacity-75">ساختمان احمد رضایی - 10:00 صبح</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="p-2 rounded-full mr-3" style="background-color: var(--secondary-container);">
+                                        <i class="material-icons" style="color: var(--on-secondary-container);">description</i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold">بررسی فنی پرونده</h4>
+                                        <p class="text-sm opacity-75">پرونده #1234 - تا ساعت 14:00</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="p-2 rounded-full mr-3" style="background-color: var(--tertiary-container);">
+                                        <i class="material-icons" style="color: var(--on-tertiary-container);">check_circle</i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold">تکمیل گزارش بازدید</h4>
+                                        <p class="text-sm opacity-75">پروژه فاطمه کریمی - فوراً</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Urgent Tasks Table -->
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">لیست وظایف فوری</h3>
+                            <div class="content-card-actions">
+                                <div class="content-card-action">
+                                    <i class="material-icons">filter_list</i>
+                                </div>
+                                <div class="content-card-action">
+                                    <i class="material-icons">more_vert</i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>کد پرونده</th>
+                                        <th>متقاضی</th>
+                                        <th>نوع درخواست</th>
+                                        <th>اقدام لازم</th>
+                                        <th>مهلت</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium">P-156</td>
+                                        <td>حسین کریمی</td>
+                                        <td>ساخت با پروانه</td>
+                                        <td><span class="font-bold" style="color: var(--primary);">تایید مدارک اولیه</span></td>
+                                        <td>2 روز</td>
+                                        <td>
+                                            <button class="action-button">بررسی پرونده</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">NP-012</td>
+                                        <td>علی رضایی</td>
+                                        <td>ساخت بدون پروانه</td>
+                                        <td><span class="font-bold" style="color: var(--secondary);">بازدید و تهیه گزارش</span></td>
+                                        <td>امروز</td>
+                                        <td>
+                                            <button class="action-button">بررسی پرونده</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">S-021</td>
+                                        <td>مریم قاسمی</td>
+                                        <td>صدور سند</td>
+                                        <td><span class="font-bold" style="color: var(--tertiary);">ارسال استعلام به بنیاد مسکن</span></td>
+                                        <td>3 روز</td>
+                                        <td>
+                                            <button class="action-button">بررسی پرونده</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cases Section -->
+                <div id="cases" class="content-section">
+                    <h2 class="text-3xl font-bold mb-8">پرونده‌های ارجاعی</h2>
+                    <div class="content-card mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="search-box md:col-span-2">
+                                <i class="material-icons search-icon">search</i>
+                                <input type="text" placeholder="جستجو کد یا نام متقاضی..." class="w-full p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                            </div>
+                            <select class="p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                <option>نوع: همه</option>
+                                <option>با پروانه</option>
+                                <option>بدون پروانه</option>
+                                <option>اسناد</option>
+                            </select>
+                            <select class="p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                <option>وضعیت: همه</option>
+                                <option>جدید</option>
+                                <option>در حال بررسی</option>
+                                <option>تکمیل شده</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex flex-wrap mb-4">
+                            <span class="text-sm opacity-75 ml-2 mt-1">فیلترهای سریع:</span>
+                            <div class="filter-chip active">فوری</div>
+                            <div class="filter-chip">نیاز به بازدید</div>
+                            <div class="filter-chip">تاخیر بیش از ۵ روز</div>
+                            <div class="filter-chip">شکایت همسایه</div>
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>کد پرونده</th>
+                                        <th>متقاضی</th>
+                                        <th>نوع درخواست</th>
+                                        <th>تاریخ ثبت</th>
+                                        <th>وضعیت</th>
+                                        <th>اولویت</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium">P-156</td>
+                                        <td>حسین کریمی</td>
+                                        <td>ساخت با پروانه</td>
+                                        <td>۱۴۰۳/۰۵/۱۵</td>
+                                        <td>
+                                            <span class="status-badge status-badge-warning">در حال بررسی</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-badge-warning">متوسط</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button">مشاهده</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">NP-012</td>
+                                        <td>علی رضایی</td>
+                                        <td>ساخت بدون پروانه</td>
+                                        <td>۱۴۰۳/۰۵/۱۰</td>
+                                        <td>
+                                            <span class="status-badge status-badge-error">نیاز به بازدید</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-badge-error">فوری</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button">مشاهده</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">S-021</td>
+                                        <td>مریم قاسمی</td>
+                                        <td>صدور سند</td>
+                                        <td>۱۴۰۳/۰۵/۰۵</td>
+                                        <td>
+                                            <span class="status-badge status-badge-success">تکمیل شده</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-badge-warning">عادی</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button">مشاهده</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-6">
+                            <div class="text-sm opacity-75">نمایش ۱ تا ۳ از ۱۵ پرونده</div>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button class="p-2 rounded-lg border" style="border-color: var(--outline-variant);">
+                                    <i class="material-icons">chevron_right</i>
+                                </button>
+                                <button class="p-2 rounded-lg border" style="border-color: var(--outline-variant);">
+                                    <i class="material-icons">chevron_left</i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inspections Section -->
+                <div id="inspections" class="content-section">
+                    <h2 class="text-3xl font-bold mb-8">بازدیدهای میدانی</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">بازدیدهای امروز</h3>
+                                <div class="content-card-actions">
+                                    <div class="content-card-action">
+                                        <i class="material-icons">add</i>
+                                    </div>
+                                    <div class="content-card-action">
+                                        <i class="material-icons">more_vert</i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="border p-4 rounded-lg" style="border-color: var(--outline-variant);">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <h4 class="font-bold">ساختمان احمد رضایی</h4>
+                                            <p class="text-sm opacity-75">آدرس: خیابان شهید بهشتی ۱۲</p>
+                                            <p class="text-sm opacity-75">ساعت: ۱۰:۰۰</p>
+                                        </div>
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="px-3 py-2 rounded text-sm border" style="border-color: var(--outline-variant);">
+                                                <i class="material-icons text-sm">call</i>
+                                            </button>
+                                            <button class="action-button">شروع بازدید</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="border p-4 rounded-lg" style="border-color: var(--outline-variant);">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <h4 class="font-bold">پروژه مسکونی فاطمه کریمی</h4>
+                                            <p class="text-sm opacity-75">آدرس: کوچه گلستان ۵</p>
+                                            <p class="text-sm opacity-75">ساعت: ۱۴:۳۰</p>
+                                        </div>
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="px-3 py-2 rounded text-sm border" style="border-color: var(--outline-variant);">
+                                                <i class="material-icons text-sm">call</i>
+                                            </button>
+                                            <button class="px-3 py-2 rounded text-sm" style="background-color: var(--secondary-container); color: var(--on-secondary-container);">تکمیل شده</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">آمار بازدیدها</h3>
+                                <div class="content-card-actions">
+                                    <div class="content-card-action">
+                                        <i class="material-icons">more_vert</i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="p-4 rounded-lg" style="background-color: var(--primary-container);">
+                                    <div class="text-2xl font-bold" style="color: var(--on-primary-container);">۱۵</div>
+                                    <div class="text-sm opacity-75">بازدید این ماه</div>
+                                </div>
+                                <div class="p-4 rounded-lg" style="background-color: var(--tertiary-container);">
+                                    <div class="text-2xl font-bold" style="color: var(--on-tertiary-container);">۱۲</div>
+                                    <div class="text-sm opacity-75">تایید شده</div>
+                                </div>
+                                <div class="p-4 rounded-lg" style="background-color: var(--error-container);">
+                                    <div class="text-2xl font-bold" style="color: var(--on-error-container);">۳</div>
+                                    <div class="text-sm opacity-75">نیاز به اقدام</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <h4 class="font-medium mb-2">بازدیدهای پیش رو</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span>فردا</span>
+                                        <span>۲ بازدید</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span>پس‌فردا</span>
+                                        <span>۱ بازدید</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">تاریخچه بازدیدها</h3>
+                            <div class="content-card-actions">
+                                <div class="content-card-action">
+                                    <i class="material-icons">filter_list</i>
+                                </div>
+                                <div class="content-card-action">
+                                    <i class="material-icons">more_vert</i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>کد پروژه</th>
+                                        <th>متقاضی</th>
+                                        <th>مرحله بازدید</th>
+                                        <th>تاریخ بازدید</th>
+                                        <th>نتیجه</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium">P-150</td>
+                                        <td>احمد کریمی</td>
+                                        <td>سفت‌کاری</td>
+                                        <td>۱۴۰۳/۰۵/۲۰</td>
+                                        <td>
+                                            <span class="status-badge status-badge-success">تایید شد</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button">مشاهده گزارش</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">P-148</td>
+                                        <td>مریم قاسمی</td>
+                                        <td>پایان کار</td>
+                                        <td>۱۴۰۳/۰۵/۱۵</td>
+                                        <td>
+                                            <span class="status-badge status-badge-error">نیاز به اصلاح</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button-secondary">برنامه‌ریزی مجدد</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Violations Section -->
+                <div id="violations" class="content-section">
+                    <h2 class="text-3xl font-bold mb-8">تخلفات ساختمانی</h2>
+                    <div class="content-card mb-8">
+                        <div class="mb-6">
+                            <button class="action-button flex items-center">
+                                <i class="material-icons ml-2">add</i>
+                                <span>ثبت تخلف جدید</span>
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="search-box">
+                                <i class="material-icons search-icon">search</i>
+                                <input type="text" placeholder="جستجو آدرس یا کد تخلف..." class="w-full p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                            </div>
+                            <select class="p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                <option>نوع تخلف: همه</option>
+                                <option>ساخت بدون مجوز</option>
+                                <option>تجاوز به حریم</option>
+                                <option>تغییر کاربری</option>
+                            </select>
+                            <select class="p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                <option>وضعیت: همه</option>
+                                <option>فعال</option>
+                                <option>برطرف شده</option>
+                                <option>در دست رسیدگی</option>
+                            </select>
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>کد تخلف</th>
+                                        <th>آدرس</th>
+                                        <th>نوع تخلف</th>
+                                        <th>تاریخ ثبت</th>
+                                        <th>وضعیت</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium">#V001</td>
+                                        <td>خیابان آزادی ۱۵</td>
+                                        <td>ساخت بدون مجوز</td>
+                                        <td>۱۴۰۳/۰۵/۱۰</td>
+                                        <td>
+                                            <span class="status-badge status-badge-error">فعال</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button">پیگیری</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">#V002</td>
+                                        <td>کوچه گلها ۸</td>
+                                        <td>تجاوز به حریم</td>
+                                        <td>۱۴۰۳/۰۵/۰۵</td>
+                                        <td>
+                                            <span class="status-badge status-badge-success">برطرف شده</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button-secondary">بایگانی</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inquiries Section -->
+                <div id="inquiries" class="content-section">
+                    <h2 class="text-3xl font-bold mb-8">استعلام‌ها</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">ارسال استعلام جدید</h3>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">پرونده مرتبط</label>
+                                    <select class="w-full p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                        <option>#S-021 - مریم قاسمی</option>
+                                        <option>#C-045 - علی رضایی</option>
+                                        <option>#P-156 - حسین کریمی</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مقصد</label>
+                                    <select class="w-full p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                        <option>بنیاد مسکن</option>
+                                        <option>سازمان برنامه و بودجه</option>
+                                        <option>اداره کل شهرسازی</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">موضوع</label>
+                                    <input type="text" class="w-full p-3 rounded-lg border" style="border-color: var(--outline-variant);" placeholder="موضوع استعلام">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">شرح</label>
+                                    <textarea class="w-full p-3 rounded-lg border" rows="4" style="border-color: var(--outline-variant);" placeholder="شرح کامل استعلام"></textarea>
+                                </div>
+                                <button class="action-button w-full">ارسال استعلام</button>
+                            </div>
+                        </div>
+                        
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">آخرین استعلام‌ها</h3>
+                                <div class="content-card-actions">
+                                    <div class="content-card-action">
+                                        <i class="material-icons">refresh</i>
+                                    </div>
+                                    <div class="content-card-action">
+                                        <i class="material-icons">more_vert</i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="border p-4 rounded-lg" style="border-color: var(--outline-variant);">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="font-bold">استعلام سند - #S-021</h4>
+                                            <p class="text-sm opacity-75">متقاضی: مریم قاسمی</p>
+                                            <p class="text-sm opacity-75">مقصد: بنیاد مسکن</p>
+                                            <p class="text-xs opacity-75 mt-1">۱۴۰۳/۰۵/۱۵</p>
+                                        </div>
+                                        <span class="status-badge status-badge-success">پاسخ دریافت شد</span>
+                                    </div>
+                                    <button class="text-blue-600 text-sm mt-2 hover:text-blue-800">
+                                        <i class="material-icons ml-1 text-sm">visibility</i>مشاهده پاسخ
+                                    </button>
+                                </div>
+                                
+                                <div class="border p-4 rounded-lg" style="border-color: var(--outline-variant);">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="font-bold">استعلام کاربری - #C-045</h4>
+                                            <p class="text-sm opacity-75">متقاضی: علی رضایی</p>
+                                            <p class="text-sm opacity-75">مقصد: بنیاد مسکن</p>
+                                            <p class="text-xs opacity-75 mt-1">۱۴۰۳/۰۵/۱۰</p>
+                                        </div>
+                                        <span class="status-badge status-badge-warning">در انتظار پاسخ</span>
+                                    </div>
+                                    <button class="text-blue-600 text-sm mt-2 hover:text-blue-800">
+                                        <i class="material-icons ml-1 text-sm">refresh</i>ارسال مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">همه استعلام‌ها</h3>
+                            <div class="content-card-actions">
+                                <div class="content-card-action">
+                                    <i class="material-icons">filter_list</i>
+                                </div>
+                                <div class="content-card-action">
+                                    <i class="material-icons">more_vert</i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>کد پرونده</th>
+                                        <th>موضوع</th>
+                                        <th>مقصد</th>
+                                        <th>تاریخ ارسال</th>
+                                        <th>وضعیت</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium">S-021</td>
+                                        <td>استعلام سند</td>
+                                        <td>بنیاد مسکن</td>
+                                        <td>۱۴۰۳/۰۵/۱۵</td>
+                                        <td>
+                                            <span class="font-semibold" style="color: var(--tertiary);">پاسخ دریافت شد</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button-secondary">مشاهده</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">C-045</td>
+                                        <td>استعلام کاربری</td>
+                                        <td>بنیاد مسکن</td>
+                                        <td>۱۴۰۳/۰۵/۱۰</td>
+                                        <td>
+                                            <span class="font-semibold" style="color: var(--secondary);">در انتظار پاسخ</span>
+                                        </td>
+                                        <td>
+                                            <button class="action-button">ارسال مجدد</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reports Section -->
+                <div id="reports" class="content-section">
+                    <h2 class="text-3xl font-bold mb-8">گزارش‌های فنی</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">ایجاد گزارش جدید</h3>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">پرونده مرتبط</label>
+                                    <select class="w-full p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                        <option>#1234 - احمد رضایی</option>
+                                        <option>#1235 - زهرا احمدی</option>
+                                        <option>#1236 - علی محمدی</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">نوع گزارش</label>
+                                    <select class="w-full p-3 rounded-lg border" style="border-color: var(--outline-variant);">
+                                        <option>بررسی فنی</option>
+                                        <option>گزارش بازدید</option>
+                                        <option>گزارش تخلف</option>
+                                        <option>گزارش پایان کار</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">شرح گزارش</label>
+                                    <textarea class="w-full p-3 rounded-lg border" rows="4" style="border-color: var(--outline-variant);"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">ضمیمه‌ها</label>
+                                    <div class="border-2 border-dashed rounded-lg p-6 text-center" style="border-color: var(--outline-variant);">
+                                        <i class="material-icons text-3xl opacity-50">cloud_upload</i>
+                                        <p class="mt-2 text-sm opacity-75">برای آپلود فایل کلیک کنید یا فایل را اینجا بکشید</p>
+                                    </div>
+                                </div>
+                                <button class="action-button w-full">تهیه گزارش</button>
+                            </div>
+                        </div>
+                        
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h3 class="content-card-title">آخرین گزارش‌ها</h3>
+                                <div class="content-card-actions">
+                                    <div class="content-card-action">
+                                        <i class="material-icons">filter_list</i>
+                                    </div>
+                                    <div class="content-card-action">
+                                        <i class="material-icons">more_vert</i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="border p-4 rounded-lg" style="border-color: var(--outline-variant);">
+                                    <div class="flex justify-between">
+                                        <h4 class="font-bold text-sm">گزارش بازدید - پرونده #1234</h4>
+                                        <span class="text-xs opacity-75">۱۴۰۳/۰۵/۲۰</span>
+                                    </div>
+                                    <p class="text-sm mt-2 opacity-75">بازدید از پروژه ساختمانی آقای رضایی در مرحله سفت‌کاری انجام شد. کلیه موارد مطابق با پروانه ساخت بود.</p>
+                                    <div class="flex justify-between mt-3">
+                                        <span class="status-badge status-badge-success">تایید شده</span>
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-sm">مشاهده</button>
+                                            <button class="text-sm">دانلود</button>
+                                            <button class="text-sm">چاپ</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="border p-4 rounded-lg" style="border-color: var(--outline-variant);">
+                                    <div class="flex justify-between">
+                                        <h4 class="font-bold text-sm">بررسی فنی - پرونده #1235</h4>
+                                        <span class="text-xs opacity-75">۱۴۰۳/۰۵/۱۹</span>
+                                    </div>
+                                    <p class="text-sm mt-2 opacity-75">بررسی مدارک پایان کار پروژه مسکونی خانم احمدی انجام شد. مدارک ناقص می‌باشد.</p>
+                                    <div class="flex justify-between mt-3">
+                                        <span class="status-badge status-badge-warning">در حال بررسی</span>
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-sm">مشاهده</button>
+                                            <button class="text-sm">دانلود</button>
+                                            <button class="text-sm">چاپ</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Help Section -->
+                <div id="help" class="content-section">
+                    <h2 class="text-3xl font-bold mb-8">راهنمای استفاده از پنل</h2>
+                    <div class="content-card">
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">بخش بررسی فنی پرونده‌ها</h3>
+                                <p class="mb-4">در این بخش می‌توانید پرونده‌های جدید را بررسی کرده، وضعیت آن‌ها را مشاهده و اقدامات لازم را انجام دهید. برای مشاهده جزئیات هر پرونده، روی دکمه "بررسی فنی" کلیک کنید.</p>
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <h4 class="font-semibold mb-2">نکات مهم:</h4>
+                                    <ul class="list-disc pr-5 space-y-1">
+                                        <li>پرونده‌های جدید با نشانگر آبی مشخص شده‌اند</li>
+                                        <li>پرونده‌های فوری با اولویت بالا نمایش داده می‌شوند</li>
+                                        <li>می‌توانید پرونده‌ها را بر اساس نوع و وضعیت فیلتر کنید</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">بخش بازدیدها و کنترل</h3>
+                                <p class="mb-4">در این بخش می‌توانید بازدیدهای برنامه‌ریزی شده را مشاهده کرده، گزارش‌های بازدید را ثبت و آمار بازدیدها را بررسی نمایید.</p>
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <h4 class="font-semibold mb-2">ویژگی‌های کلیدی:</h4>
+                                    <ul class="list-disc pr-5 space-y-1">
+                                        <li>مشاهده بازدیدهای روزانه و هفتگی</li>
+                                        <li>ثبت گزارش بازدید با ضمیمه عکس و مستندات</li>
+                                        <li>پیگیری بازدیدهای انجام شده و نتایج آن‌ها</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">بخش تخلفات ساختمانی</h3>
+                                <p class="mb-4">در این بخش می‌توانید تخلفات ساختمانی ثبت شده را مشاهده کرده، تخلف جدید ثبت نمایید و وضعیت تخلفات را پیگیری کنید.</p>
+                                <div class="bg-red-50 p-4 rounded-lg">
+                                    <h4 class="font-semibold mb-2">انواع تخلفات:</h4>
+                                    <ul class="list-disc pr-5 space-y-1">
+                                        <li>ساخت بدون پروانه</li>
+                                        <li>تجاوز به حریم مجاور</li>
+                                        <li>تغییر کاربری بدون مجوز</li>
+                                        <li>عدم رعایت ضوابط شهرسازی</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">بخش گزارش‌های فنی</h3>
+                                <p class="mb-4">در این بخش می‌توانید گزارش‌های فنی جدید ایجاد کرده، گزارش‌های قبلی را مشاهده و گزارش‌ها را خروجی بگیرید.</p>
+                                <div class="bg-purple-50 p-4 rounded-lg">
+                                    <h4 class="font-semibold mb-2">نوع گزارش‌ها:</h4>
+                                    <ul class="list-disc pr-5 space-y-1">
+                                        <li>گزارش‌های بازدید فنی</li>
+                                        <li>گزارش‌های تخلفات ساختمانی</li>
+                                        <li>گزارش‌های پایان کار</li>
+                                        <li>گزارش‌های آماری و تحلیلی</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings Section -->
+                <div id="settings" class="content-section">
+                    <h2 class="text-3xl font-bold mb-8">تنظیمات کاربری</h2>
+                    <div class="content-card">
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">ظاهر و نمایش</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block mb-2">حالت نمایش</label>
+                                        <div class="flex space-x-4 space-x-reverse">
+                                            <button id="light-mode-btn" onclick="setTheme('light')" class="px-4 py-2 rounded-lg border flex items-center">
+                                                <i class="material-icons ml-2">light_mode</i>روشن
+                                            </button>
+                                            <button id="dark-mode-btn" onclick="setTheme('dark')" class="px-4 py-2 rounded-lg border flex items-center">
+                                                <i class="material-icons ml-2">dark_mode</i>تاریک
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">زبان نمایش</label>
+                                        <select class="w-full p-3 rounded-lg border">
+                                            <option>فارسی</option>
+                                            <option>English</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">اطلاع‌رسانی‌ها</h3>
+                                <div class="space-y-3">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="ml-2" checked>
+                                        <span>اطلاع‌رسانی پرونده‌های جدید</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="ml-2" checked>
+                                        <span>یادآوری بازدیدها</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="ml-2">
+                                        <span>اطلاع‌رسانی تخلفات</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">تنظیمات نمایش</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block mb-2">تعداد آیتم‌ها در صفحه</label>
+                                        <select class="w-full p-3 rounded-lg border">
+                                            <option>10</option>
+                                            <option selected>20</option>
+                                            <option>50</option>
+                                            <option>100</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">نمایش تاریخ</label>
+                                        <select class="w-full p-3 rounded-lg border">
+                                            <option>هجری شمسی</option>
+                                            <option>میلادی</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">امنیت حساب کاربری</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block mb-2">تغییر رمز عبور</label>
+                                        <div class="space-y-3">
+                                            <input type="password" class="w-full p-3 rounded-lg border" placeholder="رمز عبور فعلی">
+                                            <input type="password" class="w-full p-3 rounded-lg border" placeholder="رمز عبور جدید">
+                                            <input type="password" class="w-full p-3 rounded-lg border" placeholder="تکرار رمز عبور جدید">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="ml-2">
+                                            <span>فعالسازی ورود دو مرحله‌ای</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t" style="border-color: var(--outline-variant);">
+                                <button class="action-button w-full">ذخیره تنظیمات</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Set current date
+        document.getElementById("current-date").textContent = new Date().toLocaleDateString("fa-IR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+        
+        // Sidebar navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all sidebar items
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            
+            // Add click event listener to each sidebar item
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Get the section ID from data attribute
+                    const sectionId = this.getAttribute('data-section');
+                    
+                    // Remove active class from all sidebar items and content sections
+                    sidebarItems.forEach(i => i.classList.remove('active'));
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked sidebar item
+                    this.classList.add('active');
+                    
+                    // Show the corresponding content section
+                    const targetSection = document.getElementById(sectionId);
+                    if (targetSection) {
+                        targetSection.classList.add('active');
+                    }
+                    
+                    // Special handling for help and settings (they don't have content sections)
+                    if (sectionId === 'help') {
+                        // Show help modal or section
+                        console.log('Help clicked');
+                    } else if (sectionId === 'settings') {
+                        // Show settings modal or section
+                        console.log('Settings clicked');
+                    }
+                });
+            });
+            
+            // Initialize theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        });
+        
+        // Theme toggle
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('dark-mode-btn').style.backgroundColor = 'var(--primary)';
+                document.getElementById('dark-mode-btn').style.color = 'var(--on-primary)';
+                document.getElementById('light-mode-btn').style.backgroundColor = 'transparent';
+                document.getElementById('light-mode-btn').style.color = 'var(--on-surface)';
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.getElementById('light-mode-btn').style.backgroundColor = 'var(--primary)';
+                document.getElementById('light-mode-btn').style.color = 'var(--on-primary)';
+                document.getElementById('dark-mode-btn').style.backgroundColor = 'transparent';
+                document.getElementById('dark-mode-btn').style.color = 'var(--on-surface)';
+            }
+            localStorage.setItem('theme', theme);
+        }
+        
+        // Filter chips functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterChips = document.querySelectorAll('.filter-chip');
+            
+            filterChips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    // Here you would typically filter the content based on the selected chips
+                });
+            });
+        });
+        
+        // Toast notification
+        function showToast(message) {
+            // Create toast element if it doesn't exist
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.className = 'toast';
+                toast.innerHTML = `
+                    <i class="material-icons ml-2">check_circle</i>
+                    <span id="toast-message">${message}</span>
+                `;
+                document.body.appendChild(toast);
+            }
+            
+            // Update message and show toast
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Show welcome message
+        setTimeout(() => {
+            showToast('خوش آمدید! ۳ پرونده جدید برای بررسی دارید.');
+        }, 1000);
+    </script>
+</body>
+</html>

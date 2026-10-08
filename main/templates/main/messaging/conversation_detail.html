@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ conversation.subject }} - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .conversation-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+    }
+    .message-bubble {
+        max-width: 70%;
+        margin-bottom: 1rem;
+        animation: fadeInUp 0.3s ease;
+    }
+    .message-bubble.own {
+        margin-left: auto;
+    }
+    .message-bubble.own .message-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .message-bubble.other .message-content {
+        background: #f8f9fa;
+        color: #333;
+    }
+    .message-content {
+        padding: 12px 16px;
+        border-radius: 18px;
+        word-wrap: break-word;
+    }
+    .message-time {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 4px;
+    }
+    .message-sender {
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .messages-container {
+        height: 500px;
+        overflow-y: auto;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    .reply-form {
+        background: white;
+        border-radius: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .participant-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content-center;
+        color: white;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .typing-indicator {
+        display: none;
+        padding: 10px;
+        font-style: italic;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-6">
+    <!-- Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'main:messaging_dashboard' %}">پیام‌رسانی</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'main:conversation_list' %}">مکالمات</a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ conversation.subject|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- مکالمه اصلی -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-lg">
+                <!-- Header مکالمه -->
+                <div class="conversation-header p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-2 text-white">{{ conversation.subject }}</h4>
+                            <div class="d-flex align-items-center text-white-50">
+                                <i class="fas fa-users me-2"></i>
+                                <span class="me-4">
+                                    {% for participant in participants %}
+                                        {{ participant.get_full_name }}{% if not forloop.last %}، {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <i class="fas fa-calendar me-2"></i>
+                                <span>{{ conversation.created_at|date:"Y/m/d H:i" }}</span>
+                            </div>
+                        </div>
+                        {% if conversation.related_request %}
+                        <div class="text-end">
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-link me-1"></i>
+                                مرتبط با درخواست
+                            </span>
+                            <div class="mt-1">
+                                <a href="{% url 'main:dashboard_request_detail' conversation.related_request.id %}" 
+                                   class="text-white-50 text-decoration-none small">
+                                    {{ conversation.related_request.title }}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- پیام‌ها -->
+                <div class="messages-container" id="messagesContainer">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="message-bubble {% if message.sender == user %}own{% else %}other{% endif %}">
+                            {% if message.sender != user %}
+                            <div class="message-sender text-muted">
+                                {{ message.sender.get_full_name }}
+                            </div>
+                            {% endif %}
+                            <div class="message-content">
+                                {{ message.body|linebreaks }}
+                            </div>
+                            <div class="message-time text-muted {% if message.sender == user %}text-end{% endif %}">
+                                {{ message.created_at|date:"Y/m/d H:i" }}
+                                {% if message.sender == user %}
+                                    <i class="fas fa-check text-success ms-1" title="ارسال شده"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">هنوز پیامی در این مکالمه نیست</p>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- نشانگر تایپ -->
+                    <div class="typing-indicator" id="typingIndicator">
+                        <i class="fas fa-circle text-primary me-1" style="animation: pulse 1s infinite;"></i>
+                        در حال تایپ...
+                    </div>
+                </div>
+
+                <!-- فرم پاسخ -->
+                <div class="card-footer bg-white p-4">
+                    <form method="post" class="reply-form p-3" id="replyForm">
+                        {% csrf_token %}
+                        <div class="row align-items-end">
+                            <div class="col-md-9 mb-2">
+                                <textarea class="form-control border-0" name="message_body" id="messageBody" 
+                                          rows="2" placeholder="پیام خود را بنویسید..." required
+                                          style="resize: none; box-shadow: none;"></textarea>
+                            </div>
+                            <div class="col-md-3 mb-2 text-end">
+                                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                    <i class="fas fa-paper-plane me-1"></i>
+                                    ارسال
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    <span id="charCount">0</span> کاراکتر
+                                    <span class="mx-2">•</span>
+                                    Enter برای ارسال، Shift+Enter برای خط جدید
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- شرکت‌کنندگان -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        شرکت‌کنندگان ({{ conversation.participants.count }})
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    {% for participant in conversation.participants.all %}
+                    <div class="p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="d-flex align-items-center">
+                            <div class="participant-avatar bg-{% if participant.profile.role == 'dehyari' %}success{% elif participant.profile.role == 'engineer' %}info{% elif participant.profile.role == 'admin' %}danger{% else %}primary{% endif %} me-3">
+                                {{ participant.first_name|first }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ participant.get_full_name }}</h6>
+                                <small class="text-muted">{{ participant.profile.get_role_display }}</small>
+                                {% if participant.profile.city_village %}
+                                <div class="small text-muted">{{ participant.profile.city_village }}</div>
+                                {% endif %}
+                            </div>
+                            {% if participant == user %}
+                            <span class="badge bg-success">شما</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- اطلاعات مکالمه -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        اطلاعات مکالمه
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>تاریخ شروع:</strong>
+                        <div class="text-muted">{{ conversation.created_at|date:"Y/m/d H:i" }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>آخرین فعالیت:</strong>
+                        <div class="text-muted">{{ conversation.updated_at|date:"Y/m/d H:i" }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>تعداد پیام‌ها:</strong>
+                        <div class="text-muted">{{ messages.count }} پیام</div>
+                    </div>
+                    {% if conversation.related_request %}
+                    <div class="mb-3">
+                        <strong>درخواست مرتبط:</strong>
+                        <div>
+                            <a href="{% url 'main:dashboard_request_detail' conversation.related_request.id %}" 
+                               class="text-decoration-none">
+                                {{ conversation.related_request.title }}
+                            </a>
+                        </div>
+                        <small class="text-muted">{{ conversation.related_request.get_status_display }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- عملیات سریع -->
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>
+                        عملیات سریع
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportConversation()">
+                            <i class="fas fa-download me-1"></i>
+                            دانلود مکالمه
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="printConversation()">
+                            <i class="fas fa-print me-1"></i>
+                            چاپ مکالمه
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="shareConversation()">
+                            <i class="fas fa-share-alt me-1"></i>
+                            اشتراک‌گذاری
+                        </button>
+                        <hr>
+                        <button class="btn btn-outline-warning btn-sm" onclick="muteConversation()">
+                            <i class="fas fa-bell-slash me-1"></i>
+                            بی‌صدا کردن
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="leaveConversation()">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            ترک مکالمه
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// اسکرول خودکار به آخرین پیام
+function scrollToBottom() {
+    const container = document.getElementById('messagesContainer');
+    container.scrollTop = container.scrollHeight;
+}
+
+// شمارش کاراکترها
+document.getElementById('messageBody').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length;
+});
+
+// ارسال با Enter
+document.getElementById('messageBody').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('replyForm').submit();
+    }
+});
+
+// ارسال فرم با AJAX
+document.getElementById('replyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const messageBody = document.getElementById('messageBody').value.trim();
+    if (!messageBody) {
+        alert('لطفاً پیام خود را بنویسید');
+        return;
+    }
+    
+    // نمایش loading
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>در حال ارسال...';
+    submitBtn.disabled = true;
+    
+    // ارسال درخواست
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: new URLSearchParams({
+            'message_body': messageBody
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            throw new Error('خطا در ارسال پیام');
+        }
+    })
+    .catch(error => {
+        alert('خطا در ارسال پیام: ' + error.message);
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// عملیات سریع
+function exportConversation() {
+    // TODO: پیاده‌سازی دانلود مکالمه
+    alert('دانلود مکالمه در نسخه بعدی پیاده‌سازی خواهد شد');
+}
+
+function printConversation() {
+    window.print();
+}
+
+function shareConversation() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ conversation.subject }}',
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('لینک مکالمه کپی شد');
+        });
+    }
+}
+
+function muteConversation() {
+    // TODO: پیاده‌سازی بی‌صدا کردن
+    alert('بی‌صدا کردن مکالمه در نسخه بعدی پیاده‌سازی خواهد شد');
+}
+
+function leaveConversation() {
+    if (confirm('آیا مطمئن هستید که می‌خواهید این مکالمه را ترک کنید؟')) {
+        // TODO: پیاده‌سازی ترک مکالمه
+        alert('ترک مکالمه در نسخه بعدی پیاده‌سازی خواهد شد');
+    }
+}
+
+// بروزرسانی خودکار پیام‌ها (هر 30 ثانیه)
+function checkNewMessages() {
+    fetch(`/api/messages/{{ conversation.id }}/`)
+        .then(response => response.json())
+        .then(data => {
+            // TODO: بررسی پیام‌های جدید و به‌روزرسانی UI
+        })
+        .catch(error => {
+            console.log('خطا در بررسی پیام‌های جدید:', error);
+        });
+}
+
+// اجرای اولیه
+document.addEventListener('DOMContentLoaded', function() {
+    scrollToBottom();
+    
+    // بروزرسانی هر 30 ثانیه
+    setInterval(checkNewMessages, 30000);
+    
+    // انیمیشن ورود پیام‌ها
+    const messages = document.querySelectorAll('.message-bubble');
+    messages.forEach((message, index) => {
+        message.style.opacity = '0';
+        message.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            message.style.transition = 'all 0.3s ease';
+            message.style.opacity = '1';
+            message.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

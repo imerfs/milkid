@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شروع و ایجاد پرونده - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                <!-- Header -->
+                <div class="text-center border-b pb-6 mb-8">
+                    <i class="fas fa-folder-plus text-green-600 text-4xl mb-4"></i>
+                    <h1 class="text-3xl font-bold text-gray-800">شروع و ایجاد پرونده (مشترک)</h1>
+                    <p class="mt-2 text-gray-600">لطفاً اطلاعات اولیه را برای شروع فرآیند ثبت کنید.</p>
+                </div>
+
+                <!-- Warning Banner -->
+                <div class="mb-8 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm flex items-center">
+                    <i class="fas fa-exclamation-triangle ml-2"></i>
+                    توجه: تا زمان اتصال به API ثبت احوال، تأیید اصالت مدارک به‌صورت دستی انجام می‌شود.
+                </div>
+
+                <form id="case-creation-form" method="post">
+                    {% csrf_token %}
+
+                    <!-- 1. Owner Information -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۱. مشخصات مالک</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label for="first-name" class="block font-medium mb-2">نام<span class="text-red-500">*</span></label><input type="text" id="first-name" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                            <div><label for="last-name" class="block font-medium mb-2">نام خانوادگی<span class="text-red-500">*</span></label><input type="text" id="last-name" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                            <div><label for="father-name" class="block font-medium mb-2">نام پدر<span class="text-red-500">*</span></label><input type="text" id="father-name" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                            <div><label for="birth-cert-location" class="block font-medium mb-2">محل صدور شناسنامه<span class="text-red-500">*</span></label><input type="text" id="birth-cert-location" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                            <div><label for="national-id" class="block font-medium mb-2">کدملی<span class="text-red-500">*</span></label><input type="text" id="national-id" pattern="\d{10}" title="کد ملی باید ۱۰ رقمی باشد" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                            <div><label for="phone" class="block font-medium mb-2">موبایل<span class="text-red-500">*</span></label><input type="tel" id="phone" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                            <div class="md:col-span-2"><label for="email" class="block font-medium mb-2">ایمیل (اختیاری)</label><input type="email" id="email" class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Geographic Location -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۲. موقعیت جغرافیایی</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block font-medium mb-2">استان</label>
+                                <input type="text" name="province" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-2">شهرستان</label>
+                                <input type="text" name="county" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-2">بخش</label>
+                                <input type="text" name="district" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: مرکزی">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-2">شهر/روستا</label>
+                                <input type="text" name="city_village" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-6">
+                            <input type="checkbox" name="is_village" id="is_village" class="ml-3">
+                            <label for="is_village" class="flex items-center cursor-pointer">
+                                <i class="fas fa-tree text-green-600 ml-2"></i>
+                                <span class="text-gray-700 font-medium">در روستا قرار دارد</span>
+                            </label>
+                        </div>
+
+                        <div id="dehestan-field" class="hidden">
+                            <label class="block font-medium mb-2">دهستان</label>
+                            <input type="text" name="dehestan" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="نام دهستان">
+                        </div>
+                    </div>
+
+                    <!-- 3. Property Information -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۳. مشخصات ملک</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div><label for="postal-code" class="block font-medium mb-2">کد پستی (اختیاری)</label><input type="text" id="postal-code" class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                             <div><label for="area" class="block font-medium mb-2">مساحت (متر مربع)<span class="text-red-500">*</span></label><input type="number" id="area" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                             <div><label for="land-use" class="block font-medium mb-2">نوع کاربری فعلی<span class="text-red-500">*</span></label>
+                                <select id="land-use" required class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                                    <option value="">انتخاب کنید...</option>
+                                    <option value="residential">مسکونی</option>
+                                    <option value="agricultural">کشاورزی</option>
+                                    <option value="commercial">تجاری</option>
+                                    <option value="administrative">اداری</option>
+                                    <option value="services">خدماتی</option>
+                                    <option value="green-space">فضای سبز</option>
+                                    <option value="facilities">تاسیسات</option>
+                                    <option value="other">سایر</option>
+                                </select>
+                             </div>
+                             <div class="md:col-span-2"><label for="address" class="block font-medium mb-2">آدرس کامل ملک<span class="text-red-500">*</span></label><textarea id="address" rows="3" required class="w-full p-3 border border-gray-300 rounded-lg"></textarea></div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Request Type -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۴. نوع درخواست</h2>
+                        <div class="flex gap-6">
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-green-50 has-[:checked]:border-green-500"><input type="radio" name="serviceType" value="with-permit" class="ml-3" checked><span>تغییر کاربری</span></label>
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-green-50 has-[:checked]:border-green-500"><input type="radio" name="serviceType" value="no-permit" class="ml-3"><span>الحاق به طرح</span></label>
+                        </div>
+                    </div>
+
+                    <!-- 5. Document Uploads -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۵. بارگذاری مدارک</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label for="birth-cert-upload" class="block font-medium mb-2">شناسنامه (تمام صفحات)<span class="text-red-500">*</span></label><input type="file" id="birth-cert-upload" required accept=".pdf,.jpg,.jpeg" class="w-full text-sm"></div>
+                            <div><label for="national-card-upload" class="block font-medium mb-2">کارت ملی (پشت و رو)<span class="text-red-500">*</span></label><input type="file" id="national-card-upload" required accept=".pdf,.jpg,.jpeg" class="w-full text-sm"></div>
+                        </div>
+                         <div class="mt-6">
+                            <label class="block font-medium mb-3">وضعیت سند ملک<span class="text-red-500">*</span></label>
+                            <div class="flex gap-6">
+                                <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-green-50 has-[:checked]:border-green-500"><input type="radio" name="propertyStatus" value="deeded" class="ml-3" checked><span>دارای سند رسمی</span></label>
+                                <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500"><input type="radio" name="propertyStatus" value="not-deeded" class="ml-3"><span>فاقد سند (قولنامه)</span></label>
+                            </div>
+                        </div>
+                        
+                        <!-- Conditional Section for Occupancy Certificate -->
+                        <div id="occupancy-cert-section" class="hidden mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                            <h3 class="font-bold text-amber-800 mb-2">گواهی تصرف</h3>
+                            <p class="text-sm text-gray-700 mb-4">برای ادامه، ابتدا از شورا گواهی تصرف را دریافت و سپس فایل آن را در اینجا بارگذاری کنید.</p>
+                            <button type="button" class="bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg text-sm mb-4 w-full sm:w-auto hover:bg-orange-600">تقاضای گواهی تصرف</button>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="occupancy-cert-upload" class="block font-medium mb-2">آپلود گواهی تصرف<span class="text-red-500">*</span></label>
+                                    <input type="file" id="occupancy-cert-upload" accept=".pdf,.jpg,.jpeg" class="w-full text-sm">
+                                </div>
+                                <div>
+                                    <label for="transfer-contract-upload" class="block font-medium mb-2">آپلود قرارداد واگذاری<span class="text-red-500">*</span></label>
+                                    <input type="file" id="transfer-contract-upload" accept=".pdf,.jpg,.jpeg" class="w-full text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="agreement-upload" class="block font-medium mb-2">قولنامه یا مبایعه‌نامه<span class="text-red-500">*</span></label>
+                            <input type="file" id="agreement-upload" required accept=".pdf,.jpg,.jpeg" class="w-full text-sm">
+                        </div>
+                         <div class="mt-6 p-4 bg-gray-50 rounded-lg border">
+                            <label for="shamim-upload" class="block font-medium mb-2">فایل شمیم<span class="text-red-500">*</span></label>
+                             <p class="text-xs text-gray-500 mb-3">فرمت‌های مجاز: .zip, .dwg, .dxf. اطلاعات ملک به صورت خودکار استخراج خواهد شد.</p>
+                            <div class="flex items-center gap-4">
+                                <input type="file" id="shamim-upload" required accept=".zip,.dwg,.dxf" class="w-full text-sm">
+                                <button type="button" onclick="extractShamim()" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg text-sm whitespace-nowrap">استخراج فایل</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirmation -->
+                    <div class="mt-8 border-t pt-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="confirm-checkbox" required class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                            <span class="mr-3 text-gray-700">تأیید می‌کنم اطلاعات و مدارک صحیح است.<span class="text-red-500">*</span></span>
+                        </label>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-10 pt-6 border-t flex justify-between items-center">
+                        <button type="button" class="text-gray-600 font-semibold hover:bg-gray-100 px-6 py-3 rounded-lg">ذخیره پیش‌نویس</button>
+                        <button id="submit-btn" type="submit" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg">مرحله بعد</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-list-check text-green-500 mr-3"></i>چک‌لیست مدارک</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-circle-check text-gray-400 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
+                        <li class="flex items-center"><i class="fas fa-circle-check text-gray-400 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
+                        <li class="flex items-center"><i class="fas fa-circle-check text-gray-400 mr-3"></i><span>سند یا قولنامه ملک</span></li>
+                        <li class="flex items-center"><i class="fas fa-circle-check text-gray-400 mr-3"></i><span>فایل شمیم</span></li>
+                    </ul>
+                </div>
+                 <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">شناسه پرونده:</p><p class="text-gray-600">در انتظار ایجاد</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p class="text-gray-600 font-bold">جدید (NEW)</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function extractShamim() {
+            const shamimInput = document.getElementById('shamim-upload');
+            if (shamimInput.files.length === 0) {
+                alert('لطفاً ابتدا فایل شمیم را انتخاب کنید.');
+                return;
+            }
+            
+            // Show loading state
+            const extractButton = event.target;
+            const originalText = extractButton.innerHTML;
+            extractButton.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>در حال پردازش...';
+            extractButton.disabled = true;
+            
+            // Store current form data in sessionStorage to restore later
+            const currentFormData = {};
+            document.querySelectorAll('input, select, textarea').forEach(element => {
+                if (element.id) {
+                    currentFormData[element.id] = element.value;
+                }
+            });
+            sessionStorage.setItem('join_development_plan_form_data', JSON.stringify(currentFormData));
+            sessionStorage.setItem('return_url', window.location.href);
+            
+            // Prepare FormData for file upload
+            const formData = new FormData();
+            formData.append('cad_file', shamimInput.files[0]);
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            // Send file via XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/autocad/upload/', true);
+            
+            xhr.onload = function() {
+                extractButton.innerHTML = originalText;
+                extractButton.disabled = false;
+                
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            alert('فایل شمیم با موفقیت پردازش شد!');
+                            // Optionally redirect to results page
+                            if (response.result_url) {
+                                window.open(response.result_url, '_blank');
+                            }
+                        } else {
+                            alert('خطا در پردازش فایل: ' + (response.error || 'خطای ناشناخته'));
+                        }
+                    } catch (e) {
+                        // If response is not JSON (redirect), handle it
+                        if (xhr.responseURL && xhr.responseURL.includes('/autocad/result/')) {
+                            window.open(xhr.responseURL, '_blank');
+                            alert('فایل شمیم با موفقیت پردازش شد!');
+                        } else {
+                            alert('خطا در پردازش فایل');
+                        }
+                    }
+                } else {
+                    alert('خطا در ارسال فایل: ' + xhr.status);
+                }
+            };
+            
+            xhr.onerror = function() {
+                extractButton.innerHTML = originalText;
+                extractButton.disabled = false;
+                alert('خطا در ارتباط با سرور');
+            };
+            
+            xhr.send(formData);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const propertyStatusRadios = document.querySelectorAll('input[name="propertyStatus"]');
+            const occupancyCertSection = document.getElementById('occupancy-cert-section');
+            const occupancyCertUpload = document.getElementById('occupancy-cert-upload');
+            const submitBtn = document.getElementById('submit-btn');
+            const mainForm = document.getElementById('case-creation-form');
+
+            function updateFormState() {
+                const selectedStatus = document.querySelector('input[name="propertyStatus"]:checked');
+                
+                if (selectedStatus && selectedStatus.value === 'not-deeded') {
+                    occupancyCertSection.classList.remove('hidden');
+                    occupancyCertUpload.required = true;
+                    
+                    if (occupancyCertUpload.files.length > 0) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        submitBtn.classList.add('hover:bg-green-700');
+
+                    } else {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        submitBtn.classList.remove('hover:bg-green-700');
+                    }
+                } else {
+                    occupancyCertSection.classList.add('hidden');
+                    occupancyCertUpload.required = false;
+                    occupancyCertUpload.value = ''; // Clear the file input if user switches back
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    submitBtn.classList.add('hover:bg-green-700');
+                }
+            }
+
+            propertyStatusRadios.forEach(radio => {
+                radio.addEventListener('change', updateFormState);
+            });
+
+            occupancyCertUpload.addEventListener('change', updateFormState);
+
+            mainForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                // Redirect to step 2
+                window.location.href = '/services/join-development-plan/step2/';
+            });
+
+            // Show/hide dehestan field based on village checkbox
+            document.getElementById('is_village').addEventListener('change', function() {
+                const dehestanField = document.getElementById('dehestan-field');
+                if (this.checked) {
+                    dehestanField.classList.remove('hidden');
+                } else {
+                    dehestanField.classList.add('hidden');
+                }
+            });
+
+            // Initial check in case the 'not-deeded' is pre-selected
+            updateFormState();
+        });
+    </script>
+</body>
+</html>

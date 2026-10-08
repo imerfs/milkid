@@ -1,0 +1,257 @@
+
+{% extends 'base.html' %}
+
+{% block title %}جستجوی املاک - سامانه خدمات شهری و روستایی{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-filters {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.property-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.property-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.property-image-placeholder {
+    height: 200px;
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: #6c757d;
+}
+
+.property-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+}
+
+.price-badge {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>🏘️ جستجو و مدیریت املاک</h2>
+            <p class="text-muted">جستجو در پایگاه املاک و مشاهده جزئیات ملک</p>
+        </div>
+    </div>
+
+    <!-- Search Filters -->
+    <div class="search-filters">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">شماره پلاک</label>
+                <input type="text" class="form-control" name="parcel_number" placeholder="شماره پلاک" value="{{ request.GET.parcel_number }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">کد ملی مالک</label>
+                <input type="text" class="form-control" name="owner_national_id" placeholder="کد ملی مالک" value="{{ request.GET.owner_national_id }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">نوع کاربری</label>
+                <select class="form-control" name="usage_type">
+                    <option value="">همه</option>
+                    <option value="residential" {% if request.GET.usage_type == 'residential' %}selected{% endif %}>مسکونی</option>
+                    <option value="commercial" {% if request.GET.usage_type == 'commercial' %}selected{% endif %}>تجاری</option>
+                    <option value="agricultural" {% if request.GET.usage_type == 'agricultural' %}selected{% endif %}>کشاورزی</option>
+                    <option value="industrial" {% if request.GET.usage_type == 'industrial' %}selected{% endif %}>صنعتی</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">منطقه</label>
+                <select class="form-control" name="area">
+                    <option value="">همه مناطق</option>
+                    <option value="center" {% if request.GET.area == 'center' %}selected{% endif %}>مرکز شهر</option>
+                    <option value="north" {% if request.GET.area == 'north' %}selected{% endif %}>شمال شهر</option>
+                    <option value="south" {% if request.GET.area == 'south' %}selected{% endif %}>جنوب شهر</option>
+                    <option value="east" {% if request.GET.area == 'east' %}selected{% endif %}>شرق شهر</option>
+                    <option value="west" {% if request.GET.area == 'west' %}selected{% endif %}>غرب شهر</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">حداقل مساحت (متر مربع)</label>
+                <input type="number" class="form-control" name="min_area" placeholder="حداقل مساحت" value="{{ request.GET.min_area }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">حداکثر مساحت (متر مربع)</label>
+                <input type="number" class="form-control" name="max_area" placeholder="حداکثر مساحت" value="{{ request.GET.max_area }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="d-grid w-100">
+                    <button type="submit" class="btn btn-primary">🔍 جستجو</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Search Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>نتایج جستجو</h4>
+                <span class="badge bg-secondary">{{ properties|length }} ملک یافت شد</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Cards -->
+    <div class="row">
+        {% for property in properties %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="property-card position-relative">
+                <div class="property-status">
+                    <span class="badge bg-{% if property.status == 'active' %}success{% elif property.status == 'pending' %}warning{% else %}danger{% endif %}">
+                        {{ property.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="property-image-placeholder">
+                    {% if property.usage_type == 'residential' %}🏠
+                    {% elif property.usage_type == 'commercial' %}🏢
+                    {% elif property.usage_type == 'agricultural' %}🌾
+                    {% elif property.usage_type == 'industrial' %}🏭
+                    {% else %}🏘️{% endif %}
+                </div>
+                
+                <div class="card-body">
+                    <h5 class="card-title">پلاک {{ property.parcel_number }}</h5>
+                    <p class="text-muted mb-2">📍 {{ property.address }}</p>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">مساحت</small>
+                            <span class="fw-bold">{{ property.area }} متر مربع</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">کاربری</small>
+                            <span class="fw-bold">{{ property.get_usage_type_display }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">مالک</small>
+                            <span class="fw-bold">{{ property.owner_name }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">شماره سند</small>
+                            <span class="fw-bold">{{ property.deed_number|default:"نامشخص" }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if property.price %}
+                    <div class="mb-3">
+                        <span class="price-badge text-success">💰 {{ property.price|floatformat:0 }} تومان</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-primary btn-sm">مشاهده جزئیات</a>
+                        {% if user.is_authenticated and user.profile.is_staff_member %}
+                        <a href="#" class="btn btn-outline-secondary btn-sm">ویرایش اطلاعات</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <div class="mb-4" style="font-size: 5rem; opacity: 0.3;">🔍</div>
+                <h4>هیچ ملکی یافت نشد</h4>
+                <p class="text-muted">لطفاً فیلترهای جستجو را تغییر دهید</p>
+                <a href="?" class="btn btn-outline-primary">پاک کردن فیلترها</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if properties.has_other_pages %}
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="صفحه‌بندی">
+                <ul class="pagination justify-content-center">
+                    {% if properties.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ properties.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">قبلی</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in properties.paginator.page_range %}
+                        {% if properties.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if properties.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ properties.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">بعدی</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Stats -->
+    {% if user.is_authenticated and user.profile.is_staff_member %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 آمار سریع املاک</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ total_properties }}</h4>
+                            <p class="text-muted">کل املاک</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">{{ residential_count }}</h4>
+                            <p class="text-muted">مسکونی</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">{{ commercial_count }}</h4>
+                            <p class="text-muted">تجاری</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">{{ agricultural_count }}</h4>
+                            <p class="text-muted">کشاورزی</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

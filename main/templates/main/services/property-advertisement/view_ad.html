@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+{% load static persian_filters %}
+
+{% block extra_css %}
+<style>
+    .ad-detail-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .section-header {
+        color: #1f2937;
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f9fafb;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #6b7280;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .status-pending {
+        background: #fef3c7;
+        color: #d97706;
+        border: 1px solid #f59e0b;
+    }
+    
+    .status-approved {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+    
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
+    }
+    
+    .edit-history-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .edit-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .price-highlight {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 16px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 8px 0;
+    }
+    
+    .rent-highlight {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 8px 0;
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .btn-edit:hover {
+        background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        color: white;
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+    
+    .btn-back {
+        background: #6b7280;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .btn-back:hover {
+        background: #4b5563;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">جزئیات آگهی ملک</h1>
+            <p class="text-gray-600">مشاهده کامل اطلاعات آگهی و تاریخچه تغییرات</p>
+        </div>
+
+        <!-- Status and Actions -->
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <span>
+                    <i class="fas fa-info-circle ml-2 text-blue-600"></i>
+                    وضعیت آگهی
+                </span>
+                <div class="flex space-x-3 space-x-reverse">
+                    {% if ad.status in 'pending,approved,rejected' %}
+                    <a href="{% url 'main:edit_property_ad' ad.id %}" class="btn-edit">
+                        <i class="fas fa-edit ml-2"></i>
+                        درخواست ویرایش
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'main:my_property_ads' %}" class="btn-back">
+                        <i class="fas fa-arrow-right ml-2"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <span class="status-badge 
+                        {% if ad.status == 'pending' %}status-pending
+                        {% elif ad.status == 'approved' %}status-approved
+                        {% elif ad.status == 'rejected' %}status-rejected
+                        {% endif %}">
+                        {{ ad.get_status_display }}
+                    </span>
+                </div>
+                <div>
+                    <span class="info-label">تاریخ ثبت:</span>
+                    <div class="info-value">{{ ad.created_at|persian_date:"Y/m/d H:i" }}</div>
+                </div>
+                <div>
+                    <span class="info-label">آخرین به‌روزرسانی:</span>
+                    <div class="info-value">{{ ad.updated_at|persian_date:"Y/m/d H:i" }}</div>
+                </div>
+                {% if ad.approved_at %}
+                <div>
+                    <span class="info-label">تاریخ تایید:</span>
+                    <div class="info-value">{{ ad.approved_at|persian_date:"Y/m/d H:i" }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Basic Information -->
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-home ml-2 text-blue-600"></i>
+                اطلاعات کلی ملک
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="info-row">
+                    <span class="info-label">نوع آگهی:</span>
+                    <span class="info-value">
+                        {% if ad.ad_type == 'sale' %}
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full">فروش</span>
+                        {% elif ad.ad_type == 'rent' %}
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">اجاره</span>
+                        {% else %}
+                            <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full">فروش و اجاره</span>
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">نوع ملک:</span>
+                    <span class="info-value">{{ ad.get_property_type_display }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">مساحت کل:</span>
+                    <span class="info-value">{{ ad.total_area }} متر مربع</span>
+                </div>
+                
+                {% if ad.built_area %}
+                <div class="info-row">
+                    <span class="info-label">مساحت زیربنا:</span>
+                    <span class="info-value">{{ ad.built_area }} متر مربع</span>
+                </div>
+                {% endif %}
+                
+                {% if ad.bedrooms %}
+                <div class="info-row">
+                    <span class="info-label">تعداد اتاق خواب:</span>
+                    <span class="info-value">{{ ad.bedrooms }}</span>
+                </div>
+                {% endif %}
+                
+                {% if ad.construction_year %}
+                <div class="info-row">
+                    <span class="info-label">سال ساخت:</span>
+                    <span class="info-value">{{ ad.construction_year }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-money-bill-wave ml-2 text-green-600"></i>
+                قیمت‌گذاری
+            </div>
+            
+            {% if ad.ad_type == 'sale' or ad.ad_type == 'both' %}
+                {% if ad.sale_price %}
+                <div class="price-highlight">
+                    <div class="text-xl font-bold">قیمت فروش</div>
+                    <div class="text-2xl font-extrabold mt-2">
+                        {{ ad.sale_price|floatformat:0 }} تومان
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            
+            {% if ad.ad_type == 'rent' or ad.ad_type == 'both' %}
+                {% if ad.rent_price %}
+                <div class="rent-highlight">
+                    <div class="text-lg font-semibold">اجاره ماهانه</div>
+                    <div class="text-xl font-bold">
+                        {{ ad.rent_price|floatformat:0 }} تومان
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if ad.deposit %}
+                <div class="bg-gray-100 p-3 rounded text-center mt-2">
+                    <div class="text-gray-700 font-medium">ودیعه</div>
+                    <div class="text-xl font-bold text-gray-900">
+                        {{ ad.deposit|floatformat:0 }} تومان
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            
+            {% if ad.price_negotiable %}
+            <div class="bg-orange-50 p-3 rounded-lg text-center mt-3">
+                <i class="fas fa-handshake text-orange-600 ml-2"></i>
+                <span class="text-orange-800 font-medium">قیمت قابل مذاکره</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Location -->
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-map-marker-alt ml-2 text-red-600"></i>
+                موقعیت جغرافیایی
+            </div>
+            
+            <div class="space-y-3">
+                <div class="info-row">
+                    <span class="info-label">استان:</span>
+                    <span class="info-value">{{ ad.province|default:"نامشخص" }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">شهرستان:</span>
+                    <span class="info-value">{{ ad.county|default:"نامشخص" }}</span>
+                </div>
+                
+                {% if ad.city_village %}
+                <div class="info-row">
+                    <span class="info-label">{% if ad.is_village %}روستا:{% else %}شهر:{% endif %}</span>
+                    <span class="info-value">{{ ad.city_village }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="info-label mb-2">آدرس کامل:</div>
+                    <div class="info-value text-justify">{{ ad.address }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        {% if ad.parking_available or ad.storage_room or ad.elevator %}
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-star ml-2 text-yellow-600"></i>
+                امکانات و ویژگی‌ها
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+                {% if ad.parking_available %}
+                    <span class="px-3 py-2 bg-blue-100 text-blue-800 rounded-full"><i class="fas fa-car ml-1"></i> پارکینگ</span>
+                {% endif %}
+                {% if ad.storage_room %}
+                    <span class="px-3 py-2 bg-green-100 text-green-800 rounded-full"><i class="fas fa-box ml-1"></i> انباری</span>
+                {% endif %}
+                {% if ad.elevator %}
+                    <span class="px-3 py-2 bg-purple-100 text-purple-800 rounded-full"><i class="fas fa-elevator ml-1"></i> آسانسور</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Contact Information -->
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-phone ml-2 text-indigo-600"></i>
+                اطلاعات تماس
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="info-row">
+                    <span class="info-label">نام تماس:</span>
+                    <span class="info-value">{{ ad.contact_name }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">شماره تماس:</span>
+                    <span class="info-value">
+                        <a href="tel:{{ ad.contact_phone }}" class="text-blue-600 hover:text-blue-800">
+                            {{ ad.contact_phone }}
+                        </a>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        {% if ad.description %}
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-file-alt ml-2 text-gray-600"></i>
+                توضیحات
+            </div>
+            
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-justify leading-relaxed">{{ ad.description|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Admin Notes -->
+        {% if ad.admin_notes %}
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-user-shield ml-2 text-red-600"></i>
+                یادداشت مدیر سیستم
+            </div>
+            
+            <div class="bg-red-50 border border-red-200 p-4 rounded-lg">
+                <p class="text-red-800">{{ ad.admin_notes|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Edit History -->
+        {% if edit_logs %}
+        <div class="ad-detail-section">
+            <div class="section-header">
+                <i class="fas fa-history ml-2 text-purple-600"></i>
+                تاریخچه ویرایش‌ها
+            </div>
+            
+            {% for log in edit_logs %}
+            <div class="edit-history-item">
+                <div class="edit-history-header">
+                    <div>
+                        <span class="font-semibold text-gray-700">درخواست ویرایش #{{ log.id }}</span>
+                        <span class="text-sm text-gray-500 mr-3">{{ log.created_at|persian_date:"Y/m/d H:i" }}</span>
+                    </div>
+                    <span class="status-badge 
+                        {% if log.status == 'pending' %}status-pending
+                        {% elif log.status == 'approved' %}status-approved
+                        {% elif log.status == 'rejected' %}status-rejected
+                        {% endif %}">
+                        {{ log.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="text-sm text-gray-600">
+                    <strong>دلیل ویرایش:</strong> {{ log.edit_reason }}
+                </div>
+                
+                {% if log.admin_notes %}
+                <div class="text-sm text-red-600 mt-2">
+                    <strong>یادداشت مدیر:</strong> {{ log.admin_notes }}
+                </div>
+                {% endif %}
+                
+                {% if log.reviewed_at %}
+                <div class="text-sm text-gray-500 mt-2">
+                    بررسی شده در: {{ log.reviewed_at|persian_date:"Y/m/d H:i" }}
+                    {% if log.reviewed_by %}
+                        توسط: {{ log.reviewed_by.get_full_name }}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

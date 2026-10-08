@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آگهی ملک - ملک آیدی</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Persian Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        
+        /* RTL input styling */
+        input[type="text"], input[type="number"], input[type="tel"], textarea, select {
+            direction: rtl;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        /* Image preview grid */
+        .image-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        
+        .image-preview-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-preview-number {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        /* Checkbox styling */
+        .feature-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #2563eb;
+        }
+        
+        /* Animation for form elements */
+        .form-card {
+            transition: all 0.3s ease;
+        }
+        
+        .form-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Tooltip styling */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Vertical progress bar */
+        .vertical-progress {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 8px;
+            height: 0;
+            background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+            z-index: 100;
+            transition: height 0.3s ease;
+        }
+        
+        /* Auto-save indicator */
+        .auto-save-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 100;
+        }
+        
+        /* Interactive map container */
+        .map-container {
+            height: 300px;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #e2e8f0;
+            position: relative;
+        }
+        
+        /* Template selector */
+        .template-option {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .template-option:hover {
+            transform: scale(1.03);
+        }
+        
+        .template-option.selected {
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        /* FAQ accordion */
+        .faq-item {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .faq-question {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .faq-question:hover {
+            color: #3b82f6;
+        }
+        
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .faq-answer.active {
+            max-height: 500px;
+        }
+        
+        /* Live validation */
+        .input-valid {
+            border-color: #10b981 !important;
+        }
+        
+        .input-invalid {
+            border-color: #ef4444 !important;
+        }
+        
+        .validation-message {
+            font-size: 12px;
+            margin-top: 4px;
+            color: #ef4444;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <!-- Vertical Progress Bar -->
+    <div class="vertical-progress" id="vertical-progress"></div>
+    
+    <!-- Auto-save Indicator -->
+    <div class="auto-save-indicator" id="auto-save-indicator">
+        <i class="fas fa-check-circle ml-2"></i>
+        <span>ذخیره خودکار انجام شد</span>
+    </div>
+    
+    <!-- Progress Stepper -->
+    <div class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-4 space-x-reverse mb-4 md:mb-0">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                            1
+                        </div>
+                        <span class="mr-3 text-gray-900 font-semibold">مشخصات ملک</span>
+                    </div>
+                    <div class="w-16 h-1 bg-gray-300"></div>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-300 text-gray-500 rounded-full flex items-center justify-center font-bold">
+                            2
+                        </div>
+                        <span class="mr-3 text-gray-500">بررسی و انتشار</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <button type="button" id="save-draft-btn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all flex items-center">
+                        <i class="fas fa-save ml-2"></i>
+                        ذخیره پیش‌نویس
+                    </button>
+                    <button type="button" id="preview-btn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all flex items-center">
+                        <i class="fas fa-eye ml-2"></i>
+                        پیش‌نمایش آگهی
+                    </button>
+                    <a href="/dashboard/owner/" class="text-gray-600 hover:text-gray-800 flex items-center">
+                        <i class="fas fa-arrow-right ml-2"></i>
+                        بازگشت به داشبورد
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-6 py-8">
+        
+        <!-- Header Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 form-card">
+            <div class="text-center">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-bullhorn text-3xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-3">ثبت آگهی ملک</h1>
+                <p class="text-gray-600 text-lg">اطلاعات ملک خود را با دقت وارد کنید تا آگهی شما در بهترین حالت منتشر شود</p>
+                
+                <!-- Template Selection -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">قالب آگهی را انتخاب کنید:</h3>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <div class="template-option selected bg-gray-50 p-4 rounded-xl border border-gray-200 w-40" data-template="standard">
+                            <div class="text-center">
+                                <i class="fas fa-file-alt text-3xl text-blue-600 mb-2"></i>
+                                <p class="font-medium">استاندارد</p>
+                            </div>
+                        </div>
+                        <div class="template-option bg-gray-50 p-4 rounded-xl border border-gray-200 w-40" data-template="premium">
+                            <div class="text-center">
+                                <i class="fas fa-gem text-3xl text-purple-600 mb-2"></i>
+                                <p class="font-medium">پرمیوم</p>
+                            </div>
+                        </div>
+                        <div class="template-option bg-gray-50 p-4 rounded-xl border border-gray-200 w-40" data-template="urgent">
+                            <div class="text-center">
+                                <i class="fas fa-fire text-3xl text-red-600 mb-2"></i>
+                                <p class="font-medium">فوری</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Copy from previous ad -->
+                <div class="mt-6">
+                    <button type="button" id="copy-previous-btn" class="text-blue-600 hover:text-blue-800 flex items-center justify-center mx-auto">
+                        <i class="fas fa-copy ml-2"></i>
+                        کپی اطلاعات از آگهی قبلی
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tips Card -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-lg p-6 mb-8 border border-blue-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                <i class="fas fa-lightbulb text-yellow-500 ml-2"></i>
+                نکات کلیدی برای آگهی بهتر
+            </h3>
+            <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
+                    <span class="text-gray-700">عکس‌های باکیفیت و نورانی از ملک بگیرید</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
+                    <span class="text-gray-700">اطلاعات دقیق و کامل وارد کنید</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
+                    <span class="text-gray-700">امکانات و ویژگی‌های منحصر به فرد را ذکر کنید</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
+                    <span class="text-gray-700">قیمت واقع‌بینانه و منصفانه تعیین کنید</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
+                    <span class="text-gray-700">موقعیت دقیق ملک را روی نقشه مشخص کنید</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
+                    <span class="text-gray-700">اطلاعات تماس صحیح وارد کنید</span>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Form Error Messages -->
+        {% if form.errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-500 ml-3"></i>
+                <h3 class="text-red-800 font-semibold">خطاهای فرم:</h3>
+            </div>
+            <ul class="mt-2 text-red-700">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li class="mt-1">• {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <form method="post" enctype="multipart/form-data" id="property-ad-form" class="p-8">
+                {% csrf_token %}
+                
+                <!-- نوع آگهی -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-blue-600 rounded-full ml-3"></div>
+                        <i class="fas fa-tags text-blue-600 ml-2"></i>
+                        نوع آگهی
+                        <span class="tooltip mr-2">
+                            <i class="fas fa-question-circle text-gray-400"></i>
+                            <span class="tooltiptext">نوع آگهی و ملک را با دقت انتخاب کنید تا در دسته‌بندی مناسب نمایش داده شود</span>
+                        </span>
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">نوع آگهی <span class="text-red-500">*</span></label>
+                            <select name="ad_type" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                <option value="">انتخاب کنید...</option>
+                                <option value="sale">فروش</option>
+                                <option value="rent">اجاره</option>
+                                <option value="both">فروش و اجاره</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">نوع ملک <span class="text-red-500">*</span></label>
+                            <select name="property_type" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                <option value="">انتخاب کنید...</option>
+                                <option value="residential">مسکونی</option>
+                                <option value="commercial">تجاری</option>
+                                <option value="land">زمین</option>
+                                <option value="agricultural">کشاورزی</option>
+                                <option value="industrial">صنعتی</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- مشخصات ملک -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-green-600 rounded-full ml-3"></div>
+                        <i class="fas fa-home text-green-600 ml-2"></i>
+                        مشخصات ملک
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">مساحت کل (متر مربع) <span class="text-red-500">*</span></label>
+                            <input type="number" name="total_area" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="1" step="0.01" placeholder="مثال: 120">
+                            <div class="validation-message" id="total-area-error"></div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">مساحت زیربنا (متر مربع)</label>
+                            <input type="number" name="built_area" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="0" step="0.01" placeholder="مثال: 100">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">تعداد طبقات</label>
+                            <input type="number" name="floors" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="0" max="20" placeholder="مثال: 2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">طبقه واحد</label>
+                            <input type="number" name="specific_floor" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="0" max="20" placeholder="مثال: 3">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">تعداد واحد</label>
+                            <input type="number" name="units" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="1" max="50" placeholder="مثال: 1">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">تعداد اتاق خواب</label>
+                            <input type="number" name="bedrooms" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="0" max="10" placeholder="مثال: 2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">تعداد پارکینگ</label>
+                            <input type="number" name="parking" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="0" max="10" placeholder="مثال: 1">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">سال ساخت</label>
+                            <input type="number" name="construction_year" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="1300" max="1410" placeholder="مثال: 1400">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ویژگی‌های ملک -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-indigo-600 rounded-full ml-3"></div>
+                        <i class="fas fa-star text-indigo-600 ml-2"></i>
+                        ویژگی‌های ملک
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="parking_available" id="parking_available" class="feature-checkbox ml-3">
+                            <label for="parking_available" class="flex items-center cursor-pointer">
+                                <i class="fas fa-car text-indigo-600 ml-2"></i>
+                                <span class="text-gray-700 font-medium">پارکینگ دارد</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="storage_room" id="storage_room" class="feature-checkbox ml-3">
+                            <label for="storage_room" class="flex items-center cursor-pointer">
+                                <i class="fas fa-warehouse text-indigo-600 ml-2"></i>
+                                <span class="text-gray-700 font-medium">انباری دارد</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="elevator" id="elevator" class="feature-checkbox ml-3">
+                            <label for="elevator" class="flex items-center cursor-pointer">
+                                <i class="fas fa-building text-indigo-600 ml-2"></i>
+                                <span class="text-gray-700 font-medium">آسانسور دارد</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- امکانات رفاهی (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-amber-500 rounded-full ml-3"></div>
+                        <i class="fas fa-swimming-pool text-amber-500 ml-2"></i>
+                        امکانات رفاهی
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="pool" id="pool" class="feature-checkbox ml-3">
+                            <label for="pool" class="flex items-center cursor-pointer">
+                                <i class="fas fa-swimming-pool text-amber-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">استخر</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="sauna" id="sauna" class="feature-checkbox ml-3">
+                            <label for="sauna" class="flex items-center cursor-pointer">
+                                <i class="fas fa-hot-tub text-amber-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">سونا</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="gym" id="gym" class="feature-checkbox ml-3">
+                            <label for="gym" class="flex items-center cursor-pointer">
+                                <i class="fas fa-dumbbell text-amber-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">سالن ورزشی</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="garden" id="garden" class="feature-checkbox ml-3">
+                            <label for="garden" class="flex items-center cursor-pointer">
+                                <i class="fas fa-tree text-amber-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">فضای سبز/باغ</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="balcony" id="balcony" class="feature-checkbox ml-3">
+                            <label for="balcony" class="flex items-center cursor-pointer">
+                                <i class="fas fa-building text-amber-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">بالکن</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="security" id="security" class="feature-checkbox ml-3">
+                            <label for="security" class="flex items-center cursor-pointer">
+                                <i class="fas fa-shield-alt text-amber-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">سیستم امنیتی</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- دسترسی‌ها (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-teal-500 rounded-full ml-3"></div>
+                        <i class="fas fa-map-marked-alt text-teal-500 ml-2"></i>
+                        دسترسی‌ها
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="near_school" id="near_school" class="feature-checkbox ml-3">
+                            <label for="near_school" class="flex items-center cursor-pointer">
+                                <i class="fas fa-school text-teal-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">نزدیک مدرسه</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="near_hospital" id="near_hospital" class="feature-checkbox ml-3">
+                            <label for="near_hospital" class="flex items-center cursor-pointer">
+                                <i class="fas fa-hospital text-teal-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">نزدیک بیمارستان</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="near_metro" id="near_metro" class="feature-checkbox ml-3">
+                            <label for="near_metro" class="flex items-center cursor-pointer">
+                                <i class="fas fa-subway text-teal-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">نزدیک مترو</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="near_bus" id="near_bus" class="feature-checkbox ml-3">
+                            <label for="near_bus" class="flex items-center cursor-pointer">
+                                <i class="fas fa-bus text-teal-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">نزدیک ایستگاه اتوبوس</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="near_mall" id="near_mall" class="feature-checkbox ml-3">
+                            <label for="near_mall" class="flex items-center cursor-pointer">
+                                <i class="fas fa-shopping-cart text-teal-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">نزدیک مرکز خرید</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="near_park" id="near_park" class="feature-checkbox ml-3">
+                            <label for="near_park" class="flex items-center cursor-pointer">
+                                <i class="fas fa-tree text-teal-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">نزدیک پارک</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- اطلاعات انرژی (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-emerald-500 rounded-full ml-3"></div>
+                        <i class="fas fa-leaf text-emerald-500 ml-2"></i>
+                        اطلاعات انرژی
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">رتبه انرژی</label>
+                            <select name="energy_rating" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                                <option value="">انتخاب کنید...</option>
+                                <option value="A">A (بسیار کم مصرف)</option>
+                                <option value="B">B (کم مصرف)</option>
+                                <option value="C">C (متوسط)</option>
+                                <option value="D">D (پر مصرف)</option>
+                                <option value="E">E (بسیار پر مصرف)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">میانگین هزینه ماهانه (برق، گاز، آب)</label>
+                            <input type="number" name="monthly_utility_cost" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" min="0" placeholder="مثال: 500000">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="solar_panels" id="solar_panels" class="feature-checkbox ml-3">
+                            <label for="solar_panels" class="flex items-center cursor-pointer">
+                                <i class="fas fa-solar-panel text-emerald-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">پنل خورشیدی</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="double_glazing" id="double_glazing" class="feature-checkbox ml-3">
+                            <label for="double_glazing" class="flex items-center cursor-pointer">
+                                <i class="fas fa-window-maximize text-emerald-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">پنجره دوجداره</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="insulation" id="insulation" class="feature-checkbox ml-3">
+                            <label for="insulation" class="flex items-center cursor-pointer">
+                                <i class="fas fa-thermometer-half text-emerald-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">عایق حرارتی</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- موقعیت جغرافیایی -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-emerald-600 rounded-full ml-3"></div>
+                        <i class="fas fa-map-marker-alt text-emerald-600 ml-2"></i>
+                        موقعیت جغرافیایی
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">استان <span class="text-red-500">*</span></label>
+                            <select id="id_province_ad" name="province" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                                <option value="">انتخاب کنید...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">شهرستان <span class="text-red-500">*</span></label>
+                            <select id="id_county_ad" name="county" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" disabled>
+                                <option value="">ابتدا استان را انتخاب کنید</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">بخش <span class="text-red-500">*</span></label>
+                            <select id="id_district_ad" name="district" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" disabled>
+                                <option value="">ابتدا شهرستان را انتخاب کنید</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="block text-gray-700 font-medium">شهر / روستا <span class="text-red-500">*</span></label>
+                                <button type="button" id="btnOpenRequestCityModal" class="text-xs text-emerald-600 hover:text-emerald-800 font-medium hover:underline flex items-center">
+                                    <i class="fas fa-plus-circle ml-1"></i>
+                                    درخواست افزودن شهر یا روستا
+                                </button>
+                            </div>
+                            <select id="id_city_village_ad" name="city_village" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" disabled>
+                                <option value="">ابتدا بخش را انتخاب کنید</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-6">
+                        <input type="checkbox" name="is_village" id="is_village" class="feature-checkbox ml-3">
+                        <label for="is_village" class="flex items-center cursor-pointer">
+                            <i class="fas fa-tree text-emerald-600 ml-2"></i>
+                            <span class="text-gray-700 font-medium">ملک در محدوده روستا قرار دارد</span>
+                        </label>
+                    </div>
+
+                    <!-- پیام راهنمای ثبت شهر یا روستا -->
+                    <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="flex items-center text-emerald-800 text-sm">
+                            <i class="fas fa-map-marker-alt text-emerald-600 ml-2 text-lg"></i>
+                            <span>شهر یا روستای شما در لیست بالا وجود ندارد؟</span>
+                        </div>
+                        <button type="button" id="btnOpenRequestCityModal2" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center shadow-sm whitespace-nowrap">
+                            <i class="fas fa-plus ml-1.5"></i>
+                            درخواست افزودن به سیستم
+                        </button>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-gray-700 font-medium mb-3">آدرس کامل <span class="text-red-500">*</span></label>
+                        <textarea name="address" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" rows="3" placeholder="آدرس دقیق ملک را وارد کنید..."></textarea>
+                    </div>
+                    
+                    <!-- Interactive Map (NEW FEATURE) -->
+                    <div class="mt-6">
+                        <label class="block text-gray-700 font-medium mb-3">موقعیت ملک روی نقشه</label>
+                        <div class="map-container flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-map-marked-alt text-4xl text-gray-400 mb-4"></i>
+                                <p class="text-gray-600">برای انتخاب موقعیت دقیق ملک روی نقشه کلیک کنید</p>
+                                <button type="button" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                                    انتخاب موقعیت روی نقشه
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- قیمت و شرایط -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-purple-600 rounded-full ml-3"></div>
+                        <i class="fas fa-money-bill-wave text-purple-600 ml-2"></i>
+                        قیمت و شرایط مالی
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="price-section">
+                        <!-- Dynamic pricing fields based on ad_type -->
+                    </div>
+                    <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mt-6">
+                        <input type="checkbox" name="price_negotiable" id="price_negotiable" class="feature-checkbox ml-3">
+                        <label for="price_negotiable" class="flex items-center cursor-pointer">
+                            <i class="fas fa-handshake text-purple-600 ml-2"></i>
+                            <span class="text-gray-700 font-medium">قابل مذاکره</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Price Estimation (NEW FEATURE) -->
+                    <div class="mt-6 bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-purple-800 flex items-center">
+                                    <i class="fas fa-calculator ml-2"></i>
+                                    برآورد قیمت ملک
+                                </h3>
+                                <p class="text-sm text-purple-600 mt-1">بر اساس اطلاعات وارد شده، قیمت تخمینی ملک محاسبه می‌شود</p>
+                            </div>
+                            <button type="button" id="estimate-price-btn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all">
+                                محاسبه قیمت
+                            </button>
+                        </div>
+                        <div id="price-estimate-result" class="mt-4 hidden">
+                            <div class="bg-white p-4 rounded-lg border border-purple-200">
+                                <p class="text-lg font-semibold text-purple-800">قیمت تخمینی: <span id="estimated-price">0</span> تومان</p>
+                                <p class="text-sm text-gray-600 mt-2">این قیمت بر اساس میانگین قیمت‌های منطقه و مشخصات ملک شما محاسبه شده است</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loan Calculator (NEW FEATURE) -->
+                    <div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-blue-800 flex items-center">
+                                    <i class="fas fa-home ml-2"></i>
+                                    محاسبه وام مسکن
+                                </h3>
+                                <p class="text-sm text-blue-600 mt-1">برای محاسبه اقساط وام مسکن، اطلاعات را وارد کنید</p>
+                            </div>
+                            <button type="button" id="loan-calculator-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                                محاسبه وام
+                            </button>
+                        </div>
+                        <div id="loan-calculator-result" class="mt-4 hidden">
+                            <div class="bg-white p-4 rounded-lg border border-blue-200">
+                                <p class="text-lg font-semibold text-blue-800">مبلغ قسط ماهانه: <span id="monthly-payment">0</span> تومان</p>
+                                <p class="text-sm text-gray-600 mt-2">این محاسبه بر اساس نرخ بهره فعلی وام مسکن انجام شده است</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- قوانین و مقررات (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-rose-500 rounded-full ml-3"></div>
+                        <i class="fas fa-gavel text-rose-500 ml-2"></i>
+                        قوانین و مقررات
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">شرایط اجاره (در صورت اجاره)</label>
+                            <textarea name="rent_terms" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all" rows="3" placeholder="شرایط خاص اجاره را وارد کنید..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">محدودیت‌ها</label>
+                            <textarea name="restrictions" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all" rows="3" placeholder="محدودیت‌های استفاده از ملک را وارد کنید..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="pet_friendly" id="pet_friendly" class="feature-checkbox ml-3">
+                            <label for="pet_friendly" class="flex items-center cursor-pointer">
+                                <i class="fas fa-paw text-rose-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">حیوان خانگی مجاز</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="smoking_allowed" id="smoking_allowed" class="feature-checkbox ml-3">
+                            <label for="smoking_allowed" class="flex items-center cursor-pointer">
+                                <i class="fas fa-smoking text-rose-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">سیگار مجاز</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" name="party_allowed" id="party_allowed" class="feature-checkbox ml-3">
+                            <label for="party_allowed" class="flex items-center cursor-pointer">
+                                <i class="fas fa-glass-cheers text-rose-500 ml-2"></i>
+                                <span class="text-gray-700 font-medium">مهمانی مجاز</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- برنامه بازدید (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-cyan-500 rounded-full ml-3"></div>
+                        <i class="fas fa-calendar-check text-cyan-500 ml-2"></i>
+                        برنامه بازدید
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">روزهای قابل بازدید</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="visit_sat" id="visit_sat" class="feature-checkbox ml-2">
+                                    <label for="visit_sat" class="text-gray-700">شنبه</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="visit_sun" id="visit_sun" class="feature-checkbox ml-2">
+                                    <label for="visit_sun" class="text-gray-700">یکشنبه</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="visit_mon" id="visit_mon" class="feature-checkbox ml-2">
+                                    <label for="visit_mon" class="text-gray-700">دوشنبه</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="visit_tue" id="visit_tue" class="feature-checkbox ml-2">
+                                    <label for="visit_tue" class="text-gray-700">سه‌شنبه</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="visit_wed" id="visit_wed" class="feature-checkbox ml-2">
+                                    <label for="visit_wed" class="text-gray-700">چهارشنبه</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="visit_thu" id="visit_thu" class="feature-checkbox ml-2">
+                                    <label for="visit_thu" class="text-gray-700">پنج‌شنبه</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="visit_fri" id="visit_fri" class="feature-checkbox ml-2">
+                                    <label for="visit_fri" class="text-gray-700">جمعه</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">ساعات قابل بازدید</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-gray-600 text-sm mb-1">از ساعت</label>
+                                    <select name="visit_from_hour" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all">
+                                        <option value="8">8 صبح</option>
+                                        <option value="9">9 صبح</option>
+                                        <option value="10">10 صبح</option>
+                                        <option value="11">11 صبح</option>
+                                        <option value="12">12 ظهر</option>
+                                        <option value="13">1 بعدازظهر</option>
+                                        <option value="14">2 بعدازظهر</option>
+                                        <option value="15">3 بعدازظهر</option>
+                                        <option value="16">4 بعدازظهر</option>
+                                        <option value="17">5 بعدازظهر</option>
+                                        <option value="18">6 بعدازظهر</option>
+                                        <option value="19">7 بعدازظهر</option>
+                                        <option value="20">8 بعدازظهر</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-600 text-sm mb-1">تا ساعت</label>
+                                    <select name="visit_to_hour" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all">
+                                        <option value="8">8 صبح</option>
+                                        <option value="9">9 صبح</option>
+                                        <option value="10">10 صبح</option>
+                                        <option value="11">11 صبح</option>
+                                        <option value="12">12 ظهر</option>
+                                        <option value="13">1 بعدازظهر</option>
+                                        <option value="14">2 بعدازظهر</option>
+                                        <option value="15">3 بعدازظهر</option>
+                                        <option value="16">4 بعدازظهر</option>
+                                        <option value="17">5 بعدازظهر</option>
+                                        <option value="18">6 بعدازظهر</option>
+                                        <option value="19">7 بعدازظهر</option>
+                                        <option value="20">8 بعدازظهر</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-gray-700 font-medium mb-3">توضیحات برنامه بازدید</label>
+                        <textarea name="visit_notes" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all" rows="2" placeholder="توضیحات اضافی در مورد برنامه بازدید..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- اطلاعات مالیاتی (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-violet-500 rounded-full ml-3"></div>
+                        <i class="fas fa-file-invoice-dollar text-violet-500 ml-2"></i>
+                        اطلاعات مالیاتی
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">مالیات سالانه</label>
+                            <input type="number" name="annual_tax" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all" min="0" placeholder="مثال: 5000000">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">هزینه‌های مشاع</label>
+                            <input type="number" name="shared_costs" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all" min="0" placeholder="مثال: 200000">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-gray-700 font-medium mb-3">توضیحات مالیاتی</label>
+                        <textarea name="tax_notes" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all" rows="2" placeholder="توضیحات اضافی در مورد مسائل مالیاتی..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- تاریخچه ملک (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-indigo-500 rounded-full ml-3"></div>
+                        <i class="fas fa-history text-indigo-500 ml-2"></i>
+                        تاریخچه ملک
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">سال آخرین بازسازی</label>
+                            <input type="number" name="last_renovation_year" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" min="1300" max="1410" placeholder="مثال: 1398">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">تعداد مالکان قبلی</label>
+                            <input type="number" name="previous_owners" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" min="0" placeholder="مثال: 2">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-gray-700 font-medium mb-3">توضیحات تاریخچه</label>
+                        <textarea name="property_history" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" rows="3" placeholder="توضیحات در مورد تاریخچه ملک، تغییرات انجام شده و..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- توضیحات تکمیلی -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-orange-500 rounded-full ml-3"></div>
+                        <i class="fas fa-align-right text-orange-500 ml-2"></i>
+                        توضیحات
+                    </h2>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-3">توضیحات ملک</label>
+                        <textarea name="description" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="4" placeholder="توضیحات کامل در مورد ملک، امکانات، موقعیت و..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- تصاویر ملک -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-indigo-600 rounded-full ml-3"></div>
+                        <i class="fas fa-camera text-indigo-600 ml-2"></i>
+                        تصاویر ملک
+                    </h2>
+                    
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <label for="property-images" class="cursor-pointer">
+                            <span class="text-blue-600 font-semibold hover:text-blue-700">کلیک کنید تا تصاویر را انتخاب کنید</span>
+                            <span class="text-gray-600"> یا فایل‌ها را بکشید و اینجا رها کنید</span>
+                        </label>
+                        <input type="file" name="images" class="hidden" multiple accept="image/*" id="property-images">
+                        <p class="text-sm text-gray-500 mt-2">فرمت‌های مجاز: JPG, PNG, WebP - حداکثر سایز هر فایل: 5MB - حداکثر 10 عکس</p>
+                    </div>
+                    
+                    <div id="image-preview" class="mt-6 image-preview-grid"></div>
+                    
+                    <!-- Image Editing Tools (NEW FEATURE) -->
+                    <div id="image-editing-tools" class="mt-6 hidden bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="font-medium text-gray-800 mb-3">ابزارهای ویرایش تصویر</h3>
+                        <div class="flex flex-wrap gap-3">
+                            <button type="button" class="px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all">
+                                <i class="fas fa-crop-alt ml-1"></i>
+                                برش
+                            </button>
+                            <button type="button" class="px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all">
+                                <i class="fas fa-sync-alt ml-1"></i>
+                                چرخش
+                            </button>
+                            <button type="button" class="px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all">
+                                <i class="fas fa-adjust ml-1"></i>
+                                روشنایی
+                            </button>
+                            <button type="button" class="px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all">
+                                <i class="fas fa-palette ml-1"></i>
+                                فیلتر
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- اطلاعات تماس -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-emerald-600 rounded-full ml-3"></div>
+                        <i class="fas fa-phone text-emerald-600 ml-2"></i>
+                        اطلاعات تماس
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">نام و نام خانوادگی <span class="text-red-500">*</span></label>
+                            <input type="text" name="contact_name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value="{{ user.get_full_name }}">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-3">شماره تماس <span class="text-red-500">*</span></label>
+                            <input type="tel" name="contact_phone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value="{{ user.profile.mobile_number }}" placeholder="09123456789">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- پرسش‌های متداول (NEW SECTION) -->
+                <div class="mb-12">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <div class="w-1 h-6 bg-blue-500 rounded-full ml-3"></div>
+                        <i class="fas fa-question-circle text-blue-500 ml-2"></i>
+                        پرسش‌های متداول
+                    </h2>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="faq-item">
+                            <div class="faq-question py-3 font-medium text-gray-800 flex items-center justify-between">
+                                <span>چگونه می‌توانم آگهی خود را جذاب‌تر کنم؟</span>
+                                <i class="fas fa-chevron-down text-gray-500"></i>
+                            </div>
+                            <div class="faq-answer px-3 pb-3 text-gray-600">
+                                برای جذاب‌تر کردن آگهی خود، حتماً از تصاویر باکیفیت و نورانی استفاده کنید، تمام اطلاعات دقیق ملک را وارد کنید، امکانات و ویژگی‌های منحصر به فرد را ذکر کنید و قیمت واقع‌بینانه تعیین کنید.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question py-3 font-medium text-gray-800 flex items-center justify-between">
+                                <span>آیا می‌توانم آگهی خود را بعداً ویرایش کنم؟</span>
+                                <i class="fas fa-chevron-down text-gray-500"></i>
+                            </div>
+                            <div class="faq-answer px-3 pb-3 text-gray-600">
+                                بله، شما می‌توانید آگهی خود را در هر زمان از طریق داشبورد کاربری ویرایش کنید. اطلاعات قیمت، تصاویر و توضیحات قابل تغییر هستند.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question py-3 font-medium text-gray-800 flex items-center justify-between">
+                                <span>آگهی من چقدر زمان در سایت باقی می‌ماند؟</span>
+                                <i class="fas fa-chevron-down text-gray-500"></i>
+                            </div>
+                            <div class="faq-answer px-3 pb-3 text-gray-600">
+                                آگهی‌های استاندارد به مدت 30 روز در سایت باقی می‌مانند. شما می‌توانید با ارتقاء به پلن‌های پرمیوم، مدت نمایش آگهی خود را افزایش دهید.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- دکمه ها -->
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-gray-200">
+                    <a href="/dashboard/owner/" class="w-full sm:w-auto px-8 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all flex items-center justify-center">
+                        <i class="fas fa-arrow-right ml-2"></i>
+                        انصراف
+                    </a>
+                    <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg flex items-center justify-center">
+                        <i class="fas fa-arrow-left ml-2"></i>
+                        مرحله بعد: بررسی و انتشار
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Show/hide dehestan field based on village checkbox
+        document.getElementById('is_village').addEventListener('change', function() {
+            const dehestanField = document.getElementById('dehestan-field');
+            if (this.checked) {
+                dehestanField.classList.remove('hidden');
+            } else {
+                dehestanField.classList.add('hidden');
+            }
+        });
+        
+        // Number formatting functions
+        function formatNumber(num) {
+            if (!num) return '';
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        
+        function removeFormatting(str) {
+            if (!str) return '';
+            return str.replace(/,/g, '');
+        }
+        
+        function addNumberFormatting(input) {
+            input.addEventListener('input', function(e) {
+                let value = removeFormatting(e.target.value);
+                if (value && !isNaN(value)) {
+                    // Store raw value in a data attribute
+                    e.target.setAttribute('data-raw-value', value);
+                    // Display formatted value
+                    e.target.value = formatNumber(value);
+                }
+            });
+            
+            // Before form submission, restore raw values
+            input.addEventListener('blur', function(e) {
+                let rawValue = e.target.getAttribute('data-raw-value');
+                if (rawValue) {
+                    e.target.value = rawValue;
+                }
+            });
+            
+            // On focus, show formatted value again
+            input.addEventListener('focus', function(e) {
+                let rawValue = e.target.getAttribute('data-raw-value');
+                if (rawValue) {
+                    e.target.value = formatNumber(rawValue);
+                }
+            });
+        }
+        
+        // Dynamic pricing fields based on ad type
+        document.querySelector('select[name="ad_type"]').addEventListener('change', function() {
+            const priceSection = document.getElementById('price-section');
+            const adType = this.value;
+            
+            if (!adType) {
+                priceSection.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            if (adType === 'sale' || adType === 'both') {
+                html += `
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-3">قیمت فروش (تومان) <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="text" name="sale_price" class="price-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="مثال: 5,000,000,000">
+                            <div class="absolute left-3 top-3 text-gray-500 text-sm">تومان</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (adType === 'rent' || adType === 'both') {
+                html += `
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-3">اجاره ماهانه (تومان) <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="text" name="rent_price" class="price-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="مثال: 5,000,000">
+                            <div class="absolute left-3 top-3 text-gray-500 text-sm">تومان</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-3">رهن (تومان)</label>
+                        <div class="relative">
+                            <input type="text" name="deposit" class="price-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="مثال: 200,000,000">
+                            <div class="absolute left-3 top-3 text-gray-500 text-sm">تومان</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            priceSection.innerHTML = html;
+            
+            // Add number formatting to new price inputs
+            document.querySelectorAll('.price-input').forEach(addNumberFormatting);
+        });
+        
+        // Image preview with modern styling
+        document.getElementById('property-images').addEventListener('change', function() {
+            const preview = document.getElementById('image-preview');
+            const editingTools = document.getElementById('image-editing-tools');
+            preview.innerHTML = '';
+            
+            if (this.files.length > 10) {
+                alert('حداکثر 10 تصویر قابل انتخاب است');
+                this.value = '';
+                return;
+            }
+            
+            Array.from(this.files).forEach((file, index) => {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`فایل ${file.name} بیش از 5MB است`);
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'image-preview-item bg-gray-100 rounded-lg overflow-hidden shadow-md';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="تصویر ${index + 1}">
+                        <div class="image-preview-number">${index + 1}</div>
+                    `;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            // Show editing tools if images are selected
+            if (this.files.length > 0) {
+                editingTools.classList.remove('hidden');
+            } else {
+                editingTools.classList.add('hidden');
+            }
+        });
+        
+        // File drag and drop
+        const dropZone = document.querySelector('.border-dashed');
+        const fileInput = document.getElementById('property-images');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('border-blue-500', 'bg-blue-50');
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            }, false);
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }, false);
+        
+        // Form submission handler to ensure raw values are submitted
+        document.getElementById('property-ad-form').addEventListener('submit', function(e) {
+            // Convert all formatted price inputs back to raw numbers
+            document.querySelectorAll('.price-input').forEach(input => {
+                let rawValue = input.getAttribute('data-raw-value');
+                if (rawValue) {
+                    input.value = rawValue;
+                }
+            });
+        });
+        
+        // Template selection
+        document.querySelectorAll('.template-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.template-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+        
+        // FAQ accordion
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', function() {
+                const answer = this.nextElementSibling;
+                const icon = this.querySelector('i');
+                
+                answer.classList.toggle('active');
+                
+                if (answer.classList.contains('active')) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            });
+        });
+        
+        // Vertical progress bar
+        function updateVerticalProgress() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('vertical-progress').style.height = scrolled + '%';
+        }
+        
+        window.addEventListener('scroll', updateVerticalProgress);
+        
+        // Auto-save functionality
+        let autoSaveTimer;
+        function autoSave() {
+            // Show auto-save indicator
+            const indicator = document.getElementById('auto-save-indicator');
+            indicator.style.display = 'flex';
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Auto-save on form changes
+        document.getElementById('property-ad-form').addEventListener('input', function() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(autoSave, 3000);
+        });
+        
+        // Save draft button
+        document.getElementById('save-draft-btn').addEventListener('click', function() {
+            // Show loading state
+            const originalContent = this.innerHTML;
+            this.innerHTML = '<span class="spinner"></span> در حال ذخیره...';
+            this.disabled = true;
+            
+            // Simulate saving
+            setTimeout(() => {
+                this.innerHTML = originalContent;
+                this.disabled = false;
+                
+                // Show success message
+                const indicator = document.getElementById('auto-save-indicator');
+                indicator.innerHTML = '<i class="fas fa-check-circle ml-2"></i><span>پیش‌نویس با موفقیت ذخیره شد</span>';
+                indicator.style.display = 'flex';
+                
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 3000);
+            }, 1500);
+        });
+        
+        // Preview button
+        document.getElementById('preview-btn').addEventListener('click', function() {
+            showAdPreview();
+        });
+        
+        // Show ad preview function
+        function showAdPreview() {
+            const form = document.getElementById('property-ad-form');
+            const formData = new FormData(form);
+            
+            // Extract form data
+            const adData = {
+                ad_type: formData.get('ad_type') || 'نامشخص',
+                property_type: formData.get('property_type') || 'نامشخص',
+                total_area: formData.get('total_area') || '0',
+                built_area: formData.get('built_area') || '0',
+                floors: formData.get('floors') || '0',
+                specific_floor: formData.get('specific_floor') || '0',
+                units: formData.get('units') || '1',
+                bedrooms: formData.get('bedrooms') || '0',
+                parking: formData.get('parking') || '0',
+                construction_year: formData.get('construction_year') || 'نامشخص',
+                sale_price: formData.get('sale_price') || '0',
+                rent_price: formData.get('rent_price') || '0',
+                deposit: formData.get('deposit') || '0',
+                title: formData.get('title') || 'بدون عنوان',
+                description: formData.get('description') || 'توضیحات وارد نشده',
+                address: formData.get('address') || 'آدرس وارد نشده',
+                contact_name: formData.get('contact_name') || 'نامشخص',
+                contact_phone: formData.get('contact_phone') || 'نامشخص'
+            };
+            
+            // Get selected features - all checkboxes
+            const features = [];
+            const featureMapping = {
+                'parking_available': 'پارکینگ',
+                'storage_room': 'انباری', 
+                'elevator': 'آسانسور',
+                'pool': 'استخر',
+                'sauna': 'سونا',
+                'gym': 'سالن ورزش',
+                'garden': 'باغ و فضای سبز',
+                'balcony': 'بالکن',
+                'security': 'سیستم امنیتی',
+                'near_school': 'نزدیک مدرسه',
+                'near_hospital': 'نزدیک بیمارستان', 
+                'near_metro': 'نزدیک مترو',
+                'near_bus': 'نزدیک ایستگاه اتوبوس',
+                'near_mall': 'نزدیک مرکز خرید',
+                'near_park': 'نزدیک پارک',
+                'solar_panels': 'پنل خورشیدی',
+                'double_glazing': 'شیشه دوجداره',
+                'insulation': 'عایق حرارتی',
+                'pet_friendly': 'حیوان خانگی مجاز',
+                'smoking_allowed': 'سیگار مجاز',
+                'party_allowed': 'جشن و مهمانی مجاز',
+                'price_negotiable': 'قیمت قابل مذاکره'
+            };
+            
+            // Extract all checked features
+            Object.keys(featureMapping).forEach(key => {
+                const checkbox = form.querySelector(`input[name="${key}"]`);
+                if (checkbox && checkbox.checked) {
+                    features.push(featureMapping[key]);
+                }
+            });
+            
+            // Get visit days
+            const visitDays = [];
+            const dayMapping = {
+                'visit_sat': 'شنبه',
+                'visit_sun': 'یکشنبه', 
+                'visit_mon': 'دوشنبه',
+                'visit_tue': 'سه‌شنبه',
+                'visit_wed': 'چهارشنبه',
+                'visit_thu': 'پنج‌شنبه',
+                'visit_fri': 'جمعه'
+            };
+            
+            Object.keys(dayMapping).forEach(key => {
+                const checkbox = form.querySelector(`input[name="${key}"]`);
+                if (checkbox && checkbox.checked) {
+                    visitDays.push(dayMapping[key]);
+                }
+            });
+            
+            if (visitDays.length > 0) {
+                features.push('روزهای بازدید: ' + visitDays.join('، '));
+            }
+            
+            // Generate type labels
+            const typeLabels = {
+                'sale': 'فروش',
+                'rent': 'اجاره',
+                'both': 'فروش و اجاره',
+                'residential': 'مسکونی',
+                'commercial': 'تجاری',
+                'land': 'زمین',
+                'agricultural': 'کشاورزی',
+                'industrial': 'صنعتی'
+            };
+            
+            // Update modal content
+            document.getElementById('preview-ad-type').textContent = typeLabels[adData.ad_type] || adData.ad_type;
+            document.getElementById('preview-property-type').textContent = typeLabels[adData.property_type] || adData.property_type;
+            document.getElementById('preview-title').textContent = adData.title;
+            document.getElementById('preview-description').textContent = adData.description;
+            document.getElementById('preview-address').textContent = adData.address;
+            document.getElementById('preview-total-area').textContent = formatNumber(adData.total_area) + ' متر مربع';
+            document.getElementById('preview-built-area').textContent = formatNumber(adData.built_area) + ' متر مربع';
+            document.getElementById('preview-bedrooms').textContent = adData.bedrooms + ' اتاق';
+            document.getElementById('preview-floors').textContent = adData.floors;
+            document.getElementById('preview-construction-year').textContent = adData.construction_year;
+            document.getElementById('preview-contact-name').textContent = adData.contact_name;
+            document.getElementById('preview-contact-phone').textContent = adData.contact_phone;
+            
+            // Update features
+            const featuresContainer = document.getElementById('preview-features');
+            if (features.length > 0) {
+                featuresContainer.innerHTML = features.map(feature => 
+                    `<span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium ml-2 mb-2">${feature}</span>`
+                ).join('');
+            } else {
+                featuresContainer.innerHTML = '<span class="text-gray-500">امکانات خاصی ذکر نشده</span>';
+            }
+            
+            // Update prices with proper formatting
+            const priceContainer = document.getElementById('preview-price');
+            let priceHtml = '';
+            
+            // Helper function to format price in Persian
+            function formatPersianPrice(price) {
+                if (!price || price === '0') return null;
+                const number = parseInt(price);
+                if (isNaN(number)) return null;
+                
+                // Add thousand separators and convert to Persian digits
+                let formatted = number.toLocaleString('fa-IR');
+                return formatted + ' تومان';
+            }
+            
+            if (adData.ad_type === 'sale' || adData.ad_type === 'both') {
+                const formattedSalePrice = formatPersianPrice(adData.sale_price);
+                if (formattedSalePrice) {
+                    priceHtml += `<div class="text-2xl font-bold text-green-600 mb-2">
+                        <i class="fas fa-tag ml-2"></i>قیمت فروش: ${formattedSalePrice}
+                    </div>`;
+                }
+            }
+            
+            if (adData.ad_type === 'rent' || adData.ad_type === 'both') {
+                const formattedRentPrice = formatPersianPrice(adData.rent_price);
+                const formattedDeposit = formatPersianPrice(adData.deposit);
+                
+                if (formattedRentPrice) {
+                    priceHtml += `<div class="text-xl font-semibold text-blue-600 mb-1">
+                        <i class="fas fa-calendar-alt ml-2"></i>اجاره ماهانه: ${formattedRentPrice}
+                    </div>`;
+                }
+                if (formattedDeposit) {
+                    priceHtml += `<div class="text-lg text-gray-700 mb-1">
+                        <i class="fas fa-piggy-bank ml-2"></i>ودیعه: ${formattedDeposit}
+                    </div>`;
+                }
+            }
+            
+            // Add negotiable note if checked
+            if (form.querySelector('input[name="price_negotiable"]') && form.querySelector('input[name="price_negotiable"]').checked) {
+                priceHtml += `<div class="text-sm text-orange-600 font-medium mt-2">
+                    <i class="fas fa-handshake ml-2"></i>قیمت قابل مذاکره
+                </div>`;
+            }
+            
+            if (!priceHtml) {
+                priceHtml = `<div class="text-gray-500 text-center py-4">
+                    <i class="fas fa-exclamation-triangle ml-2"></i>
+                    قیمت وارد نشده است
+                </div>`;
+            }
+            
+            priceContainer.innerHTML = priceHtml;
+            
+            // Show modal with proper behavior
+            const modal = document.getElementById('preview-modal');
+            modal.classList.remove('hidden');
+            
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+            
+            // Focus on modal for accessibility
+            modal.focus();
+        }
+        
+        // Modal close functions
+        function closePreviewModal() {
+            const modal = document.getElementById('preview-modal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('preview-modal');
+                if (!modal.classList.contains('hidden')) {
+                    closePreviewModal();
+                }
+            }
+        });
+        
+        // Close modal when clicking on backdrop
+        document.getElementById('preview-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreviewModal();
+            }
+        });
+        
+        // Copy from previous ad
+        document.getElementById('copy-previous-btn').addEventListener('click', function() {
+            // In a real application, this would open a modal to select from previous ads
+            alert('در نسخه نهایی، این دکمه امکان کپی اطلاعات از آگهی‌های قبلی را فراهم می‌کند');
+        });
+        
+        // Price estimation
+        document.getElementById('estimate-price-btn').addEventListener('click', function() {
+            // Show loading state
+            const resultDiv = document.getElementById('price-estimate-result');
+            const priceSpan = document.getElementById('estimated-price');
+            
+            this.innerHTML = '<span class="spinner"></span> در حال محاسبه...';
+            this.disabled = true;
+            
+            // Simulate calculation
+            setTimeout(() => {
+                // In a real application, this would be based on actual data
+                const estimatedPrice = Math.floor(Math.random() * 10000000000) + 500000000;
+                priceSpan.textContent = formatNumber(estimatedPrice);
+                
+                resultDiv.classList.remove('hidden');
+                
+                this.innerHTML = 'محاسبه قیمت';
+                this.disabled = false;
+            }, 1500);
+        });
+        
+        // Loan calculator
+        document.getElementById('loan-calculator-btn').addEventListener('click', function() {
+            // Show loading state
+            const resultDiv = document.getElementById('loan-calculator-result');
+            const paymentSpan = document.getElementById('monthly-payment');
+            
+            this.innerHTML = '<span class="spinner"></span> در حال محاسبه...';
+            this.disabled = true;
+            
+            // Simulate calculation
+            setTimeout(() => {
+                // In a real application, this would be based on actual data
+                const monthlyPayment = Math.floor(Math.random() * 5000000) + 1000000;
+                paymentSpan.textContent = formatNumber(monthlyPayment);
+                
+                resultDiv.classList.remove('hidden');
+                
+                this.innerHTML = 'محاسبه وام';
+                this.disabled = false;
+            }, 1500);
+        });
+        
+        // Live validation
+        document.querySelector('input[name="total_area"]').addEventListener('input', function() {
+            const errorDiv = document.getElementById('total-area-error');
+            
+            if (this.value && (isNaN(this.value) || this.value <= 0)) {
+                this.classList.add('input-invalid');
+                this.classList.remove('input-valid');
+                errorDiv.textContent = 'لطفاً یک عدد معتبر وارد کنید';
+            } else if (this.value) {
+                this.classList.add('input-valid');
+                this.classList.remove('input-invalid');
+                errorDiv.textContent = '';
+            } else {
+                this.classList.remove('input-valid', 'input-invalid');
+                errorDiv.textContent = '';
+            }
+        });
+    </script>
+    
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/5 shadow-lg rounded-2xl bg-white">
+            <div class="mt-3">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center pb-6 border-b border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-900">پیش‌نمایش آگهی ملک</h3>
+                    <button type="button" onclick="closePreviewModal()" 
+                            class="text-gray-400 hover:text-gray-600 text-2xl font-bold">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="py-6">
+                    <!-- Ad Header -->
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
+                        <div class="flex flex-wrap items-center gap-4 mb-4">
+                            <span id="preview-ad-type" class="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold">فروش</span>
+                            <span id="preview-property-type" class="bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold">مسکونی</span>
+                        </div>
+                        <h2 id="preview-title" class="text-2xl font-bold text-gray-900 mb-3">عنوان آگهی</h2>
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-map-marker-alt ml-2"></i>
+                            <span id="preview-address">آدرس ملک</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Price Section -->
+                    <div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-money-bill-wave text-green-600 ml-2"></i>
+                            قیمت
+                        </h3>
+                        <div id="preview-price">
+                            <!-- Price will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Property Details -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Specifications -->
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-ruler-combined text-blue-600 ml-2"></i>
+                                مشخصات ملک
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">مساحت کل:</span>
+                                    <span id="preview-total-area" class="font-medium">0 متر مربع</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">زیربنا:</span>
+                                    <span id="preview-built-area" class="font-medium">0 متر مربع</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">تعداد اتاق:</span>
+                                    <span id="preview-bedrooms" class="font-medium">0 اتاق</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">تعداد طبقات:</span>
+                                    <span id="preview-floors" class="font-medium">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">سال ساخت:</span>
+                                    <span id="preview-construction-year" class="font-medium">نامشخص</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Features -->
+                        <div class="bg-purple-50 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-star text-purple-600 ml-2"></i>
+                                امکانات و ویژگی‌ها
+                            </h3>
+                            <div id="preview-features" class="flex flex-wrap">
+                                <!-- Features will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-align-left text-indigo-600 ml-2"></i>
+                            توضیحات
+                        </h3>
+                        <p id="preview-description" class="text-gray-700 leading-relaxed">توضیحات آگهی در اینجا نمایش داده می‌شود</p>
+                    </div>
+                    
+                    <!-- Contact Information -->
+                    <div class="bg-orange-50 rounded-xl p-6 border border-orange-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-phone text-orange-600 ml-2"></i>
+                            اطلاعات تماس
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-user text-gray-500 ml-2"></i>
+                                <span class="text-gray-600 ml-2">نام تماس:</span>
+                                <span id="preview-contact-name" class="font-medium">نامشخص</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-phone text-gray-500 ml-2"></i>
+                                <span class="text-gray-600 ml-2">شماره تماس:</span>
+                                <span id="preview-contact-phone" class="font-medium">نامشخص</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="closePreviewModal()" 
+                            class="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-all font-medium">
+                        بستن
+                    </button>
+                    <button type="button" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium">
+                        <i class="fas fa-edit ml-2"></i>
+                        ویرایش آگهی
+                    </button>
+                    <button type="button" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-medium">
+                        <i class="fas fa-paper-plane ml-2"></i>
+                        انتشار آگهی
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- مودال درخواست افزودن شهر یا روستا -->
+    <div id="requestCityModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-right relative animate-fade-in">
+            <div class="flex items-center justify-between border-b pb-4 mb-4">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-map-marker-alt text-emerald-600 ml-2"></i>
+                    درخواست افزودن شهر یا روستا
+                </h3>
+                <button type="button" id="btnCloseRequestCityModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <div id="modalAlertBox" class="hidden"></div>
+            
+            <form id="formRequestCityVillage">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">نوع سکونتگاه <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center p-2.5 border rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="modal_settlement_type" value="village" checked class="ml-2 text-emerald-600">
+                            <span>روستا</span>
+                        </label>
+                        <label class="flex items-center p-2.5 border rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="modal_settlement_type" value="city" class="ml-2 text-emerald-600">
+                            <span>شهر</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="modal_settlement_name" class="block text-gray-700 text-sm font-medium mb-2">
+                        نام شهر یا روستا <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="modal_settlement_name" required placeholder="مثلاً: چهکند، حاجی‌آباد..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+
+                <div class="mb-5">
+                    <label for="modal_settlement_desc" class="block text-gray-700 text-sm font-medium mb-2">توضیحات تکمیلی (اختیاری)</label>
+                    <textarea id="modal_settlement_desc" rows="2" placeholder="توضیحاتی در مورد موقعیت یا دهستان مربوطه..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-3 border-t">
+                    <button type="button" id="btnCancelRequestCityModal" class="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium">
+                        انصراف
+                    </button>
+                    <button type="submit" id="btnSubmitRequestCity" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors shadow-md flex items-center text-sm">
+                        <i class="fas fa-check ml-1.5"></i>
+                        ثبت و افزودن به لیست
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Geographic Cascading Dropdown Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const provinceSelect = document.getElementById('id_province_ad');
+            const countySelect = document.getElementById('id_county_ad');
+            const districtSelect = document.getElementById('id_district_ad');
+            const cityVillageSelect = document.getElementById('id_city_village_ad');
+            const isVillageCheckbox = document.querySelector('input[name="is_village"]');
+            
+            // Load provinces on page load
+            loadProvinces();
+            
+            // Helper function to clear a select
+            function clearSelect(selectElement, placeholderText) {
+                if (!selectElement) return;
+                selectElement.innerHTML = `<option value="">${placeholderText}</option>`;
+            }
+
+            // Load provinces
+            function loadProvinces() {
+                fetch('/api/geo/provinces/')
+                    .then(response => response.json())
+                    .then(data => {
+                        provinceSelect.innerHTML = '<option value="">استان را انتخاب کنید</option>';
+                        const provinces = Array.isArray(data) ? data : (data.data || []);
+                        
+                        provinces.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province.id;
+                            option.textContent = province.name;
+                            provinceSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading provinces:', error);
+                    });
+            }
+            
+            // Province change handler
+            provinceSelect.addEventListener('change', function() {
+                const provinceId = this.value;
+                clearSelect(countySelect, 'ابتدا استان را انتخاب کنید');
+                clearSelect(districtSelect, 'ابتدا شهرستان را انتخاب کنید');
+                clearSelect(cityVillageSelect, 'ابتدا بخش را انتخاب کنید');
+                
+                if (provinceId) {
+                    countySelect.disabled = false;
+                    districtSelect.disabled = true;
+                    cityVillageSelect.disabled = true;
+                    loadCounties(provinceId);
+                } else {
+                    countySelect.disabled = true;
+                    districtSelect.disabled = true;
+                    cityVillageSelect.disabled = true;
+                }
+            });
+            
+            // Load counties for a province
+            function loadCounties(provinceId) {
+                countySelect.innerHTML = '<option value="">در حال بارگذاری...</option>';
+                fetch(`/api/geo/counties/?province_id=${provinceId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        countySelect.innerHTML = '<option value="">شهرستان را انتخاب کنید</option>';
+                        const counties = Array.isArray(data) ? data : (data.data || []);
+                        
+                        counties.forEach(county => {
+                            const option = document.createElement('option');
+                            option.value = county.id;
+                            option.textContent = county.name;
+                            countySelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading counties:', error);
+                        countySelect.innerHTML = '<option value="">خطا در بارگذاری</option>';
+                    });
+            }
+
+            // County change handler
+            countySelect.addEventListener('change', function() {
+                const countyId = this.value;
+                clearSelect(districtSelect, 'ابتدا شهرستان را انتخاب کنید');
+                clearSelect(cityVillageSelect, 'ابتدا بخش را انتخاب کنید');
+                
+                if (countyId) {
+                    districtSelect.disabled = false;
+                    cityVillageSelect.disabled = true;
+                    loadDistricts(countyId);
+                } else {
+                    districtSelect.disabled = true;
+                    cityVillageSelect.disabled = true;
+                }
+            });
+            
+            // Load districts for a county
+            function loadDistricts(countyId) {
+                districtSelect.innerHTML = '<option value="">در حال بارگذاری...</option>';
+                fetch(`/api/geo/districts/?county_id=${countyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        districtSelect.innerHTML = '<option value="">بخش را انتخاب کنید</option>';
+                        const districts = Array.isArray(data) ? data : (data.data || []);
+                        
+                        districts.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.id;
+                            option.textContent = district.name;
+                            districtSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading districts:', error);
+                        districtSelect.innerHTML = '<option value="">خطا در بارگذاری</option>';
+                    });
+            }
+
+            // District change handler -> loads cities & villages!
+            districtSelect.addEventListener('change', function() {
+                const districtId = this.value;
+                clearSelect(cityVillageSelect, 'ابتدا بخش را انتخاب کنید');
+                
+                if (districtId) {
+                    cityVillageSelect.disabled = false;
+                    loadCityVillages(districtId);
+                } else {
+                    cityVillageSelect.disabled = true;
+                }
+            });
+
+            // Load cities and villages for district
+            function loadCityVillages(districtId) {
+                cityVillageSelect.innerHTML = '<option value="">در حال بارگذاری شهرها و روستاها...</option>';
+                fetch(`/api/geo/cities-villages/?district_id=${districtId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        cityVillageSelect.innerHTML = '<option value="">شهر یا روستای مورد نظر را انتخاب کنید</option>';
+                        const settlements = Array.isArray(data) ? data : (data.data || []);
+                        
+                        settlements.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            const isVillage = item.settlement_type === 'village';
+                            const typeBadge = isVillage ? 'روستا' : 'شهر';
+                            option.textContent = `${item.name} (${typeBadge})`;
+                            option.dataset.isVillage = isVillage ? 'true' : 'false';
+                            option.dataset.name = item.name;
+                            cityVillageSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading cities and villages:', error);
+                        cityVillageSelect.innerHTML = '<option value="">خطا در بارگذاری شهرها و روستاها</option>';
+                    });
+            }
+
+            // City/Village change handler -> auto-check village checkbox
+            cityVillageSelect.addEventListener('change', function() {
+                const selectedOpt = this.options[this.selectedIndex];
+                if (selectedOpt && isVillageCheckbox) {
+                    isVillageCheckbox.checked = (selectedOpt.dataset.isVillage === 'true');
+                }
+            });
+
+            // Modal Management for Requesting City/Village
+            const modal = document.getElementById('requestCityModal');
+            const openBtn1 = document.getElementById('btnOpenRequestCityModal');
+            const openBtn2 = document.getElementById('btnOpenRequestCityModal2');
+            const closeBtn = document.getElementById('btnCloseRequestCityModal');
+            const cancelBtn = document.getElementById('btnCancelRequestCityModal');
+            const form = document.getElementById('formRequestCityVillage');
+            const alertBox = document.getElementById('modalAlertBox');
+            const submitBtn = document.getElementById('btnSubmitRequestCity');
+
+            function openModal() {
+                if (!districtSelect || !districtSelect.value) {
+                    alert('لطفاً ابتدا استان، شهرستان و بخش مورد نظر را از فرم انتخاب کنید.');
+                    return;
+                }
+                modal.classList.remove('hidden');
+                document.getElementById('modal_settlement_name').focus();
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                alertBox.classList.add('hidden');
+                form.reset();
+            }
+
+            if (openBtn1) openBtn1.addEventListener('click', openModal);
+            if (openBtn2) openBtn2.addEventListener('click', openModal);
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModal();
+            });
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const districtId = districtSelect ? districtSelect.value : '';
+                const nameInput = document.getElementById('modal_settlement_name');
+                const descInput = document.getElementById('modal_settlement_desc');
+                const typeInput = document.querySelector('input[name="modal_settlement_type"]:checked');
+
+                const name = nameInput.value.trim();
+                if (!districtId) {
+                    alertBox.className = 'p-3 rounded-lg text-sm mb-3 bg-red-100 text-red-700 border border-red-200';
+                    alertBox.textContent = 'لطفاً ابتدا بخش را در فرم انتخاب کنید.';
+                    alertBox.classList.remove('hidden');
+                    return;
+                }
+                if (!name) {
+                    alertBox.className = 'p-3 rounded-lg text-sm mb-3 bg-red-100 text-red-700 border border-red-200';
+                    alertBox.textContent = 'نام شهر یا روستا الزامی است.';
+                    alertBox.classList.remove('hidden');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-1.5"></i> در حال ثبت...';
+
+                fetch('/api/geo/request-city-village/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        province_id: provinceSelect.value,
+                        county_id: countySelect.value,
+                        district_id: districtId,
+                        name: name,
+                        settlement_type: typeInput ? typeInput.value : 'village',
+                        description: descInput ? descInput.value.trim() : ''
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check ml-1.5"></i> ثبت و افزودن به لیست';
+
+                    if (data.success) {
+                        alertBox.className = 'p-3 rounded-lg text-sm mb-3 bg-emerald-100 text-emerald-800 border border-emerald-200';
+                        alertBox.textContent = data.message;
+                        alertBox.classList.remove('hidden');
+
+                        if (cityVillageSelect && data.item) {
+                            let option = Array.from(cityVillageSelect.options).find(o => o.value == data.item.id);
+                            if (!option) {
+                                option = document.createElement('option');
+                                option.value = data.item.id;
+                                const isVillage = data.item.settlement_type === 'village';
+                                option.textContent = `${data.item.name} (${isVillage ? 'روستا' : 'شهر'})`;
+                                option.dataset.isVillage = isVillage ? 'true' : 'false';
+                                option.dataset.name = data.item.name;
+                                cityVillageSelect.appendChild(option);
+                            }
+                            cityVillageSelect.value = data.item.id;
+                            cityVillageSelect.disabled = false;
+                            if (isVillageCheckbox) {
+                                isVillageCheckbox.checked = (data.item.settlement_type === 'village');
+                            }
+                        }
+
+                        setTimeout(() => {
+                            closeModal();
+                        }, 1200);
+                    } else {
+                        alertBox.className = 'p-3 rounded-lg text-sm mb-3 bg-red-100 text-red-700 border border-red-200';
+                        alertBox.textContent = data.message || 'خطایی در ثبت درخواست رخ داد.';
+                        alertBox.classList.remove('hidden');
+                    }
+                })
+                .catch(err => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check ml-1.5"></i> ثبت و افزودن به لیست';
+                    alertBox.className = 'p-3 rounded-lg text-sm mb-3 bg-red-100 text-red-700 border border-red-200';
+                    alertBox.textContent = 'خطا در برقراری ارتباط با سرور.';
+                    alertBox.classList.remove('hidden');
+                });
+            });
+        });
+    </script>
+    
+</body>
+</html>

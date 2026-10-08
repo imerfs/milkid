@@ -1,0 +1,148 @@
+/* FORCE LIGHT BACKGROUND FOR CARDS - HIGHEST PRIORITY */
+
+/* Default state - WHITE CARDS */
+.card,
+.choice-card,
+div.card,
+div.choice-card {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #e9ecef !important;
+}
+
+.card .card-body,
+.choice-card .card-body,
+div.card .card-body,
+div.choice-card .card-body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+.card .card-title,
+.choice-card .card-title,
+.card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
+.choice-card h1, .choice-card h2, .choice-card h3, .choice-card h4, .choice-card h5, .choice-card h6 {
+    color: #000000 !important;
+}
+
+.card .card-text,
+.choice-card .card-text,
+.card p,
+.choice-card p {
+    color: #333333 !important;
+}
+
+.card .list-unstyled li,
+.choice-card .list-unstyled li {
+    color: #000000 !important;
+}
+
+/* Bootstrap text utility overrides for light mode */
+body:not([data-theme="dark"]) .text-dark,
+html:not([data-theme="dark"]) .text-dark {
+    color: #000000 !important;
+}
+
+body:not([data-theme="dark"]) .text-muted,
+html:not([data-theme="dark"]) .text-muted {
+    color: #666666 !important;
+}
+
+body:not([data-theme="dark"]) .text-primary,
+html:not([data-theme="dark"]) .text-primary {
+    color: #2563eb !important;
+}
+
+body:not([data-theme="dark"]) .text-success,
+html:not([data-theme="dark"]) .text-success {
+    color: #059669 !important;
+}
+
+/* ONLY apply dark styles when explicitly in dark theme */
+[data-theme="dark"] .card,
+[data-theme="dark"] .choice-card {
+    background-color: #1e293b !important;
+    background: #1e293b !important;
+    color: #ffffff !important;
+    border: 2px solid #334155 !important;
+}
+
+[data-theme="dark"] .card .card-body,
+[data-theme="dark"] .choice-card .card-body {
+    background-color: #1e293b !important;
+    background: #1e293b !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .card .card-title,
+[data-theme="dark"] .choice-card .card-title,
+[data-theme="dark"] .card h1, [data-theme="dark"] .card h2, [data-theme="dark"] .card h3, 
+[data-theme="dark"] .card h4, [data-theme="dark"] .card h5, [data-theme="dark"] .card h6,
+[data-theme="dark"] .choice-card h1, [data-theme="dark"] .choice-card h2, [data-theme="dark"] .choice-card h3, 
+[data-theme="dark"] .choice-card h4, [data-theme="dark"] .choice-card h5, [data-theme="dark"] .choice-card h6 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .card .card-text,
+[data-theme="dark"] .choice-card .card-text,
+[data-theme="dark"] .card p,
+[data-theme="dark"] .choice-card p {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .card .list-unstyled li,
+[data-theme="dark"] .choice-card .list-unstyled li {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .text-dark {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: #cbd5e1 !important;
+}
+
+/* High contrast mode */
+.high-contrast .card,
+.high-contrast .choice-card {
+    border-width: 3px !important;
+    border-color: #000000 !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+.high-contrast .card *,
+.high-contrast .choice-card * {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="dark"].high-contrast .card,
+[data-theme="dark"].high-contrast .choice-card {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    border-color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .card *,
+[data-theme="dark"].high-contrast .choice-card * {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Remove any gradients or complex backgrounds */
+.choice-card,
+.choice-card .card-body {
+    background-image: none !important;
+    background-attachment: initial !important;
+    background-clip: initial !important;
+    background-origin: initial !important;
+    background-position: initial !important;
+    background-repeat: initial !important;
+    background-size: initial !important;
+}
+</style>
+{% endblock %}

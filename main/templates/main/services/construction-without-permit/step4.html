@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مراحل نهایی پرونده کمیسیون - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+        }
+
+        /* Stepper styles corrected */
+        .stepper .step-item {
+            position: relative;
+        }
+        .stepper .step-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 0.25rem; /* h-1 */
+            background-color: #d1d5db; /* bg-gray-300 */
+            top: 20px; /* Aligns with center of the counter */
+            right: calc(50% + 1.25rem);
+            z-index: 1;
+            transition: background-color 0.4s ease-in-out;
+        }
+        .stepper .step-item.completed:not(:last-child)::after {
+            background-color: #16a34a; /* bg-green-600 */
+        }
+        /* Payment tab styles */
+        .payment-tab-button.active {
+            border-color: #16a34a; /* green-600 */
+            background-color: #d1fae5; /* green-100 */
+            color: #047857; /* green-800 */
+            font-weight: bold;
+        }
+        .payment-tab-content {
+            display: none;
+        }
+        .payment-tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="bg-white p-8 rounded-2xl shadow-lg">
+
+            <!-- Header -->
+            <div class="text-center border-b pb-6 mb-8">
+                <i class="fas fa-tasks text-blue-600 text-4xl mb-4"></i>
+                <h1 class="text-3xl font-bold text-gray-800">تکمیل پرونده کمیسیون ۹۹</h1>
+                <p class="mt-2 text-gray-600">برای پرونده #NP-012</p>
+            </div>
+
+            <!-- Stepper Navigation -->
+            <div class="stepper flex justify-between mb-12">
+                <div id="step-nav-1" class="step-item active flex-1">
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold transition-colors duration-300">1</div>
+                        <div class="mt-2 font-semibold text-blue-700 text-sm sm:text-base text-center">تعهد محضری</div>
+                    </div>
+                </div>
+                <div id="step-nav-2" class="step-item flex-1">
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold transition-colors duration-300">2</div>
+                        <div class="mt-2 font-semibold text-gray-500 text-sm sm:text-base text-center">استحکام بنا</div>
+                    </div>
+                </div>
+                <div id="step-nav-3" class="step-item flex-1">
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold transition-colors duration-300">3</div>
+                        <div class="mt-2 font-semibold text-gray-500 text-sm sm:text-base text-center">رأی و پرداخت</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div id="main-content">
+                <!-- Step 1: Notary Commitment -->
+                <div id="step-1" class="step-content active">
+                    <form id="notary-form">
+                        <div class="mb-8">
+                            <h2 class="text-xl font-semibold mb-4 border-r-4 border-purple-500 pr-4">مرحله ۱: تعهدنامه محضری</h2>
+                            <div class="p-6 bg-gray-50 rounded-lg border">
+                                <div class="mb-6 border-b pb-6">
+                                    <h3 class="font-semibold text-gray-800 mb-2">۱. دانلود فرم تعهد</h3>
+                                    <p class="text-sm text-gray-600 mb-4">ابتدا فرم را دانلود کرده، پس از تکمیل و ثبت در دفتر اسناد رسمی، فایل اسکن‌شده‌ی آن را در بخش بعدی بارگذاری کنید.</p>
+                                    <button type="button" class="inline-flex items-center bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700">
+                                        <i class="fas fa-download mr-2"></i>دانلود فرم تعهد محضری
+                                    </button>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800 mb-2">۲. بارگذاری تعهدنامه تکمیل‌شده</h3>
+                                    <p class="text-gray-700 mb-4">فایل اسکن شده <span class="font-bold">اصل تعهد محضری</span> را در این قسمت بارگذاری کنید.</p>
+                                    <input type="file" id="notary-upload" required accept=".pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-10 pt-6 border-t text-left">
+                            <button type="submit" class="bg-blue-600 text-white font-bold px-10 py-4 rounded-lg hover:bg-blue-700 transition-all shadow-lg">
+                                ثبت و ادامه <i class="fas fa-arrow-left mr-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Step 2: Building Strength Approval -->
+                <div id="step-2" class="step-content">
+                    <form id="approval-form">
+                        <div class="mb-8">
+                             <h2 class="text-xl font-semibold mb-4 border-r-4 border-purple-500 pr-4">مرحله ۲: تأییدیه استحکام بنا و مدارک تکمیلی</h2>
+                            <div class="p-6 bg-gray-50 rounded-lg border">
+                                <div class="mb-6 border-b pb-6">
+                                    <h3 class="font-semibold text-gray-800 mb-2">۱. دانلود نامه‌ها و فرم‌ها</h3>
+                                    <p class="text-sm text-gray-600 mb-4">نامه‌ها و فرم‌های مورد نیاز را از لینک‌های زیر دریافت و تکمیل نمایید.</p>
+                                    <div class="flex flex-col sm:flex-row gap-4">
+                                        <button type="button" class="inline-flex items-center justify-center bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700">
+                                            <i class="fas fa-download mr-2"></i>نامه معرفی به کارشناس
+                                        </button>
+                                         <button type="button" class="inline-flex items-center justify-center bg-gray-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-gray-700">
+                                            <i class="fas fa-download mr-2"></i>فرم‌های دفاعیه، رضایت و تعهد
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-6 border-b pb-6">
+                                    <h3 class="font-semibold text-gray-800 mb-2">۲. استعلام بنیاد مسکن</h3>
+                                     <p class="text-sm text-gray-600 mb-4">نامه دهیاری را دانلود کرده و پس از دریافت پاسخ از بنیاد مسکن، آن را بارگذاری کنید.</p>
+                                    <div class="flex flex-col sm:flex-row gap-4 items-start">
+                                        <button type="button" class="inline-flex items-center justify-center bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 mb-4 sm:mb-0">
+                                            <i class="fas fa-download mr-2"></i>دانلود نامه دهیاری
+                                        </button>
+                                        <div class="w-full">
+                                            <label for="bonyad-upload" class="block font-medium mb-2 text-sm">آپلود پاسخ بنیاد مسکن<span class="text-red-500">*</span></label>
+                                            <input type="file" id="bonyad-upload" required accept=".pdf,.zip" class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800 mb-2">۳. بارگذاری مدارک تکمیلی</h3>
+                                    <p class="text-gray-700 mb-4">لطفاً فایل‌های اسکن شده را پس از تکمیل، در قسمت‌های مربوطه بارگذاری کنید.</p>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label for="approval-upload" class="block font-medium mb-2">الف) فایل تأییدیه استحکام بنا (PDF الزامی)<span class="text-red-500">*</span></label>
+                                            <input type="file" id="approval-upload" required accept=".pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                        </div>
+                                         <div>
+                                            <label for="other-forms-upload" class="block font-medium mb-2">ب) فایل فرم‌های تکمیلی (دفاعیه، رضایت، تعهد)<span class="text-red-500">*</span></label>
+                                            <input type="file" id="other-forms-upload" required accept=".pdf,.zip" class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-10 pt-6 border-t flex justify-between">
+                             <button type="button" onclick="goToStep(1)" class="text-gray-600 font-semibold hover:bg-gray-100 px-6 py-3 rounded-lg">
+                                <i class="fas fa-arrow-right ml-2"></i> بازگشت
+                            </button>
+                            <button type="submit" class="bg-blue-600 text-white font-bold px-10 py-4 rounded-lg hover:bg-blue-700 transition-all shadow-lg">
+                                ثبت و ادامه <i class="fas fa-arrow-left mr-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Step 3: Commission Verdict & Payment -->
+                <div id="step-3" class="step-content">
+                    <h2 class="text-xl font-semibold mb-4 border-r-4 border-red-500 pr-4">مرحله ۳: رأی کمیسیون و پرداخت جریمه</h2>
+                    <div id="commission-verdict" class="p-6 bg-green-50 rounded-lg border border-green-200 mb-8">
+                         <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 text-3xl ml-4"></i>
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">رأی کمیسیون: <span class="text-green-700">موافقت با پرداخت جریمه</span></h3>
+                                <p class="text-gray-700 mt-1">رأی نهایی توسط دهیاری در سامانه بارگذاری شد.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="payment-section">
+                         <!-- Cost Breakdown -->
+                         <div class="p-6 bg-gray-50 rounded-lg border mb-6">
+                            <ul class="space-y-3 text-gray-800">
+                                <li class="flex justify-between items-center border-b pb-2"><span>جریمه کمیسیون:</span><span class="font-bold text-lg">۵,۰۰۰,۰۰۰ تومان</span></li>
+                                <li class="flex justify-between items-center pt-3"><span class="text-xl font-bold">مبلغ نهایی:</span><span class="font-extrabold text-2xl text-green-700">۵,۰۰۰,۰۰۰ تومان</span></li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Payment Method Selection -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">انتخاب روش پرداخت</h3>
+                            <div class="flex border-b mb-6">
+                                <button type="button" class="payment-tab-button active py-3 px-6 border-b-2 border-green-600 bg-green-50 text-green-800 font-bold" onclick="switchPaymentTab('online')">پرداخت آنلاین</button>
+                                <button type="button" class="payment-tab-button py-3 px-6 border-b-2 border-transparent text-gray-600" onclick="switchPaymentTab('check')">پرداخت با چک</button>
+                            </div>
+
+                            <!-- Online Payment Tab -->
+                            <div id="online-payment-tab" class="payment-tab-content active">
+                                <p class="text-gray-600 mb-4">با کلیک بر روی دکمه زیر به درگاه پرداخت امن متصل خواهید شد.</p>
+                                <button type="button" onclick="processOnlinePayment()" class="w-full bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-credit-card mr-2"></i>پرداخت ۵,۰۰۰,۰۰۰ تومان
+                                </button>
+                            </div>
+
+                            <!-- Check Payment Tab -->
+                            <div id="check-payment-tab" class="payment-tab-content">
+                                <!-- Important Notice for Check Payment -->
+                                <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-exclamation-circle text-amber-600 text-xl mt-1 ml-3"></i>
+                                        <div>
+                                            <h4 class="font-bold text-amber-800 mb-2">نکته مهم برای پرداخت با چک:</h4>
+                                            <p class="text-amber-700 text-sm">باید چک را به دهیاری تحویل دهید تا چک تایید شود. پس از تحویل چک فیزیکی، عملیات پرداخت نهایی می‌شود.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-gray-600 mb-4">اطلاعات چک را وارد کرده و تصویر آن را بارگذاری کنید.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div><label class="block mb-1 font-medium">مبلغ چک<span class="text-red-500">*</span></label><input type="text" placeholder="۵,۰۰۰,۰۰۰ تومان" class="w-full p-2 border rounded-lg"></div>
+                                    <div><label class="block mb-1 font-medium">شماره چک<span class="text-red-500">*</span></label><input type="text" placeholder="۱۲۳۴۵۶۷۸" class="w-full p-2 border rounded-lg"></div>
+                                    <div><label class="block mb-1 font-medium">نام بانک<span class="text-red-500">*</span></label><input type="text" placeholder="بانک ملی" class="w-full p-2 border rounded-lg"></div>
+                                    <div><label class="block mb-1 font-medium">تاریخ چک<span class="text-red-500">*</span></label><input type="text" placeholder="1403/01/01" pattern="[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}" class="w-full p-2 border rounded-lg persian-date-input"></div>
+                                </div>
+                                
+                                <!-- Check Upload Section -->
+                                <div class="border-t pt-6">
+                                    <h4 class="font-semibold text-gray-800 mb-3">بارگذاری تصویر چک</h4>
+                                    <div class="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                                        <input type="file" id="check-image-upload-cwp" accept=".jpg,.jpeg,.png,.pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        <p class="text-xs text-gray-500 mt-2">حداکثر ۵ مگابایت - فرمت‌های JPG، PNG، PDF</p>
+                                    </div>
+                                    <div class="mt-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">
+                                        <i class="fas fa-info-circle ml-2"></i>
+                                        <span class="font-semibold">راهنما:</span> عکس واضح از روی و پشت چک را گرفته و بارگذاری کنید.
+                                    </div>
+                                </div>
+                                
+                                <button type="button" onclick="processCheckPayment()" class="w-full mt-6 bg-amber-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-amber-700 transition-colors">
+                                    <i class="fas fa-check mr-2"></i>ثبت اطلاعات چک
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Navigation Buttons -->
+                        <div class="mt-10 pt-6 border-t flex justify-between">
+                            <button type="button" onclick="goToStep(2)" class="text-gray-600 font-semibold hover:bg-gray-100 px-6 py-3 rounded-lg">
+                                <i class="fas fa-arrow-right ml-2"></i> بازگشت
+                            </button>
+                            <button type="button" id="continue-process-btn" class="hidden bg-blue-600 text-white font-bold px-10 py-4 rounded-lg hover:bg-blue-700 transition-all shadow-lg" onclick="finalizeProcess()">
+                                ادامه فرآیند
+                                <i class="fas fa-arrow-left mr-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Final Confirmation Message -->
+                <div id="final-confirmation" class="step-content text-center py-12">
+                    <i class="fas fa-check-circle text-green-500 text-6xl mb-6"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">فرآیند با موفقیت تکمیل شد</h2>
+                    <p class="text-gray-600 mt-2">پرونده شما برای ارجاع به مرحله خدمات مختومه گردید.</p>
+                     <button onclick="window.location.reload()" class="mt-8 bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700">
+                        بازگشت به داشبورد
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        function updateStepperUI() {
+            for (let i = 1; i <= totalSteps; i++) {
+                const stepNav = document.getElementById(`step-nav-${i}`);
+                const counter = stepNav.querySelector('.w-10');
+                const name = stepNav.querySelector('.font-semibold');
+
+                stepNav.classList.remove('completed');
+                counter.classList.remove('bg-green-600', 'bg-blue-600', 'bg-gray-300', 'text-white', 'text-gray-600');
+                name.classList.remove('text-green-700', 'text-blue-700', 'text-gray-500');
+
+                if (i < currentStep) {
+                    stepNav.classList.add('completed');
+                    counter.classList.add('bg-green-600', 'text-white');
+                    name.classList.add('text-green-700');
+                } else if (i === currentStep) {
+                    counter.classList.add('bg-blue-600', 'text-white');
+                    name.classList.add('text-blue-700');
+                } else {
+                    counter.classList.add('bg-gray-300', 'text-gray-600');
+                    name.classList.add('text-gray-500');
+                }
+            }
+        }
+
+        function goToStep(stepNumber) {
+            if (stepNumber < 1 || stepNumber > totalSteps) return;
+
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            currentStep = stepNumber;
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+            updateStepperUI();
+        }
+
+        document.getElementById('notary-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            if (document.getElementById('notary-upload').files.length === 0) {
+                alert('لطفاً فایل تعهد محضری را بارگذاری کنید.');
+                return;
+            }
+            goToStep(2);
+        });
+
+        document.getElementById('approval-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const approvalUpload = document.getElementById('approval-upload');
+            const otherFormsUpload = document.getElementById('other-forms-upload');
+            const bonyadUpload = document.getElementById('bonyad-upload');
+            if (approvalUpload.files.length === 0 || otherFormsUpload.files.length === 0 || bonyadUpload.files.length === 0) {
+                alert('لطفاً تمام فایل‌های الزامی را بارگذاری کنید.');
+                return;
+            }
+            goToStep(3);
+        });
+
+        function finalizeProcess() {
+            // Redirect to step 5
+            window.location.href = '/services/construction-without-permit/step5/';
+        }
+
+        // Payment tab switching functionality
+        function switchPaymentTab(tabName) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.payment-tab-button').forEach(btn => {
+                btn.classList.remove('active', 'border-green-600', 'bg-green-50', 'text-green-800', 'font-bold');
+                btn.classList.add('border-transparent', 'text-gray-600');
+            });
+            
+            // Add active class to clicked button
+            const clickedButton = document.querySelector(`button[onclick*="'${tabName}'"]`);
+            clickedButton.classList.add('active', 'border-green-600', 'bg-green-50', 'text-green-800', 'font-bold');
+            clickedButton.classList.remove('border-transparent', 'text-gray-600');
+
+            // Hide all tab contents
+            document.querySelectorAll('.payment-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(`${tabName}-payment-tab`).classList.add('active');
+        }
+
+        // Online payment processing
+        function processOnlinePayment() {
+            // Simulate payment processing
+            alert('در حال انتقال به درگاه پرداخت... (نسخه نمایشی)');
+            // Show continue button after payment
+            document.getElementById('continue-process-btn').classList.remove('hidden');
+        }
+
+        // Check payment processing
+        function processCheckPayment() {
+            // Validate check form fields
+            const checkFields = document.querySelectorAll('#check-payment-tab input[type="text"], #check-payment-tab input[type="date"]');
+            let allFilled = true;
+            
+            checkFields.forEach(field => {
+                if (field.value.trim() === '') {
+                    allFilled = false;
+                }
+            });
+            
+            if (!allFilled) {
+                alert('لطفاً تمام فیلدهای اطلاعات چک را تکمیل کنید.');
+                return;
+            }
+            
+            // Check if image is uploaded
+            const checkImageUpload = document.getElementById('check-image-upload-cwp');
+            if (checkImageUpload.files.length === 0) {
+                alert('لطفاً تصویر چک را بارگذاری کنید.');
+                return;
+            }
+            
+            alert('اطلاعات چک با موفقیت ثبت شد. لطفاً چک فیزیکی را به دهیاری تحویل دهید.');
+            // Show continue button after check registration
+            document.getElementById('continue-process-btn').classList.remove('hidden');
+        }
+
+        // Initial UI setup
+        updateStepperUI();
+
+    </script>
+</body>
+</html>
+

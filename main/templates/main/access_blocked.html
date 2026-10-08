@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دسترسی مسدود شده است - ملک آیدی</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Vazirmatn', sans-serif; }
+        .pulse-danger {
+            animation: pulse-ring 2s infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-100 via-rose-50 to-slate-200 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 border border-rose-100 text-center relative overflow-hidden">
+        <!-- Accent Top Bar -->
+        <div class="absolute top-0 right-0 left-0 h-2 bg-gradient-to-r from-red-500 via-rose-500 to-amber-500"></div>
+
+        <!-- Warning Icon -->
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-rose-100 text-rose-600 mb-6 pulse-danger mt-2">
+            <i class="fas fa-user-lock text-3xl"></i>
+        </div>
+
+        <h1 class="text-2xl font-extrabold text-gray-800 mb-2">
+            دسترسی شما بسته شده است
+        </h1>
+        <p class="text-rose-600 text-sm font-semibold mb-4">
+            حساب کاربری در وضعیت تعلیق و مسدود
+        </p>
+
+        <p class="text-gray-600 text-sm leading-relaxed mb-6">
+            دسترسی حساب کاربری شما به سامانه توسط مدیر مسدود گردیده است و در حال حاضر امکان استفاده از خدمات و داشبورد کاربری برای شما مقدور نمی‌باشد.
+        </p>
+
+        <!-- Information Box -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-right text-xs space-y-2 text-slate-700">
+            <div class="flex items-center text-slate-900 font-bold mb-1">
+                <i class="fas fa-shield-alt text-rose-500 ml-2"></i>
+                <span>علت‌های احتمالی مسدودسازی:</span>
+            </div>
+            <p class="text-slate-500 mr-5">• عدم تطابق مدارک یا اطلاعات هویتی</p>
+            <p class="text-slate-500 mr-5">• مسدودسازی اداری توسط مدیریت سامانه</p>
+            <p class="text-slate-500 mr-5">• نیاز به بررسی و راستی‌آزمایی مجدد پرونده</p>
+        </div>
+
+        <!-- Support Info -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 mb-6 text-amber-800 text-xs">
+            <div class="flex items-center justify-center gap-1 font-bold mb-1">
+                <i class="fas fa-headset text-amber-600"></i>
+                <span>راهنمای رفع مسدودی و پشتیبانی:</span>
+            </div>
+            <p class="text-amber-700">
+                چنانچه فکر می‌کنید این مسدودسازی به اشتباه رخ داده است، جهت بررسی با شماره پشتیبانی سامانه تماس حاصل فرمایید.
+            </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="{% url 'main:login' %}" 
+               class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium px-5 py-2.5 rounded-xl shadow-md hover:from-blue-700 hover:to-indigo-700 transition">
+                <i class="fas fa-sign-in-alt text-xs"></i>
+                ورود با حساب دیگر
+            </a>
+
+            <a href="{% url 'main:home' %}" 
+               class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-100 text-slate-700 font-medium px-5 py-2.5 rounded-xl hover:bg-slate-200 border border-slate-300 transition">
+                <i class="fas fa-home text-xs"></i>
+                صفحه اصلی
+            </a>
+        </div>
+    </div>
+</body>
+</html>

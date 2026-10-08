@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}شروع مکالمه جدید - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .user-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: #667eea;
+    }
+    .user-card.selected {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    }
+    .role-badge {
+        font-size: 0.75rem;
+    }
+    .form-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-6">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-comments text-primary me-2"></i>
+                        شروع مکالمه جدید
+                    </h1>
+                    <p class="text-muted mt-1">ارسال پیام به کاربران سیستم</p>
+                </div>
+                <a href="{% url 'main:messaging_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- انتخاب گیرنده -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        انتخاب گیرنده
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="p-3">
+                        <input type="text" class="form-control mb-3" id="userSearch" 
+                               placeholder="جستجو در نام کاربران...">
+                    </div>
+                    
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        {% if available_users %}
+                            {% for user in available_users %}
+                            <div class="user-card p-3 border-bottom" onclick="selectUser({{ user.id }}, '{{ user.get_full_name }}', '{{ user.profile.get_role_display }}')">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px;">
+                                            {{ user.first_name|first|default:"؟" }}
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ user.get_full_name }}</h6>
+                                        <span class="badge role-badge bg-{% if user.profile.role == 'dehyari' %}success{% elif user.profile.role == 'engineer' %}info{% elif user.profile.role == 'council' %}warning{% elif user.profile.role == 'admin' %}danger{% else %}secondary{% endif %}">
+                                            {{ user.profile.get_role_display }}
+                                        </span>
+                                        {% if user.profile.city_village %}
+                                        <small class="text-muted d-block">{{ user.profile.city_village }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                                <p class="text-muted">کاربری برای پیام‌رسانی یافت نشد</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- فرم مکالمه -->
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header form-card">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-edit me-2"></i>
+                        پیام جدید
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="conversationForm">
+                        {% csrf_token %}
+                        
+                        <!-- گیرنده انتخاب شده -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                گیرنده <span class="text-danger">*</span>
+                            </label>
+                            <div class="border rounded p-3 bg-light" id="selectedRecipient">
+                                <i class="fas fa-hand-pointer text-muted me-2"></i>
+                                <span class="text-muted">لطفاً از لیست سمت چپ یک کاربر انتخاب کنید</span>
+                            </div>
+                            <input type="hidden" name="recipient_id" id="recipientId" required>
+                        </div>
+
+                        <!-- موضوع -->
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">
+                                <i class="fas fa-heading me-1"></i>
+                                موضوع مکالمه <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="subject" name="subject" required
+                                   placeholder="مثال: درخواست اطلاعات درباره پروانه ساختمان">
+                        </div>
+
+                        <!-- درخواست مرتبط -->
+                        {% if related_requests %}
+                        <div class="mb-3">
+                            <label for="related_request_id" class="form-label">
+                                <i class="fas fa-link me-1"></i>
+                                درخواست مرتبط (اختیاری)
+                            </label>
+                            <select class="form-select" id="related_request_id" name="related_request_id">
+                                <option value="">انتخاب کنید...</option>
+                                {% for request in related_requests %}
+                                <option value="{{ request.id }}">{{ request.title }} - {{ request.get_status_display }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                اگر این پیام مربوط به درخواست خاصی است، آن را انتخاب کنید
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- متن پیام -->
+                        <div class="mb-3">
+                            <label for="message_body" class="form-label">
+                                <i class="fas fa-align-left me-1"></i>
+                                متن پیام <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="message_body" name="message_body" rows="6" required
+                                      placeholder="متن پیام خود را اینجا بنویسید..."></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span> کاراکتر
+                            </div>
+                        </div>
+
+                        <!-- پیش‌نمایش -->
+                        <div class="mb-4">
+                            <h6 class="text-muted">
+                                <i class="fas fa-eye me-1"></i>
+                                پیش‌نمایش پیام:
+                            </h6>
+                            <div class="border rounded p-3 bg-light" id="messagePreview">
+                                <div class="d-flex align-items-start mb-2">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                            {{ user.first_name|first }}
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ user.get_full_name }}</h6>
+                                        <small class="text-muted">{{ user.profile.get_role_display }}</small>
+                                    </div>
+                                    <small class="text-muted">الان</small>
+                                </div>
+                                <p class="mb-0" id="previewText">متن پیام اینجا نمایش داده می‌شود...</p>
+                            </div>
+                        </div>
+
+                        <!-- دکمه‌های عملیات -->
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo me-1"></i>
+                                پاک کردن فرم
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-info me-2" onclick="previewMessage()">
+                                    <i class="fas fa-eye me-1"></i>
+                                    پیش‌نمایش
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-paper-plane me-1"></i>
+                                    ارسال پیام
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal پیش‌نمایش -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">پیش‌نمایش مکالمه</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0" id="modalSubject">موضوع مکالمه</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    {{ user.first_name|first }}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-0">{{ user.get_full_name }}</h6>
+                                        <small class="text-muted">{{ user.profile.get_role_display }}</small>
+                                    </div>
+                                    <small class="text-muted">الان</small>
+                                </div>
+                                <div class="mt-2">
+                                    <p class="mb-0" id="modalMessageBody">متن پیام</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>اطلاعات ارسال:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>فرستنده:</strong> {{ user.get_full_name }}</li>
+                        <li><strong>گیرنده:</strong> <span id="modalRecipient">-</span></li>
+                        <li><strong>تاریخ ارسال:</strong> <span id="modalSendDate"></span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                <button type="button" class="btn btn-success" onclick="submitForm()">
+                    تایید و ارسال
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedUserId = null;
+let selectedUserName = '';
+let selectedUserRole = '';
+
+// انتخاب کاربر
+function selectUser(userId, userName, userRole) {
+    selectedUserId = userId;
+    selectedUserName = userName;
+    selectedUserRole = userRole;
+    
+    // به‌روزرسانی UI
+    document.querySelectorAll('.user-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // نمایش گیرنده انتخاب شده
+    document.getElementById('selectedRecipient').innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 me-3">
+                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" 
+                     style="width: 32px; height: 32px;">
+                    ${userName.charAt(0)}
+                </div>
+            </div>
+            <div>
+                <h6 class="mb-0">${userName}</h6>
+                <small class="text-muted">${userRole}</small>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('recipientId').value = userId;
+}
+
+// جستجوی کاربران
+document.getElementById('userSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const userCards = document.querySelectorAll('.user-card');
+    
+    userCards.forEach(card => {
+        const userName = card.querySelector('h6').textContent.toLowerCase();
+        const userRole = card.querySelector('.badge').textContent.toLowerCase();
+        
+        if (userName.includes(searchTerm) || userRole.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// به‌روزرسانی پیش‌نمایش در زمان واقعی
+document.getElementById('message_body').addEventListener('input', function() {
+    document.getElementById('previewText').textContent = this.value || 'متن پیام اینجا نمایش داده می‌شود...';
+    document.getElementById('charCount').textContent = this.value.length;
+});
+
+// پیش‌نمایش کامل
+function previewMessage() {
+    const subject = document.getElementById('subject').value;
+    const messageBody = document.getElementById('message_body').value;
+    
+    if (!selectedUserId || !subject || !messageBody) {
+        alert('لطفاً تمام فیلدهای ضروری را پر کنید');
+        return;
+    }
+    
+    document.getElementById('modalSubject').textContent = subject;
+    document.getElementById('modalMessageBody').textContent = messageBody;
+    document.getElementById('modalRecipient').textContent = selectedUserName;
+    document.getElementById('modalSendDate').textContent = new Date().toLocaleDateString('fa-IR');
+    
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+
+// ارسال فرم
+function submitForm() {
+    document.getElementById('conversationForm').submit();
+}
+
+// پاک کردن فرم
+function resetForm() {
+    if (confirm('آیا مطمئن هستید که می‌خواهید فرم را پاک کنید؟')) {
+        document.getElementById('conversationForm').reset();
+        document.getElementById('selectedRecipient').innerHTML = `
+            <i class="fas fa-hand-pointer text-muted me-2"></i>
+            <span class="text-muted">لطفاً از لیست سمت چپ یک کاربر انتخاب کنید</span>
+        `;
+        document.getElementById('previewText').textContent = 'متن پیام اینجا نمایش داده می‌شود...';
+        document.getElementById('charCount').textContent = '0';
+        
+        document.querySelectorAll('.user-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        selectedUserId = null;
+        selectedUserName = '';
+        selectedUserRole = '';
+    }
+}
+
+// اعتبارسنجی فرم
+document.getElementById('conversationForm').addEventListener('submit', function(e) {
+    if (!selectedUserId) {
+        e.preventDefault();
+        alert('لطفاً گیرنده را انتخاب کنید');
+        return;
+    }
+    
+    const subject = document.getElementById('subject').value.trim();
+    const messageBody = document.getElementById('message_body').value.trim();
+    
+    if (!subject || !messageBody) {
+        e.preventDefault();
+        alert('لطفاً موضوع و متن پیام را وارد کنید');
+        return;
+    }
+    
+    if (messageBody.length < 5) {
+        e.preventDefault();
+        alert('متن پیام باید حداقل 5 کاراکتر باشد');
+        return;
+    }
+});
+
+// پر کردن خودکار موضوع بر اساس URL parameters
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const subject = urlParams.get('subject');
+    const recipientId = urlParams.get('recipient');
+    
+    if (subject) {
+        document.getElementById('subject').value = decodeURIComponent(subject);
+    }
+    
+    if (recipientId) {
+        // انتخاب خودکار گیرنده
+        const userCard = document.querySelector(`[onclick*="${recipientId}"]`);
+        if (userCard) {
+            userCard.click();
+        }
+    }
+});
+</script>
+{% endblock %}

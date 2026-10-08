@@ -1,0 +1,118 @@
+
+{% extends 'base.html' %}
+
+{% block title %}{{ service.name }} - مرحله {{ current_step }} - سامانه خدمات روستایی{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="text-center mb-3">{{ service.icon }} {{ service.name }}</h5>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ progress_percentage }}%" 
+                             aria-valuenow="{{ current_step }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ total_steps }}">
+                            مرحله {{ current_step }} از {{ total_steps }}
+                        </div>
+                    </div>
+                    
+                    <!-- Step indicators -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        {% for step in service.steps.all %}
+                        <div class="text-center flex-fill">
+                            <div class="step-indicator 
+                                {% if step.step_number <= current_step %}bg-primary text-white{% else %}bg-light text-muted{% endif %} 
+                                rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                {{ step.step_number }}
+                            </div>
+                            <div style="font-size: 0.7rem;" class="mt-1">{{ step.title }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Step Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ step_obj.title }}</h5>
+                    {% if step_obj.description %}
+                        <p class="mb-0 text-muted">{{ step_obj.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="text-danger">
+                                        {% for error in field.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between">
+                            {% if current_step > 1 %}
+                                <button type="submit" name="action" value="previous" class="btn btn-outline-secondary">
+                                    ⬅️ مرحله قبل
+                                </button>
+                            {% else %}
+                                <a href="{% url 'main:service_detail' service.slug %}" class="btn btn-outline-secondary">
+                                    انصراف
+                                </a>
+                            {% endif %}
+                            
+                            {% if current_step < total_steps %}
+                                <button type="submit" name="action" value="next" class="btn btn-primary">
+                                    مرحله بعد ➡️
+                                </button>
+                            {% else %}
+                                <button type="submit" name="action" value="submit" class="btn btn-success">
+                                    ✅ ثبت نهایی درخواست
+                                </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Help Section -->
+            {% if step_obj.description %}
+            <div class="card mt-3">
+                <div class="card-body bg-light">
+                    <h6>💡 راهنما:</h6>
+                    <p class="mb-0">{{ step_obj.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.step-indicator {
+    font-weight: bold;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+</style>
+{% endblock %}

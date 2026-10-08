@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله ۳: بارگذاری عکس‌ها - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .file-preview {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            background-color: #f9fafb; /* gray-50 */
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست صدور سند</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 75%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۳ از ۴: بارگذاری عکس‌ها</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                <form id="docs-upload-form">
+                    <div class="border-b pb-6 mb-8">
+                        <i class="fas fa-camera text-green-600 text-3xl mb-4"></i>
+                        <h1 class="text-3xl font-bold text-gray-800">بارگذاری عکس ملک</h1>
+                        <p class="mt-2 text-gray-600">لطفاً عکس‌های کلی ملک را بارگذاری کنید.</p>
+                    </div>
+
+                    <!-- General Photos -->
+                    <fieldset class="mb-8"><legend class="text-xl font-semibold mb-4 border-r-4 border-green-500 pr-4">۱. بارگذاری عکس‌ها</legend>
+                        <div class="max-w-md mx-auto">
+                            <div>
+                                <label for="photo-general" class="block font-medium mb-2">نمای کلی ملک<span class="text-red-500">*</span></label>
+                                <input type="file" id="photo-general" required accept="image/*" multiple class="w-full text-sm">
+                                <p class="text-xs text-gray-500 mt-1">حداکثر ۵ مگابایت برای هر عکس - امکان انتخاب چند فایل</p>
+                                <div class="file-preview-container"></div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Action Button -->
+                    <div class="mt-10 pt-6 border-t text-left">
+                        <button type="submit" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg">
+                            ثبت عکس‌ها و ادامه
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                 <!-- Checklist Card -->
+                 <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-list-check text-green-500 mr-3"></i>چک‌لیست مدارک</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>سند یا قولنامه ملک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>فایل شمیم</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>آپلود فرم ها</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>پاسخ استعلام بنیاد مسکن</span></li>
+                    </ul>
+                </div>
+
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">شناسه پرونده:</p><p class="text-gray-600">#DEED-1001</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p id="case-status" class="text-amber-600 font-bold">در حال بارگذاری عکس‌ها</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const container = e.target.parentElement.querySelector('.file-preview-container');
+                container.innerHTML = ''; // Clear previous preview
+                if (e.target.files.length > 0) {
+                    // Handle multiple files
+                    for (let i = 0; i < e.target.files.length; i++) {
+                        const file = e.target.files[i];
+                        const preview = document.createElement('div');
+                        preview.className = 'file-preview';
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle text-green-500 ml-2';
+                        preview.appendChild(icon);
+                        const text = document.createElement('span');
+                        text.textContent = file.name;
+                        preview.appendChild(text);
+                        container.appendChild(preview);
+                    }
+                }
+            });
+        });
+
+        document.getElementById('docs-upload-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            // Redirect to step 4
+            window.location.href = '/services/property-deed-issuance/step4/';
+        });
+    </script>
+</body>
+</html>
+

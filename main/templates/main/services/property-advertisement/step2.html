@@ -1,0 +1,942 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .review-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .review-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .section-header {
+        color: #1f2937;
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .edit-section-btn {
+        background: #f3f4f6;
+        color: #4b5563;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .edit-section-btn:hover {
+        background: #e5e7eb;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f9fafb;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #6b7280;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .price-highlight {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 16px;
+        border-radius: 8px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .price-highlight::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: rotate(45deg);
+    }
+    
+    .rent-highlight {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .rent-highlight::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: rotate(45deg);
+    }
+    
+    .feature-tag {
+        display: inline-block;
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        margin: 2px;
+        transition: transform 0.2s;
+    }
+    
+    .feature-tag:hover {
+        transform: scale(1.05);
+    }
+    
+    .warning-box {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .success-icon {
+        color: #10b981;
+    }
+    
+    .warning-icon {
+        color: #f59e0b;
+    }
+    
+    .ad-summary {
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .summary-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .summary-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .summary-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #dbeafe;
+        color: #1e40af;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 12px;
+    }
+    
+    .timer-container {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .timer {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #0284c7;
+        margin-top: 5px;
+    }
+    
+    .suggestions-box {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .suggestion-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+    
+    .suggestion-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .suggestion-icon {
+        color: #16a34a;
+        margin-left: 8px;
+        margin-top: 2px;
+    }
+    
+    .dark-mode-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4b5563;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 100;
+    }
+    
+    .dark-mode {
+        background-color: #1f2937;
+        color: #f9fafb;
+    }
+    
+    .dark-mode .review-section {
+        background: #374151;
+        border-color: #4b5563;
+    }
+    
+    .dark-mode .section-header {
+        color: #f9fafb;
+        border-bottom-color: #4b5563;
+    }
+    
+    .dark-mode .info-label {
+        color: #d1d5db;
+    }
+    
+    .dark-mode .info-value {
+        color: #f9fafb;
+    }
+    
+    .dark-mode .ad-summary {
+        background: #374151;
+        border-color: #4b5563;
+    }
+    
+    .dark-mode .timer-container {
+        background: #1e3a8a;
+        border-color: #3b82f6;
+    }
+    
+    .dark-mode .suggestions-box {
+        background: #14532d;
+        border-color: #16a34a;
+    }
+    
+    .dark-mode .warning-box {
+        background: #78350f;
+        border-color: #f59e0b;
+    }
+    
+    .print-btn {
+        background: #f3f4f6;
+        color: #4b5563;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-left: 8px;
+    }
+    
+    .print-btn:hover {
+        background: #e5e7eb;
+    }
+    
+    .faq-section {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .faq-item {
+        margin-bottom: 16px;
+    }
+    
+    .faq-question {
+        font-weight: 600;
+        color: #1f2937;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+    }
+    
+    .faq-answer {
+        color: #4b5563;
+        padding: 8px 0;
+        display: none;
+    }
+    
+    .faq-item.active .faq-answer {
+        display: block;
+    }
+    
+    .faq-item.active .faq-icon {
+        transform: rotate(180deg);
+    }
+    
+    .faq-icon {
+        transition: transform 0.3s;
+    }
+    
+    .save-draft-btn {
+        background: #f3f4f6;
+        color: #4b5563;
+        border: none;
+        border-radius: 6px;
+        padding: 12px 20px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .save-draft-btn:hover {
+        background: #e5e7eb;
+    }
+    
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .review-section {
+            break-inside: avoid;
+        }
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f4f6;
+        border-top: 5px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">بررسی نهایی آگهی ملک</h1>
+            <p class="text-gray-600">لطفاً اطلاعات وارد شده را بررسی کنید</p>
+            
+            <!-- Progress indicator -->
+            <div class="flex justify-center items-center mt-6 mb-4">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="text-green-600 font-medium mr-2">مرحله ۱</span>
+                </div>
+                <div class="w-16 h-1 bg-green-500 mx-4"></div>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                        ۲
+                    </div>
+                    <span class="text-blue-600 font-medium mr-2">بررسی نهایی</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ad Summary -->
+        <div class="ad-summary">
+            <div class="section-header">
+                <span>
+                    <i class="fas fa-clipboard-list ml-2 text-blue-600"></i>
+                    خلاصه آگهی
+                </span>
+                <button class="print-btn no-print" onclick="window.print()">
+                    <i class="fas fa-print ml-1"></i> پرینت
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="summary-item">
+                    <div class="summary-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">نوع ملک</div>
+                        <div class="font-medium">{{ ad_data.property_type|default:"نامشخص" }}</div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-icon">
+                        <i class="fas fa-ruler-combined"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">مساحت</div>
+                        <div class="font-medium">{{ ad_data.total_area }} متر مربع</div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">موقعیت</div>
+                        <div class="font-medium">{{ ad_data.province|default:"نامشخص" }}, {{ ad_data.city_village|default:"نامشخص" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-container no-print">
+            <div class="text-sm text-gray-600">زمان باقی‌مانده تا انقضای جلسه</div>
+            <div class="timer" id="session-timer">15:00</div>
+        </div>
+
+        <!-- Warning Box -->
+        <div class="warning-box">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle warning-icon text-xl mt-1"></i>
+                <div class="mr-3">
+                    <h3 class="font-semibold text-gray-900">توجه مهم</h3>
+                    <p class="text-gray-700 mt-1">
+                        آگهی شما پس از ارسال، به مدیر سیستم جهت بررسی و تایید ارسال می‌شود. 
+                        پس از تایید، آگهی شما در سایت نمایش داده خواهد شد.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suggestions Box -->
+        <div class="suggestions-box no-print">
+            <div class="section-header">
+                <span>
+                    <i class="fas fa-lightbulb ml-2 text-yellow-500"></i>
+                    پیشنهادات برای بهبود آگهی
+                </span>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="suggestion-item">
+                    <i class="fas fa-check-circle suggestion-icon"></i>
+                    <div>افزودن تصاویر با کیفیت بالا می‌تواند تا 80% بازدید آگهی شما را افزایش دهد.</div>
+                </div>
+                
+                <div class="suggestion-item">
+                    <i class="fas fa-check-circle suggestion-icon"></i>
+                    <div>توضیحات دقیق‌تر از امکانات ملک می‌تواند به جذب خریداران/مستاجران بهتر کمک کند.</div>
+                </div>
+                
+                <div class="suggestion-item">
+                    <i class="fas fa-check-circle suggestion-icon"></i>
+                    <div>قیمت‌گذاری رقابتی بر اساس املاک مشابه در منطقه می‌تواند زمان فروش/اجاره را کاهش دهد.</div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" id="ad-form">
+            {% csrf_token %}
+            
+            <!-- Basic Info -->
+            <div class="review-section">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-home ml-2 text-blue-600"></i>
+                        اطلاعات کلی ملک
+                    </span>
+                    <button type="button" class="edit-section-btn no-print" onclick="editSection('basic-info')">
+                        <i class="fas fa-edit ml-1"></i> ویرایش
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="info-row">
+                        <span class="info-label">نوع آگهی:</span>
+                        <span class="info-value">
+                            {% if ad_data.ad_type == 'sale' %}
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full">فروش</span>
+                            {% elif ad_data.ad_type == 'rent' %}
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">اجاره</span>
+                            {% else %}
+                                <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full">فروش و اجاره</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">نوع ملک:</span>
+                        <span class="info-value">{{ ad_data.property_type|default:"نامشخص" }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">مساحت کل:</span>
+                        <span class="info-value">{{ ad_data.total_area }} متر مربع</span>
+                    </div>
+                    
+                    {% if ad_data.built_area %}
+                    <div class="info-row">
+                        <span class="info-label">مساحت زیربنا:</span>
+                        <span class="info-value">{{ ad_data.built_area }} متر مربع</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ad_data.bedrooms %}
+                    <div class="info-row">
+                        <span class="info-label">تعداد اتاق خواب:</span>
+                        <span class="info-value">{{ ad_data.bedrooms }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ad_data.construction_year %}
+                    <div class="info-row">
+                        <span class="info-label">سال ساخت:</span>
+                        <span class="info-value">{{ ad_data.construction_year }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pricing -->
+            <div class="review-section">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-money-bill-wave ml-2 text-green-600"></i>
+                        قیمت‌گذاری
+                    </span>
+                    <button type="button" class="edit-section-btn no-print" onclick="editSection('pricing')">
+                        <i class="fas fa-edit ml-1"></i> ویرایش
+                    </button>
+                </div>
+                
+                {% if ad_data.ad_type == 'sale' or ad_data.ad_type == 'both' %}
+                    {% if ad_data.sale_price %}
+                    <div class="price-highlight mb-4">
+                        <div class="text-2xl font-bold">قیمت فروش</div>
+                        <div class="text-3xl font-extrabold mt-2">
+                            {{ ad_data.sale_price|floatformat:0 }} تومان
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+                
+                {% if ad_data.ad_type == 'rent' or ad_data.ad_type == 'both' %}
+                    {% if ad_data.rent_price %}
+                    <div class="rent-highlight">
+                        <div class="text-lg font-semibold">اجاره ماهانه</div>
+                        <div class="text-2xl font-bold">
+                            {{ ad_data.rent_price|floatformat:0 }} تومان
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ad_data.deposit %}
+                    <div class="bg-gray-100 p-3 rounded text-center">
+                        <div class="text-gray-700 font-medium">ودیعه</div>
+                        <div class="text-xl font-bold text-gray-900">
+                            {{ ad_data.deposit|floatformat:0 }} تومان
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+                
+                {% if ad_data.price_negotiable %}
+                <div class="bg-orange-50 p-3 rounded-lg text-center mt-3">
+                    <i class="fas fa-handshake text-orange-600 ml-2"></i>
+                    <span class="text-orange-800 font-medium">قیمت قابل مذاکره</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Location -->
+            <div class="review-section">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-map-marker-alt ml-2 text-red-600"></i>
+                        موقعیت جغرافیایی
+                    </span>
+                    <button type="button" class="edit-section-btn no-print" onclick="editSection('location')">
+                        <i class="fas fa-edit ml-1"></i> ویرایش
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="info-row">
+                        <span class="info-label">استان:</span>
+                        <span class="info-value">{{ ad_data.province|default:"نامشخص" }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">شهرستان:</span>
+                        <span class="info-value">{{ ad_data.county|default:"نامشخص" }}</span>
+                    </div>
+                    
+                    {% if ad_data.city_village %}
+                    <div class="info-row">
+                        <span class="info-label">{% if ad_data.is_village %}روستا:{% else %}شهر:{% endif %}</span>
+                        <span class="info-value">{{ ad_data.city_village }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="info-label mb-2">آدرس کامل:</div>
+                        <div class="info-value text-justify">{{ ad_data.address }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            {% if ad_data.parking_available or ad_data.storage_room or ad_data.elevator %}
+            <div class="review-section">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-star ml-2 text-yellow-600"></i>
+                        امکانات و ویژگی‌ها
+                    </span>
+                    <button type="button" class="edit-section-btn no-print" onclick="editSection('features')">
+                        <i class="fas fa-edit ml-1"></i> ویرایش
+                    </button>
+                </div>
+                
+                <div class="space-y-2">
+                    {% if ad_data.parking_available %}
+                        <span class="feature-tag"><i class="fas fa-car"></i> پارکینگ</span>
+                    {% endif %}
+                    {% if ad_data.storage_room %}
+                        <span class="feature-tag"><i class="fas fa-box"></i> انباری</span>
+                    {% endif %}
+                    {% if ad_data.elevator %}
+                        <span class="feature-tag"><i class="fas fa-elevator"></i> آسانسور</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Contact Info -->
+            <div class="review-section">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-phone ml-2 text-green-600"></i>
+                        اطلاعات تماس
+                    </span>
+                    <button type="button" class="edit-section-btn no-print" onclick="editSection('contact')">
+                        <i class="fas fa-edit ml-1"></i> ویرایش
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="info-row">
+                        <span class="info-label">نام تماس:</span>
+                        <span class="info-value">{{ ad_data.contact_name }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">شماره تماس:</span>
+                        <span class="info-value">{{ ad_data.contact_phone }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if ad_data.description %}
+            <div class="review-section">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-file-alt ml-2 text-gray-600"></i>
+                        توضیحات
+                    </span>
+                    <button type="button" class="edit-section-btn no-print" onclick="editSection('description')">
+                        <i class="fas fa-edit ml-1"></i> ویرایش
+                    </button>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-justify leading-relaxed">{{ ad_data.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Images Info -->
+            {% if images_count > 0 %}
+            <div class="review-section">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-images ml-2 text-purple-600"></i>
+                        تصاویر ملک
+                    </span>
+                    <button type="button" class="edit-section-btn no-print" onclick="editSection('images')">
+                        <i class="fas fa-edit ml-1"></i> ویرایش
+                    </button>
+                </div>
+                
+                <div class="bg-orange-50 p-4 rounded-lg text-center border border-orange-200">
+                    <i class="fas fa-exclamation-triangle text-orange-600 text-2xl mb-2"></i>
+                    <div class="text-orange-800 font-medium mb-2">
+                        {{ images_count }} تصویر انتخاب شده بود
+                    </div>
+                    <div class="text-orange-700 text-sm">
+                        توجه: آپلود تصاویر در مراحل بعدی توسعه پیاده‌سازی خواهد شد.
+                        در حال حاضر آگهی بدون تصویر ثبت می‌شود.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- FAQ Section -->
+            <div class="faq-section no-print">
+                <div class="section-header">
+                    <span>
+                        <i class="fas fa-question-circle ml-2 text-blue-600"></i>
+                        سوالات متداول
+                    </span>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>آگهی من چه زمانی در سایت نمایش داده می‌شود؟</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        پس از ارسال آگهی، مدیر سیستم آن را بررسی می‌کند. معمولاً این فرآیند بین 24 تا 48 ساعت زمان می‌برد. پس از تایید، آگهی شما در سایت نمایش داده خواهد شد.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>آیا می‌توانم آگهی خود را پس از ارسال ویرایش کنم؟</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        بله، پس از تایید آگهی، شما می‌توانید از طریق پنل کاربری خود، آگهی را ویرایش کنید. همچنین می‌توانید درخواست خود را از طریق بخش تماس با ما ارسال کنید.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>آیا ثبت آگهی هزینه دارد؟</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        ثبت آگهی در سایت ما رایگان است. اما برای نمایش ویژه و قرار گرفتن در صفحه اصلی، می‌توانید از پکیج‌های تبلیغاتی استفاده کنید.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 mt-8 no-print">
+                <a href="{% url 'main:property_advertisement_form' %}" 
+                   class="flex-1 bg-gray-200 text-gray-800 text-center py-4 px-6 rounded-lg hover:bg-gray-300 transition-all font-medium text-lg">
+                    <i class="fas fa-arrow-right ml-2"></i>
+                    بازگشت و ویرایش
+                </a>
+                
+                <button type="button" class="save-draft-btn" onclick="saveDraft()">
+                    <i class="fas fa-save ml-2"></i>
+                    ذخیره پیش‌نویس
+                </button>
+                
+                <button type="submit" 
+                        class="flex-1 bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-all font-medium text-lg">
+                    <i class="fas fa-paper-plane ml-2"></i>
+                    ارسال برای تایید مدیر
+                </button>
+            </div>
+        </form>
+        
+        <div class="text-center mt-6 text-gray-500 no-print">
+            <small>
+                <i class="fas fa-shield-alt ml-1"></i>
+                اطلاعات شما محفوظ و امن نگهداری می‌شود
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Dark Mode Toggle -->
+<button class="dark-mode-toggle no-print" onclick="toggleDarkMode()">
+    <i class="fas fa-moon"></i>
+</button>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Session Timer
+    let timeLeft = 15 * 60; // 15 minutes in seconds
+    const timerElement = document.getElementById('session-timer');
+    
+    function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert('زمان جلسه شما به پایان رسید. لطفاً دوباره وارد شوید.');
+            window.location.href = "{% url 'main:login' %}";
+        }
+        
+        timeLeft--;
+    }
+    
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer(); // Initial call
+    
+    // Dark Mode Toggle
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const icon = document.querySelector('.dark-mode-toggle i');
+        if (document.body.classList.contains('dark-mode')) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+            localStorage.setItem('darkMode', 'enabled');
+        } else {
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
+            localStorage.setItem('darkMode', 'disabled');
+        }
+    }
+    
+    // Check for saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'enabled') {
+        document.body.classList.add('dark-mode');
+        document.querySelector('.dark-mode-toggle i').classList.remove('fa-moon');
+        document.querySelector('.dark-mode-toggle i').classList.add('fa-sun');
+    }
+    
+    // FAQ Toggle
+    function toggleFaq(element) {
+        const faqItem = element.parentElement;
+        faqItem.classList.toggle('active');
+    }
+    
+    // Edit Section
+    function editSection(section) {
+        // In a real implementation, this would navigate to the specific section of the form
+        alert(`در حال حاضر ویرایش بخش ${section} در دسترس نیست. لطفاً از دکمه "بازگشت و ویرایش" استفاده کنید.`);
+    }
+    
+    // Save Draft
+    function saveDraft() {
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = 'flex';
+        
+        // Simulate saving draft
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            alert('پیش‌نویس با موفقیت ذخیره شد. شما می‌توانید بعداً به کار خود ادامه دهید.');
+        }, 1500);
+    }
+    
+    // Form submission confirmation
+    document.getElementById('ad-form').addEventListener('submit', function(e) {
+        if (!confirm('آیا از ارسال آگهی برای تایید مدیر اطمینان دارید؟')) {
+            e.preventDefault();
+        } else {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = 'flex';
+        }
+    });
+    
+    // Auto-save draft every 30 seconds
+    setInterval(() => {
+        // In a real implementation, this would save the form data to localStorage or send to server
+        console.log('Auto-saving draft...');
+    }, 30000);
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + S to save draft
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveDraft();
+        }
+        
+        // Ctrl/Cmd + P to print
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+            e.preventDefault();
+            window.print();
+        }
+        
+        // Ctrl/Cmd + D to toggle dark mode
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+            e.preventDefault();
+            toggleDarkMode();
+        }
+    });
+</script>
+{% endblock %}

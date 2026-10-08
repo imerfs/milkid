@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت شورا - نسخه بهبودیافته</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #0d9488;
+            --primary-dark: #0f766e;
+            --secondary: #4f46e5;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --light: #f8fafc;
+            --dark: #1e293b;
+        }
+        
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+        }
+        
+        .main-content > div {
+            display: none;
+        }
+        
+        .main-content > div.active {
+            display: block;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
+        }
+        
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(13, 148, 136, 0.1);
+            transform: translateX(-3px);
+        }
+        
+        .mobile-sidebar {
+            transform: translateX(100%);
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            z-index: 50;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        
+        .notification-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+        
+        .task-progress {
+            transition: width 1s ease-in-out;
+        }
+        
+        .tab-content {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-item:hover {
+            background-color: rgba(13, 148, 136, 0.05);
+        }
+        
+        .calendar-day {
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-day:hover {
+            background-color: rgba(13, 148, 136, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .calendar-day.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+        }
+        
+        .status-online {
+            background-color: var(--success);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-away {
+            background-color: var(--warning);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+        }
+        
+        .status-offline {
+            background-color: var(--danger);
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleMobileMenu()"></div>
+
+    <div class="flex min-h-screen">
+        <!-- Mobile Menu Button -->
+        <button class="fixed top-5 right-5 z-50 bg-white p-2 rounded-full shadow-lg md:hidden" onclick="toggleMobileMenu()">
+            <i id="hamburger-icon" class="fas fa-bars text-gray-700 text-xl"></i>
+        </button>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-72 bg-white text-gray-800 shadow-2xl mobile-sidebar md:relative md:transform-none">
+            <div class="p-6 border-b flex items-center justify-center">
+                <i class="fas fa-users text-teal-600 text-2xl"></i>
+                <h1 class="text-xl font-bold text-teal-600 mr-3">پنل مدیریت شورا</h1>
+            </div>
+            
+            <!-- User Profile -->
+            <div class="p-4 border-b flex items-center">
+                <div class="relative">
+                    <div class="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
+                        <i class="fas fa-user text-teal-600 text-xl"></i>
+                    </div>
+                    <span class="status-indicator status-online absolute bottom-0 right-0"></span>
+                </div>
+                <div class="mr-3">
+                    <p class="font-semibold">{{ user_profile.user.get_full_name|default:"کاربر" }}</p>
+                    <p class="text-xs text-gray-500">{{ user_profile.get_role_display }}</p>
+                </div>
+            </div>
+            
+            <!-- Search Box -->
+            <div class="p-4 border-b">
+                <div class="relative">
+                    <input type="text" placeholder="جستجو..." class="w-full bg-gray-100 rounded-lg py-2 pr-10 pl-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                </div>
+            </div>
+            
+            <nav class="mt-2">
+                <a href="#" class="sidebar-link active flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('dashboard', this)">
+                    <div class="flex items-center"><i class="fas fa-tachometer-alt ml-3"></i>داشبورد</div>
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('voting', this)">
+                    <div class="flex items-center"><i class="fas fa-vote-yea ml-3"></i>صندوق رای‌گیری</div>
+                    {% if stats.pending_votes > 0 %}<span class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.pending_votes }}</span>{% endif %}
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('financial', this)">
+                    <div class="flex items-center"><i class="fas fa-file-invoice-dollar ml-3"></i>تاییدهای مالی</div>
+                    {% if stats.pending_financial > 0 %}<span class="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.pending_financial }}</span>{% endif %}
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('deeds', this)">
+                    <div class="flex items-center"><i class="fas fa-file-signature ml-3"></i>صدور گواهی تصرف</div>
+                    {% if stats.pending_deeds > 0 %}<span class="bg-amber-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.pending_deeds }}</span>{% endif %}
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('history', this)">
+                    <div class="flex items-center"><i class="fas fa-history ml-3"></i>سوابق مصوبات</div>
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('calendar', this)">
+                    <div class="flex items-center"><i class="fas fa-calendar-alt ml-3"></i>تقویم جلسات</div>
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('messages', this)">
+                    <div class="flex items-center"><i class="fas fa-envelope ml-3"></i>پیام‌ها</div>
+                    <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-badge">3</span>
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('members', this)">
+                    <div class="flex items-center"><i class="fas fa-users ml-3"></i>اعضای شورا</div>
+                </a>
+                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('settings', this)">
+                    <div class="flex items-center"><i class="fas fa-cog ml-3"></i>تنظیمات</div>
+                </a>
+            </nav>
+            
+            <!-- Notifications -->
+            <div class="p-4 mt-4 border-t">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-sm">اطلاعیه‌ها</h3>
+                    <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                </div>
+                <div class="text-xs text-gray-600 space-y-2">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-circle text-red-500 mt-1 ml-2"></i>
+                        <p>جلسه شورا فردا ساعت ۱۰ صبح</p>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 ml-2"></i>
+                        <p>۲ درخواست مالی جدید</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="glass-effect flex justify-between items-center p-4 border-b">
+                <div class="flex items-center">
+                    <h2 class="text-lg font-semibold text-gray-700">خوش آمدید، {{ user_profile.user.get_full_name|default:"کاربر" }}</h2>
+                    <span class="mr-4 text-sm text-gray-500">
+                        <i class="fas fa-calendar-alt ml-1"></i>
+                        <span id="current-date"></span>
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <button class="relative p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell text-xl"></i>
+                        {% if stats.unread_notifications > 0 %}<span class="absolute top-0 left-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.unread_notifications }}</span>{% endif %}
+                    </button>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-print text-xl"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-file-pdf text-xl"></i>
+                    </button>
+                    <a href="{% url 'main:logout' %}" class="text-red-500 hover:text-red-600 transition-colors flex items-center">
+                        <i class="fas fa-sign-out-alt ml-2"></i>خروج
+                    </a>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-6 md:p-8 main-content">
+
+                <!-- Dashboard Tab -->
+                <div id="dashboard-tab" class="active tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">داشبورد شورا</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-sync-alt ml-2"></i>به‌روزرسانی
+                            </button>
+                            <button class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                                <i class="fas fa-filter ml-2"></i>فیلتر
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stat-card glass-effect p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">پرونده‌های در انتظار رای</p>
+                                    <p class="text-3xl font-bold text-blue-600">{{ stats.pending_votes }}</p>
+                                </div>
+                                <i class="fas fa-vote-yea text-blue-500 text-2xl opacity-50"></i>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-sm">
+                                    <span class="text-gray-500">مجموع آرای ثبت شده: {{ stats.total_votes_cast }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card glass-effect p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">درخواست‌های مالی</p>
+                                    <p class="text-3xl font-bold text-green-600">{{ stats.pending_financial }}</p>
+                                </div>
+                                <i class="fas fa-file-invoice-dollar text-green-500 text-2xl opacity-50"></i>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-sm">
+                                    <span class="text-gray-500">در انتظار بررسی</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card glass-effect p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">املاک فاقد سند</p>
+                                    <p class="text-3xl font-bold text-amber-500">{{ stats.pending_deeds }}</p>
+                                </div>
+                                <i class="fas fa-file-signature text-amber-500 text-2xl opacity-50"></i>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-sm">
+                                    <span class="text-gray-500">نیازمند بررسی</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card glass-effect p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">جلسات برگزار شده</p>
+                                    <p class="text-3xl font-bold text-purple-600">{{ stats.meetings_held }}</p>
+                                </div>
+                                <i class="fas fa-users text-purple-500 text-2xl opacity-50"></i>
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex items-center text-sm">
+                                    <span class="text-gray-500">امسال</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts and Progress -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">نمودار پیشرفت پروژه‌ها</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">بازسازی پارک محله</span>
+                                        <span class="text-sm font-medium">75%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-blue-600 h-2.5 rounded-full task-progress" style="width: 75%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">آسفالت خیابان اصلی</span>
+                                        <span class="text-sm font-medium">40%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-green-600 h-2.5 rounded-full task-progress" style="width: 40%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">ساخت کتابخانه عمومی</span>
+                                        <span class="text-sm font-medium">20%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-yellow-500 h-2.5 rounded-full task-progress" style="width: 20%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">توسعه فضای سبز</span>
+                                        <span class="text-sm font-medium">90%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-purple-600 h-2.5 rounded-full task-progress" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">نمودار فعالیت‌های ماهانه</h3>
+                            <div class="flex items-end justify-between h-48">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 60%"></div>
+                                    <span class="mt-2 text-xs">فروردین</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 80%"></div>
+                                    <span class="mt-2 text-xs">اردیبهشت</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 45%"></div>
+                                    <span class="mt-2 text-xs">خرداد</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 70%"></div>
+                                    <span class="mt-2 text-xs">تیر</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 90%"></div>
+                                    <span class="mt-2 text-xs">مرداد</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 65%"></div>
+                                    <span class="mt-2 text-xs">شهریور</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Requests Table -->
+                    <div class="glass-effect p-6 rounded-xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold text-gray-800">خلاصه درخواست‌های نیازمند اقدام</h3>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <input type="text" placeholder="جستجو..." class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                <select class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                    <option>همه موارد</option>
+                                    <option>مالی</option>
+                                    <option>رای‌گیری</option>
+                                    <option>گواهی</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="py-3 px-4">کد پرونده</th>
+                                        <th class="py-3 px-4">متقاضی</th>
+                                        <th class="py-3 px-4">نوع درخواست</th>
+                                        <th class="py-3 px-4">اولویت</th>
+                                        <th class="py-3 px-4">تاریخ ثبت</th>
+                                        <th class="py-3 px-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-4 px-4">C-045</td>
+                                        <td class="py-4 px-4">مریم قاسمی</td>
+                                        <td class="py-4 px-4">تغییر کاربری</td>
+                                        <td class="py-4 px-4">
+                                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">بالا</span>
+                                        </td>
+                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۱۵</td>
+                                        <td class="py-4 px-4">
+                                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">بررسی و رای‌دهی</button>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-4 px-4">F-012</td>
+                                        <td class="py-4 px-4">علی رضایی</td>
+                                        <td class="py-4 px-4">تایید پرداخت با چک</td>
+                                        <td class="py-4 px-4">
+                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">متوسط</span>
+                                        </td>
+                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۱۰</td>
+                                        <td class="py-4 px-4">
+                                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">بررسی درخواست</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Voting Tab -->
+                <div id="voting-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">صندوق رای‌گیری</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-plus ml-2"></i>ایجاد رای‌گیری جدید
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">رای‌گیری‌های فعال</h3>
+                            <div class="space-y-4">
+                                {% for req in voting_requests %}
+                                <div class="border p-4 rounded-lg bg-blue-50">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <p class="font-bold">{{ req.title }} - {{ req.user.get_full_name }}</p>
+                                            <p class="text-sm text-gray-600 mt-2">{{ req.description|truncatewords:20 }}</p>
+                                            <div class="mt-4 flex items-center text-sm">
+                                                <span class="text-gray-500">تاریخ ثبت:</span>
+                                                <span class="font-medium mr-2">{{ req.created_at|date:"Y/m/d" }}</span>
+                                                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs mr-2">{{ req.get_status_display }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="text-sm text-gray-500">آرا: {{ req.votes.count }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex gap-4">
+                                        <a href="{% url 'main:council_request_detail' req.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+                                            <i class="fas fa-file-alt ml-2"></i>مشاهده جزئیات
+                                        </a>
+                                        <form method="post" action="{% url 'main:council_submit_vote' req.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="vote" value="approve">
+                                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">
+                                                <i class="fas fa-check ml-2"></i>موافق
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{% url 'main:council_submit_vote' req.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="vote" value="reject">
+                                            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm">
+                                                <i class="fas fa-times ml-2"></i>مخالف
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-inbox text-4xl mb-4"></i>
+                                    <p>درخواستی برای رای‌گیری وجود ندارد</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">آمار رای‌گیری‌ها</h3>
+                            <div class="space-y-4">
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-blue-600">12</div>
+                                    <div class="text-sm text-gray-600">کل رای‌گیری‌ها</div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-green-600">8</div>
+                                    <div class="text-sm text-gray-600">تکمیل شده</div>
+                                </div>
+                                <div class="bg-yellow-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-yellow-600">2</div>
+                                    <div class="text-sm text-gray-600">در حال اجرا</div>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-red-600">2</div>
+                                    <div class="text-sm text-gray-600">در انتظار شروع</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Tab -->
+                <div id="financial-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">تاییدهای مالی</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-file-export ml-2"></i>خروجی اکسل
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-effect p-6 rounded-xl">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-xl font-bold text-gray-800">درخواست‌های مالی نیازمند تایید</h3>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <input type="text" placeholder="جستجو..." class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                    <select class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                        <option>همه موارد</option>
+                                        <option>پرداخت با چک</option>
+                                        <option>تخفیفات</option>
+                                        <option>معافیت‌ها</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="py-3 px-4">متقاضی</th>
+                                        <th class="py-3 px-4">موضوع</th>
+                                        <th class="py-3 px-4">مبلغ / درصد</th>
+                                        <th class="py-3 px-4">تاریخ درخواست</th>
+                                        <th class="py-3 px-4">اولویت</th>
+                                        <th class="py-3 px-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in financial_requests %}
+                                    <tr class="hover:bg-green-50">
+                                        <td class="py-4 px-4">{{ payment.user.get_full_name }}</td>
+                                        <td class="py-4 px-4">{{ payment.get_payment_type_display }}</td>
+                                        <td class="py-4 px-4">{{ payment.amount|floatformat:0 }} تومان</td>
+                                        <td class="py-4 px-4">{{ payment.created_at|date:"Y/m/d" }}</td>
+                                        <td class="py-4 px-4">
+                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">{{ payment.get_status_display }}</span>
+                                        </td>
+                                        <td class="py-4 px-4">
+                                            <a href="{% url 'main:council_financial_reports' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">مشاهده جزئیات</a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-8 text-gray-500">
+                                            <i class="fas fa-inbox text-2xl mb-2"></i>
+                                            <p>درخواست مالی وجود ندارد</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">نمودار توزیع بودجه</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">توسعه زیرساخت‌ها</span>
+                                        <span class="text-sm font-medium">35%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 35%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">خدمات شهری</span>
+                                        <span class="text-sm font-medium">25%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-green-600 h-2.5 rounded-full" style="width: 25%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">آموزش و فرهنگ</span>
+                                        <span class="text-sm font-medium">20%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-yellow-500 h-2.5 rounded-full" style="width: 20%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">بهداشت و درمان</span>
+                                        <span class="text-sm font-medium">15%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-purple-600 h-2.5 rounded-full" style="width: 15%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium">سایر</span>
+                                        <span class="text-sm font-medium">5%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-red-500 h-2.5 rounded-full" style="width: 5%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">آمار مالی</h3>
+                            <div class="space-y-4">
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-blue-600">۲۴۵ میلیون تومان</div>
+                                    <div class="text-sm text-gray-600">بودجه کل سال</div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-green-600">۱۲۰ میلیون تومان</div>
+                                    <div class="text-sm text-gray-600">هزینه شده</div>
+                                </div>
+                                <div class="bg-yellow-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-yellow-600">۱۲۵ میلیون تومان</div>
+                                    <div class="text-sm text-gray-600">مانده</div>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-red-600">۱۵ مورد</div>
+                                    <div class="text-sm text-gray-600">درخواست‌های معلق</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deeds Tab -->
+                <div id="deeds-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">صدور گواهی تصرف (املاک فاقد سند)</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-file-export ml-2"></i>خروجی PDF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-effect p-6 rounded-xl">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-xl font-bold text-gray-800">درخواست‌های صدور گواهی</h3>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <input type="text" placeholder="جستجو..." class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                    <select class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                        <option>همه موارد</option>
+                                        <option>قولنامه</option>
+                                        <option>وارث</option>
+                                        <option>سایر</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="py-3 px-4">متقاضی</th>
+                                        <th class="py-3 px-4">آدرس ملک</th>
+                                        <th class="py-3 px-4">نوع مدرک فعلی</th>
+                                        <th class="py-3 px-4">تاریخ درخواست</th>
+                                        <th class="py-3 px-4">وضعیت</th>
+                                        <th class="py-3 px-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="hover:bg-amber-50">
+                                        <td class="py-4 px-4">سارا حسینی</td>
+                                        <td class="py-4 px-4">روستای فشم، خ اصلی، پلاک ۱۲</td>
+                                        <td class="py-4 px-4">قولنامه</td>
+                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۰۵</td>
+                                        <td class="py-4 px-4">
+                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">در حال بررسی</span>
+                                        </td>
+                                        <td class="py-4 px-4">
+                                            <button class="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm">بررسی و صدور گواهی</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">آمار گواهی‌های صادر شده</h3>
+                            <div class="space-y-4">
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-green-600">۴۵</div>
+                                    <div class="text-sm text-gray-600">کل گواهی‌های صادر شده</div>
+                                </div>
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-blue-600">۳۲</div>
+                                    <div class="text-sm text-gray-600">بر اساس قولنامه</div>
+                                </div>
+                                <div class="bg-purple-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-purple-600">۸</div>
+                                    <div class="text-sm text-gray-600">بر اساس ارث</div>
+                                </div>
+                                <div class="bg-yellow-50 p-4 rounded-lg">
+                                    <div class="text-2xl font-bold text-yellow-600">۵</div>
+                                    <div class="text-sm text-gray-600">سایر موارد</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">فرآیند صدور گواهی</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">1</div>
+                                    <div class="mr-3">
+                                        <p class="font-medium">ثبت درخواست</p>
+                                        <p class="text-sm text-gray-600">تکمیل فرم و ارائه مدارک</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">2</div>
+                                    <div class="mr-3">
+                                        <p class="font-medium">بررسی اولیه</p>
+                                        <p class="text-sm text-gray-600">بررسی مدارک توسط کارشناس</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">3</div>
+                                    <div class="mr-3">
+                                        <p class="font-medium">تایید شورا</p>
+                                        <p class="text-sm text-gray-600">تصویب در جلسه شورا</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">4</div>
+                                    <div class="mr-3">
+                                        <p class="font-medium">صدور گواهی</p>
+                                        <p class="text-sm text-gray-600">چاپ و تحویل گواهی</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="history-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">سوابق مصوبات شورا</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-plus ml-2"></i>مصوبه جدید
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-effect p-6 rounded-xl">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-xl font-bold text-gray-800">لیست مصوبات</h3>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <input type="text" placeholder="جستجو..." class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                    <select class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                        <option>همه موارد</option>
+                                        <option>تایید شده</option>
+                                        <option>در حال بررسی</option>
+                                        <option>رد شده</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="py-3 px-4">شماره مصوبه</th>
+                                        <th class="py-3 px-4">موضوع</th>
+                                        <th class="py-3 px-4">تاریخ تصویب</th>
+                                        <th class="py-3 px-4">وضعیت</th>
+                                        <th class="py-3 px-4">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-4 px-4">۱۴۰۳-۰۱</td>
+                                        <td class="py-4 px-4">تصویب بودجه سال ۱۴۰۳</td>
+                                        <td class="py-4 px-4">۱۴۰۳/۰۱/۱۵</td>
+                                        <td class="py-4 px-4">
+                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">تایید شده</span>
+                                        </td>
+                                        <td class="py-4 px-4">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-800 mr-3">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-4 px-4">۱۴۰۳-۰۲</td>
+                                        <td class="py-4 px-4">آیین‌نامه شهرسازی جدید</td>
+                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۱۰</td>
+                                        <td class="py-4 px-4">
+                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm">در حال بررسی</span>
+                                        </td>
+                                        <td class="py-4 px-4">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-800 mr-3">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Tab -->
+                <div id="calendar-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">تقویم جلسات شورا</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-plus ml-2"></i>جلسه جدید
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold text-gray-800">تقویم</h3>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                    <span class="font-medium">فروردین ۱۴۰۳</span>
+                                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                <div class="text-center text-sm font-medium py-2">ش</div>
+                                <div class="text-center text-sm font-medium py-2">ی</div>
+                                <div class="text-center text-sm font-medium py-2">د</div>
+                                <div class="text-center text-sm font-medium py-2">س</div>
+                                <div class="text-center text-sm font-medium py-2">چ</div>
+                                <div class="text-center text-sm font-medium py-2">پ</div>
+                                <div class="text-center text-sm font-medium py-2">ج</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-7 gap-1">
+                                <div class="calendar-day text-center py-2 rounded-lg text-gray-400">۲۸</div>
+                                <div class="calendar-day text-center py-2 rounded-lg text-gray-400">۲۹</div>
+                                <div class="calendar-day text-center py-2 rounded-lg text-gray-400">۳۰</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۳</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۴</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۵</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۶</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۷</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۸</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۹</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۰</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۱</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۲</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۳</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۴</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۵</div>
+                                <div class="calendar-day active text-center py-2 rounded-lg">۱۶</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۷</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۸</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۱۹</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۰</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۱</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۲</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۳</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۴</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۵</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۶</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۷</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۸</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۲۹</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۳۰</div>
+                                <div class="calendar-day text-center py-2 rounded-lg">۳۱</div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">جلسات آینده</h3>
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-blue-500 pl-4 py-2">
+                                    <div class="flex justify-between">
+                                        <h4 class="font-bold">جلسه عادی شورا</h4>
+                                        <span class="text-sm text-gray-500">۱۶ فروردین</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mt-1">ساعت ۱۰:۰۰ - سالن جلسات</p>
+                                    <div class="mt-2 flex items-center text-sm">
+                                        <i class="fas fa-users text-gray-500 ml-2"></i>
+                                        <span class="text-gray-600">۷ نفر شرکت کننده</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-l-4 border-green-500 pl-4 py-2">
+                                    <div class="flex justify-between">
+                                        <h4 class="font-bold">جلسه بودجه</h4>
+                                        <span class="text-sm text-gray-500">۲۳ فروردین</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mt-1">ساعت ۱۴:۰۰ - سالن جلسات</p>
+                                    <div class="mt-2 flex items-center text-sm">
+                                        <i class="fas fa-users text-gray-500 ml-2"></i>
+                                        <span class="text-gray-600">۷ نفر شرکت کننده</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-l-4 border-purple-500 pl-4 py-2">
+                                    <div class="flex justify-between">
+                                        <h4 class="font-bold">جلسه بررسی پروژه‌ها</h4>
+                                        <span class="text-sm text-gray-500">۳۰ فروردین</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mt-1">ساعت ۹:۰۰ - سالن جلسات</p>
+                                    <div class="mt-2 flex items-center text-sm">
+                                        <i class="fas fa-users text-gray-500 ml-2"></i>
+                                        <span class="text-gray-600">۷ نفر شرکت کننده</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Tab -->
+                <div id="messages-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">پیام‌ها</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-plus ml-2"></i>پیام جدید
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="glass-effect p-6 rounded-xl">
+                            <div class="mb-6">
+                                <h3 class="text-xl font-bold text-gray-800">لیست گفتگوها</h3>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="message-item p-3 rounded-lg cursor-pointer">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <i class="fas fa-user text-blue-600"></i>
+                                        </div>
+                                        <div class="mr-3 flex-1">
+                                            <div class="flex justify-between">
+                                                <h4 class="font-medium">احمد رضایی</h4>
+                                                <span class="text-xs text-gray-500">۱۴:۳۰</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 truncate">در مورد پرونده C-045...</p>
+                                        </div>
+                                        <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">2</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="message-item p-3 rounded-lg cursor-pointer">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i class="fas fa-users text-green-600"></i>
+                                        </div>
+                                        <div class="mr-3 flex-1">
+                                            <div class="flex justify-between">
+                                                <h4 class="font-medium">گروه شورا</h4>
+                                                <span class="text-xs text-gray-500">دیروز</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 truncate">جلسه فردا ساعت ۱۰ صبح...</p>
+                                        </div>
+                                        <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">1</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="message-item p-3 rounded-lg cursor-pointer">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                            <i class="fas fa-user text-purple-600"></i>
+                                        </div>
+                                        <div class="mr-3 flex-1">
+                                            <div class="flex justify-between">
+                                                <h4 class="font-medium">مریم قاسمی</h4>
+                                                <span class="text-xs text-gray-500">۲ روز پیش</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 truncate">ممنون از پیگیری شما...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
+                            <div class="mb-6">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600"></i>
+                                    </div>
+                                    <div class="mr-3">
+                                        <h3 class="font-bold">احمد رضایی</h3>
+                                        <p class="text-sm text-gray-600">آخرین بازدید: ۱۴:۳۰</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4 mb-6">
+                                <div class="flex justify-start">
+                                    <div class="bg-gray-100 rounded-lg p-4 max-w-md">
+                                        <p>سلام، در مورد پرونده C-045 می‌خواستم با شما صحبت کنم.</p>
+                                        <span class="text-xs text-gray-500 mt-1 block">۱۴:۲۰</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-end">
+                                    <div class="bg-teal-600 text-white rounded-lg p-4 max-w-md">
+                                        <p>سلام، بفرمایید چه سوال دارید؟</p>
+                                        <span class="text-xs text-teal-200 mt-1 block">۱۴:۲۵</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-start">
+                                    <div class="bg-gray-100 rounded-lg p-4 max-w-md">
+                                        <p>می‌خواستم بدانم آیا امکان تغییر کاربری از کشاورزی به مسکونی وجود دارد؟</p>
+                                        <span class="text-xs text-gray-500 mt-1 block">۱۴:۳۰</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="text" placeholder="پیام خود را بنویسید..." class="flex-1 bg-gray-100 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                <button class="bg-teal-600 text-white p-3 rounded-lg mr-2 hover:bg-teal-700">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Members Tab -->
+                <div id="members-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">اعضای شورا</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-user-plus ml-2"></i>عضو جدید
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="glass-effect p-6 rounded-xl">
+                            <div class="flex flex-col items-center">
+                                <div class="relative mb-4">
+                                    <div class="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center">
+                                        <i class="fas fa-user text-teal-600 text-3xl"></i>
+                                    </div>
+                                    <span class="status-indicator status-online absolute bottom-0 right-0"></span>
+                                </div>
+                                <h3 class="text-lg font-bold">جناب آقای رسولی</h3>
+                                <p class="text-gray-600 text-sm">رئیس شورا</p>
+                                <div class="mt-4 flex space-x-2 space-x-reverse">
+                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
+                                        <i class="fas fa-phone"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <div class="flex flex-col items-center">
+                                <div class="relative mb-4">
+                                    <div class="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600 text-3xl"></i>
+                                    </div>
+                                    <span class="status-indicator status-away absolute bottom-0 right-0"></span>
+                                </div>
+                                <h3 class="text-lg font-bold">خانم فاطمه محمدی</h3>
+                                <p class="text-gray-600 text-sm">عضو شورا</p>
+                                <div class="mt-4 flex space-x-2 space-x-reverse">
+                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
+                                        <i class="fas fa-phone"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <div class="flex flex-col items-center">
+                                <div class="relative mb-4">
+                                    <div class="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <i class="fas fa-user text-purple-600 text-3xl"></i>
+                                    </div>
+                                    <span class="status-indicator status-offline absolute bottom-0 right-0"></span>
+                                </div>
+                                <h3 class="text-lg font-bold">جناب آقای احمدی</h3>
+                                <p class="text-gray-600 text-sm">عضو شورا</p>
+                                <div class="mt-4 flex space-x-2 space-x-reverse">
+                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
+                                        <i class="fas fa-phone"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settings-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">تنظیمات</h2>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                                <i class="fas fa-save ml-2"></i>ذخیره تغییرات
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">تنظیمات پروفایل</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">نام و نام خانوادگی</label>
+                                    <input type="text" value="جناب آقای رسولی" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
+                                    <input type="text" value="rasooli" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
+                                    <input type="email" value="rasooli@example.com" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">شماره تماس</label>
+                                    <input type="tel" value="۰۹۱۲۳۴۵۶۷۸۹" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">تغییر رمز عبور</label>
+                                    <input type="password" placeholder="رمز عبور جدید" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500 mb-2">
+                                    <input type="password" placeholder="تکرار رمز عبور جدید" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-effect p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">تنظیمات اعلان‌ها</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium">اعلان‌های رای‌گیری</h4>
+                                        <p class="text-sm text-gray-600">اطلاع رسانی برای رای‌گیری‌های جدید</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium">اعلان‌های مالی</h4>
+                                        <p class="text-sm text-gray-600">اطلاع رسانی برای درخواست‌های مالی</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium">اعلان‌های جلسات</h4>
+                                        <p class="text-sm text-gray-600">اطلاع رسانی برای جلسات جدید</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium">اعلان‌های پیام‌ها</h4>
+                                        <p class="text-sm text-gray-600">اطلاع رسانی برای پیام‌های جدید</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabId, clickedLink) {
+            document.querySelectorAll('.main-content > div').forEach(el => el.classList.remove('active'));
+            const targetTab = document.getElementById(`${tabId}-tab`);
+            if(targetTab) targetTab.classList.add('active');
+
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            if(clickedLink) clickedLink.classList.add('active');
+
+            if (window.innerWidth < 768) {
+                toggleMobileMenu();
+            }
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            const icon = document.getElementById('hamburger-icon');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('hidden');
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-times');
+        }
+
+        // Set current date
+        document.getElementById('current-date').textContent = 
+            new Date().toLocaleDateString('fa-IR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+    </script>
+</body>
+</html>

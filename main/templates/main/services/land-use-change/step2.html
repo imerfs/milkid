@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله 2: ارسال درخواست به شورا - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست تغییر کاربری</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 50%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۳ از ۶: ارسال درخواست به شورا</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                <form id="council-submission-form">
+                    <div class="border-b pb-6 mb-8">
+                        <i class="fas fa-paper-plane text-blue-600 text-3xl mb-4"></i>
+                        <h1 class="text-3xl font-bold text-gray-800">ثبت درخواست تغییر کاربری و ارسال به شورا</h1>
+                        <p class="mt-2 text-gray-600">اطلاعات زیر را تکمیل کرده و درخواست خود را برای بررسی ارسال نمایید.</p>
+                    </div>
+
+                    <!-- 1. Request Details -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-blue-500 pr-4">۱. جزئیات درخواست</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="usage-type" class="block font-medium mb-2">نوع کاربری پیشنهادی<span class="text-red-500">*</span></label>
+                                <select id="usage-type" required class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                                    <option value="">انتخاب کنید...</option>
+                                    <option value="مسکونی">مسکونی</option>
+                                    <option value="تجاری">تجاری</option>
+                                    <option value="کشاورزی">کشاورزی</option>
+                                    <option value="صنعتی">صنعتی</option>
+                                    <option value="اداری">اداری</option>
+                                    <option value="خدماتی">خدماتی</option>
+                                    <option value="تاسیسات">تاسیسات</option>
+                                    <option value="فضای سبز">فضای سبز</option>
+                                    <option value="سایر">سایر</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="reason" class="block font-medium mb-2">توضیح علت تغییر<span class="text-red-500">*</span></label>
+                                <textarea id="reason" rows="4" required minlength="50" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="حداقل ۵۰ کاراکتر..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Supplementary Documents -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-blue-500 pr-4">۲. مستندات تکمیلی (اختیاری)</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="extra-docs-upload" class="block font-medium mb-2">نقشه یا توضیحات شناسایی</label>
+                                <input type="file" id="extra-docs-upload" class="w-full text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Auto-generated Request Text -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-4 border-r-4 border-blue-500 pr-4">۳. متن درخواست رسمی</h2>
+                        <div class="p-4 bg-gray-50 rounded-lg border">
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-sm text-gray-600">قالب پیشنهادی (قابل ویرایش)</p>
+                                <button type="button" onclick="generateRequestText()" class="text-blue-600 text-sm font-semibold hover:underline">
+                                    <i class="fas fa-magic ml-1"></i>تولید خودکار متن
+                                </button>
+                            </div>
+                            <textarea id="request-text" rows="8" class="w-full p-3 border border-gray-300 rounded-lg bg-white leading-relaxed"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-10 pt-6 border-t text-left">
+                        <button type="submit" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg">
+                            ارسال درخواست به شورا
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">شناسه پرونده:</p><p class="text-gray-600">#C-045</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p id="case-status" class="text-amber-600 font-bold">آماده ارسال به شورا</p></div>
+                        <div><p class="font-semibold">مسئول فعلی:</p><p class="text-gray-600">شما (متقاضی)</p></div>
+                    </div>
+                </div>
+                 <!-- Guidance Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-clipboard-list text-blue-500 mr-3"></i>راهنمای شورا</h3>
+                    <p class="text-sm text-gray-600">شورا برای بررسی درخواست شما به مدارک زیر نیاز خواهد داشت:</p>
+                    <ul class="text-sm list-disc list-inside mt-2 space-y-1">
+                        <li>مدارک هویتی و مالکیتی</li>
+                        <li>فایل شمیم و موقعیت دقیق ملک</li>
+                        <li>دلایل موجه برای تغییر کاربری</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateRequestText() {
+            const requestText = document.getElementById('request-text');
+            const usageType = document.getElementById('usage-type').value || '[نوع کاربری پیشنهادی]';
+
+            const template = `ریاست محترم شورای اسلامی روستا،\n\nبا سلام و احترام،\n\nاینجانب، [نام مالک]، مالک پلاک ثبتی [شماره پلاک] به استحضار می‌رساند، درخواست تغییر کاربری ملک مذکور به کاربری «${usageType}» را دارم. \n\nدلایل اینجانب برای این درخواست به شرح زیر است:\n[علت تغییر در اینجا شرح داده شود]\n\nخواهشمند است دستور فرمایید اقدامات لازم در این خصوص مبذول گردد.\n\nبا تشکر`;
+
+            requestText.value = template;
+        }
+
+        document.getElementById('council-submission-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Redirect to step 3
+            window.location.href = '/services/land-use-change/step3/';
+        });
+
+        // Initial text generation
+        generateRequestText();
+    </script>
+</body>
+</html>
+

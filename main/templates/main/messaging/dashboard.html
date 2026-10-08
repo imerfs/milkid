@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}پیام‌رسانی - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/messaging-theme-fixes.css' %}">
+<style>
+    .message-card {
+        transition: all 0.3s ease;
+        border-right: 4px solid transparent;
+    }
+    .message-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+    .unread-message {
+        border-right-color: var(--primary-color);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.1) 100%);
+    }
+    .priority-urgent {
+        border-right-color: #ef4444;
+    }
+    .priority-high {
+        border-right-color: #f59e0b;
+    }
+    .priority-medium {
+        border-right-color: #10b981;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-6">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-comments text-primary me-2"></i>
+                        پیام‌رسانی
+                    </h1>
+                    <p class="text-muted mt-1">مدیریت پیام‌ها و اطلاعیه‌ها</p>
+                </div>
+                <div>
+                    <a href="{% url 'main:start_conversation' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        مکالمه جدید
+                    </a>
+                    {% if user.profile.role in 'dehyari,admin' %}
+                    <a href="{% url 'main:create_announcement' %}" class="btn btn-success">
+                        <i class="fas fa-bullhorn me-1"></i>
+                        اطلاعیه جدید
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-comments fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ stats.total_conversations }}</h4>
+                    <small>مکالمات</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-envelope fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ stats.unread_messages }}</h4>
+                    <small>پیام خوانده نشده</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-paper-plane fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ stats.sent_messages }}</h4>
+                    <small>پیام ارسالی</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bullhorn fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ stats.announcements_count }}</h4>
+                    <small>اطلاعیه فعال</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- مکالمات اخیر -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-comments me-2"></i>
+                            مکالمات اخیر
+                        </h6>
+                        <a href="{% url 'main:conversation_list' %}" class="btn btn-sm btn-outline-primary">
+                            مشاهده همه
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if conversations %}
+                        {% for conversation in conversations %}
+                        <div class="message-card p-3 border-bottom {% if conversation.unread_count > 0 %}unread-message{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'main:conversation_detail' conversation.id %}" 
+                                           class="text-decoration-none text-dark">
+                                            {{ conversation.subject }}
+                                        </a>
+                                        {% if conversation.unread_count > 0 %}
+                                        <span class="badge bg-primary rounded-pill">{{ conversation.unread_count }}</span>
+                                        {% endif %}
+                                    </h6>
+                                    <p class="text-muted mb-1 small">
+                                        شرکت‌کنندگان: 
+                                        {% for participant in conversation.participants.all %}
+                                            {% if participant != user %}
+                                                {{ participant.get_full_name }}{% if not forloop.last %}، {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                    {% if conversation.related_request %}
+                                    <p class="text-info mb-0 small">
+                                        <i class="fas fa-link me-1"></i>
+                                        مرتبط با: {{ conversation.related_request.title }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">{{ conversation.updated_at|date:"Y/m/d H:i" }}</small>
+                                    <div class="mt-1">
+                                        <span class="badge bg-light text-dark">{{ conversation.message_count }} پیام</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">هنوز مکالمه‌ای ندارید</p>
+                            <a href="{% url 'main:start_conversation' %}" class="btn btn-primary">
+                                شروع مکالمه جدید
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- پیام‌های اخیر و اطلاعیه‌ها -->
+        <div class="col-lg-4">
+            <!-- پیام‌های اخیر -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-envelope me-2"></i>
+                        پیام‌های اخیر
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_messages %}
+                        {% for message in recent_messages %}
+                        <div class="p-3 border-bottom">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0 me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        {{ message.sender.first_name|first }}
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 small">{{ message.sender.get_full_name }}</h6>
+                                    <p class="mb-1 small text-muted">{{ message.body|truncatechars:50 }}</p>
+                                    <small class="text-muted">{{ message.created_at|timesince }} پیش</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-envelope-open fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small">پیام جدیدی ندارید</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- اطلاعیه‌های اخیر -->
+            <div class="card shadow">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-bullhorn me-2"></i>
+                            اطلاعیه‌ها
+                        </h6>
+                        <a href="{% url 'main:announcement_list' %}" class="btn btn-sm btn-outline-warning">
+                            مشاهده همه
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if announcements %}
+                        {% for announcement in announcements %}
+                        <div class="p-3 border-bottom priority-{{ announcement.priority }}">
+                            <h6 class="mb-1">
+                                <a href="{% url 'main:announcement_detail' announcement.id %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ announcement.title }}
+                                </a>
+                            </h6>
+                            <p class="mb-1 small text-muted">{{ announcement.content|truncatechars:80 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">{{ announcement.created_at|date:"Y/m/d" }}</small>
+                                <span class="badge bg-{{ announcement.priority == 'urgent' and 'danger' or announcement.priority == 'high' and 'warning' or 'success' }}">
+                                    {{ announcement.get_priority_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-bullhorn fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small">اطلاعیه جدیدی ندارید</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Message Modal -->
+<div class="modal fade" id="quickMessageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ارسال پیام سریع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickMessageForm">
+                    <div class="mb-3">
+                        <label class="form-label">گیرنده</label>
+                        <select class="form-select" id="quickRecipient" required>
+                            <option value="">انتخاب کنید...</option>
+                            <!-- Options will be loaded via AJAX -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">پیام</label>
+                        <textarea class="form-control" id="quickMessage" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="sendQuickMessage()">ارسال</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// بروزرسانی تعداد پیام‌های خوانده نشده
+function updateUnreadCount() {
+    fetch('{% url "main:api_unread_count" %}')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.querySelector('.unread-badge');
+            if (badge) {
+                badge.textContent = data.unread_count;
+                badge.style.display = data.unread_count > 0 ? 'inline' : 'none';
+            }
+        });
+}
+
+// ارسال پیام سریع
+function sendQuickMessage() {
+    const recipient = document.getElementById('quickRecipient').value;
+    const message = document.getElementById('quickMessage').value;
+    
+    if (!recipient || !message) {
+        alert('لطفاً تمام فیلدها را پر کنید');
+        return;
+    }
+    
+    fetch('{% url "main:api_send_quick_message" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            recipient_id: recipient,
+            message_body: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('پیام ارسال شد');
+            document.getElementById('quickMessageForm').reset();
+            $('#quickMessageModal').modal('hide');
+            location.reload();
+        } else {
+            alert('خطا: ' + data.error);
+        }
+    });
+}
+
+// بروزرسانی هر 30 ثانیه
+setInterval(updateUnreadCount, 30000);
+</script>
+{% endblock %}

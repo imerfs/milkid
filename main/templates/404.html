@@ -1,0 +1,105 @@
+
+{% extends 'base.html' %}
+
+{% block title %}صفحه یافت نشد - ۴۰۴{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-lg-6 text-center">
+            <div class="fade-in">
+                <!-- Large 404 Icon -->
+                <div class="mb-4">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 8rem; opacity: 0.7;"></i>
+                </div>
+                
+                <!-- Error Code -->
+                <h1 class="display-1 fw-bold text-primary mb-3">۴۰۴</h1>
+                
+                <!-- Error Message -->
+                <h2 class="h3 fw-bold mb-3">صفحه مورد نظر یافت نشد!</h2>
+                <p class="lead text-muted mb-4">
+                    متأسفانه صفحه‌ای که به دنبال آن هستید وجود ندارد یا ممکن است منتقل شده باشد.
+                </p>
+                
+                <!-- Action Buttons -->
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                    <a href="{% url 'main:home' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home ms-1"></i>
+                        بازگشت به خانه
+                    </a>
+                    <a href="{% url 'main:services_catalog' %}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-clipboard-list ms-1"></i>
+                        مشاهده خدمات
+                    </a>
+                </div>
+                
+                <!-- Help Section -->
+                <div class="mt-5 p-4 bg-light rounded">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-question-circle text-info ms-1"></i>
+                        نیاز به کمک دارید؟
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{% url 'main:contact' %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-envelope ms-1"></i>
+                                تماس با ما
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'main:about' %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-info-circle ms-1"></i>
+                                راهنمای استفاده
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="tel:02112345678" class="btn btn-outline-success w-100">
+                                <i class="fas fa-phone ms-1"></i>
+                                پشتیبانی تلفنی
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Pages -->
+                <div class="mt-4">
+                    <p class="text-muted small">
+                        <i class="fas fa-lightbulb ms-1"></i>
+                        لینک‌های پرکاربرد:
+                        <a href="{% url 'main:property_marketplace' %}" class="text-decoration-none">جستجوی املاک</a> |
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'main:dashboard' %}" class="text-decoration-none">پیشخوان</a> |
+                            <a href="{% url 'main:my_requests' %}" class="text-decoration-none">درخواست‌ها</a>
+                        {% else %}
+                            <a href="{% url 'main:login' %}" class="text-decoration-none">ورود</a> |
+                            <a href="{% url 'main:register' %}" class="text-decoration-none">ثبت نام</a>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .min-vh-100 {
+        min-height: calc(100vh - 200px);
+    }
+    
+    .fade-in {
+        animation: fadeInUp 0.8s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

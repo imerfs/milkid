@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}انتخاب نوع ثبت نام - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/register-page-final-fix.css' %}">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .choice-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+    }
+    .choice-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--primary-color) !important;
+    }
+    .choice-icon {
+        font-size: 5rem;
+        margin-bottom: 2rem;
+        transition: color 0.3s ease;
+    }
+    .choice-card:hover .choice-icon {
+        color: var(--primary-color) !important;
+    }
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+        color: white !important;
+        padding: 4rem 0;
+        margin-bottom: 4rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mx-auto text-center">
+                <h1 class="display-4 fw-bold mb-4">به ملک آیدی خوش آمدید</h1>
+                <p class="lead mb-0">پلتفرم دیجیتال مدیریت خدمات شهری و روستایی</p>
+                <p class="mb-0">نوع حساب کاربری خود را انتخاب کنید</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="row">
+                <!-- شهروند عادی -->
+                <div class="col-md-6 mb-4">
+                    <a href="{% url 'main:register_citizen' %}" class="text-decoration-none">
+                        <div class="card choice-card h-100">
+                            <div class="card-body text-center p-5">
+                                <div class="choice-icon text-primary">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <h3 class="card-title text-dark mb-3">شهروند عادی</h3>
+                                <p class="card-text text-muted mb-4">
+                                    برای دریافت خدمات شهری و روستایی، درخواست پروانه‌ها، استعلام املاک و سایر خدمات
+                                </p>
+                                
+                                <div class="row text-center mt-4">
+                                    <div class="col-12">
+                                        <ul class="list-unstyled text-start">
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>درخواست پروانه ساختمان</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>استعلام اطلاعات املاک</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>پرداخت عوارض</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>دریافت گواهی‌های رسمی</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <span class="btn btn-primary btn-lg">
+                                        <i class="fas fa-user-plus me-2"></i>ثبت نام به عنوان شهروند
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- دهیاری/شهرداری -->
+                <div class="col-md-6 mb-4">
+                    <a href="{% url 'main:register_municipality' %}" class="text-decoration-none">
+                        <div class="card choice-card h-100">
+                            <div class="card-body text-center p-5">
+                                <div class="choice-icon text-success">
+                                    <i class="fas fa-building"></i>
+                                </div>
+                                <h3 class="card-title text-dark mb-3">دهیاری / شهرداری</h3>
+                                <p class="card-text text-muted mb-4">
+                                    برای ثبت دهیاری، شهرداری یا نهادهای مرتبط در سامانه به همراه ارائه حکم فرماندار
+                                </p>
+                                
+                                <div class="row text-center mt-4">
+                                    <div class="col-12">
+                                        <ul class="list-unstyled text-start">
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>مدیریت درخواست‌های شهروندان</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>صدور پروانه‌ها و مجوزها</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>داشبورد تحلیلی</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>مدیریت اطلاعات املاک منطقه</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-warning small mt-3">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    نیاز به ارائه حکم فرماندار دارد
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <span class="btn btn-success btn-lg">
+                                        <i class="fas fa-building me-2"></i>ثبت درخواست دهیاری
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- نقش‌های کارمندی - فقط توضیحات -->
+            <div class="row mt-5">
+                <div class="col-12 mb-4">
+                    <h4 class="text-center mb-3">نقش‌های کارمندی و مدیریتی</h4>
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>توجه:</strong> اگر جزو کارکنان دهیاری، شهرداری یا اعضای شورا هستید، 
+                        لطفاً برای دریافت دسترسی به پنل مدیریتی خود، به دهیاری مراجعه کنید تا توسط مدیر سیستم اضافه شوید.
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="row">
+                        <!-- دهیار -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <a href="{% url 'main:register_dehyari' %}" class="text-decoration-none">
+                                <div class="card h-100 border-2 choice-card" style="border-color: #17a2b8;">
+                                    <div class="card-body text-center p-4">
+                                        <div class="text-info mb-3" style="font-size: 3rem;">
+                                            <i class="fas fa-user-tie"></i>
+                                        </div>
+                                        <h5 class="card-title text-dark mb-3">دهیار</h5>
+                                        <p class="card-text text-muted small mb-3">
+                                            مدیر اجرایی دهیاری
+                                        </p>
+                                        <div class="alert alert-warning small">
+                                            <i class="fas fa-building me-1"></i>
+                                            مراجعه به دهیاری ضروری
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- کارشناس فنی -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <a href="{% url 'main:register_engineer' %}" class="text-decoration-none">
+                                <div class="card h-100 border-2 choice-card" style="border-color: #ffc107;">
+                                    <div class="card-body text-center p-4">
+                                        <div class="text-warning mb-3" style="font-size: 3rem;">
+                                            <i class="fas fa-hard-hat"></i>
+                                        </div>
+                                        <h5 class="card-title text-dark mb-3">کارشناس فنی</h5>
+                                        <p class="card-text text-muted small mb-3">
+                                            بررسی و ارزیابی درخواست‌ها
+                                        </p>
+                                        <div class="alert alert-warning small">
+                                            <i class="fas fa-building me-1"></i>
+                                            مراجعه به دهیاری ضروری
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- عضو شورا -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <a href="{% url 'main:register_council' %}" class="text-decoration-none">
+                                <div class="card h-100 border-2 choice-card" style="border-color: #dc3545;">
+                                    <div class="card-body text-center p-4">
+                                        <div class="text-danger mb-3" style="font-size: 3rem;">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <h5 class="card-title text-dark mb-3">عضو شورا</h5>
+                                        <p class="card-text text-muted small mb-3">
+                                            عضو شورای اسلامی روستا/شهر
+                                        </p>
+                                        <div class="alert alert-warning small">
+                                            <i class="fas fa-building me-1"></i>
+                                            مراجعه به دهیاری ضروری
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- مسئول مالی -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <a href="{% url 'main:register_accountant' %}" class="text-decoration-none">
+                                <div class="card h-100 border-2 choice-card" style="border-color: #28a745;">
+                                    <div class="card-body text-center p-4">
+                                        <div class="text-success mb-3" style="font-size: 3rem;">
+                                            <i class="fas fa-calculator"></i>
+                                        </div>
+                                        <h5 class="card-title text-dark mb-3">مسئول مالی</h5>
+                                        <p class="card-text text-muted small mb-3">
+                                            مدیریت امور مالی و پرداخت‌ها
+                                        </p>
+                                        <div class="alert alert-warning small">
+                                            <i class="fas fa-building me-1"></i>
+                                            مراجعه به دهیاری ضروری
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- ناظر فنی -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <a href="{% url 'main:register_inspector' %}" class="text-decoration-none">
+                                <div class="card h-100 border-2 choice-card" style="border-color: #6c757d;">
+                                    <div class="card-body text-center p-4">
+                                        <div class="text-secondary mb-3" style="font-size: 3rem;">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </div>
+                                        <h5 class="card-title text-dark mb-3">ناظر فنی</h5>
+                                        <p class="card-text text-muted small mb-3">
+                                            بازرسی و نظارت بر پروژه‌ها
+                                        </p>
+                                        <div class="alert alert-warning small">
+                                            <i class="fas fa-building me-1"></i>
+                                            مراجعه به دهیاری ضروری
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- مدیر سیستم -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <a href="{% url 'main:staff_registration_info' %}" class="text-decoration-none">
+                                <div class="card h-100 border-2 choice-card" style="border-color: #6f42c1;">
+                                    <div class="card-body text-center p-4">
+                                        <div class="text-purple mb-3" style="font-size: 3rem; color: #6f42c1;">
+                                            <i class="fas fa-user-shield"></i>
+                                        </div>
+                                        <h5 class="card-title text-dark mb-3">مدیر سیستم</h5>
+                                        <p class="card-text text-muted small mb-3">
+                                            مدیریت کل سامانه
+                                        </p>
+                                        <div class="alert alert-danger small">
+                                            <i class="fas fa-lock me-1"></i>
+                                            دسترسی محدود
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- راهنمای مراجعه به دهیاری -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card bg-light border-0">
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-2 text-center">
+                                    <i class="fas fa-building fa-3x text-primary"></i>
+                                </div>
+                                <div class="col-md-10">
+                                    <h5 class="mb-2">چگونه به عنوان کارمند دسترسی پیدا کنم؟</h5>
+                                    <p class="text-muted mb-3">
+                                        اگر شما کارمند دهیاری، عضو شورا یا دارای نقش مدیریتی هستید، 
+                                        لطفاً با مدارک هویتی و حکم کاری خود به دهیاری مراجعه کنید تا:
+                                    </p>
+                                    <ul class="text-muted mb-3">
+                                        <li>مدیر سیستم شما را به عنوان کاربر با نقش مناسب اضافه کند</li>
+                                        <li>دسترسی‌های لازم برای پنل مدیریتی تان فعال شود</li>
+                                        <li>آموزش‌های لازم برای استفاده از سامانه دریافت کنید</li>
+                                    </ul>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'main:contact' %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-phone me-1"></i>
+                                            تماس با دهیاری
+                                        </a>
+                                        <a href="{% url 'main:about' %}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            اطلاعات بیشتر
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- اطلاعات تکمیلی -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-2">آیا قبلاً ثبت نام کرده‌اید؟</h5>
+                                    <p class="text-muted mb-0">در صورتی که حساب کاربری دارید، می‌توانید وارد شوید</p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <a href="{% url 'main:login' %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-sign-in-alt me-2"></i>ورود به حساب کاربری
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- راهنما -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="text-center">
+                        <h6 class="text-muted mb-3">نیاز به راهنمایی دارید؟</h6>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'main:contact' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-envelope me-1"></i>تماس با ما
+                            </a>
+                            <a href="#" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-question-circle me-1"></i>سوالات متداول
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add click animation
+document.querySelectorAll('.choice-card').forEach(card => {
+    card.addEventListener('click', function(e) {
+        if (!this.querySelector('a')) return;
+        
+        // Add loading animation
+        const btn = this.querySelector('.btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال انتقال...';
+        
+        // Reset after delay if navigation fails
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+        }, 3000);
+    });
+});
+</script>
+{% endblock %}

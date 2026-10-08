@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جزئیات آگهی ملک - طراحی بهبودیافته</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Vazirmatn -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        
+        /* Custom styles for stepper */
+        .stepper-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .stepper-item::before {
+            position: absolute;
+            content: "";
+            top: 20px;
+            left: -50%;
+            width: 100%;
+            height: 2px;
+            background-color: #e5e7eb;
+            z-index: -1;
+        }
+        
+        .stepper-item:first-child::before {
+            display: none;
+        }
+        
+        .stepper-item.completed::before {
+            background-color: #10b981;
+        }
+        
+        .stepper-item.active::before {
+            background: linear-gradient(to right, #10b981 50%, #e5e7eb 50%);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Tab indicator animation */
+        .tab-indicator {
+            position: absolute;
+            bottom: 0;
+            height: 3px;
+            background-color: #2563eb;
+            transition: all 0.3s ease;
+        }
+        
+        /* Hover effects */
+        .hover-scale {
+            transition: transform 0.3s ease;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.03);
+        }
+        
+        /* Custom form inputs */
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Custom buttons */
+        .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #2563eb;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .btn-success {
+            background-color: #10b981;
+        }
+        
+        .btn-success:hover {
+            background-color: #059669;
+        }
+        
+        .btn-purple {
+            background-color: #9333ea;
+        }
+        
+        .btn-purple:hover {
+            background-color: #7e22ce;
+        }
+        
+        /* Card hover effect */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Section title border */
+        .section-title {
+            position: relative;
+            padding-right: 1rem;
+        }
+        
+        .section-title::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 70%;
+            background-color: #2563eb;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-gray-800">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <a href="{% url 'main:property_listings' %}" class="text-blue-600 hover:text-blue-800 transition-colors">
+                        <i class="fas fa-arrow-right ml-2"></i>
+                        <span class="text-lg font-medium">بازگشت به لیست آگهی‌ها</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <button class="text-gray-600 hover:text-blue-600 transition-colors p-2 rounded-lg">
+                        <i class="fas fa-print ml-2"></i>
+                        <span class="text-sm font-medium">چاپ آگهی</span>
+                    </button>
+                    <button class="text-gray-600 hover:text-blue-600 transition-colors p-2 rounded-lg">
+                        <i class="fas fa-share-alt ml-2"></i>
+                        <span class="text-sm font-medium">اشتراک‌گذاری</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Property Header with Stats -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 fade-in">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                <div class="border-r-4 border-blue-600 pr-6 mb-4 md:mb-0">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ property.get_property_type_display }} {{ property.total_area|floatformat:0 }} متری در {{ property.city_village|default:"شهر" }}</h1>
+                    <div class="flex items-center text-gray-600 mb-2">
+                        <i class="fas fa-map-marker-alt ml-2"></i>
+                        <span>{{ property.address }}</span>
+                    </div>
+                    <div class="flex items-center text-gray-600">
+                        <i class="fas fa-compass ml-2 text-blue-600"></i>
+                        <span>{{ property.city_village|default:"" }} {% if property.dehestan %}- {{ property.dehestan }}{% endif %}</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6 space-x-reverse">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">{{ property.views_count|default:"0" }}</div>
+                        <div class="text-sm text-gray-600">بازدید</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">{{ property.created_at|date:"Y/m/d" }}</div>
+                        <div class="text-sm text-gray-600">تاریخ انتشار</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">{{ property.updated_at|date:"Y/m/d" }}</div>
+                        <div class="text-sm text-gray-600">به‌روزرسانی</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stepper -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <div class="stepper-item completed">
+                    <div class="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white mb-2">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="text-sm font-medium">اطلاعات اولیه</span>
+                </div>
+                <div class="stepper-item completed">
+                    <div class="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white mb-2">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="text-sm font-medium">مشاهده تصاویر</span>
+                </div>
+                <div class="stepper-item active">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white mb-2">
+                        <span class="font-bold">3</span>
+                    </div>
+                    <span class="text-sm font-medium">بررسی جزئیات</span>
+                </div>
+                <div class="stepper-item">
+                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white mb-2">
+                        <span class="font-bold">4</span>
+                    </div>
+                    <span class="text-sm font-medium">تماس با مالک</span>
+                </div>
+                <div class="stepper-item">
+                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white mb-2">
+                        <span class="font-bold">5</span>
+                    </div>
+                    <span class="text-sm font-medium">بازدید حضوری</span>
+                </div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-info-circle text-blue-600 ml-2"></i>
+                    <p class="text-blue-800 text-sm">شما در حال بررسی جزئیات ملک هستید. پس از مطالعه اطلاعات، می‌توانید به مرحله بعد بروید.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2">
+                <!-- Tabs for Navigation -->
+                <div class="bg-white rounded-2xl shadow-lg p-4 mb-8 relative">
+                    <div class="flex border-b overflow-x-auto relative">
+                        <button class="tab-button px-4 py-3 font-medium text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="gallery">
+                            <i class="fas fa-images ml-2"></i>
+                            تصاویر
+                        </button>
+                        <button class="tab-button px-4 py-3 font-medium text-gray-600 hover:text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="details">
+                            <i class="fas fa-info-circle ml-2"></i>
+                            جزئیات
+                        </button>
+                        <button class="tab-button px-4 py-3 font-medium text-gray-600 hover:text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="floor-plan">
+                            <i class="fas fa-th-large ml-2"></i>
+                            پلان طبقات
+                        </button>
+                        <button class="tab-button px-4 py-3 font-medium text-gray-600 hover:text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="map">
+                            <i class="fas fa-map-marked-alt ml-2"></i>
+                            موقعیت مکانی
+                        </button>
+                        <button class="tab-button px-4 py-3 font-medium text-gray-600 hover:text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="neighborhood">
+                            <i class="fas fa-city ml-2"></i>
+                            محله
+                        </button>
+                        <button class="tab-button px-4 py-3 font-medium text-gray-600 hover:text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="comments">
+                            <i class="fas fa-comments ml-2"></i>
+                            نظرات
+                        </button>
+                        <button class="tab-button px-4 py-3 font-medium text-gray-600 hover:text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="faq">
+                            <i class="fas fa-question-circle ml-2"></i>
+                            سوالات متداول
+                        </button>
+                        <button class="tab-button px-4 py-3 font-medium text-gray-600 hover:text-blue-600 focus:outline-none whitespace-nowrap relative" data-tab="price-history">
+                            <i class="fas fa-chart-line ml-2"></i>
+                            تاریخچه قیمت
+                        </button>
+                        <div class="tab-indicator" style="width: 100px; left: 0;"></div>
+                    </div>
+                </div>
+
+                <!-- Gallery Tab -->
+                <div id="gallery" class="tab-content">
+                    <!-- Property Images Gallery -->
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8 card-hover">
+                        <div class="relative h-80">
+                            <img id="main-image" src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=400&fit=crop" 
+                                 alt="تصویر اصلی ملک" 
+                                 class="w-full h-full object-cover cursor-pointer">
+                            <div class="absolute top-4 right-4">
+                                <span class="{% if property.ad_type == 'sale' %}bg-green-600{% elif property.ad_type == 'rent' %}bg-blue-600{% else %}bg-purple-600{% endif %} text-white px-3 py-1 rounded-full text-sm font-medium">
+                                    {{ property.get_ad_type_display }}
+                                </span>
+                            </div>
+                            <div class="absolute bottom-4 left-4">
+                                <button class="bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg text-sm font-medium flex items-center hover:bg-opacity-70 transition-all">
+                                    <i class="fas fa-search-plus ml-2"></i>
+                                    بزرگنمایی
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Image Thumbnails -->
+                        <div class="p-4">
+                            <div class="grid grid-cols-4 gap-2">
+                                <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=200&h=150&fit=crop" 
+                                     class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
+                                <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200&h=150&fit=crop" 
+                                     class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
+                                <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=150&fit=crop" 
+                                     class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
+                                <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200&h=150&fit=crop" 
+                                     class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Tab -->
+                <div id="details" class="tab-content hidden">
+                    <!-- Property Title and Description -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">توضیحات ملک</h3>
+                        <p class="text-gray-700 leading-relaxed">
+                            {{ property.description|default:"توضیحات تکمیلی برای این ملک ارائه نشده است." }}
+                        </p>
+                    </div>
+
+                    <!-- Property Features -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">امکانات و ویژگی‌ها</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-car text-blue-600 ml-2"></i>
+                                <span>پارکینگ</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-store text-blue-600 ml-2"></i>
+                                <span>انباری</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-building text-blue-600 ml-2"></i>
+                                <span>آسانسور</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-wind text-blue-600 ml-2"></i>
+                                <span>تهویه مطبوع</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-fire text-blue-600 ml-2"></i>
+                                <span>شوفاژ</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-shield-alt text-blue-600 ml-2"></i>
+                                <span>سرایدار</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-bath text-blue-600 ml-2"></i>
+                                <span>سرویس ایرانی</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-bath text-blue-600 ml-2"></i>
+                                <span>سرویس فرنگی</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-snowflake text-blue-600 ml-2"></i>
+                                <span>کولر گازی</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Property Detailed Info -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">اطلاعات دقیق ملک</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <div class="grid grid-cols-3 gap-4 mb-6">
+                                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">{{ property.total_area|floatformat:0 }}</div>
+                                        <div class="text-sm text-gray-600">متراژ</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">{{ property.bedrooms|default:"نامشخص" }}</div>
+                                        <div class="text-sm text-gray-600">اتاق</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">{{ property.construction_year|default:"نامشخص" }}</div>
+                                        <div class="text-sm text-gray-600">سال ساخت</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="grid grid-cols-3 gap-4 mb-6">
+                                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-purple-600">{{ property.specific_floor|default:"نامشخص" }}</div>
+                                        <div class="text-sm text-gray-600">طبقه</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-purple-600">{{ property.floors|default:"نامشخص" }}</div>
+                                        <div class="text-sm text-gray-600">طبقات کل</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-purple-600">{{ property.units|default:"نامشخص" }}</div>
+                                        <div class="text-sm text-gray-600">واحد در طبقه</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-gray-800 mb-3">اطلاعات پارکینگ</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">تعداد پارکینگ:</span>
+                                        <span class="font-semibold">{{ property.parking|default:"0" }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">نوع پارکینگ:</span>
+                                        <span class="font-semibold">روباز</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-gray-800 mb-3">اطلاعات انباری</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">متراژ انباری:</span>
+                                        <span class="font-semibold">10 متر</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">موقعیت انباری:</span>
+                                        <span class="font-semibold">همکف</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floor Plan Tab -->
+                <div id="floor-plan" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">پلان طبقات</h3>
+                        <div class="mb-6">
+                            <div class="flex space-x-4 space-x-reverse">
+                                <button class="btn btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium">طبقه همکف</button>
+                                <button class="btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-lg text-sm font-medium">طبقه اول</button>
+                                <button class="btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-lg text-sm font-medium">طبقه دوم</button>
+                            </div>
+                        </div>
+                        <div id="floor-plan-container">
+                            <div class="bg-gray-100 rounded-lg h-96 flex items-center justify-center mb-4">
+                                <div class="text-center">
+                                    <i class="fas fa-th-large text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-gray-600">پلان طبقه همکف در اینجا نمایش داده می‌شود</p>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <h4 class="font-semibold text-gray-800 mb-2">توضیحات پلان</h4>
+                                <p class="text-gray-700">این پلان مربوط به طبقه همکف ملک است که شامل اتاق نشیمن، آشپزخانه، سرویس بهداشتی و انباری می‌باشد. مساحت کل این طبقه 120 متر مربع است.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Tab -->
+                <div id="map" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">موقعیت مکانی ملک</h3>
+                        <div class="bg-gray-200 rounded-lg h-96 flex items-center justify-center mb-6">
+                            <div class="text-center">
+                                <i class="fas fa-map-marked-alt text-4xl text-gray-500 mb-2"></i>
+                                <p class="text-gray-600">نقشه موقعیت مکانی ملک در اینجا نمایش داده می‌شود</p>
+                                <p class="text-gray-500 text-sm mt-2">تهران، نیاوران، خیابان شهید باهنر</p>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-blue-600 mt-1 ml-2"></i>
+                                <p class="text-gray-700 text-sm">برای نمایش دقیق موقعیت مکانی ملک، از نقشه استفاده کنید. شما می‌توانید با استفاده از نقشه، دسترسی به مراکز مهم و امکانات اطراف ملک را بررسی کنید.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Neighborhood Tab -->
+                <div id="neighborhood" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">اطلاعات محله</h3>
+                        <p class="text-gray-700 mb-6">محله نیاوران یکی از بهترین و لوکس‌ترین محله‌های شمالی تهران است که با امکانات رفاهی و تفریحی متعدد، محیطی ایده‌آل برای زندگی فراهم کرده است.</p>
+                        
+                        <h4 class="font-semibold text-gray-800 mb-4">امکانات اطراف</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <div class="bg-blue-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-shopping-cart text-blue-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">مرکز خرید</p>
+                                <p class="text-gray-500 text-sm">500 متر</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-hospital text-green-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">بیمارستان</p>
+                                <p class="text-gray-500 text-sm">1.2 کیلومتر</p>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-school text-yellow-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">مدرسه</p>
+                                <p class="text-gray-500 text-sm">300 متر</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-subway text-purple-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">مترو</p>
+                                <p class="text-gray-500 text-sm">800 متر</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-tree text-red-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">پارک</p>
+                                <p class="text-gray-500 text-sm">400 متر</p>
+                            </div>
+                            <div class="bg-indigo-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-dumbbell text-indigo-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">باشگاه</p>
+                                <p class="text-gray-500 text-sm">600 متر</p>
+                            </div>
+                            <div class="bg-pink-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-utensils text-pink-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">رستوران</p>
+                                <p class="text-gray-500 text-sm">350 متر</p>
+                            </div>
+                            <div class="bg-teal-50 p-4 rounded-lg text-center hover-scale">
+                                <i class="fas fa-bus text-teal-600 text-2xl mb-2"></i>
+                                <p class="text-gray-700">اتوبوس</p>
+                                <p class="text-gray-500 text-sm">200 متر</p>
+                            </div>
+                        </div>
+                        
+                        <h4 class="font-semibold text-gray-800 mb-4">امنیت محله</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-shield-alt text-green-600 ml-2"></i>
+                                <span class="text-gray-700">امنیت بالا</span>
+                            </div>
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-camera text-green-600 ml-2"></i>
+                                <span class="text-gray-700">دوربین‌های مداربسته</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-user-shield text-green-600 ml-2"></i>
+                                <span class="text-gray-700">نگهبان محله</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Tab -->
+                <div id="comments" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">نظرات و امتیازات</h3>
+                        
+                        <!-- Rating Summary -->
+                        <div class="bg-gray-50 p-6 rounded-lg mb-8">
+                            <div class="flex flex-col md:flex-row items-center">
+                                <div class="text-center mb-4 md:mb-0 md:ml-6">
+                                    <div class="text-4xl font-bold text-gray-800">4.2</div>
+                                    <div class="text-yellow-400 text-xl">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star-half-alt"></i>
+                                    </div>
+                                    <div class="text-gray-600 text-sm mt-1">از 24 نظر</div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-gray-600 text-sm w-16">5 ستاره</span>
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2 mx-2">
+                                            <div class="bg-yellow-400 h-2 rounded-full" style="width: 60%"></div>
+                                        </div>
+                                        <span class="text-gray-600 text-sm w-8">60%</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-gray-600 text-sm w-16">4 ستاره</span>
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2 mx-2">
+                                            <div class="bg-yellow-400 h-2 rounded-full" style="width: 25%"></div>
+                                        </div>
+                                        <span class="text-gray-600 text-sm w-8">25%</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-gray-600 text-sm w-16">3 ستاره</span>
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2 mx-2">
+                                            <div class="bg-yellow-400 h-2 rounded-full" style="width: 10%"></div>
+                                        </div>
+                                        <span class="text-gray-600 text-sm w-8">10%</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-gray-600 text-sm w-16">2 ستاره</span>
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2 mx-2">
+                                            <div class="bg-yellow-400 h-2 rounded-full" style="width: 3%"></div>
+                                        </div>
+                                        <span class="text-gray-600 text-sm w-8">3%</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="text-gray-600 text-sm w-16">1 ستاره</span>
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2 mx-2">
+                                            <div class="bg-yellow-400 h-2 rounded-full" style="width: 2%"></div>
+                                        </div>
+                                        <span class="text-gray-600 text-sm w-8">2%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Add Comment Form -->
+                        <div class="bg-blue-50 p-6 rounded-lg mb-8">
+                            <h4 class="font-semibold text-gray-800 mb-4">ثبت نظر شما</h4>
+                            <form>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-medium mb-2">امتیاز شما</label>
+                                    <div class="flex">
+                                        <i class="fas fa-star text-gray-300 text-xl cursor-pointer hover:text-yellow-400 mx-1"></i>
+                                        <i class="fas fa-star text-gray-300 text-xl cursor-pointer hover:text-yellow-400 mx-1"></i>
+                                        <i class="fas fa-star text-gray-300 text-xl cursor-pointer hover:text-yellow-400 mx-1"></i>
+                                        <i class="fas fa-star text-gray-300 text-xl cursor-pointer hover:text-yellow-400 mx-1"></i>
+                                        <i class="fas fa-star text-gray-300 text-xl cursor-pointer hover:text-yellow-400 mx-1"></i>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-medium mb-2" for="comment-text">نظر شما</label>
+                                    <textarea id="comment-text" class="form-input w-full p-3 border border-gray-300 rounded-lg" rows="4" placeholder="نظر خود را در مورد این ملک بنویسید..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                                    ثبت نظر
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Comments List -->
+                        <div class="space-y-6">
+                            <div class="bg-gray-50 p-6 rounded-lg">
+                                <div class="flex items-start">
+                                    <div class="bg-gray-300 rounded-full w-12 h-12 flex items-center justify-center ml-4">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h5 class="font-semibold text-gray-800">احمد رضایی</h5>
+                                            <span class="text-gray-500 text-sm">1402/05/10</span>
+                                        </div>
+                                        <div class="text-yellow-400 text-sm mb-2">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                        </div>
+                                        <p class="text-gray-700">ملک بسیار خوبی است، موقعیت عالی دارد و امکانات رفاهی آن کامل است. از خرید راضی هستم.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-6 rounded-lg">
+                                <div class="flex items-start">
+                                    <div class="bg-gray-300 rounded-full w-12 h-12 flex items-center justify-center ml-4">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h5 class="font-semibold text-gray-800">سارا محمدی</h5>
+                                            <span class="text-gray-500 text-sm">1402/04/28</span>
+                                        </div>
+                                        <div class="text-yellow-400 text-sm mb-2">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="far fa-star"></i>
+                                        </div>
+                                        <p class="text-gray-700">محله خوبی است و دسترسی به مرکز شهر راحت است. تنها مشکل کوچکی که وجود دارد، ترافیک در ساعات شلوغی است.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Tab -->
+                <div id="faq" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">سوالات متداول</h3>
+                        
+                        <div class="space-y-4 mb-8">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center justify-between cursor-pointer">
+                                    <h4 class="font-semibold text-gray-800">آیا این ملک سند دارد؟</h4>
+                                    <i class="fas fa-chevron-down text-gray-600"></i>
+                                </div>
+                                <div class="mt-3 text-gray-700">
+                                    بله، این ملک دارای سند تک برگ و شش دانگ است و تمامی مجوزهای قانونی را دارد.
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center justify-between cursor-pointer">
+                                    <h4 class="font-semibold text-gray-800">آیا امکان تغییر در داخلی ملک وجود دارد؟</h4>
+                                    <i class="fas fa-chevron-down text-gray-600"></i>
+                                </div>
+                                <div class="mt-3 text-gray-700 hidden">
+                                    بله، شما می‌توانید با هماهنگی با مدیریت ساختمان، تغییرات داخلی مورد نظر خود را اعمال کنید.
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center justify-between cursor-pointer">
+                                    <h4 class="font-semibold text-gray-800">هزینه شارژ ماهانه چقدر است؟</h4>
+                                    <i class="fas fa-chevron-down text-gray-600"></i>
+                                </div>
+                                <div class="mt-3 text-gray-700 hidden">
+                                    هزینه شارژ ماهانه برای این واحد حدود 150,000 تومان است که شامل هزینه‌های مشترک، نگهداری و نظافت می‌شود.
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center justify-between cursor-pointer">
+                                    <h4 class="font-semibold text-gray-800">آیا پارکینگ اختصاصی دارد؟</h4>
+                                    <i class="fas fa-chevron-down text-gray-600"></i>
+                                </div>
+                                <div class="mt-3 text-gray-700 hidden">
+                                    بله، هر واحد دارای یک پارکینگ اختصاصی در طبقه منفی یک است. همچنین برای مهمانان فضای پارکینگ عمومی در نظر گرفته شده است.
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center justify-between cursor-pointer">
+                                    <h4 class="font-semibold text-gray-800">تا مترو چند دقیقه پیاده است؟</h4>
+                                    <i class="fas fa-chevron-down text-gray-600"></i>
+                                </div>
+                                <div class="mt-3 text-gray-700 hidden">
+                                    ایستگاه مترو در فاصله حدود 10 دقیقه پیاده‌روی از ملک قرار دارد. همچنین ایستگاه اتوبوس در 3 دقیقه‌ای ملک قابل دسترس است.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">سوال دیگری دارید؟</h4>
+                            <p class="text-gray-700 text-sm mb-4">اگر سوال دیگری در مورد این ملک دارید، می‌توانید از طریق فرم زیر با ما در ارتباط باشید.</p>
+                            <form>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <input type="text" class="form-input p-3 border border-gray-300 rounded-lg" placeholder="نام و نام خانوادگی">
+                                    <input type="email" class="form-input p-3 border border-gray-300 rounded-lg" placeholder="ایمیل">
+                                </div>
+                                <div class="mb-4">
+                                    <input type="tel" class="form-input p-3 border border-gray-300 rounded-lg" placeholder="شماره تماس">
+                                </div>
+                                <div class="mb-4">
+                                    <textarea class="form-input w-full p-3 border border-gray-300 rounded-lg" rows="4" placeholder="سوال خود را بنویسید..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                                    ارسال سوال
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price History Tab -->
+                <div id="price-history" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
+                        <h3 class="section-title text-xl font-semibold text-gray-800 mb-6">تاریخچه قیمت</h3>
+                        <div class="bg-gray-100 rounded-lg h-64 flex items-center justify-center mb-6">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line text-4xl text-gray-500 mb-2"></i>
+                                <p class="text-gray-600">نمودار تاریخچه قیمت در اینجا نمایش داده می‌شود</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاریخ</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">قیمت</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تغییر</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1402/05/20</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">4,500,000,000 تومان</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                +5%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1402/05/10</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">4,285,000,000 تومان</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                -2%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1402/04/25</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">4,375,000,000 تومان</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                +3%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1402/04/15</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">4,250,000,000 تومان</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                اولین قیمت
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <!-- Price Card -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 sticky top-24">
+                    <div class="text-center mb-6">
+                        <div class="text-3xl font-bold text-green-600 mb-2">
+                            {% if property.sale_price %}{{ property.sale_price|floatformat:0 }} تومان{% else %}قیمت توافقی{% endif %}
+                        </div>
+                        <div class="text-gray-600">
+                            قیمت کل
+                        </div>
+                    </div>
+
+                    <!-- Property Quick Info -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">متراژ:</span>
+                            <span class="font-semibold">{{ property.total_area|floatformat:0 }} متر</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">اتاق:</span>
+                            <span class="font-semibold">{{ property.bedrooms|default:"نامشخص" }} اتاق</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">سن بنا:</span>
+                            <span class="font-semibold">{{ property.construction_year|default:"نامشخص" }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">طبقه:</span>
+                            <span class="font-semibold">{{ property.specific_floor|default:"نامشخص" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Contact Buttons -->
+                    <div class="space-y-3 mb-6">
+                        <button class="btn btn-primary text-white w-full py-3 rounded-lg font-medium flex items-center justify-center">
+                            <i class="fas fa-phone ml-2"></i>
+                            تماس با مالک
+                        </button>
+                        <button class="btn btn-success text-white w-full py-3 rounded-lg font-medium flex items-center justify-center">
+                            <i class="fab fa-whatsapp ml-2"></i>
+                            واتساپ
+                        </button>
+                        <button class="btn bg-purple-600 text-white w-full py-3 rounded-lg font-medium flex items-center justify-center hover:bg-purple-700">
+                            <i class="fas fa-bookmark ml-2"></i>
+                            ذخیره آگهی
+                        </button>
+                    </div>
+                    
+                    <!-- Contact Form -->
+                    <div class="border-t pt-6">
+                        <h4 class="font-semibold text-gray-800 mb-4">ارسال پیام به مالک</h4>
+                        <form>
+                            <div class="mb-4">
+                                <input type="text" class="form-input w-full p-3 border border-gray-300 rounded-lg" placeholder="نام و نام خانوادگی">
+                            </div>
+                            <div class="mb-4">
+                                <input type="tel" class="form-input w-full p-3 border border-gray-300 rounded-lg" placeholder="شماره تماس">
+                            </div>
+                            <div class="mb-4">
+                                <textarea class="form-input w-full p-3 border border-gray-300 rounded-lg" rows="4" placeholder="پیام خود را بنویسید..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary text-white w-full py-3 rounded-lg font-medium">
+                                ارسال پیام
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Loan Calculator -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-4">ماشین‌حساب وام مسکن</h4>
+                    <form>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-medium mb-2">مبلغ وام (تومان)</label>
+                            <input type="text" class="form-input w-full p-3 border border-gray-300 rounded-lg" placeholder="مبلغ وام را وارد کنید">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-medium mb-2">مدت بازپرداخت (ماه)</label>
+                            <input type="text" class="form-input w-full p-3 border border-gray-300 rounded-lg" placeholder="مدت بازپرداخت را وارد کنید">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-medium mb-2">نرخ سود سالانه (%)</label>
+                            <input type="text" class="form-input w-full p-3 border border-gray-300 rounded-lg" placeholder="نرخ سود را وارد کنید">
+                        </div>
+                        <button type="button" class="btn btn-primary text-white w-full py-3 rounded-lg font-medium">
+                            محاسبه قسط ماهانه
+                        </button>
+                    </form>
+                    <div class="mt-4 p-4 bg-blue-50 rounded-lg hidden">
+                        <h5 class="font-semibold text-gray-800 mb-2">نتیجه محاسبه</h5>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-gray-600">قسط ماهانه:</span>
+                            <span class="font-semibold">-</span>
+                        </div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-gray-600">مجموع پرداخت:</span>
+                            <span class="font-semibold">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">مجموع سود:</span>
+                            <span class="font-semibold">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visit Calendar -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-semibold text-gray-800">تقویم بازدید</h4>
+                        <div class="flex space-x-2">
+                            <button class="btn bg-gray-200 text-gray-700 hover:bg-gray-300 p-2 rounded-lg">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button class="btn bg-gray-200 text-gray-700 hover:bg-gray-300 p-2 rounded-lg">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center mb-4">
+                        <h5 class="font-medium">مهر 1402</h5>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 mb-4">
+                        <div class="text-center font-semibold text-gray-600 text-sm">ش</div>
+                        <div class="text-center font-semibold text-gray-600 text-sm">ی</div>
+                        <div class="text-center font-semibold text-gray-600 text-sm">د</div>
+                        <div class="text-center font-semibold text-gray-600 text-sm">س</div>
+                        <div class="text-center font-semibold text-gray-600 text-sm">چ</div>
+                        <div class="text-center font-semibold text-gray-600 text-sm">پ</div>
+                        <div class="text-center font-semibold text-gray-600 text-sm">ج</div>
+                        
+                        <!-- Calendar days -->
+                        <div class="text-center p-2"></div>
+                        <div class="text-center p-2"></div>
+                        <div class="text-center p-2 text-gray-400">1</div>
+                        <div class="text-center p-2 text-gray-400">2</div>
+                        <div class="text-center p-2 text-gray-400">3</div>
+                        <div class="text-center p-2 text-gray-400">4</div>
+                        <div class="text-center p-2 text-gray-400">5</div>
+                        <div class="text-center p-2 text-gray-400">6</div>
+                        <div class="text-center p-2 text-gray-400">7</div>
+                        <div class="text-center p-2 text-gray-400">8</div>
+                        <div class="text-center p-2 text-gray-400">9</div>
+                        <div class="text-center p-2 text-gray-400">10</div>
+                        <div class="text-center p-2 text-gray-400">11</div>
+                        <div class="text-center p-2 text-gray-400">12</div>
+                        <div class="text-center p-2 text-gray-400">13</div>
+                        <div class="text-center p-2 text-gray-400">14</div>
+                        <div class="text-center p-2 text-gray-400">15</div>
+                        <div class="text-center p-2 text-gray-400">16</div>
+                        <div class="text-center p-2 text-gray-400">17</div>
+                        <div class="text-center p-2 text-gray-400">18</div>
+                        <div class="text-center p-2 text-gray-400">19</div>
+                        <div class="text-center p-2 text-gray-400">20</div>
+                        <div class="text-center p-2 text-gray-400">21</div>
+                        <div class="text-center p-2 text-gray-400">22</div>
+                        <div class="text-center p-2 bg-blue-600 text-white rounded-lg cursor-pointer">23</div>
+                        <div class="text-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer">24</div>
+                        <div class="text-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer">25</div>
+                        <div class="text-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer">26</div>
+                        <div class="text-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer">27</div>
+                        <div class="text-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer">28</div>
+                        <div class="text-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer">29</div>
+                        <div class="text-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer">30</div>
+                    </div>
+                    <button class="btn btn-primary text-white w-full py-3 rounded-lg font-medium">
+                        برنامه‌ریزی بازدید
+                    </button>
+                </div>
+
+                <!-- Price Alert -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-4">اطلاع‌رسانی کاهش قیمت</h4>
+                    <p class="text-gray-600 text-sm mb-4">با ثبت ایمیل یا شماره تماس خود، در صورت کاهش قیمت این ملک به شما اطلاع‌رسانی خواهیم کرد.</p>
+                    <form>
+                        <div class="mb-4">
+                            <input type="email" class="form-input w-full p-3 border border-gray-300 rounded-lg" placeholder="ایمیل">
+                        </div>
+                        <div class="mb-4">
+                            <input type="tel" class="form-input w-full p-3 border border-gray-300 rounded-lg" placeholder="شماره تماس">
+                        </div>
+                        <button type="submit" class="btn btn-primary text-white w-full py-3 rounded-lg font-medium">
+                            ثبت درخواست اطلاع‌رسانی
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Report Ad -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-4">گزارش تخلف</h4>
+                    <p class="text-gray-600 text-sm mb-4">اگر این آگهی مشکوک به تخلف است، گزارش دهید.</p>
+                    <button class="btn bg-red-600 text-white w-full py-3 rounded-lg font-medium hover:bg-red-700">
+                        <i class="fas fa-exclamation-triangle ml-2"></i>
+                        گزارش آگهی
+                    </button>
+                </div>
+
+                <!-- Compare Properties -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-4">مقایسه ملک‌ها</h4>
+                    <p class="text-gray-600 text-sm mb-4">این ملک را با ملک‌های دیگر مقایسه کنید.</p>
+                    <button class="btn bg-gray-200 text-gray-700 hover:bg-gray-300 w-full py-3 rounded-lg font-medium">
+                        <i class="fas fa-balance-scale ml-2"></i>
+                        افزودن به مقایسه
+                    </button>
+                </div>
+
+                <!-- Share Options -->
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <h4 class="font-semibold text-gray-800 mb-4">اشتراک‌گذاری</h4>
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <button class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                            <i class="fab fa-telegram"></i>
+                        </button>
+                        <button class="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button class="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button class="bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <input type="text" class="form-input w-full p-3 border border-gray-300 rounded-lg mb-2" value="https://example.com/property/123" readonly>
+                        <button class="btn bg-gray-200 text-gray-700 hover:bg-gray-300 w-full py-2 rounded-lg font-medium">
+                            کپی لینک
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Similar Properties -->
+        <div class="mt-16">
+            <h2 class="section-title text-2xl font-bold text-gray-800 mb-8">آگهی‌های مشابه</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Similar Property 1 -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <div class="bg-gray-200 h-48 flex items-center justify-center">
+                            <i class="fas fa-home text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                فروش
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-800 mb-2">آپارتمان 95 متری</h3>
+                        <p class="text-gray-600 text-sm mb-3">تهران، یوسف‌آباد</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-green-600 font-semibold">قیمت توافقی</span>
+                            <button class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Similar Property 2 -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <div class="bg-gray-200 h-48 flex items-center justify-center">
+                            <i class="fas fa-home text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-yellow-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                اجاره
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-800 mb-2">ویلا 180 متری</h3>
+                        <p class="text-gray-600 text-sm mb-3">تهران، نیاوران</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-green-600 font-semibold">اجاره توافقی</span>
+                            <button class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Similar Property 3 -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <div class="bg-gray-200 h-48 flex items-center justify-center">
+                            <i class="fas fa-home text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                رهن
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-800 mb-2">دفتر اداری 75 متری</h3>
+                        <p class="text-gray-600 text-sm mb-3">تهران، ونک</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-green-600 font-semibold">رهن توافقی</span>
+                            <button class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <script>
+        // Tab functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const tabIndicator = document.querySelector('.tab-indicator');
+            
+            // Set initial tab
+            document.getElementById('gallery').classList.remove('hidden');
+            
+            tabButtons.forEach((button, index) => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Remove active class from all tabs and buttons
+                    tabContents.forEach(tab => {
+                        tab.classList.add('hidden');
+                    });
+                    
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('text-blue-600');
+                        btn.classList.add('text-gray-600');
+                    });
+                    
+                    // Add active class to selected tab and button
+                    document.getElementById(tabId).classList.remove('hidden');
+                    this.classList.remove('text-gray-600');
+                    this.classList.add('text-blue-600');
+                    
+                    // Move tab indicator
+                    tabIndicator.style.width = this.offsetWidth + 'px';
+                    tabIndicator.style.left = this.offsetLeft + 'px';
+                });
+            });
+            
+            // Set initial indicator position
+            const activeTab = document.querySelector('.tab-button.text-blue-600');
+            if (activeTab) {
+                tabIndicator.style.width = activeTab.offsetWidth + 'px';
+                tabIndicator.style.left = activeTab.offsetLeft + 'px';
+            }
+        });
+
+        // Gallery functionality
+        function changeMainImage(src) {
+            document.getElementById('main-image').src = src;
+        }
+
+        // FAQ functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqItems = document.querySelectorAll('#faq .bg-gray-50');
+            
+            faqItems.forEach(item => {
+                const question = item.querySelector('.flex');
+                const answer = item.querySelector('.mt-3');
+                const icon = item.querySelector('.fa-chevron-down, .fa-chevron-up');
+                
+                question.addEventListener('click', function() {
+                    if (answer.classList.contains('hidden')) {
+                        answer.classList.remove('hidden');
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-up');
+                    } else {
+                        answer.classList.add('hidden');
+                        icon.classList.remove('fa-chevron-up');
+                        icon.classList.add('fa-chevron-down');
+                    }
+                });
+            });
+        });
+
+        // Calendar functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarDays = document.querySelectorAll('.calendar-grid .text-center.p-2');
+            
+            calendarDays.forEach(day => {
+                if (!day.classList.contains('text-gray-400') && !day.classList.contains('font-semibold')) {
+                    day.addEventListener('click', function() {
+                        // Remove selected class from all days
+                        calendarDays.forEach(d => {
+                            d.classList.remove('bg-blue-600', 'text-white');
+                        });
+                        
+                        // Add selected class to clicked day
+                        this.classList.add('bg-blue-600', 'text-white');
+                    });
+                }
+            });
+        });
+
+        // Notification functionality
+        function showNotification(message, type = 'info') {
+            const notificationContainer = document.getElementById('notification-container');
+            
+            const notification = document.createElement('div');
+            
+            // Set background color based on type
+            let bgColor = 'bg-blue-100';
+            let textColor = 'text-blue-800';
+            let icon = 'fa-info-circle';
+            
+            if (type === 'success') {
+                bgColor = 'bg-green-100';
+                textColor = 'text-green-800';
+                icon = 'fa-check-circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-100';
+                textColor = 'text-red-800';
+                icon = 'fa-exclamation-circle';
+            } else if (type === 'warning') {
+                bgColor = 'bg-yellow-100';
+                textColor = 'text-yellow-800';
+                icon = 'fa-exclamation-triangle';
+            }
+            
+            notification.className = `notification ${bgColor} ${textColor} p-4 rounded-lg shadow-lg flex items-center`;
+            
+            const iconElement = document.createElement('i');
+            iconElement.className = `fas ${icon} ml-2`;
+            
+            const messageText = document.createElement('span');
+            messageText.textContent = message;
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'mr-auto cursor-pointer';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.addEventListener('click', function() {
+                notification.remove();
+            });
+            
+            notification.appendChild(iconElement);
+            notification.appendChild(messageText);
+            notification.appendChild(closeBtn);
+            
+            notificationContainer.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Copy link functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const copyLinkBtn = document.querySelector('button:contains("کپی لینک")');
+            
+            if (copyLinkBtn) {
+                copyLinkBtn.addEventListener('click', function() {
+                    const linkInput = document.querySelector('input[value="https://example.com/property/123"]');
+                    linkInput.select();
+                    document.execCommand('copy');
+                    
+                    showNotification('لینک با موفقیت کپی شد', 'success');
+                });
+            }
+        });
+
+        // Stepper navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const stepperItems = document.querySelectorAll('.stepper-item');
+            
+            stepperItems.forEach((item, index) => {
+                if (index < 2) {
+                    item.classList.add('completed');
+                } else if (index === 2) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

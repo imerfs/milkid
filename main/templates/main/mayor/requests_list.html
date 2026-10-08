@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load persian_filters %}
+
+{% block title %}کارتابل درخواست‌های دهیاری / شهرداری{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4" dir="rtl">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1">📋 کارتابل بررسی و تایید درخواست‌های دهیاری</h3>
+                    <p class="text-muted small mb-0">رسیدگی نهایی به پرونده‌های ارجاع شده از سوی کارشناس دهیاری و شورا</p>
+                </div>
+                <a href="{% url 'main:dehyari_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-1"></i> بازگشت به داشبورد دهیار
+                </a>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body bg-light rounded">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">وضعیت</label>
+                            <select name="status" class="form-select form-select-sm">
+                                <option value="">همه وضعیت‌ها</option>
+                                {% for status_code, status_name in status_choices %}
+                                    <option value="{{ status_code }}" {% if status_code == status_filter %}selected{% endif %}>
+                                        {{ status_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">نوع خدمت</label>
+                            <select name="request_type" class="form-select form-select-sm">
+                                <option value="">همه انواع</option>
+                                {% for type_code, type_name in request_type_choices %}
+                                    <option value="{{ type_code }}" {% if type_code == request_type_filter %}selected{% endif %}>
+                                        {{ type_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">جستجو</label>
+                            <input type="text" name="search" class="form-control form-control-sm" value="{{ search_query }}" placeholder="کد رهگیری، نام متقاضی یا عنوان...">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">فیلتر</button>
+                                <a href="{% url 'main:mayor_requests_list' %}" class="btn btn-secondary btn-sm">بازنشانی</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Table -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    {% if service_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>شناسه</th>
+                                        <th>متقاضی</th>
+                                        <th>عنوان و خدمت</th>
+                                        <th>مرحله فرآیند</th>
+                                        <th>ارجاع شده به</th>
+                                        <th>وضعیت</th>
+                                        <th>تاریخ ثبت</th>
+                                        <th class="text-center">اقدام</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for req in service_requests %}
+                                    <tr {% if req.workflow_stage == 'mayor_review' %}class="table-warning"{% endif %}>
+                                        <td><strong>#{{ req.tracking_code|default:req.id }}</strong></td>
+                                        <td>
+                                            <div class="fw-bold">{{ req.user.get_full_name|default:req.user.username }}</div>
+                                            <div class="text-muted small">{{ req.user.profile.mobile_number|default:"-" }}</div>
+                                        </td>
+                                        <td>
+                                            <div>{{ req.title }}</div>
+                                            <span class="badge bg-light text-dark border">{{ req.get_request_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">{{ req.get_workflow_stage_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ req.get_referral_target_display|default:"کارشناس دهیاری" }}</span>
+                                        </td>
+                                        <td>
+                                            {% if req.status == 'approved' %}
+                                                <span class="badge bg-success">تایید شده</span>
+                                            {% elif req.status == 'rejected' %}
+                                                <span class="badge bg-danger">رد شده</span>
+                                            {% elif req.status == 'in_review' %}
+                                                <span class="badge bg-warning text-dark">در حال بررسی</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">در انتظار</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ req.created_at|persian_date:"Y/m/d" }}</td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'main:request_detail' req.id %}" class="btn btn-outline-primary" title="مشاهده جزئیات">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if req.status != 'approved' and req.status != 'rejected' %}
+                                                    <button type="button" class="btn btn-outline-success" onclick="approveRequest({{ req.id }})" title="تایید نهایی">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger" onclick="openRejectModal({{ req.id }})" title="رد درخواست">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5>هیچ درخواستی یافت نشد</h5>
+                            <p class="text-muted small">درخواستی مطابق با فیلترهای انتخابی در کارتابل موجود نیست.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reject -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">رد درخواست</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">علت رد درخواست:</label>
+                        <textarea class="form-control" name="reason" id="rejectReason" rows="3" required placeholder="علت عدم تایید را وارد کنید..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" onclick="submitReject()">تایید و رد پرونده</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRejectId = null;
+
+function approveRequest(reqId) {
+    if (!confirm('آیا از تایید نهایی این پرونده اطمینان دارید؟')) return;
+    
+    fetch(`/mayor/requests/${reqId}/approve/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('درخواست با موفقیت تایید شد.');
+            location.reload();
+        } else {
+            alert('خطا: ' + (data.error || 'عملیات ناموفق بود'));
+        }
+    })
+    .catch(err => {
+        alert('خطا در برقراری ارتباط با سرور.');
+    });
+}
+
+function openRejectModal(reqId) {
+    currentRejectId = reqId;
+    document.getElementById('rejectReason').value = '';
+    new bootstrap.Modal(document.getElementById('rejectModal')).show();
+}
+
+function submitReject() {
+    const reason = document.getElementById('rejectReason').value.trim();
+    if (!reason) {
+        alert('لطفاً دلیل رد درخواست را وارد نمایید.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('reason', reason);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/mayor/requests/${currentRejectId}/reject/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('درخواست با موفقیت رد شد.');
+            location.reload();
+        } else {
+            alert('خطا: ' + (data.error || 'عملیات ناموفق بود'));
+        }
+    })
+    .catch(err => {
+        alert('خطا در برقراری ارتباط با سرور.');
+    });
+}
+</script>
+{% endblock %}

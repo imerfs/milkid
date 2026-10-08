@@ -1,0 +1,81 @@
+
+{% extends 'base.html' %}
+
+{% block title %}درخواست جدید - سامانه خدمات روستایی{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4>➕ ثبت درخواست جدید</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" dir="rtl">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.request_type.id_for_label }}" class="form-label">{{ form.request_type.label }}</label>
+                            {{ form.request_type }}
+                            {% if form.request_type.errors %}
+                                <div class="invalid-feedback d-block">{{ form.request_type.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">توضیحات کاملی از درخواست خود ارائه دهید تا بررسی سریع‌تر انجام شود.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.property_address.id_for_label }}" class="form-label">{{ form.property_address.label }}</label>
+                            {{ form.property_address }}
+                            {% if form.property_address.errors %}
+                                <div class="invalid-feedback d-block">{{ form.property_address.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">در صورتی که درخواست شما مربوط به ملک خاصی است، آدرس کامل را وارد کنید.</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>نکته مهم:</strong>
+                            <ul class="mb-0">
+                                <li>لطفاً تمام اطلاعات را با دقت کامل کنید</li>
+                                <li>پس از ثبت درخواست، امکان آپلود مدارک مورد نیاز فراهم خواهد شد</li>
+                                <li>زمان بررسی معمولاً 3-7 روز کاری می‌باشد</li>
+                                <li>در صورت نیاز به اطلاعات تکمیلی، از طریق سیستم با شما تماس خواهیم گرفت</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">ثبت درخواست</button>
+                            <a href="{% url 'main:my_requests' %}" class="btn btn-secondary">انصراف</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

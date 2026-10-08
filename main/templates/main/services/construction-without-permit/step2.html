@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله ۲: تأیید مالکیت و مدارک مکان‌محور - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .conditional-view {
+            display: none;
+        }
+        .conditional-view.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست پروانه ساخت</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 33.3%"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۲ از ۶: بررسی مالکیت و مدارک مکان‌محور</p>
+        </div>
+
+        <!-- Demo Controls -->
+        <div class="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm text-center">
+            <strong>نمایش آزمایشی:</strong> وضعیت پرونده را تغییر دهید:
+            <select id="case-type-selector" onchange="switchCaseView(this.value)" class="bg-white rounded p-1 mx-2">
+                <option value="deeded">با پروانه (دارای سند)</option>
+                <option value="not-deeded">با پروانه (فاقد سند)</option>
+                <option value="no-permit">بدون پروانه</option>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+
+                <!-- Case Summary -->
+                <div class="mb-8 border-b pb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-r-4 border-gray-400 pr-4">خلاصه پرونده</h2>
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <p><strong>کد نوسازی:</strong> #P-157</p>
+                            <p><strong>متقاضی:</strong> علی رضایی</p>
+                            <p><strong>مساحت زمین (از شمیم):</strong> ۲۵۰ متر مربع</p>
+                            <p><strong>موقعیت:</strong> روستای فشم</p>
+                            <p><strong>متراژ معبر:</strong> ۱۲ متر</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t space-y-2">
+                            <p><strong>شمالا:</strong> به طول ۱۰ متر به قطعه ۱۲</p>
+                            <p><strong>جنوبا:</strong> به طول ۱۰ متر به معبر</p>
+                            <p><strong>غربا:</strong> به طول ۲۵ متر به قطعه ۱۵۶</p>
+                            <p><strong>شرقا:</strong> به طول ۲۵ متر به قطعه ۱۵۸</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sections for "With Permit" flow -->
+                <div id="with-permit-sections">
+                    <!-- Permit Request Form -->
+                    <div class="mb-8 border-b pb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 border-r-4 border-gray-400 pr-4">۱. فرم تقاضای پروانه</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block font-medium mb-2">نوع پروانه<span class="text-red-500">*</span></label>
+                                <select class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                                    <option>احداث بنا</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-2">تعداد طبقات پیشنهادی<span class="text-red-500">*</span></label>
+                                <input type="number" value="3" class="w-full p-3 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-2">نوع کاربری جدید<span class="text-red-500">*</span></label>
+                                <input type="text" value="مسکونی" class="w-full p-3 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-2">مساحت ساخت (متر مربع)<span class="text-red-500">*</span></label>
+                                <input type="number" value="180" class="w-full p-3 border border-gray-300 rounded-lg">
+                            </div>
+                            <div class="md:col-span-2 flex items-center gap-6">
+                                <label class="flex items-center"><input type="checkbox" class="ml-2 h-5 w-5"><span>دارای زیرزمین</span></label>
+                                <label class="flex items-center"><input type="checkbox" class="ml-2 h-5 w-5"><span>دارای پارکینگ</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Technical Documents Upload -->
+                    <div class="mb-8 border-b pb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 border-r-4 border-gray-400 pr-4">۲. بارگذاری مدارک فنی</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block font-medium mb-2">دستور تهیه نقشه<span class="text-red-500">*</span></label>
+                                <input type="file" class="w-full text-sm">
+                            </div>
+                             <div>
+                                <label class="block font-medium mb-2">برگ تعهد نظارت<span class="text-red-500">*</span></label>
+                                <input type="file" class="w-full text-sm">
+                            </div>
+                             <div>
+                                <label class="block font-medium mb-2">برگ تعهد معماری<span class="text-red-500">*</span></label>
+                                <input type="file" class="w-full text-sm">
+                            </div>
+                             <div>
+                                <label class="block font-medium mb-2">برگ تعهد محاسبات سازه<span class="text-red-500">*</span></label>
+                                <input type="file" class="w-full text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">تأیید مالکیت و مدارک مکان‌محور</h1>
+
+                <!-- View for Deeded Property -->
+                <div id="deeded-view" class="conditional-view active">
+                    <div class="p-4 bg-green-50 text-green-800 rounded-lg mb-6 flex items-center">
+                        <i class="fas fa-check-circle text-2xl ml-3"></i>
+                        <div>
+                            <h3 class="font-bold">وضعیت مالکیت: دارای سند رسمی</h3>
+                        </div>
+                    </div>
+                     <div class="p-6 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                        <h3 class="font-bold text-lg text-blue-800">تهیه نقشه</h3>
+                        <p class="text-gray-700 mt-2 mb-4">اگر هنوز نقشه ندارید، می‌توانید از طریق سامانه به دفاتر نقشه‌کشی معتمد درخواست دهید.</p>
+                        <button class="bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-map-signs mr-2"></i>درخواست تهیه نقشه
+                        </button>
+                    </div>
+                </div>
+
+                <!-- View for Non-Deeded Property -->
+                <div id="not-deeded-view" class="conditional-view">
+                    <div class="p-4 bg-amber-50 text-amber-800 rounded-lg mb-6 flex items-center">
+                        <i class="fas fa-exclamation-triangle text-2xl ml-3"></i>
+                        <div>
+                            <h3 class="font-bold">وضعیت مالکیت: فاقد سند رسمی</h3>
+                            <p class="text-sm">برای ادامه، نیاز به گواهی تصرف از شورا است.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="p-6 bg-orange-50 rounded-lg border border-orange-200 text-center">
+                            <h3 class="font-bold text-lg text-orange-800">گواهی تصرف</h3>
+                            <p class="text-gray-700 mt-2 mb-4">برای دریافت گواهی، ابتدا درخواست خود را به شورا ارسال کنید.</p>
+                            <button id="request-cert-btn" class="bg-orange-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-orange-700">
+                                <i class="fas fa-paper-plane mr-2"></i>درخواست گواهی تصرف
+                            </button>
+                        </div>
+                        <div>
+                            <label for="occupancy-cert-upload" class="block font-medium mb-2">بارگذاری گواهی تصرف شورا<span class="text-red-500">*</span></label>
+                            <input type="file" id="occupancy-cert-upload" required class="w-full text-sm">
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="agreement-return-checkbox" required class="h-5 w-5 text-green-600 rounded">
+                                <span class="mr-3 text-gray-700">تأیید می‌کنم قولنامه به صاحب اول بازگردانده شده است.<span class="text-red-500">*</span></span>
+                            </label>
+                        </div>
+                         <div class="p-6 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                            <h3 class="font-bold text-lg text-blue-800">تهیه نقشه</h3>
+                            <p class="text-gray-700 mt-2 mb-4">اگر هنوز نقشه ندارید، می‌توانید از طریق سامانه به دفاتر نقشه‌کشی معتمد درخواست دهید.</p>
+                            <button id="request-map-btn-not-deeded" class="bg-gray-400 text-white font-bold px-6 py-2 rounded-lg cursor-not-allowed" disabled>
+                                <i class="fas fa-map-signs mr-2"></i>درخواست تهیه نقشه
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View for No-Permit Case -->
+                <div id="no-permit-view" class="conditional-view">
+                     <div class="p-4 bg-red-50 text-red-800 rounded-lg mb-6 flex items-center">
+                        <i class="fas fa-gavel text-2xl ml-3"></i>
+                        <div>
+                            <h3 class="font-bold">پرونده ساخت بدون پروانه</h3>
+                            <p class="text-sm">این پرونده برای بررسی به کمیسیون ماده ۹۹ ارجاع خواهد شد.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="mt-8 text-left">
+                    <button id="main-submit-btn" type="submit" class="text-white font-bold px-8 py-3 rounded-lg transition-all shadow-lg">
+                        تأیید و ادامه
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <!-- Checklist Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-list-check text-green-500 mr-3"></i>چک‌لیست مدارک</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>سند یا قولنامه ملک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>فایل شمیم</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>استعلام بنیاد مسکن</span></li>
+                    </ul>
+                </div>
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">کد نوسازی:</p><p class="text-gray-600">در انتظار ایجاد</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p class="text-gray-600 font-bold">جدید (NEW)</p></div>
+                        <div id="responsible-party"><p class="font-semibold">مسئول فعلی:</p><p class="text-gray-600">کارشناس فنی</p></div>
+                        <div id="eta"><p class="font-semibold">زمان تقریبی مرحله بعد:</p><p class="text-gray-600">استعلام بنیاد (۳-۷ روز کاری)</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                        <button id="sms-surveyor-btn" class="w-full bg-purple-100 text-purple-700 font-semibold py-3 rounded-lg hover:bg-purple-200 mt-2"><i class="fas fa-sms mr-2"></i>ارسال پیامک به نقشه کش</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mainSubmitBtn = document.getElementById('main-submit-btn');
+        const occupancyCertUpload = document.getElementById('occupancy-cert-upload');
+        const agreementReturnCheckbox = document.getElementById('agreement-return-checkbox');
+        const requestMapBtnNotDeeded = document.getElementById('request-map-btn-not-deeded');
+        const smsSurveyorBtn = document.getElementById('sms-surveyor-btn');
+        const withPermitSections = document.getElementById('with-permit-sections');
+
+        function checkNotDeededCompletion() {
+            const fileUploaded = occupancyCertUpload.files.length > 0;
+            const checkboxChecked = agreementReturnCheckbox.checked;
+            const isComplete = fileUploaded && checkboxChecked;
+
+            mainSubmitBtn.disabled = !isComplete;
+            requestMapBtnNotDeeded.disabled = !isComplete;
+            smsSurveyorBtn.disabled = !isComplete;
+
+            if (isComplete) {
+                mainSubmitBtn.className = 'bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg';
+                requestMapBtnNotDeeded.className = 'bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700';
+                smsSurveyorBtn.className = 'w-full bg-purple-100 text-purple-700 font-semibold py-3 rounded-lg hover:bg-purple-200 mt-2';
+            } else {
+                mainSubmitBtn.className = 'bg-gray-400 text-white font-bold px-8 py-3 rounded-lg transition-all shadow-lg cursor-not-allowed';
+                requestMapBtnNotDeeded.className = 'bg-gray-400 text-white font-bold px-6 py-2 rounded-lg cursor-not-allowed';
+                smsSurveyorBtn.className = 'w-full bg-gray-200 text-gray-500 font-semibold py-3 rounded-lg mt-2 cursor-not-allowed';
+            }
+        }
+
+        function switchCaseView(caseType) {
+            document.querySelectorAll('.conditional-view').forEach(view => view.classList.remove('active'));
+            document.getElementById(`${caseType}-view`).classList.add('active');
+
+            const responsiblePartyEl = document.getElementById('responsible-party').querySelector('p:last-child');
+            const etaEl = document.getElementById('eta').querySelector('p:last-child');
+
+            mainSubmitBtn.disabled = false;
+
+            if (caseType === 'deeded') {
+                withPermitSections.style.display = 'block';
+                responsiblePartyEl.textContent = 'کارشناس فنی';
+                etaEl.textContent = 'استعلام بنیاد (۳-۷ روز کاری)';
+                mainSubmitBtn.textContent = 'تأیید و ادامه';
+                mainSubmitBtn.className = 'bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg';
+                smsSurveyorBtn.disabled = false;
+                smsSurveyorBtn.className = 'w-full bg-purple-100 text-purple-700 font-semibold py-3 rounded-lg hover:bg-purple-200 mt-2';
+            } else if (caseType === 'not-deeded') {
+                withPermitSections.style.display = 'block';
+                responsiblePartyEl.textContent = 'شورای روستا';
+                etaEl.textContent = 'جلسه شورا (۵-۱۰ روز کاری)';
+                mainSubmitBtn.textContent = 'تأیید و ادامه';
+                checkNotDeededCompletion(); // Initial check for disabled state
+            } else { // no-permit
+                withPermitSections.style.display = 'none';
+                responsiblePartyEl.textContent = 'شما (مالک)';
+                etaEl.textContent = 'ثبت درخواست کمیسیون ۹۹';
+                mainSubmitBtn.innerHTML = '<i class="fas fa-gavel mr-2"></i>درخواست تشکیل پرونده کمیسیون ۹۹';
+                mainSubmitBtn.className = 'bg-red-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-red-700 transition-all shadow-lg';
+                smsSurveyorBtn.disabled = true;
+                smsSurveyorBtn.className = 'w-full bg-gray-200 text-gray-500 font-semibold py-3 rounded-lg mt-2 cursor-not-allowed';
+            }
+        }
+
+        // Add event listeners for the new fields
+        occupancyCertUpload.addEventListener('change', checkNotDeededCompletion);
+        agreementReturnCheckbox.addEventListener('change', checkNotDeededCompletion);
+
+        // Form submission handler
+        mainSubmitBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            window.location.href = '/services/construction-without-permit/step3/';
+        });
+
+        // Initialize view
+        document.addEventListener('DOMContentLoaded', () => {
+            switchCaseView('deeded');
+        });
+    </script>
+</body>
+</html>

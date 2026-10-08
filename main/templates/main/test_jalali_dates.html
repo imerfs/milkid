@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jalali_tags %}
+
+{% block title %}تست تاریخ‌های شمسی{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        تست سیستم تاریخ شمسی
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Current Date/Time Display -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-clock me-2"></i>تاریخ و زمان فعلی:</h6>
+                                <p class="mb-1"><strong>شمسی:</strong> {% jalali_now %}</p>
+                                <p class="mb-1"><strong>امروز:</strong> {% jalali_today %}</p>
+                                <p class="mb-0"><strong>مفصل:</strong> {{ "now"|date:"Y-m-d"|jalali_verbose }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-language me-2"></i>تبدیل اعداد:</h6>
+                                <p class="mb-1"><strong>انگلیسی:</strong> 1403/08/15</p>
+                                <p class="mb-0"><strong>فارسی:</strong> {{ "1403/08/15"|persian_numbers }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Date Input Form -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">تاریخ تأسیس (شمسی):</label>
+                                <input type="text" name="establishment_date" class="form-control jalali-date" 
+                                       placeholder="مثال: 1403/08/15" value="1403/08/15">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    تاریخ را به صورت شمسی وارد کنید
+                                </small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">تاریخ و زمان رویداد:</label>
+                                <input type="text" name="event_datetime" class="form-control jalali-datetime" 
+                                       placeholder="مثال: 1403/08/15 14:30" value="1403/08/15 14:30">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    تاریخ و زمان را به صورت شمسی وارد کنید
+                                </small>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>
+                            تست تبدیل تاریخ
+                        </button>
+                    </form>
+
+                    <!-- Sample Dates Display -->
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <h6 class="mb-0">نمونه تبدیل تاریخ‌ها</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>تاریخ میلادی</th>
+                                            <th>تاریخ شمسی</th>
+                                            <th>فرمت مفصل</th>
+                                            <th>فرمت کوتاه</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2024-11-06</td>
+                                            <td>{{ "2024-11-06"|jalali_date }}</td>
+                                            <td>{{ "2024-11-06"|jalali_verbose }}</td>
+                                            <td>{{ "2024-11-06"|jalali_short }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-03-21</td>
+                                            <td>{{ "2024-03-21"|jalali_date }}</td>
+                                            <td>{{ "2024-03-21"|jalali_verbose }}</td>
+                                            <td>{{ "2024-03-21"|jalali_short }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-12-31</td>
+                                            <td>{{ "2024-12-31"|jalali_date }}</td>
+                                            <td>{{ "2024-12-31"|jalali_verbose }}</td>
+                                            <td>{{ "2024-12-31"|jalali_short }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="mt-4">
+                        <h6>راهنمای استفاده:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>تاریخ‌ها به صورت خودکار از میلادی به شمسی تبدیل می‌شوند</li>
+                            <li><i class="fas fa-check text-success me-2"></i>فرمت ورودی: YYYY/MM/DD (مثال: 1403/08/15)</li>
+                            <li><i class="fas fa-check text-success me-2"></i>برای تاریخ و زمان: YYYY/MM/DD HH:MM (مثال: 1403/08/15 14:30)</li>
+                            <li><i class="fas fa-check text-success me-2"></i>اعتبارسنجی خودکار تاریخ‌های وارد شده</li>
+                            <li><i class="fas fa-check text-success me-2"></i>پشتیبانی از سال‌های کبیسه شمسی</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Test form submission
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const establishmentDate = document.querySelector('[name="establishment_date"]').value;
+            const eventDateTime = document.querySelector('[name="event_datetime"]').value;
+            
+            alert(`تاریخ تأسیس: ${establishmentDate}\nتاریخ رویداد: ${eventDateTime}`);
+        });
+    }
+});
+</script>
+{% endblock %}

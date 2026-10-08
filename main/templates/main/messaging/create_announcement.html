@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ایجاد اطلاعیه جدید - ملک آیدی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .priority-preview {
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+        display: none;
+    }
+    .priority-urgent { background-color: #fee2e2; color: #991b1b; }
+    .priority-high { background-color: #fef3c7; color: #92400e; }
+    .priority-medium { background-color: #d1fae5; color: #065f46; }
+    .priority-low { background-color: #e0e7ff; color: #3730a3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-6">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-bullhorn text-primary me-2"></i>
+                        ایجاد اطلاعیه جدید
+                    </h1>
+                    <p class="text-muted mt-1">ارسال اطلاعیه عمومی برای شهروندان</p>
+                </div>
+                <a href="{% url 'main:messaging_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header form-card">
+                    <h5 class="mb-0 text-white">
+                        <i class="fas fa-edit me-2"></i>
+                        فرم ایجاد اطلاعیه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="announcementForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="title" class="form-label">
+                                    <i class="fas fa-heading me-1"></i>
+                                    عنوان اطلاعیه <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="title" name="title" required 
+                                       placeholder="مثال: اطلاعیه قطعی آب">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="priority" class="form-label">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    اولویت
+                                </label>
+                                <select class="form-select" id="priority" name="priority" onchange="updatePriorityPreview()">
+                                    <option value="low">کم</option>
+                                    <option value="medium" selected>متوسط</option>
+                                    <option value="high">بالا</option>
+                                    <option value="urgent">فوری</option>
+                                </select>
+                                <div id="priorityPreview" class="priority-preview"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label">
+                                <i class="fas fa-align-left me-1"></i>
+                                متن اطلاعیه <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="content" name="content" rows="6" required
+                                      placeholder="متن کامل اطلاعیه را اینجا بنویسید..."></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span> کاراکتر
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-users me-1"></i>
+                                    گروه هدف
+                                </label>
+                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="all_users" onchange="toggleAllUsers()">
+                                        <label class="form-check-label fw-bold" for="all_users">
+                                            همه کاربران
+                                        </label>
+                                    </div>
+                                    <hr>
+                                    {% for role_code, role_name in role_choices %}
+                                    <div class="form-check">
+                                        <input class="form-check-input role-checkbox" type="checkbox" 
+                                               name="target_roles" value="{{ role_code }}" id="role_{{ role_code }}">
+                                        <label class="form-check-label" for="role_{{ role_code }}">
+                                            {{ role_name }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="expires_at" class="form-label">
+                                    <i class="fas fa-calendar-times me-1"></i>
+                                    تاریخ انقضا (اختیاری)
+                                </label>
+                                <input type="datetime-local" class="form-control" id="expires_at" name="expires_at">
+                                <div class="form-text">
+                                    اگر خالی بگذارید، اطلاعیه تا زمان حذف دستی فعال خواهد بود
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- پیش‌نمایش -->
+                        <div class="mb-4">
+                            <h6 class="text-muted">
+                                <i class="fas fa-eye me-1"></i>
+                                پیش‌نمایش اطلاعیه:
+                            </h6>
+                            <div class="border rounded p-3 bg-light" id="preview">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0" id="previewTitle">عنوان اطلاعیه</h6>
+                                    <span class="badge bg-secondary" id="previewPriority">متوسط</span>
+                                </div>
+                                <p class="text-muted small mb-2">
+                                    <i class="fas fa-user me-1"></i>
+                                    {{ user.get_full_name }} - {{ user.profile.get_role_display }}
+                                </p>
+                                <p class="mb-0" id="previewContent">متن اطلاعیه اینجا نمایش داده می‌شود...</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo me-1"></i>
+                                پاک کردن فرم
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-info me-2" onclick="previewAnnouncement()">
+                                    <i class="fas fa-eye me-1"></i>
+                                    پیش‌نمایش
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-paper-plane me-1"></i>
+                                    ارسال اطلاعیه
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal پیش‌نمایش -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">پیش‌نمایش اطلاعیه</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert" id="modalPreview">
+                    <!-- محتوا از طریق JavaScript پر می‌شود -->
+                </div>
+                <div class="mt-3">
+                    <h6>اطلاعات ارسال:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>فرستنده:</strong> {{ user.get_full_name }}</li>
+                        <li><strong>نقش:</strong> {{ user.profile.get_role_display }}</li>
+                        <li><strong>تاریخ ارسال:</strong> <span id="sendDate"></span></li>
+                        <li><strong>گروه هدف:</strong> <span id="targetGroups"></span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                <button type="button" class="btn btn-success" onclick="submitForm()">
+                    تایید و ارسال
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تابع به‌روزرسانی پیش‌نمایش اولویت
+function updatePriorityPreview() {
+    const priority = document.getElementById('priority').value;
+    const preview = document.getElementById('priorityPreview');
+    const previewPriority = document.getElementById('previewPriority');
+    
+    const priorityTexts = {
+        'urgent': 'فوری',
+        'high': 'بالا', 
+        'medium': 'متوسط',
+        'low': 'کم'
+    };
+    
+    const priorityClasses = {
+        'urgent': 'bg-danger',
+        'high': 'bg-warning',
+        'medium': 'bg-success', 
+        'low': 'bg-info'
+    };
+    
+    preview.className = 'priority-preview priority-' + priority;
+    preview.style.display = 'block';
+    preview.textContent = 'اولویت: ' + priorityTexts[priority];
+    
+    previewPriority.className = 'badge ' + priorityClasses[priority];
+    previewPriority.textContent = priorityTexts[priority];
+}
+
+// تابع انتخاب همه کاربران
+function toggleAllUsers() {
+    const allUsersCheckbox = document.getElementById('all_users');
+    const roleCheckboxes = document.querySelectorAll('.role-checkbox');
+    
+    roleCheckboxes.forEach(checkbox => {
+        checkbox.checked = allUsersCheckbox.checked;
+    });
+}
+
+// به‌روزرسانی پیش‌نمایش در زمان واقعی
+document.getElementById('title').addEventListener('input', function() {
+    document.getElementById('previewTitle').textContent = this.value || 'عنوان اطلاعیه';
+});
+
+document.getElementById('content').addEventListener('input', function() {
+    document.getElementById('previewContent').textContent = this.value || 'متن اطلاعیه اینجا نمایش داده می‌شود...';
+    document.getElementById('charCount').textContent = this.value.length;
+});
+
+// تابع پیش‌نمایش کامل
+function previewAnnouncement() {
+    const title = document.getElementById('title').value;
+    const content = document.getElementById('content').value;
+    const priority = document.getElementById('priority').value;
+    
+    if (!title || !content) {
+        alert('لطفاً عنوان و متن اطلاعیه را وارد کنید');
+        return;
+    }
+    
+    const priorityTexts = {
+        'urgent': 'فوری',
+        'high': 'بالا',
+        'medium': 'متوسط', 
+        'low': 'کم'
+    };
+    
+    const priorityClasses = {
+        'urgent': 'alert-danger',
+        'high': 'alert-warning',
+        'medium': 'alert-success',
+        'low': 'alert-info'
+    };
+    
+    const modalPreview = document.getElementById('modalPreview');
+    modalPreview.className = 'alert ' + priorityClasses[priority];
+    modalPreview.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h5 class="alert-heading mb-0">${title}</h5>
+            <span class="badge bg-dark">${priorityTexts[priority]}</span>
+        </div>
+        <p class="mb-0">${content}</p>
+    `;
+    
+    // تاریخ ارسال
+    document.getElementById('sendDate').textContent = new Date().toLocaleDateString('fa-IR');
+    
+    // گروه‌های هدف
+    const selectedRoles = [];
+    document.querySelectorAll('.role-checkbox:checked').forEach(checkbox => {
+        selectedRoles.push(checkbox.nextElementSibling.textContent.trim());
+    });
+    
+    document.getElementById('targetGroups').textContent = 
+        selectedRoles.length > 0 ? selectedRoles.join('، ') : 'همه کاربران';
+    
+    // نمایش modal
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+
+// تابع ارسال فرم
+function submitForm() {
+    document.getElementById('announcementForm').submit();
+}
+
+// تابع پاک کردن فرم
+function resetForm() {
+    if (confirm('آیا مطمئن هستید که می‌خواهید فرم را پاک کنید؟')) {
+        document.getElementById('announcementForm').reset();
+        document.getElementById('previewTitle').textContent = 'عنوان اطلاعیه';
+        document.getElementById('previewContent').textContent = 'متن اطلاعیه اینجا نمایش داده می‌شود...';
+        document.getElementById('charCount').textContent = '0';
+        updatePriorityPreview();
+    }
+}
+
+// اجرای اولیه
+document.addEventListener('DOMContentLoaded', function() {
+    updatePriorityPreview();
+});
+
+// اعتبارسنجی فرم
+document.getElementById('announcementForm').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    const content = document.getElementById('content').value.trim();
+    
+    if (!title || !content) {
+        e.preventDefault();
+        alert('لطفاً عنوان و متن اطلاعیه را وارد کنید');
+        return;
+    }
+    
+    if (content.length < 10) {
+        e.preventDefault();
+        alert('متن اطلاعیه باید حداقل 10 کاراکتر باشد');
+        return;
+    }
+    
+    // تایید نهایی
+    if (!confirm('آیا مطمئن هستید که می‌خواهید این اطلاعیه را ارسال کنید؟')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

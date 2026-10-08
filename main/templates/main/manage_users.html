@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load persian_filters %}
+
+{% block title %}مدیریت کاربران{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-users-cog me-2"></i>مدیریت کاربران</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'main:dashboard' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item active">مدیریت کاربران</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Pending Users Section -->
+    {% if pending_users %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h5><i class="fas fa-clock me-2"></i>کاربران در انتظار تایید ({{ pending_users.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>نام کامل</th>
+                                    <th>نام کاربری</th>
+                                    <th>کد ملی</th>
+                                    <th>موبایل</th>
+                                    <th>نقش درخواستی</th>
+                                    <th>تاریخ درخواست</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user_profile in pending_users %}
+                                <tr class="table-warning">
+                                    <td><strong>{{ user_profile.user.get_full_name }}</strong></td>
+                                    <td>{{ user_profile.user.username }}</td>
+                                    <td dir="ltr">{{ user_profile.national_id }}</td>
+                                    <td dir="ltr">{{ user_profile.mobile_number }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if user_profile.role == 'dehyari' %}bg-success
+                                            {% elif user_profile.role == 'council' %}bg-info
+                                            {% elif user_profile.role == 'engineer' %}bg-primary
+                                            {% else %}bg-secondary{% endif %}">
+                                            <i class="fas fa-user-tie me-1"></i>{{ user_profile.get_role_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ user_profile.created_at|persian_date:"Y/m/d H:i" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="user_id" value="{{ user_profile.id }}">
+                                                <button type="submit" name="action" value="approve" 
+                                                        class="btn btn-sm btn-success"
+                                                        onclick="return confirm('آیا از تایید درخواست {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                    <i class="fas fa-check me-1"></i>تایید
+                                                </button>
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="user_id" value="{{ user_profile.id }}">
+                                                <button type="submit" name="action" value="reject" 
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('آیا از رد درخواست {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                    <i class="fas fa-times me-1"></i>رد
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- All Users Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-users me-2"></i>همه کاربران ({{ all_users.count }})</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="filterUsers('all')">همه</button>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="filterUsers('active')">فعال</button>
+                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="filterUsers('frozen')">مسدود</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>نام کامل</th>
+                                    <th>نام کاربری</th>
+                                    <th>کد ملی</th>
+                                    <th>موبایل</th>
+                                    <th>نقش</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ ثبت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user_profile in all_users %}
+                                <tr data-status="{% if user_profile.is_active and user_profile.user.is_active %}active{% else %}frozen{% endif %}">
+                                    <td>{{ user_profile.user.get_full_name }}</td>
+                                    <td>{{ user_profile.user.username }}</td>
+                                    <td dir="ltr">{{ user_profile.national_id }}</td>
+                                    <td dir="ltr">{{ user_profile.mobile_number }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if user_profile.role == 'dehyari' %}bg-success
+                                            {% elif user_profile.role == 'council' %}bg-info
+                                            {% elif user_profile.role == 'engineer' %}bg-primary
+                                            {% elif user_profile.role == 'citizen' %}bg-secondary
+                                            {% elif user_profile.role == 'owner' %}bg-dark
+                                            {% else %}bg-warning{% endif %}">
+                                            {{ user_profile.get_role_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if user_profile.approval_status == 'pending' %}
+                                            <span class="badge bg-warning"><i class="fas fa-clock me-1"></i>در انتظار تایید</span>
+                                        {% elif user_profile.approval_status == 'rejected' %}
+                                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>رد شده</span>
+                                        {% elif user_profile.is_active and user_profile.user.is_active %}
+                                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>فعال</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary"><i class="fas fa-ban me-1"></i>مسدود</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user_profile.created_at|persian_date:"Y/m/d" }}</td>
+                                    <td>
+                                        <div class="btn-group-vertical" role="group">
+                                            {% if user_profile.is_active and user_profile.user.is_active %}
+                                                <!-- User is active - show freeze option -->
+                                                <form method="post" class="d-inline mb-1">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="user_id" value="{{ user_profile.id }}">
+                                                    <button type="submit" name="action" value="freeze" 
+                                                            class="btn btn-sm btn-outline-warning"
+                                                            onclick="return confirm('آیا از مسدود کردن {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                        <i class="fas fa-ban me-1"></i>مسدود
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <!-- User is frozen - show unfreeze option -->
+                                                <form method="post" class="d-inline mb-1">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="user_id" value="{{ user_profile.id }}">
+                                                    <button type="submit" name="action" value="unfreeze" 
+                                                            class="btn btn-sm btn-outline-success"
+                                                            onclick="return confirm('آیا از فعال کردن {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                        <i class="fas fa-unlock me-1"></i>فعال
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            
+                                            <!-- Delete option -->
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="user_id" value="{{ user_profile.id }}">
+                                                <button type="submit" name="action" value="delete" 
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('هشدار: این عمل برگشت‌پذیر نیست. آیا از حذف کامل {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                    <i class="fas fa-trash me-1"></i>حذف
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-users text-muted me-2"></i>کاربری یافت نشد
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterUsers(status) {
+    const table = document.getElementById('users-table');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            const rowStatus = row.getAttribute('data-status');
+            row.style.display = rowStatus === status ? '' : 'none';
+        }
+    });
+    
+    // Update button states
+    const buttons = document.querySelectorAll('.btn-group button');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+// Auto refresh every 30 seconds to show new pending users
+setInterval(() => {
+    if (window.location.pathname.includes('manage-users')) {
+        const pendingCount = {{ pending_users.count }};
+        if (pendingCount > 0) {
+            document.title = `(${pendingCount}) مدیریت کاربران - ملک آیدی`;
+        }
+    }
+}, 30000);
+</script>
+
+<style>
+.table tr.table-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+}
+
+.btn-group-vertical .btn {
+    margin-bottom: 2px;
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+@media (max-width: 768px) {
+    .btn-group-vertical {
+        width: 100%;
+    }
+    
+    .btn-group-vertical .btn {
+        font-size: 0.75em;
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style>
+{% endblock %}

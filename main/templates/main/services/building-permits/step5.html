@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحله ۵: پرداخت یکپارچه - ملک آیدی</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .tab-button.active {
+            border-color: #16a34a; /* green-600 */
+            background-color: #d1fae5; /* green-100 */
+            color: #047857; /* green-800 */
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-center mb-2">روند درخواست پروانه ساخت</h2>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: 83.3%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">مرحله ۵ از ۶: پرداخت</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                <form id="payment-form">
+                    <div class="border-b pb-6 mb-8">
+                        <i class="fas fa-wallet text-green-600 text-3xl mb-4"></i>
+                        <h1 class="text-3xl font-bold text-gray-800">پرداخت یکپارچه</h1>
+                        <p class="mt-2 text-gray-600">هزینه‌های پرونده خود را پرداخت کرده یا درخواست تخفیف ثبت نمایید.</p>
+                    </div>
+
+                    <!-- 1. Costs Breakdown -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-4">۱. جزئیات هزینه‌ها</h2>
+                        <div class="p-6 bg-gray-50 rounded-lg border">
+                            <ul class="space-y-3 text-gray-800">
+                                <li class="flex justify-between items-center border-b pb-3">
+                                    <div>
+                                        <span>هزینه صدور پروانه:</span>
+                                        <span class="font-bold text-lg block sm:inline sm:mr-2">۱,۵۰۰,۰۰۰ تومان</span>
+                                    </div>
+                                    <button type="button" class="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full hover:bg-green-200">پرداخت</button>
+                                </li>
+                                <li class="flex justify-between items-center border-b pb-3">
+                                    <div>
+                                        <span>هزینه خدمات فنی:</span>
+                                        <span class="font-bold text-lg block sm:inline sm:mr-2">۳۵۰,۰۰۰ تومان</span>
+                                    </div>
+                                    <button type="button" class="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full hover:bg-green-200">پرداخت</button>
+                                </li>
+                                <li class="flex justify-between items-center pt-3">
+                                    <span class="text-xl font-bold">مبلغ نهایی قابل پرداخت:</span>
+                                    <span class="font-extrabold text-2xl text-green-700">۱,۸۵۰,۰۰۰ تومان</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2. Payment Method Tabs -->
+                    <div>
+                        <h2 class="text-xl font-semibold mb-4">۲. انتخاب روش پرداخت (برای کل مبلغ)</h2>
+                        <div class="flex border-b mb-6">
+                            <button type="button" class="tab-button active py-3 px-6 border-b-2" onclick="switchTab('online')">پرداخت آنلاین</button>
+                            <button type="button" class="tab-button py-3 px-6 border-b-2 border-transparent" onclick="switchTab('check')">درخواست پرداخت با چک</button>
+                        </div>
+
+                        <!-- Online Payment Tab -->
+                        <div id="online-tab" class="tab-content active">
+                            <p class="text-gray-600 mb-4">با کلیک بر روی دکمه زیر به درگاه پرداخت امن متصل خواهید شد.</p>
+                            <button type="button" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-credit-card mr-2"></i>پرداخت ۱,۸۵۰,۰۰۰ تومان
+                            </button>
+                        </div>
+
+                        <!-- Check Payment Tab -->
+                        <div id="check-tab" class="tab-content">
+                            <!-- Important Notice for Check Payment -->
+                            <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-circle text-amber-600 text-xl mt-1 ml-3"></i>
+                                    <div>
+                                        <h3 class="font-bold text-amber-800 mb-2">نکته مهم برای پرداخت با چک:</h3>
+                                        <p class="text-amber-700 text-sm">باید چک را به دهیاری تحویل دهید تا چک تایید شود. پس از تحویل چک فیزیکی، عملیات پرداخت نهایی می‌شود.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4">اطلاعات چک را وارد کرده و تصویر آن را بارگذاری کنید.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div><label class="block mb-1 font-medium">مبلغ چک<span class="text-red-500">*</span></label><input type="text" placeholder="۱,۸۵۰,۰۰۰ تومان" class="w-full p-2 border rounded-lg"></div>
+                                <div><label class="block mb-1 font-medium">شماره چک<span class="text-red-500">*</span></label><input type="text" placeholder="۱۲۳۴۵۶۷۸" class="w-full p-2 border rounded-lg"></div>
+                                <div><label class="block mb-1 font-medium">نام بانک<span class="text-red-500">*</span></label><input type="text" placeholder="بانک ملی" class="w-full p-2 border rounded-lg"></div>
+                                <div><label class="block mb-1 font-medium">تاریخ چک<span class="text-red-500">*</span></label><input type="text" placeholder="1403/01/01" pattern="[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}" class="w-full p-2 border rounded-lg persian-date-input"></div>
+                            </div>
+                            
+                            <!-- Check Upload Section -->
+                            <div class="border-t pt-6">
+                                <h3 class="font-semibold text-gray-800 mb-3">بارگذاری تصویر چک</h3>
+                                <div class="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                                    <input type="file" id="check-image-upload" accept=".jpg,.jpeg,.png,.pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    <p class="text-xs text-gray-500 mt-2">حداکثر ۵ مگابایت - فرمت‌های JPG، PNG، PDF</p>
+                                </div>
+                                <div class="mt-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">
+                                    <i class="fas fa-info-circle ml-2"></i>
+                                    <span class="font-semibold">راهنما:</span> عکس واضح از روی و پشت چک را گرفته و بارگذاری کنید.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-10 pt-6 border-t text-left">
+                        <button type="submit" class="bg-green-600 text-white font-bold px-10 py-4 rounded-lg hover:bg-green-700 transition-all shadow-lg">
+                            ثبت و ادامه
+                            <i class="fas fa-arrow-left mr-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <!-- Checklist Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-list-check text-green-500 mr-3"></i>چک‌لیست مدارک</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>سند یا قولنامه ملک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>فایل شمیم</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>استعلام بنیاد مسکن</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i><span>نقشه‌های تاییدشده</span></li>
+                    </ul>
+                </div>
+                <!-- Case Status Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
+                    <div class="space-y-4">
+                        <div><p class="font-semibold">کد نوسازی:</p><p class="text-gray-600">#P-157</p></div>
+                        <div><p class="font-semibold">وضعیت:</p><p id="case-status" class="text-amber-600 font-bold">آماده پرداخت</p></div>
+                        <div><p class="font-semibold">مسئول فعلی:</p><p class="text-gray-600">شما (متقاضی)</p></div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                    </div>
+                </div>
+                 <!-- Discount Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-percent text-amber-500 mr-3"></i>درخواست تخفیف</h3>
+                    <p class="text-sm text-gray-600 mb-4">در صورت تحت پوشش بودن نهادهای حمایتی، می‌توانید درخواست تخفیف ثبت کنید.</p>
+                    <button onclick="openDiscountModal()" class="w-full bg-amber-100 text-amber-700 font-semibold py-3 rounded-lg hover:bg-amber-200">ثبت درخواست تخفیف/معافیت</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discount Modal -->
+    <div id="discount-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-lg max-w-lg w-full">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">درخواست تخفیف/معافیت</h2><button onclick="closeDiscountModal()" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button></div>
+            <p class="text-gray-600 mb-4">مدارک کمیته امداد، بهزیستی یا ایثارگران را بارگذاری کنید.</p>
+            <input type="file" class="w-full text-sm">
+            <div class="mt-6 text-left"><button onclick="closeDiscountModal()" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg mr-2">انصراف</button><button onclick="submitDiscountRequest()" class="bg-amber-500 text-white px-6 py-2 rounded-lg">ارسال درخواست</button></div>
+        </div>
+    </div>
+
+    <script>
+        const caseStatus = document.getElementById('case-status');
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`button[onclick*="'${tabName}'"]`).classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        document.getElementById('payment-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const activeTab = document.querySelector('.tab-button.active').getAttribute('onclick').match(/'([^']+)'/)[1];
+
+            // Redirect to step 6
+            window.location.href = '/services/building-permit/step6/';
+        });
+
+        const discountModal = document.getElementById('discount-modal');
+        function openDiscountModal() { discountModal.classList.remove('hidden'); }
+        function closeDiscountModal() { discountModal.classList.add('hidden'); }
+        function submitDiscountRequest() {
+            alert('درخواست تخفیف شما برای بررسی ارسال شد. (نسخه نمایشی)');
+            closeDiscountModal();
+        }
+    </script>
+</body>
+</html>

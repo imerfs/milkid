@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>اطلاعیه‌ها و اعلانات روستا - ملک آیدی</title>
+
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            body {
+                font-family: "Vazirmatn", sans-serif;
+                background-color: #f3f4f6; /* gray-100 */
+            }
+        </style>
+    </head>
+    <body class="text-gray-800">
+        <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <i class="fas fa-bullhorn text-blue-600 text-4xl mb-4"></i>
+                <h1 class="text-3xl font-bold text-gray-800">
+                    اطلاعیه‌ها و اعلانات روستا
+                </h1>
+                <p class="mt-2 text-gray-600">
+                    آخرین اخبار و اطلاعیه‌های دهیاری را در این بخش مشاهده کنید.
+                </p>
+            </div>
+
+            <!-- Dehyar Panel (Admin View) -->
+            <div id="dehyar-panel" class="bg-white p-8 rounded-2xl shadow-lg">
+                <h2
+                    class="text-2xl font-bold text-gray-800 mb-6 border-r-4 border-blue-500 pr-4"
+                >
+                    بخش ۱ – پنل ویژه دهیار
+                </h2>
+
+                <!-- Send New Announcement Form -->
+                <div
+                    class="mb-10 p-6 bg-blue-50 rounded-lg border border-blue-200"
+                >
+                    <h3 class="text-xl font-semibold mb-4">
+                        ارسال اطلاعیه عمومی جدید
+                    </h3>
+                    <form id="announcement-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    for="title"
+                                    class="block font-medium mb-1"
+                                    >عنوان پیام</label
+                                >
+                                <input
+                                    type="text"
+                                    id="title"
+                                    required
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    for="scope"
+                                    class="block font-medium mb-1"
+                                    >محدوده انتشار</label
+                                >
+                                <select
+                                    id="scope"
+                                    required
+                                    class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="all">کل روستا</option>
+                                    <option value="mahale1">محله ۱</option>
+                                    <option value="street1">
+                                        خیابان شهید بهشتی
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="message" class="block font-medium mb-1"
+                                >متن پیام</label
+                            >
+                            <textarea
+                                id="message"
+                                rows="5"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            ></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    for="publish-date"
+                                    class="block font-medium mb-1"
+                                    >تاریخ و ساعت انتشار</label
+                                >
+                                <input
+                                    type="datetime-local"
+                                    id="publish-date"
+                                    class="w-full p-3 border border-gray-300 rounded-lg"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    for="attachment"
+                                    class="block font-medium mb-1"
+                                    >فایل ضمیمه (اختیاری)</label
+                                >
+                                <input
+                                    type="file"
+                                    id="attachment"
+                                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                                />
+                            </div>
+                        </div>
+                        <div class="text-left pt-4">
+                            <button
+                                type="submit"
+                                class="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-all shadow-lg"
+                            >
+                                <i class="fas fa-paper-plane mr-2"></i>ارسال
+                                اطلاعیه
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sent Announcements List -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">
+                        لیست اطلاعیه‌های ارسالی
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right bg-white">
+                            <thead class="bg-gray-100">
+                                <tr class="border-b">
+                                    <th class="py-3 px-4 font-semibold">
+                                        عنوان
+                                    </th>
+                                    <th class="py-3 px-4 font-semibold">
+                                        تاریخ انتشار
+                                    </th>
+                                    <th class="py-3 px-4 font-semibold">
+                                        محدوده
+                                    </th>
+                                    <th class="py-3 px-4 font-semibold">
+                                        وضعیت
+                                    </th>
+                                    <th class="py-3 px-4 font-semibold">
+                                        عملیات
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-4 px-4">اطلاعیه قطعی آب</td>
+                                    <td class="py-4 px-4">
+                                        ۱۴۰۳/۰۵/۲۰ - ۱۰:۰۰
+                                    </td>
+                                    <td class="py-4 px-4">کل روستا</td>
+                                    <td class="py-4 px-4">
+                                        <span
+                                            class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
+                                            >فعال</span
+                                        >
+                                    </td>
+                                    <td
+                                        class="py-4 px-4 space-x-2 space-x-reverse"
+                                    >
+                                        <button
+                                            class="text-blue-500 hover:underline text-sm"
+                                        >
+                                            <i class="fas fa-edit"></i> ویرایش
+                                        </button>
+                                        <button
+                                            class="text-red-500 hover:underline text-sm"
+                                        >
+                                            <i class="fas fa-trash"></i> حذف
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-4 px-4">جلسه ماهانه شورا</td>
+                                    <td class="py-4 px-4">
+                                        ۱۴۰۳/۰۴/۱۵ - ۱۸:۰۰
+                                    </td>
+                                    <td class="py-4 px-4">کل روستا</td>
+                                    <td class="py-4 px-4">
+                                        <span
+                                            class="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-full"
+                                            >منقضی شده</span
+                                        >
+                                    </td>
+                                    <td
+                                        class="py-4 px-4 space-x-2 space-x-reverse"
+                                    >
+                                        <button
+                                            class="text-blue-500 hover:underline text-sm"
+                                        >
+                                            <i class="fas fa-edit"></i> ویرایش
+                                        </button>
+                                        <button
+                                            class="text-red-500 hover:underline text-sm"
+                                        >
+                                            <i class="fas fa-trash"></i> حذف
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document
+                .getElementById("announcement-form")
+                .addEventListener("submit", function (event) {
+                    event.preventDefault();
+                    alert(
+                        "اطلاعیه شما با موفقیت برای محدوده انتخاب شده ارسال شد. (نسخه نمایشی)",
+                    );
+                    // Here you would typically handle the form submission, maybe add the new announcement to the list.
+                    this.reset();
+                });
+        </script>
+    </body>
+</html>
