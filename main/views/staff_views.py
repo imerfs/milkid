@@ -184,7 +184,7 @@ def inspector_dashboard(request):
 @policy_required('staff.accountant')
 def accountant_dashboard(request):
     """Dashboard for financial manager (مسئول مالی)"""
-    from .models import Payment, Notification
+    from main.models import Payment, Notification
     from django.db.models import Sum, Count, Q
     from datetime import datetime, timedelta
     from dateutil.relativedelta import relativedelta
