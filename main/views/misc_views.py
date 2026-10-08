@@ -168,7 +168,7 @@ def my_event_permits(request):
 
 def local_businesses(request):
     """Local businesses directory"""
-    from .models import LocalBusiness
+    from main.models import LocalBusiness
     businesses = LocalBusiness.objects.filter(is_verified=True).order_by('-created_at')
 
     context = {
@@ -184,7 +184,7 @@ def faq_center(request):
 
 def autocad_upload(request):
     """Upload AutoCAD file"""
-    from .services.autocad_parser import AutoCADParser
+    from main.services.autocad_parser import AutoCADParser
 
     if request.method == 'POST':
         if 'autocad_file' in request.FILES:

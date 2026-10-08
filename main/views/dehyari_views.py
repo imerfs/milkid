@@ -395,7 +395,7 @@ def mayor_request_assign(request, request_id):
 @policy_required('mayor.manage')
 def mayor_violations_list(request):
     """List all violations"""
-    from .models import ViolationReport
+    from main.models import ViolationReport
     
     user_profile = request.user.profile
     
@@ -431,7 +431,7 @@ def mayor_violations_list(request):
 @policy_required('mayor.manage')
 def mayor_violation_create(request):
     """Create new violation report"""
-    from .models import ViolationReport
+    from main.models import ViolationReport
     
     user_profile = request.user.profile
     
@@ -469,7 +469,7 @@ def mayor_violation_create(request):
 @policy_required('mayor.manage')
 def mayor_violation_update(request, violation_id):
     """Update violation status and response"""
-    from .models import ViolationReport
+    from main.models import ViolationReport
     
     try:
         municipality = Municipality.objects.get(admin_user=request.user)
@@ -509,7 +509,7 @@ def mayor_violation_update(request, violation_id):
 @policy_required('mayor.manage')
 def mayor_announcements_list(request):
     """List all announcements"""
-    from .models import Announcement
+    from main.models import Announcement
     
     user_profile = request.user.profile
     
@@ -535,7 +535,7 @@ def mayor_announcements_list(request):
 @policy_required('mayor.manage')
 def mayor_announcement_create(request):
     """Create new announcement"""
-    from .models import Announcement
+    from main.models import Announcement
     
     user_profile = request.user.profile
     

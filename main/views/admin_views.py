@@ -383,7 +383,7 @@ def admin_dashboard(request):
 
 def manage_property_ads(request):
     """مدیریت آگهی‌های املاک کاربران"""
-    from .models import PropertyAdvertisementEditLog
+    from main.models import PropertyAdvertisementEditLog
     from django.utils import timezone
     
     # Handle POST requests for ad approval/rejection and edit approvals

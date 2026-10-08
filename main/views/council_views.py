@@ -232,7 +232,7 @@ def council_review_requests(request):
 @policy_required('council.view')
 def council_request_detail(request, request_id):
     """Detailed view of a request with voting and commenting"""
-    from .models import Vote, CouncilComment
+    from main.models import Vote, CouncilComment
     
     service_request = get_object_or_404(
         ServiceRequest.objects.select_related('user', 'service', 'assigned_to').prefetch_related(
@@ -266,7 +266,7 @@ def council_request_detail(request, request_id):
 @policy_required('council.view')
 def council_add_comment(request, request_id):
     """Add a comment to a request"""
-    from .models import CouncilComment
+    from main.models import CouncilComment
     
     service_request = get_object_or_404(ServiceRequest, id=request_id)
     
