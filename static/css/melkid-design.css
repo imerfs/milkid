@@ -1,0 +1,200 @@
+/*
+ * MelkID design system  (source of truth: design-system/melkid/MASTER.md)
+ * Style: "Accessible & Ethical" - government / public-service portal.
+ * Loaded LAST on every page. Sections:
+ *   1. tokens   2. global (all pages)   3. Bootstrap pages (body.mk-bs)   4. Tailwind dashboards (body.mk-tw)
+ */
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  --color-primary: #1e40af;
+  --color-primary-hover: #1e3a8a;
+  --color-primary-solid: #1e40af;        /* backgrounds that carry white text */
+  --color-primary-solid-hover: #1e3a8a;
+  --color-on-primary: #ffffff;
+  --color-secondary: #3b82f6;
+  --color-accent: #15803d;            /* CTA / success; white text = 5.0:1 */
+  --color-accent-hover: #166534;
+  --color-on-accent: #ffffff;
+  --color-background: #eff6ff;
+  --color-surface: #ffffff;
+  --color-foreground: #0f172a;
+  --color-heading: #1e3a8a;
+  --color-muted: #e9eff5;
+  --color-muted-foreground: #475569;  /* 7.6:1 on white */
+  --color-border: #bfdbfe;
+  --color-destructive: #dc2626;
+  --color-warning: #b45309;
+  --color-ring: #1e40af;
+  --color-nav-bg: #1e40af;
+  --color-nav-fg: #ffffff;
+  --color-header-bg: #1e40af;
+  --color-header-fg: #ffffff;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, .08);
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --font-body: 'Vazirmatn', system-ui, sans-serif;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+
+  /* legacy names used by older inline styles, mapped onto the tokens */
+  --primary-color: var(--color-primary-solid);
+  --secondary-color: var(--color-accent);
+  --accent-color: var(--color-destructive);
+  --light-bg: var(--color-background);
+  --dark-text: var(--color-foreground);
+  --border-color: var(--color-border);
+  --success-color: var(--color-accent);
+  --warning-color: var(--color-warning);
+  --primary: var(--color-primary-solid);
+  --primary-dark: var(--color-primary-solid-hover);
+  --secondary: var(--color-secondary);
+  --accent: var(--color-warning);
+  --success: var(--color-accent);
+  --warning: var(--color-warning);
+  --danger: var(--color-destructive);
+  --info: var(--color-secondary);
+  --light: var(--color-background);
+  --dark: var(--color-foreground);
+}
+
+[data-theme="dark"], .dark {
+  --color-primary: #60a5fa;
+  --color-primary-hover: #93c5fd;
+  --color-primary-solid: #2563eb;        /* white on this = 5.2:1 */
+  --color-primary-solid-hover: #1d4ed8;
+  --color-on-primary: #0b1220;
+  --color-secondary: #93c5fd;
+  --color-accent: #4ade80;
+  --color-accent-hover: #86efac;
+  --color-on-accent: #0b1220;
+  --color-background: #0b1220;
+  --color-surface: #111b2e;
+  --color-foreground: #e2e8f0;
+  --color-heading: #bfdbfe;
+  --color-muted: #1e293b;
+  --color-muted-foreground: #a5b4c8;
+  --color-border: #263449;
+  --color-destructive: #f87171;
+  --color-warning: #fbbf24;
+  --color-ring: #93c5fd;
+  --color-nav-bg: #0f1d3a;
+  --color-nav-fg: #e2e8f0;
+  --color-header-bg: #16264a;
+  --color-header-fg: #e2e8f0;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .45);
+}
+
+/* ---------- 2. Global (every page) ---------- */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;                      /* Persian script needs more air */
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+}
+h1, h2, h3, h4, h5, h6 { line-height: 1.4; font-weight: 700; }
+/* headings inherit colour so hero banners with white text keep working; only plain content headings get the brand navy */
+body.mk-bs main h1:not([class]), body.mk-bs main h2:not([class]), body.mk-bs main h3:not([class]) { color: var(--color-heading); }
+
+:focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.skip-link {
+  position: absolute; inset-inline-start: 8px; top: -48px; z-index: 2000;
+  background: var(--color-primary); color: var(--color-on-primary);
+  padding: 10px 16px; border-radius: var(--radius-sm); text-decoration: none;
+  transition: top var(--duration-fast) ease;
+}
+.skip-link:focus { top: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- 3. Bootstrap pages (base.html adds class "mk-bs" to <body>) ---------- */
+body.mk-bs .navbar {
+  background: var(--color-nav-bg) !important;   /* legacy theme files force gradients with !important */
+  background-image: none !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: .75rem 0;
+}
+body.mk-bs .navbar-brand { color: var(--color-nav-fg) !important; font-weight: 800; letter-spacing: 0; }
+body.mk-bs .navbar-brand .brand-icon { background: rgba(255, 255, 255, .16); border-radius: var(--radius-sm); }
+body.mk-bs .navbar-nav .nav-link {
+  color: var(--color-nav-fg) !important;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) ease;
+}
+body.mk-bs .navbar-nav .nav-link:hover,
+body.mk-bs .navbar-nav .nav-link.active { background: rgba(255, 255, 255, .18) !important; color: #fff !important; }
+body.mk-bs .navbar :focus-visible { outline-color: #fff; }
+
+body.mk-bs .card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration-base) ease, border-color var(--duration-base) ease;
+}
+body.mk-bs .card:hover { transform: none; box-shadow: var(--shadow-md); }
+body.mk-bs .card-header {
+  background: var(--color-header-bg) !important; background-image: none !important;
+  color: var(--color-header-fg) !important; border: 0; font-weight: 700;
+}
+body.mk-bs .card-body, body.mk-bs .card-footer { color: var(--color-foreground); }
+
+body.mk-bs .btn {
+  min-height: 44px; border-radius: var(--radius-sm); font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  transition: background-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+body.mk-bs .btn-primary { background: var(--color-primary-solid); border-color: var(--color-primary-solid); color: #fff; }
+body.mk-bs .btn-primary:hover, body.mk-bs .btn-primary:focus { background: var(--color-primary-solid-hover); border-color: var(--color-primary-solid-hover); }
+body.mk-bs .btn-success { background: #15803d; border-color: #15803d; color: #fff; }
+body.mk-bs .btn-success:hover { background: #166534; border-color: #166534; }
+body.mk-bs .btn-outline-primary { color: var(--color-primary); border: 2px solid var(--color-primary); background: transparent; }
+body.mk-bs .btn-outline-primary:hover { background: var(--color-primary-solid); color: #fff; }
+body.mk-bs .btn-danger { background: var(--color-destructive); border-color: var(--color-destructive); color: #fff; }
+body.mk-bs .btn-sm { min-height: 36px; }
+
+body.mk-bs .form-label { font-weight: 600; color: var(--color-heading); }
+body.mk-bs .form-control, body.mk-bs .form-select {
+  min-height: 44px; background: var(--color-surface); color: var(--color-foreground);
+  border: 1px solid #94a3b8; border-radius: var(--radius-sm);
+}
+body.mk-bs .form-control:focus, body.mk-bs .form-select:focus {
+  border-color: var(--color-ring); box-shadow: 0 0 0 .2rem rgba(30, 64, 175, .25);
+}
+body.mk-bs .form-text, body.mk-bs .text-muted { color: var(--color-muted-foreground) !important; }
+body.mk-bs .invalid-feedback, body.mk-bs .text-danger { color: var(--color-destructive) !important; }
+
+body.mk-bs .table { color: var(--color-foreground); }
+body.mk-bs .table thead th { background: var(--color-muted); color: var(--color-heading); border-bottom: 2px solid var(--color-border); }
+body.mk-bs .table-hover tbody tr:hover { background: rgba(30, 64, 175, .06); }
+
+body.mk-bs .badge { font-weight: 600; border-radius: 999px; padding: .4em .8em; }
+body.mk-bs .alert { border-radius: var(--radius-sm); border-width: 1px; }
+body.mk-bs a:not(.btn):not(.nav-link):not(.navbar-brand):not(.dropdown-item) { color: var(--color-primary); }
+body.mk-bs a:not(.btn):not(.nav-link):not(.navbar-brand):not(.dropdown-item):hover { color: var(--color-primary-hover); }
+body.mk-bs .dropdown-menu { border: 1px solid var(--color-border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); }
+body.mk-bs footer { background: var(--color-heading); color: #e2e8f0; }
+body.mk-bs footer a { color: #bfdbfe !important; }
+
+/* ---------- 4. Tailwind dashboards (their <body> gets class "mk-tw") ---------- */
+body.mk-tw { font-family: var(--font-body); }
+body.mk-tw button, body.mk-tw [role="button"], body.mk-tw select, body.mk-tw input[type="text"],
+body.mk-tw input[type="date"], body.mk-tw input[type="search"] { min-height: 40px; }
