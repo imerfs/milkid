@@ -1,3 +1,4 @@
+from django.db import DatabaseError
 from django.utils import timezone
 
 from main.seo import page_context
@@ -16,7 +17,11 @@ def office(request):
     from main.office.appointments import PROVIDER_ROLES
     from main.office.letters import unread_count
     role = getattr(getattr(user, 'profile', None), 'role', None)
-    pending = (Appointment.objects.filter(provider=user, status='pending', end__gte=timezone.now()).count()
-               if role in PROVIDER_ROLES else 0)
-    return {'office': {'letters_unread': unread_count(user), 'appointments_pending': pending,
+    try:
+        pending = (Appointment.objects.filter(provider=user, status='pending', end__gte=timezone.now()).count()
+                   if role in PROVIDER_ROLES else 0)
+        unread = unread_count(user)
+    except DatabaseError:        # e.g. migrations not applied yet: the counters are optional, the page is not
+        pending = unread = 0
+    return {'office': {'letters_unread': unread, 'appointments_pending': pending,
                        'can_grant_roles': role == 'dehyari' or user.is_superuser or role == 'admin'}}

@@ -38,6 +38,16 @@ def role_required(allowed_roles):
         return _wrapped_view
     return decorator
 
+
+def announcements_for(role):
+    """Active announcements addressed to ``role`` or to everyone.
+
+    Filtered in Python on purpose: JSONField ``contains`` is not supported by SQLite
+    (it raised NotSupportedError on every messaging page)."""
+    ids = [a.id for a in Announcement.objects.filter(is_active=True).only('id', 'target_roles')
+           if not a.target_roles or role in a.target_roles]
+    return Announcement.objects.filter(id__in=ids)
+
 @login_required
 def messaging_dashboard(request):
     """داشبورد اصلی پیام‌رسانی"""
@@ -61,12 +71,7 @@ def messaging_dashboard(request):
     ).select_related('sender', 'conversation').order_by('-created_at')[:5]
     
     # اطلاعیه‌های عمومی
-    announcements = Announcement.objects.filter(
-        Q(target_roles__contains=[user_profile.role]) | 
-        Q(target_roles=[]) |
-        Q(target_roles__isnull=True),
-        is_active=True
-    ).order_by('-created_at')[:5]
+    announcements = announcements_for(user_profile.role).order_by('-created_at')[:5]
     
     # آمار پیام‌رسانی
     stats = {
@@ -369,12 +374,7 @@ def announcement_list(request):
     user_profile = request.user.profile
     
     # اطلاعیه‌های مربوط به کاربر
-    announcements = Announcement.objects.filter(
-        Q(target_roles__contains=[user_profile.role]) | 
-        Q(target_roles=[]) |
-        Q(target_roles__isnull=True),
-        is_active=True
-    ).order_by('-created_at')
+    announcements = announcements_for(user_profile.role).order_by('-created_at')
     
     # فیلتر اولویت
     priority_filter = request.GET.get('priority')
