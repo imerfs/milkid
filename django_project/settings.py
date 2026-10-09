@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'main',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -64,6 +65,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'main.middleware.SecurityHeadersMiddleware',  # Custom security headers
@@ -97,6 +99,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'main.context_processors.seo',
             ],
         },
     },
@@ -395,3 +398,16 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# Public identity used by SEO metadata (canonical URLs, structured data, llms.txt).
+# SITE_URL empty = derive from the request host. Phone/email/address are only
+# published in structured data when set.
+SITE_NAME = os.environ.get('SITE_NAME', 'ملک آیدی')
+SITE_DESCRIPTION = os.environ.get(
+    'SITE_DESCRIPTION',
+    'سامانه دیجیتال خدمات دهیاری و املاک روستایی: ثبت و پیگیری آنلاین درخواست‌ها، صدور پروانه، تأیید سکونت و آگهی املاک.')
+SITE_URL = os.environ.get('SITE_URL', '')
+SITE_EMAIL = os.environ.get('SITE_EMAIL', '')
+SITE_PHONE = os.environ.get('SITE_PHONE', '')
+SITE_ADDRESS_LOCALITY = os.environ.get('SITE_ADDRESS_LOCALITY', '')
+SITE_ADDRESS_STREET = os.environ.get('SITE_ADDRESS_STREET', '')

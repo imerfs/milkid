@@ -284,6 +284,7 @@
                     if (!preview) {
                         preview = document.createElement('img');
                         preview.id = `preview-${input.id}`;
+                        preview.alt = 'پیش‌نمایش فایل انتخاب‌شده';
                         preview.className = 'img-thumbnail mt-2';
                         preview.style.maxHeight = '200px';
                         input.parentNode.appendChild(preview);

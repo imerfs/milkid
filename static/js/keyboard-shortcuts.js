@@ -635,7 +635,7 @@ class KeyboardShortcuts {
 }
 
 // Initialize Keyboard Shortcuts
-document.addEventListener('DOMContentLoaded', () => {
+(function (init) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); })(() => {
     window.keyboardShortcuts = new KeyboardShortcuts();
     console.log('⌨️ Keyboard Shortcuts system loaded');
     console.log('💡 Press Ctrl+Shift+K to see all available shortcuts');

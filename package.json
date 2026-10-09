@@ -1,0 +1,11 @@
+{
+  "name": "melkid-frontend",
+  "private": true,
+  "description": "Builds static/css/tailwind.css (replaces the Tailwind CDN script).",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i static/src/tailwind.input.css -o static/css/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

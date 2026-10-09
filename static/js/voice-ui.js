@@ -475,7 +475,7 @@ class VoiceUI {
 }
 
 // Initialize Voice UI when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+(function (init) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); })(() => {
     window.voiceUI = new VoiceUI();
     
     // Add voice UI info to console

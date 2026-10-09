@@ -96,7 +96,6 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   font-family: var(--font-body);
   font-size: 1rem;
-  line-height: 1.75;                      /* Persian script needs more air */
   color: var(--color-foreground);
   background-color: var(--color-background);
 }
@@ -198,3 +197,19 @@ body.mk-bs footer a { color: #bfdbfe !important; }
 body.mk-tw { font-family: var(--font-body); }
 body.mk-tw button, body.mk-tw [role="button"], body.mk-tw select, body.mk-tw input[type="text"],
 body.mk-tw input[type="date"], body.mk-tw input[type="search"] { min-height: 40px; }
+
+/* ---------- Breadcrumbs (server-rendered; works on Bootstrap and Tailwind pages) ---------- */
+.mk-breadcrumb { font-size: .875rem; line-height: 1.6; margin: 0; padding: .5rem 0; }
+.mk-breadcrumb ol { display: flex; flex-wrap: wrap; gap: .25rem; list-style: none; margin: 0; padding: 0; }
+.mk-breadcrumb li + li::before { content: "9"; margin-inline: .4rem; color: var(--color-muted-foreground); }
+.mk-breadcrumb a { color: var(--color-primary); text-decoration: none; }
+.mk-breadcrumb a:hover { text-decoration: underline; }
+.mk-breadcrumb [aria-current="page"] { color: var(--color-muted-foreground); }
+body.mk-bs main > .mk-breadcrumb { max-width: 1140px; margin-inline: auto; padding-inline: 12px; }
+
+/* h2 -> h1 promotions (one H1 per page) must not look bigger than before */
+body.mk-bs main h1:not([class*="display"]):not([class*="fs-"]):not([class*="h1"]) { font-size: calc(1.325rem + .9vw); }
+@media (min-width: 1200px) { body.mk-bs main h1:not([class*="display"]):not([class*="fs-"]):not([class*="h1"]) { font-size: 2rem; } }
+
+/* Persian script needs more air than Latin: Bootstrap pages only (Tailwind pages keep their own leading) */
+body.mk-bs { line-height: 1.75; }
