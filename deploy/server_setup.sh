@@ -6,7 +6,10 @@ set -euo pipefail
 REPO_URL="${REPO_URL:-https://github.com/imerfs/milkid.git}"
 BRANCH="${BRANCH:-ccr-6a10cb3f-dspz6o}"
 APP_DIR=/opt/milkid
-HOST_NAME="${1:-$(curl -s4 ifconfig.me || hostname -I | awk '{print $1}')}"
+HOST_NAME="${1:-$(hostname -I | awk '{print $1}')}"
+if ! [[ "$HOST_NAME" =~ ^[A-Za-z0-9.-]+$ ]]; then
+  echo "Invalid host '$HOST_NAME'. Pass the server IP or domain: bash server_setup.sh 88.218.18.165"; exit 1
+fi
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
@@ -23,6 +26,7 @@ python3 -m venv venv
 ./venv/bin/pip install --upgrade pip
 ./venv/bin/pip install -r requirements.txt
 
+rm -f .env  # always regenerate so a bad earlier run cannot persist
 if [ ! -f .env ]; then
   SECRET=$(python3 -c 'import secrets;print(secrets.token_urlsafe(64))')
   SCHEME_SECURE=False
