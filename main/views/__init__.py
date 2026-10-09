@@ -9,6 +9,9 @@ from .property_views import *
 from .request_views import *
 from .misc_views import *
 from .dehyari_expert_views import *
+from .office_views import *
+from .letter_views import *
+from .appointment_views import *
 
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 

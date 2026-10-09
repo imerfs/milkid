@@ -19,6 +19,7 @@ import os
 
 from .common import role_required
 from main import lifecycle
+from main.office import roles as office_roles
 from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -123,7 +124,12 @@ def dehyari_dashboard(request):
 
 @policy_required('mayor.manage')
 def mayor_staff_list(request):
-    """List all staff members for the municipality"""
+    """Staff of the village: managed on the roles page (the old list template never existed)."""
+    return redirect('main:role_grants')
+
+
+def _legacy_mayor_staff_list(request):
+    """Kept for reference until the roles page fully replaces it."""
     user_profile = request.user.profile
     
     try:
@@ -160,6 +166,9 @@ def mayor_staff_add(request):
         messages.error(request, 'شهرداری/دهیاری شما یافت نشد.')
         return redirect('main:dehyari_dashboard')
     
+    if request.method != 'POST':
+        return redirect('main:role_grants')       # staff are added by giving a village resident a role
+
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
@@ -170,7 +179,9 @@ def mayor_staff_add(request):
         mobile_number = request.POST.get('mobile_number')
         role = request.POST.get('role')
         
-        if User.objects.filter(username=username).exists():
+        if role not in office_roles.GRANTABLE:
+            messages.error(request, 'نقش انتخاب‌شده معتبر نیست.')
+        elif User.objects.filter(username=username).exists():
             messages.error(request, 'نام کاربری تکراری است.')
         elif UserProfile.objects.filter(national_id=national_id).exists():
             messages.error(request, 'کد ملی تکراری است.')
@@ -223,7 +234,8 @@ def mayor_staff_edit(request, staff_id):
         messages.error(request, 'شهرداری/دهیاری شما یافت نشد.')
         return redirect('main:dehyari_dashboard')
     
-    staff = get_object_or_404(UserProfile, id=staff_id, city_village=municipality.city_village)
+    staff = get_object_or_404(UserProfile, id=staff_id, city_village=municipality.city_village,
+                              role__in=office_roles.GRANTABLE)
     
     if request.method == 'POST':
         staff.user.first_name = request.POST.get('first_name', staff.user.first_name)
@@ -232,7 +244,7 @@ def mayor_staff_edit(request, staff_id):
         staff.user.save()
         
         staff.mobile_number = request.POST.get('mobile_number', staff.mobile_number)
-        staff.role = request.POST.get('role', staff.role)
+        # the role itself changes only through office.roles (validated, recorded, notified)
         staff.is_active = request.POST.get('is_active') == 'on'
         staff.save()
         
@@ -256,7 +268,8 @@ def mayor_staff_delete(request, staff_id):
         messages.error(request, 'شهرداری/دهیاری شما یافت نشد.')
         return redirect('main:dehyari_dashboard')
     
-    staff = get_object_or_404(UserProfile, id=staff_id, city_village=municipality.city_village)
+    staff = get_object_or_404(UserProfile, id=staff_id, city_village=municipality.city_village,
+                              role__in=office_roles.GRANTABLE)
     
     if request.method == 'POST':
         staff_name = staff.user.get_full_name()

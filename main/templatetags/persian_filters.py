@@ -64,3 +64,8 @@ def persian_date_verbose(value):
         return f"{jalali_date.day} {month_names[jalali_date.month]} {jalali_date.year}"
     except:
         return str(value)
+
+@register.filter
+def dict_get(mapping, key):
+    """{{ mapping|dict_get:key }} for dict lookups with a variable key."""
+    return mapping.get(key, '') if mapping else ''
