@@ -173,3 +173,4 @@ graphify-out/cost.json
 # user-uploaded files (personal/official documents)
 media/
 request_documents/
+staticfiles/

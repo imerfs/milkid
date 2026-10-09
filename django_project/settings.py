@@ -168,6 +168,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
@@ -356,10 +357,12 @@ if DEBUG:
     CSRF_COOKIE_HTTPONLY = False
 else:
     # Production security settings
-    CSRF_COOKIE_SAMESITE = 'None'
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = 'None'
-    SESSION_COOKIE_SECURE = True
+    # COOKIE_SECURE=False allows serving over plain HTTP (e.g. IP-only deploy without TLS).
+    _cookie_secure = os.environ.get('COOKIE_SECURE', 'True') == 'True'
+    CSRF_COOKIE_SAMESITE = 'None' if _cookie_secure else 'Lax'
+    CSRF_COOKIE_SECURE = _cookie_secure
+    SESSION_COOKIE_SAMESITE = 'None' if _cookie_secure else 'Lax'
+    SESSION_COOKIE_SECURE = _cookie_secure
     X_FRAME_OPTIONS = 'SAMEORIGIN'
     CSRF_COOKIE_HTTPONLY = True
     
