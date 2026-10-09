@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom Improvements CSS -->
-    {% load static %}
+    {% load static seo_tags %}
     <link rel="stylesheet" href="{% static 'css/improvements.css' %}">
     <link rel="stylesheet" href="{% static 'css/modern-ui.css' %}">
     <link rel="stylesheet" href="{% static 'css/mobile-enhancements.css' %}">
@@ -28,25 +28,22 @@
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="{% static 'manifest.json' %}">
-    <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="MelkID">
     
-    <!-- PWA Icons -->
-    <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'icons/icon-512x512.png' %}">
+    <!-- SEO: robots, description, canonical, Open Graph, icons, JSON-LD (see main/seo.py) -->
+    {% block seo %}{% include 'partials/seo_head.html' %}{% endblock %}
     
     <style>
         :root {
             --primary-color: #2563eb;
-            --secondary-color: #059669;
+            --secondary-color: #15803d;
             --accent-color: #dc2626;
             --light-bg: #f8fafc;
             --dark-text: #1e293b;
             --border-color: #e2e8f0;
-            --success-color: #10b981;
+            --success-color: #16a34a;
             --warning-color: #f59e0b;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
@@ -442,8 +439,10 @@
             border-top: 1px solid var(--border-color);
         }
     </style>
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
 </head>
-<body>
+<body class="mk-bs">
+    <a class="skip-link" href="#main-content">رفتن به محتوای اصلی</a>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
@@ -678,7 +677,8 @@
     {% endif %}
 
     <!-- Main Content -->
-    <main>
+    <main id="main-content">
+        {% block breadcrumbs %}{% include 'partials/breadcrumbs.html' %}{% endblock %}
         {% block content %}
         {% endblock %}
     </main>
@@ -704,9 +704,11 @@
                 <div class="col-md-2 footer-section">
                     <h5>خدمات</h5>
                     <ul>
-                        <li><a href="{% url 'main:services_catalog' %}">پروانه ساختمان</a></li>
-                        <li><a href="{% url 'main:services_catalog' %}">تایید سکونت</a></li>
-                        <li><a href="{% url 'main:services_catalog' %}">صدور سند</a></li>
+                        {% footer_services as footer_svcs %}
+                        {% for svc in footer_svcs %}
+                        <li><a href="{% url 'main:service_detail' svc.slug %}">{{ svc.name }}</a></li>
+                        {% endfor %}
+                        <li><a href="{% url 'main:services_catalog' %}">همه خدمات</a></li>
                         <li><a href="{% url 'main:property_marketplace' %}">جستجوی املاک</a></li>
                     </ul>
                 </div>
@@ -715,8 +717,9 @@
                     <ul>
                         <li><a href="{% url 'main:about' %}">درباره ما</a></li>
                         <li><a href="{% url 'main:contact' %}">تماس با ما</a></li>
-                        <li><a href="#">راهنمای استفاده</a></li>
-                        <li><a href="#">سوالات متداول</a></li>
+                        <li><a href="{% url 'main:login' %}">ورود</a></li>
+                        <li><a href="{% url 'main:register' %}">ثبت‌نام</a></li>
+                        <li><a href="{% url 'sitemap' %}">نقشه سایت</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3 footer-section">
@@ -745,14 +748,26 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Modern UI JavaScript -->
-    <script src="{% static 'js/modern-interactions.js' %}"></script>
-    <script src="{% static 'js/voice-ui.js' %}"></script>
-    <script src="{% static 'js/gesture-navigation.js' %}"></script>
-    <script src="{% static 'js/onboarding.js' %}"></script>
-    <script src="{% static 'js/keyboard-shortcuts.js' %}"></script>
+    <script src="{% static 'js/modern-interactions.js' %}" defer></script>
+    <script src="{% static 'js/jalali-datepicker.js' %}" defer></script>
     <!-- Temporarily disabled due to SyntaxError -->
     <!-- <script src="{% static 'js/accessibility-improvements.js' %}"></script> -->
-    <script src="{% static 'js/jalali-datepicker.js' %}"></script>
+    <!-- Optional enhancements (voice, gestures, tutorial, shortcuts): ~80 KB, loaded once the page is idle -->
+    <script>
+        window.addEventListener('load', function () {
+            var files = ["{% static 'js/voice-ui.js' %}", "{% static 'js/gesture-navigation.js' %}",
+                         "{% static 'js/onboarding.js' %}", "{% static 'js/keyboard-shortcuts.js' %}"];
+            var load = function () {
+                files.forEach(function (src) {
+                    var s = document.createElement('script');
+                    s.src = src;
+                    document.body.appendChild(s);
+                });
+            };
+            if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 3000 });
+            else setTimeout(load, 1500);
+        });
+    </script>
     
     <!-- Service Worker Registration -->
     <script>

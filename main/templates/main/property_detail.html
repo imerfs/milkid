@@ -1,12 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جزئیات آگهی ملک - طراحی بهبودیافته</title>
+    <title>جزئیات آگهی ملک - ملک آیدی</title>
     
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -44,11 +44,11 @@
         }
         
         .stepper-item.completed::before {
-            background-color: #10b981;
+            background-color: #16a34a;
         }
         
         .stepper-item.active::before {
-            background: linear-gradient(to right, #10b981 50%, #e5e7eb 50%);
+            background: linear-gradient(to right, #16a34a 50%, #e5e7eb 50%);
         }
         
         /* Custom scrollbar */
@@ -119,11 +119,11 @@
         }
         
         .btn-success {
-            background-color: #10b981;
+            background-color: #16a34a;
         }
         
         .btn-success:hover {
-            background-color: #059669;
+            background-color: #15803d;
         }
         
         .btn-purple {
@@ -176,8 +176,11 @@
             border-radius: 2px;
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="bg-slate-100 text-gray-800">
+<body class="bg-slate-100 text-gray-800 mk-tw">
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4">
@@ -343,13 +346,13 @@
                         <!-- Image Thumbnails -->
                         <div class="p-4">
                             <div class="grid grid-cols-4 gap-2">
-                                <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=200&h=150&fit=crop" 
+                                <img alt="نمای 1 از {{ property.get_property_type_display }}" src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=200&h=150&fit=crop" 
                                      class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
-                                <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200&h=150&fit=crop" 
+                                <img alt="نمای 2 از {{ property.get_property_type_display }}" src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200&h=150&fit=crop" 
                                      class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
-                                <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=150&fit=crop" 
+                                <img alt="نمای 3 از {{ property.get_property_type_display }}" src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=150&fit=crop" 
                                      class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
-                                <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200&h=150&fit=crop" 
+                                <img alt="نمای 4 از {{ property.get_property_type_display }}" src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200&h=150&fit=crop" 
                                      class="rounded-lg cursor-pointer h-20 w-full object-cover hover-scale" onclick="changeMainImage(this.src)">
                             </div>
                         </div>

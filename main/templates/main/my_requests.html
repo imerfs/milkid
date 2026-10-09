@@ -3,7 +3,7 @@
 {% load persian_filters %}
 {% load jalali_tags %}
 
-{% block title %}پیگیری درخواست‌ها - سامانه خدمات روستایی{% endblock %}
+{% block title %}پیگیری درخواست‌ها - ملک آیدی{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -45,10 +45,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="mb-1">
+                    <h1 class="mb-1">
                         <i class="fas fa-tasks me-2 text-primary"></i>
                         پیگیری درخواست‌ها
-                    </h2>
+                    </h1>
                     <p class="text-muted mb-0">مشاهده و پیگیری تمام درخواست‌های ثبت شده</p>
                 </div>
                 <a href="{% url 'main:services_catalog' %}" class="btn btn-success btn-lg">

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -6,7 +7,6 @@
     <title>نمایش آگهی‌های ملک - ملک آیدی</title>
     
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Persian Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -310,7 +310,7 @@
             top: 10px;
             left: -30px;
             transform: rotate(-45deg);
-            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            background: linear-gradient(45deg, #3b82f6, #a855f7);
             color: white;
             padding: 5px 40px;
             font-size: 0.7rem;
@@ -858,8 +858,11 @@
             font-size: 0.875rem;
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-slate-100 min-h-screen mk-tw">
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -930,6 +933,8 @@
             </form>
         </div>
     </header>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">{% include 'partials/breadcrumbs.html' %}</div>
+
     
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

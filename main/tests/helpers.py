@@ -5,7 +5,7 @@ from datetime import date
 from django.contrib.auth.models import User
 from django.test import Client
 
-from main.models import Payment, ServiceRequest, Municipality, CityVillage, UserProfile
+from main.models import Payment, ServiceRequest, Municipality, CityVillage, UserProfile, Service, PropertyAdvertisement
 
 _seq = itertools.count(1)
 
@@ -50,3 +50,16 @@ def make_municipality(manager, village='روستای نمونه'):
         population=100, area_hectares=1, manager_name='m', manager_national_id='1234567890',
         manager_phone='09120000000', manager_email='m@b.ir', admin_user=manager,
     )
+
+
+def make_service(name='خدمت نمونه', slug='sample-service', **kwargs):
+    return Service.objects.create(
+        name=name, slug=slug, description='توضیح خدمت نمونه برای آزمایش',
+        category='building', estimated_duration='3 days', required_documents='-', **kwargs)
+
+
+def make_ad(status='approved', owner=None):
+    owner = owner or make_user('citizen')
+    return PropertyAdvertisement.objects.create(
+        user=owner, ad_type='sale', property_type='land', total_area=100, address='addr',
+        contact_name='n', contact_phone='09120000000', status=status)

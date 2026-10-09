@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="fa" dir="rtl">
     <head>
@@ -5,7 +6,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>پنل مدیر سیستم - ملک آیدی</title>
 
-        <script src="https://cdn.tailwindcss.com"></script>
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -533,7 +533,7 @@
                 width: 10px;
                 height: 10px;
                 border-radius: 50%;
-                background: #10b981;
+                background: #16a34a;
                 position: relative;
             }
             .pulse-online::after {
@@ -544,7 +544,7 @@
                 width: 100%;
                 height: 100%;
                 border-radius: 50%;
-                background: #10b981;
+                background: #16a34a;
                 animation: pulse-ring 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
             }
             @keyframes pulse-ring {
@@ -553,8 +553,11 @@
                 100% { transform: scale(2.5); opacity: 0; }
             }
         </style>
-    </head>
-    <body class="text-gray-800">
+        {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+</head>
+    <body class="text-gray-800 mk-tw">
         <!-- Progress bar -->
         <div class="progress-bar">
             <div class="progress" id="progress-bar"></div>
@@ -3359,7 +3362,7 @@
                         let imagesHtml = '';
                         if (ad.images && ad.images.length > 0) {
                             imagesHtml = '<div class="grid grid-cols-3 gap-2 my-3">' + 
-                                ad.images.map(img => `<img src="${img.url}" class="h-24 w-full object-cover rounded-lg border">`).join('') +
+                                ad.images.map(img => `<img src="${img.url}" alt="تصویر آگهی" class="h-24 w-full object-cover rounded-lg border">`).join('') +
                                 '</div>';
                         } else {
                             imagesHtml = '<div class="p-3 bg-gray-50 rounded-lg text-center text-xs text-gray-400">تصویری بارگذاری نشده است</div>';

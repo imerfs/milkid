@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -5,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پنل مدیریت شورا - نسخه بهبودیافته</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +14,11 @@
     
     <style>
         :root {
-            --primary: #0d9488;
-            --primary-dark: #0f766e;
-            --secondary: #4f46e5;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #2563eb;
             --accent: #f59e0b;
-            --success: #10b981;
+            --success: #16a34a;
             --warning: #f59e0b;
             --danger: #ef4444;
             --info: #3b82f6;
@@ -157,8 +157,11 @@
             box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="text-gray-800">
+<body class="text-gray-800 mk-tw">
     <!-- Mobile Menu Overlay -->
     <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleMobileMenu()"></div>
 
