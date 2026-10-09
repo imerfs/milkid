@@ -26,7 +26,8 @@ python3 -m venv venv
 ./venv/bin/pip install --upgrade pip
 ./venv/bin/pip install -r requirements.txt
 
-rm -f .env  # always regenerate so a bad earlier run cannot persist
+# drop a malformed .env from an earlier run (keeps a valid one, and its secret key)
+if [ -f .env ] && ! grep -qE '^REPLIT_DOMAINS=[A-Za-z0-9.-]+$' .env; then rm -f .env; fi
 if [ ! -f .env ]; then
   SECRET=$(python3 -c 'import secrets;print(secrets.token_urlsafe(64))')
   SCHEME_SECURE=False
