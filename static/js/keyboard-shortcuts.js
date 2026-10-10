@@ -10,8 +10,6 @@ class KeyboardShortcuts {
     init() {
         this.setupDefaultShortcuts();
         this.bindEvents();
-        this.createHelpOverlay();
-        this.showInitialHint();
     }
 
     setupDefaultShortcuts() {
@@ -34,7 +32,6 @@ class KeyboardShortcuts {
         // UI shortcuts
         this.addShortcut('ctrl+shift+d', () => this.toggleTheme(), 'تغییر تم');
         this.addShortcut('ctrl+shift+h', () => this.toggleHelp(), 'نمایش/مخفی کردن راهنما');
-        this.addShortcut('ctrl+shift+k', () => this.showShortcutsHelp(), 'نمایش میانبرها');
 
         // Quick actions
         this.addShortcut('ctrl+n', () => this.newRequest(), 'درخواست جدید');
@@ -557,11 +554,13 @@ class KeyboardShortcuts {
     }
 
     showShortcutsHelp() {
+        if (!this.helpOverlay) return;
         this.helpOverlay.style.display = 'flex';
         this.helpVisible = true;
     }
 
     hideShortcutsHelp() {
+        if (!this.helpOverlay) return;
         this.helpOverlay.style.display = 'none';
         this.helpVisible = false;
     }
