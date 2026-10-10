@@ -267,7 +267,7 @@ nft -f /etc/nftables.d/milkid.nft
 echo
 echo "Firewall applied. Open a SECOND terminal and confirm you can still ssh in and load https://$DOMAIN"
 read -r -t 90 -p "Type YES within 90 s to keep the firewall (otherwise it is removed): " ANS || ANS=""
-if [ "$ANS" != "YES" ]; then
+if [ "${ANS^^}" != "YES" ]; then
   nft delete table inet milkid
   rm -f /etc/nftables.d/milkid.nft
   echo "Rolled back: firewall removed. Everything else stays applied."
