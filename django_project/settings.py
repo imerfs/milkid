@@ -41,14 +41,18 @@ if not SECRET_KEY:
 
 # Host configuration for both Replit and local development
 REPLIT_DOMAINS = os.environ.get("REPLIT_DOMAINS", "localhost,127.0.0.1")
-ALLOWED_HOSTS = REPLIT_DOMAINS.split(',') + ['127.0.0.1', 'localhost', '0.0.0.0', 'testserver']
-CSRF_TRUSTED_ORIGINS = [
-    *[f"https://{domain}" for domain in REPLIT_DOMAINS.split(',')],
-    *[f"http://{domain}" for domain in REPLIT_DOMAINS.split(',')],
-    "http://localhost:8000", "http://127.0.0.1:8000", "http://0.0.0.0:8000",
-    "http://localhost:5000", "http://127.0.0.1:5000", "http://0.0.0.0:5000",
-    "https://localhost:5000", "https://127.0.0.1:5000"
-]
+_DEV_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
+ALLOWED_HOSTS = [d.strip() for d in REPLIT_DOMAINS.split(',') if d.strip()] + _DEV_HOSTS
+CSRF_TRUSTED_ORIGINS = [f"https://{d.strip()}" for d in REPLIT_DOMAINS.split(',') if d.strip()]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += [f"http://{d.strip()}" for d in REPLIT_DOMAINS.split(',') if d.strip()] + [
+        "http://localhost:8000", "http://127.0.0.1:8000",
+        "http://localhost:5000", "http://127.0.0.1:5000",
+    ]
+
+# nginx terminates TLS and forwards X-Forwarded-Proto; without this Django would
+# think every request is plain HTTP (redirect loops, insecure cookies, wrong https:// URLs).
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
@@ -70,6 +74,7 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'main.ratelimit.AuthThrottleMiddleware',  # brute-force / spam throttling
     'main.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,8 +90,8 @@ MIDDLEWARE = [
 
 # Only use clickjacking protection in deployments because the Development Web View uses
 # iframes and needs to be a cross origin.
-# if ("REPLIT_DEPLOYMENT" in os.environ):
-#     MIDDLEWARE.append('django.middleware.clickjacking.XFrameOptionsMiddleware')
+if not DEBUG:
+    MIDDLEWARE.append('django.middleware.clickjacking.XFrameOptionsMiddleware')
 
 ROOT_URLCONF = 'django_project.urls'
 
@@ -197,7 +202,12 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20
+    'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {'anon': '60/min', 'user': '240/min'},
 }
 
 # JWT Configuration
@@ -210,17 +220,14 @@ SIMPLE_JWT = {
 
 # CORS Configuration (for development)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://localhost:5000",
-    "http://127.0.0.1:5000",
-] + [
-    "https://" + domain for domain in REPLIT_DOMAINS.split(',')
-] + [
-    "http://" + domain for domain in REPLIT_DOMAINS.split(',')
+    "https://" + d.strip() for d in REPLIT_DOMAINS.split(',') if d.strip()
 ]
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000", "http://127.0.0.1:3000",
+        "http://localhost:8000", "http://127.0.0.1:8000",
+        "http://localhost:5000", "http://127.0.0.1:5000",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -365,16 +372,17 @@ else:
     # Production security settings
     # COOKIE_SECURE=False allows serving over plain HTTP (e.g. IP-only deploy without TLS).
     _cookie_secure = os.environ.get('COOKIE_SECURE', 'True') == 'True'
-    CSRF_COOKIE_SAMESITE = 'None' if _cookie_secure else 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SECURE = _cookie_secure
-    SESSION_COOKIE_SAMESITE = 'None' if _cookie_secure else 'Lax'
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = _cookie_secure
     X_FRAME_OPTIONS = 'SAMEORIGIN'
     CSRF_COOKIE_HTTPONLY = True
     
     # Additional production security
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
-    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000' if _cookie_secure else '0'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False') == 'True'
     SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'False') == 'True'
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -385,6 +393,7 @@ MAX_FILE_SIZE = int(os.environ.get('MAX_FILE_SIZE', '10485760'))  # 10MB default
 ALLOWED_FILE_EXTENSIONS = os.environ.get('ALLOWED_FILE_EXTENSIONS', 'pdf,jpg,jpeg,png,doc,docx,dwg,dxf').split(',')
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_SIZE
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_SIZE
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 
 # Password validation - Stronger policies
 AUTH_PASSWORD_VALIDATORS = [

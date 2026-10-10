@@ -33,6 +33,7 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
 
 
+@login_required
 def user_profile(request):
     """View user profile"""
     user_profile = request.user.profile
@@ -43,6 +44,7 @@ def user_profile(request):
     return render(request, 'main/user_profile.html', context)
 
 
+@login_required
 def update_profile(request):
     """Update user profile"""
     user_profile = request.user.profile

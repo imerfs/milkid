@@ -35,6 +35,7 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
 
 
+@login_required
 def my_requests(request):
     """User's service requests"""
     user_profile = request.user.profile
@@ -65,6 +66,7 @@ def my_requests(request):
     return render(request, 'main/my_requests.html', context)
 
 
+@login_required
 def create_request(request):
     """Create a new service request"""
     if request.method == 'POST':
@@ -107,6 +109,7 @@ def create_request(request):
     return render(request, 'main/create_request.html', context)
 
 
+@login_required
 def request_detail(request, request_id):
     """View service request details"""
     service_request = get_object_or_404(ServiceRequest, id=request_id)
@@ -194,6 +197,7 @@ def service_wizard(request, slug, step):
     return render(request, f'main/services/{service.slug}/step{step}.html', context)
 
 
+@login_required
 def construction_permit_request(request):
     """Request construction permit"""
     if request.method == 'POST':

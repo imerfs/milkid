@@ -61,6 +61,7 @@ def ai_fraud_detection(request):
     return render(request, 'main/ai_fraud_detection.html')
 
 
+@login_required
 def payments_debts(request):
     """Payments and debts management"""
     user_payments = Payment.objects.filter(user=request.user).order_by('-created_at')
@@ -77,6 +78,7 @@ def payments_debts(request):
     return render(request, 'main/payments_debts.html', context)
 
 
+@login_required
 def process_payment(request, property_id):
     """Process payment for property"""
     property_obj = get_object_or_404(Property, id=property_id)
@@ -182,6 +184,7 @@ def faq_center(request):
     return render(request, 'main/faq.html')
 
 
+@login_required
 def autocad_upload(request):
     """Upload AutoCAD file"""
     from main.services.autocad_parser import AutoCADParser
@@ -217,6 +220,7 @@ def autocad_upload(request):
     return render(request, 'main/autocad/upload.html')
 
 
+@login_required
 def autocad_result(request, pk):
     """View AutoCAD parsing result"""
     autocad_file = get_object_or_404(AutoCADFile, pk=pk, user=request.user)
@@ -227,6 +231,7 @@ def autocad_result(request, pk):
     return render(request, 'main/autocad/result.html', context)
 
 
+@login_required
 def autocad_history(request):
     """AutoCAD upload history"""
     autocad_files = AutoCADFile.objects.filter(user=request.user).order_by('-uploaded_at')
@@ -243,6 +248,7 @@ def autocad_history(request):
     return render(request, 'main/autocad/history.html', context)
 
 
+@policy_required('staff.accountant', api=True)
 def export_transactions_excel(request):
     """Export transactions to Excel"""
     from openpyxl import Workbook
@@ -324,6 +330,7 @@ def export_transactions_excel(request):
         return redirect('main:accountant_dashboard')
 
 
+@login_required
 def api_notifications_list(request):
     """API endpoint to get user notifications"""
     try:
@@ -355,6 +362,7 @@ def api_notifications_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_notification_mark_read(request, notification_id):
     """API endpoint to mark notification as read"""
     try:
@@ -370,6 +378,7 @@ def api_notification_mark_read(request, notification_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_notifications_mark_all_read(request):
     """API endpoint to mark all notifications as read"""
     try:
@@ -383,6 +392,7 @@ def api_notifications_mark_all_read(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_notification_delete(request, notification_id):
     """API endpoint to delete a notification"""
     try:
@@ -397,6 +407,7 @@ def api_notification_delete(request, notification_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_messages_list(request):
     """API endpoint to get user conversations"""
     try:
@@ -430,6 +441,7 @@ def api_messages_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_conversation_messages(request, conversation_id):
     """API endpoint to get messages in a conversation"""
     try:
@@ -465,6 +477,7 @@ def api_conversation_messages(request, conversation_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_message_send(request):
     """API endpoint to send a new message"""
     import json
@@ -513,6 +526,7 @@ def api_message_send(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_conversation_reply(request, conversation_id):
     """API endpoint to reply to an existing conversation"""
     import json
@@ -563,6 +577,7 @@ def api_conversation_reply(request, conversation_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 def api_message_mark_read(request, message_id):
     """API endpoint to mark a message as read"""
     try:
@@ -715,3 +730,8 @@ def test_geographic(request):
 def test_jalali_dates(request):
     return JsonResponse({'status': 'ok'})
 
+
+
+def media_auth(request):
+    """Subrequest target for nginx ``auth_request``: 204 for signed-in users, 401 otherwise."""
+    return HttpResponse(status=204 if request.user.is_authenticated else 401)

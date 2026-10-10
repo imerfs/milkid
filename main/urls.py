@@ -5,6 +5,8 @@ from . import views, api_views
 app_name = 'main'
 
 urlpatterns = [
+    # nginx auth_request target guarding /media/ (private uploads need a logged-in session)
+    path('_media-auth/', views.media_auth, name='media_auth'),
     # Main pages
     path('', views.home, name='home'),
     path('about/', views.about, name='about'),
@@ -202,9 +204,6 @@ urlpatterns = [
     path('api/districts/<int:county_id>/', views.api_get_districts, name='api_get_districts'),
     path('api/city-villages/<int:district_id>/', views.api_get_city_villages, name='api_get_city_villages'),
     
-    # Test Pages
-    path('test/jalali-dates/', views.test_jalali_dates, name='test_jalali_dates'),
-
     # Property Marketplace
     path('properties/', views.property_marketplace, name='property_marketplace'),
     path('property-listings/', views.property_listings, name='property_listings'),
@@ -255,7 +254,6 @@ urlpatterns = [
     path('api/geo/dehestans/', views.api_get_dehestans, name='api_geo_dehestans'),
     path('api/geo/cities-villages/', views.api_get_city_villages, name='api_geo_cities_villages'),
     path('api/geo/request-city-village/', views.api_request_city_village, name='api_geo_request_city_village'),
-    path('test-geographic/', views.test_geographic, name='test_geographic'),
     
     # Notification System API
     path('api/notifications/', views.api_notifications_list, name='api_notifications_list'),

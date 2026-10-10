@@ -16,7 +16,9 @@ apt-get update -y
 apt-get install -y python3 python3-venv python3-dev build-essential libmagic1 libjpeg-dev zlib1g-dev nginx git curl
 
 if [ -d "$APP_DIR/.git" ]; then
-  git -C "$APP_DIR" fetch origin "$BRANCH" && git -C "$APP_DIR" checkout "$BRANCH" && git -C "$APP_DIR" pull origin "$BRANCH"
+  # "checkout -B ... FETCH_HEAD" avoids the "'main' could be both a file and a branch" error (the repo has a main/ dir)
+  git -C "$APP_DIR" fetch origin "$BRANCH"
+  git -C "$APP_DIR" checkout -B "$BRANCH" FETCH_HEAD
 else
   git clone -b "$BRANCH" "$REPO_URL" "$APP_DIR"
 fi
@@ -64,6 +66,9 @@ Restart=always
 WantedBy=multi-user.target
 UNIT
 
+if [ -f "/etc/letsencrypt/live/$HOST_NAME/fullchain.pem" ]; then
+  echo "TLS certificate found: leaving the nginx config alone (re-run deploy/harden_server.sh $HOST_NAME to regenerate it)."
+else
 cat > /etc/nginx/sites-available/milkid <<NGINX
 server {
     listen 80 default_server;
@@ -77,13 +82,14 @@ server {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
 NGINX
 ln -sf /etc/nginx/sites-available/milkid /etc/nginx/sites-enabled/milkid
 rm -f /etc/nginx/sites-enabled/default
+fi
 nginx -t
 
 systemctl daemon-reload

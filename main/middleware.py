@@ -142,13 +142,8 @@ class RequestLoggingMiddleware:
 
     @staticmethod
     def get_client_ip(request):
-        """Get client IP address"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+        """Get client IP address (X-Forwarded-For is client-controlled; use nginx's X-Real-IP)"""
+        return request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR')
 
 
 class ActiveUserMiddleware:
