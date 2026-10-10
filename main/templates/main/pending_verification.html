@@ -1,18 +1,21 @@
+{% load static %}
 
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>در انتظار تایید - بهرنگار</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>در انتظار تایید - ملک آیدی</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Vazirmatn', sans-serif; }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+<body class="bg-gray-50 min-h-screen flex items-center justify-center mk-tw">
     <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
         <div class="text-yellow-500 mb-6">
             <i class="fas fa-clock text-6xl"></i>

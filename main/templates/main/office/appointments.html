@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static jalali_tags %}
+
+{% block title %}وقت‌های ملاقات - ملک آیدی{% endblock %}
+
+{% block content %}
+{% comment %}One row of an appointment; `side` decides who the "other person" is.{% endcomment %}
+<div class="container py-4" style="max-width: 960px">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <h1 class="h3 mb-0"><i class="fas fa-calendar-check ms-2"></i>وقت‌های ملاقات</h1>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'main:appointment_providers' %}" class="btn btn-primary"><i class="fas fa-calendar-plus ms-1"></i>گرفتن وقت جدید</a>
+            {% if is_provider %}<a href="{% url 'main:availability' %}" class="btn btn-outline-primary"><i class="fas fa-clock ms-1"></i>ساعات کاری من</a>{% endif %}
+        </div>
+    </div>
+
+    {% if is_provider %}
+    <section class="card mb-4" aria-labelledby="incoming-h">
+        <div class="card-header"><h2 class="h5 mb-0" id="incoming-h"><i class="fas fa-inbox ms-2"></i>درخواست‌های دریافتی</h2></div>
+        <ul class="list-group list-group-flush">
+            {% for a in incoming %}
+            <li class="list-group-item">
+                <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                    <div>
+                        <div class="fw-bold">{{ a.subject }}</div>
+                        <small class="text-muted"><i class="fas fa-user ms-1"></i>{{ a.client.get_full_name|default:a.client.username }} · <i class="fas fa-calendar-day ms-1"></i>{{ a.start|jalali_datetime }}</small>
+                        {% if a.notes %}<div class="small mt-1">{{ a.notes }}</div>{% endif %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-items-start">
+                        <span class="badge {% if a.status == 'confirmed' %}bg-success{% elif a.status == 'pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">{{ a.get_status_display }}</span>
+                        {% if a.status == 'pending' %}
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once>{% csrf_token %}<input type="hidden" name="action" value="confirm"><button class="btn btn-success btn-sm" type="submit"><i class="fas fa-check ms-1"></i>تایید</button></form>
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once data-confirm="این درخواست رد شود؟">{% csrf_token %}<input type="hidden" name="action" value="reject"><button class="btn btn-outline-danger btn-sm" type="submit"><i class="fas fa-xmark ms-1"></i>رد</button></form>
+                        {% elif a.status == 'confirmed' %}
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once>{% csrf_token %}<input type="hidden" name="action" value="complete"><button class="btn btn-outline-success btn-sm" type="submit"><i class="fas fa-flag-checkered ms-1"></i>انجام شد</button></form>
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once data-confirm="این وقت لغو شود؟">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="btn btn-outline-danger btn-sm" type="submit"><i class="fas fa-ban ms-1"></i>لغو</button></form>
+                        {% endif %}
+                    </div>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center text-muted py-4"><i class="fas fa-calendar-xmark fa-2x mb-2" aria-hidden="true"></i><p class="mb-0">درخواست بازی ندارید. ساعات کاری خود را تنظیم کنید تا مردم بتوانند وقت بگیرند.</p></li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <section class="card" aria-labelledby="mine-h">
+        <div class="card-header"><h2 class="h5 mb-0" id="mine-h"><i class="fas fa-calendar-days ms-2"></i>وقت‌هایی که گرفته‌ام</h2></div>
+        <ul class="list-group list-group-flush">
+            {% for a in upcoming %}
+            <li class="list-group-item d-flex flex-column flex-md-row justify-content-between gap-2">
+                <div>
+                    <div class="fw-bold">{{ a.subject }}</div>
+                    <small class="text-muted"><i class="fas fa-user-tie ms-1"></i>{{ a.provider.get_full_name|default:a.provider.username }} ({{ a.provider.profile.get_role_display }}) · <i class="fas fa-calendar-day ms-1"></i>{{ a.start|jalali_datetime }}</small>
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-start">
+                    <span class="badge {% if a.status == 'confirmed' %}bg-success{% elif a.status == 'pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">{{ a.get_status_display }}</span>
+                    {% if a.status == 'pending' or a.status == 'confirmed' %}
+                    <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once data-confirm="این وقت لغو شود؟">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="btn btn-outline-danger btn-sm" type="submit"><i class="fas fa-ban ms-1"></i>لغو</button></form>
+                    {% endif %}
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center text-muted py-4"><i class="fas fa-calendar-plus fa-2x mb-2" aria-hidden="true"></i><p class="mb-0">وقتی ندارید. از دکمه‌ی «گرفتن وقت جدید» استفاده کنید.</p></li>
+            {% endfor %}
+            {% for a in past %}
+            <li class="list-group-item text-muted"><i class="fas fa-clock-rotate-left ms-1"></i>{{ a.subject }} — {{ a.provider.get_full_name|default:a.provider.username }} · {{ a.start|jalali_date }} · {{ a.get_status_display }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

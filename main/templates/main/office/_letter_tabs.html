@@ -1,0 +1,9 @@
+<nav class="d-flex flex-wrap align-items-center gap-2 mb-3" aria-label="صندوق‌های نامه">
+    <a href="{% url 'main:letter_compose' %}" class="btn btn-primary"><i class="fas fa-pen-to-square ms-1"></i>نامه‌ی جدید</a>
+    {% for key, item in boxes.items %}
+    <a href="{% if key == 'inbox' %}{% url 'main:letters_inbox' %}{% elif key == 'sent' %}{% url 'main:letters_sent' %}{% elif key == 'drafts' %}{% url 'main:letters_drafts' %}{% else %}{% url 'main:letters_archive' %}{% endif %}"
+       class="btn {% if box == key %}btn-dark{% else %}btn-outline-secondary{% endif %}" {% if box == key %}aria-current="page"{% endif %}>
+        <i class="fas {{ item.1 }} ms-1"></i>{{ item.0 }}{% if key == 'inbox' and unread %} <span class="badge bg-danger">{{ unread }}</span>{% endif %}
+    </a>
+    {% endfor %}
+</nav>

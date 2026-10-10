@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -5,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پنل مدیریت شورا - نسخه بهبودیافته</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +14,11 @@
     
     <style>
         :root {
-            --primary: #0d9488;
-            --primary-dark: #0f766e;
-            --secondary: #4f46e5;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #2563eb;
             --accent: #f59e0b;
-            --success: #10b981;
+            --success: #16a34a;
             --warning: #f59e0b;
             --danger: #ef4444;
             --info: #3b82f6;
@@ -157,8 +157,11 @@
             box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="text-gray-800">
+<body class="text-gray-800 mk-tw">
     <!-- Mobile Menu Overlay -->
     <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleMobileMenu()"></div>
 
@@ -201,7 +204,7 @@
                 <a href="#" class="sidebar-link active flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('dashboard', this)">
                     <div class="flex items-center"><i class="fas fa-tachometer-alt ml-3"></i>داشبورد</div>
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('voting', this)">
+                <a href="{% url 'main:council_voting_list' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('voting', this)">
                     <div class="flex items-center"><i class="fas fa-vote-yea ml-3"></i>صندوق رای‌گیری</div>
                     {% if stats.pending_votes > 0 %}<span class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.pending_votes }}</span>{% endif %}
                 </a>
@@ -216,17 +219,17 @@
                 <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('history', this)">
                     <div class="flex items-center"><i class="fas fa-history ml-3"></i>سوابق مصوبات</div>
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('calendar', this)">
+                <a href="{% url 'main:appointments' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('calendar', this)">
                     <div class="flex items-center"><i class="fas fa-calendar-alt ml-3"></i>تقویم جلسات</div>
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('messages', this)">
+                <a href="{% url 'main:letters_inbox' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('messages', this)">
                     <div class="flex items-center"><i class="fas fa-envelope ml-3"></i>پیام‌ها</div>
                     <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-badge">3</span>
                 </a>
                 <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('members', this)">
                     <div class="flex items-center"><i class="fas fa-users ml-3"></i>اعضای شورا</div>
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('settings', this)">
+                <a href="{% url 'main:user_profile' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('settings', this)">
                     <div class="flex items-center"><i class="fas fa-cog ml-3"></i>تنظیمات</div>
                 </a>
             </nav>
@@ -469,7 +472,7 @@
                                         </td>
                                         <td class="py-4 px-4">۱۴۰۳/۰۲/۱۵</td>
                                         <td class="py-4 px-4">
-                                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">بررسی و رای‌دهی</button>
+                                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="location.href='{% url 'main:council_voting_list' %}'">بررسی و رای‌دهی</button>
                                         </td>
                                     </tr>
                                     <tr class="hover:bg-gray-50">
@@ -911,7 +914,7 @@
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-3xl font-bold text-gray-800">تقویم جلسات شورا</h2>
                         <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="location.href='{% url 'main:appointment_providers' %}'">
                                 <i class="fas fa-plus ml-2"></i>جلسه جدید
                             </button>
                         </div>
@@ -1028,7 +1031,7 @@
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-3xl font-bold text-gray-800">پیام‌ها</h2>
                         <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
+                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="location.href='{% url 'main:letter_compose' %}'">
                                 <i class="fas fa-plus ml-2"></i>پیام جدید
                             </button>
                         </div>
@@ -1341,5 +1344,6 @@
                 day: 'numeric'
             });
     </script>
+    {% include 'partials/office_dock.html' %}
 </body>
 </html>

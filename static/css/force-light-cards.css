@@ -57,7 +57,7 @@ html:not([data-theme="dark"]) .text-primary {
 
 body:not([data-theme="dark"]) .text-success,
 html:not([data-theme="dark"]) .text-success {
-    color: #059669 !important;
+    color: #15803d !important;
 }
 
 /* ONLY apply dark styles when explicitly in dark theme */

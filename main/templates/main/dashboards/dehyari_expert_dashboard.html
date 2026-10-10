@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -6,7 +7,6 @@
     <title>پنل کارشناس دهیاری - سامانه ملک آیدی</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -15,30 +15,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'vazir': ['Vazirmatn', 'sans-serif']
-                    },
-                    colors: {
-                        brand: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            800: '#3730a3',
-                            900: '#312e81',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
 
     <style>
         body {
@@ -101,8 +77,11 @@
             border-radius: 9999px;
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="text-slate-800 antialiased min-h-screen bg-slate-50">
+<body class="text-slate-800 antialiased min-h-screen bg-slate-50 mk-tw">
 
     <!-- Notification Toast Container -->
     <div id="toast-container"></div>
@@ -124,7 +103,7 @@
                         <i class="fas fa-drafting-compass text-lg"></i>
                     </div>
                     <div>
-                        <h1 class="font-extrabold text-base tracking-wide text-white">ملک آیدی</h1>
+                        <p class="font-extrabold text-base tracking-wide text-white">ملک آیدی</p>
                         <span class="text-[11px] font-medium text-indigo-400 block -mt-0.5">پنل کارشناس دهیاری</span>
                     </div>
                 </div>
@@ -221,13 +200,13 @@
                         <i class="fas fa-bars"></i>
                     </button>
                     <div>
-                        <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <h1 class="text-xl font-black text-slate-800 flex items-center gap-2">
                             <span>کارتابل کارشناس دهیاری</span>
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-live"></span>
                                 برخط
                             </span>
-                        </h2>
+                        </h1>
                         <p class="text-xs text-slate-500 mt-0.5">
                             مدیریت و گردش کار درخواست‌های صدور پروانه، بدون پروانه، تایید سکونت، صدور سند، تغییر کاربری و سایر خدمات دهیاری
                         </p>
@@ -1375,5 +1354,6 @@
             }
         }
     </script>
+    {% include 'partials/office_dock.html' %}
 </body>
 </html>

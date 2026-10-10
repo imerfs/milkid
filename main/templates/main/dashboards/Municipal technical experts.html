@@ -1,10 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پنل جامع کارشناس فنی شهرداری</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -698,8 +698,11 @@
             margin-bottom: 24px;
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body>
+<body class="mk-tw">
     <div class="poster-container">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -743,7 +746,7 @@
                         <i class="material-icons sidebar-item-icon">help_outline</i>
                         <span>راهنما</span>
                     </a>
-                    <a href="#" class="sidebar-item" data-section="settings">
+                    <a href="{% url 'main:user_profile' %}" class="sidebar-item" data-section="settings">
                         <i class="material-icons sidebar-item-icon">settings</i>
                         <span>تنظیمات</span>
                     </a>
@@ -1695,7 +1698,7 @@
                             </div>
                             
                             <div class="pt-4 border-t" style="border-color: var(--outline-variant);">
-                                <button class="action-button w-full">ذخیره تنظیمات</button>
+                                <button class="action-button w-full" onclick="location.href='{% url 'main:user_profile' %}'">ذخیره تنظیمات</button>
                             </div>
                         </div>
                     </div>
@@ -1818,5 +1821,6 @@
             showToast('خوش آمدید! ۳ پرونده جدید برای بررسی دارید.');
         }, 1000);
     </script>
+    {% include 'partials/office_dock.html' %}
 </body>
 </html>

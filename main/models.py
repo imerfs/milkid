@@ -1505,3 +1505,5 @@ class CityVillageRequest(models.Model):
     def __str__(self):
         return f"درخواست افزودن {self.name} ({self.get_settlement_type_display()}) - {self.district.name}"
 
+# Office system models (role grants, letters, appointments)
+from .models_office import *  # noqa: E402,F401,F403

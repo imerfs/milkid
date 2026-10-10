@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static persian_filters jalali_tags %}
+
+{% block title %}مکاتبات اداری - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-envelope-open-text ms-2"></i>مکاتبات اداری</h1>
+    {% include 'main/office/_letter_tabs.html' %}
+
+    {% if box == 'inbox' or box == 'archive' or box == 'sent' %}
+    <form method="get" class="row g-2 mb-3" role="search">
+        <div class="col">
+            <label for="q" class="visually-hidden">جستجو در موضوع یا نام فرستنده</label>
+            <input type="search" id="q" name="q" value="{{ q }}" class="form-control" placeholder="جستجو در موضوع یا نام فرستنده">
+        </div>
+        {% if box == 'inbox' %}
+        <div class="col-auto d-flex align-items-center">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="unread" value="1" id="unread" {% if unread_only %}checked{% endif %}>
+                <label class="form-check-label" for="unread">فقط خوانده‌نشده</label></div>
+        </div>
+        {% endif %}
+        <div class="col-auto"><button class="btn btn-outline-primary" type="submit"><i class="fas fa-magnifying-glass ms-1"></i>جستجو</button></div>
+    </form>
+    {% endif %}
+
+    <div class="card">
+        <ul class="list-group list-group-flush">
+            {% for letter in page %}
+            <li class="list-group-item">
+                <a href="{% url 'main:letter_detail' letter.id %}" class="d-flex flex-column flex-md-row justify-content-between gap-2 text-decoration-none text-reset">
+                    <div>
+                        <div class="fw-bold">
+                            {% if letter.priority == 'immediate' %}<i class="fas fa-bolt text-danger ms-1" title="آنی"></i>{% elif letter.priority == 'urgent' %}<i class="fas fa-clock text-warning ms-1" title="فوری"></i>{% endif %}
+                            {% if letter.confidential %}<i class="fas fa-lock text-secondary ms-1" title="محرمانه"></i>{% endif %}
+                            {{ letter.subject }}
+                        </div>
+                        <small class="text-muted">
+                            {% if box == 'sent' or box == 'drafts' %}به: {% for r in letter.recipients.all %}{{ r.user.get_full_name|default:r.user.username }}{% if not forloop.last %}، {% endif %}{% endfor %}
+                            {% else %}از: {{ letter.sender.get_full_name|default:letter.sender.username }}{% endif %}
+                            {% if letter.number %} · شماره {{ letter.number|persian_numbers }}{% endif %}
+                        </small>
+                    </div>
+                    <small class="text-muted text-nowrap">{% if letter.sent_at %}{{ letter.sent_at|jalali_datetime }}{% else %}{{ letter.created_at|jalali_datetime }}{% endif %}</small>
+                </a>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center text-muted py-5">
+                <i class="fas {% if box == 'drafts' %}fa-file-circle-question{% else %}fa-envelope-circle-check{% endif %} fa-2x mb-2" aria-hidden="true"></i>
+                <p class="mb-0">{% if q or unread_only %}نامه‌ای با این جستجو پیدا نشد.{% elif box == 'drafts' %}پیش‌نویسی ندارید.{% elif box == 'sent' %}هنوز نامه‌ای نفرستاده‌اید.{% elif box == 'archive' %}بایگانی خالی است.{% else %}نامه‌ای در صندوق ورودی ندارید.{% endif %}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {% if page.has_other_pages %}
+    <nav class="d-flex justify-content-between mt-3" aria-label="صفحه‌بندی">
+        {% if page.has_previous %}<a class="btn btn-outline-secondary" href="?page={{ page.previous_page_number }}&q={{ q|urlencode }}"><i class="fas fa-chevron-right ms-1"></i>قبلی</a>{% else %}<span></span>{% endif %}
+        <span class="align-self-center text-muted">صفحه {{ page.number }} از {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a class="btn btn-outline-secondary" href="?page={{ page.next_page_number }}&q={{ q|urlencode }}">بعدی<i class="fas fa-chevron-left me-1"></i></a>{% else %}<span></span>{% endif %}
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
