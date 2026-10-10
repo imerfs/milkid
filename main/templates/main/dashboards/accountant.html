@@ -399,7 +399,7 @@
             </div>
             
             <nav class="mt-2">
-                <a href="#" class="flex items-center py-3 px-6 text-white bg-primary-600" aria-current="page">
+                <a href="{% url 'main:accountant_dashboard' %}" class="flex items-center py-3 px-6 text-white bg-primary-600" aria-current="page">
                     <i class="fas fa-tachometer-alt w-5 h-5" aria-hidden="true"></i>
                     <span class="mr-3 font-semibold">داشبورد</span>
                 </a>
@@ -798,5 +798,6 @@
             });
         });
     </script>
+    {% include 'partials/office_dock.html' %}
 </body>
 </html>

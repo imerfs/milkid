@@ -479,6 +479,18 @@
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:letters_inbox' %}">
+                            <i class="fas fa-envelope-open-text ms-1"></i>
+                            مکاتبات{% if office.letters_unread %} <span class="badge bg-danger">{{ office.letters_unread }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:appointments' %}">
+                            <i class="fas fa-calendar-check ms-1"></i>
+                            وقت‌ها{% if office.appointments_pending %} <span class="badge bg-warning text-dark">{{ office.appointments_pending }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'main:messaging_dashboard' %}">
                             <i class="fas fa-comments ms-1"></i>
                             پیام‌رسانی
@@ -637,6 +649,12 @@
                                     <i class="fas fa-bell ms-1"></i>
                                     اعلان‌ها
                                 </a></li>
+                                {% if office.can_grant_roles %}
+                                <li><a class="dropdown-item" href="{% url 'main:role_grants' %}">
+                                    <i class="fas fa-user-shield ms-1"></i>
+                                    نقش‌های دهیاری
+                                </a></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'main:logout' %}">
                                     <i class="fas fa-sign-out-alt ms-1"></i>

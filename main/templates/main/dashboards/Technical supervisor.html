@@ -311,7 +311,7 @@
                                     </div>
                                 </div>
                                 <div class="px-4 py-2 border-t text-center">
-                                    <a href="#" class="text-sm text-blue-600 hover:text-blue-800">مشاهده همه پیام‌ها</a>
+                                    <a href="{% url 'main:letters_inbox' %}" class="text-sm text-blue-600 hover:text-blue-800">مشاهده همه پیام‌ها</a>
                                 </div>
                             </div>
                         </div>
@@ -1906,5 +1906,6 @@
                 });
             }
         </script>
-    </body>
+        {% include 'partials/office_dock.html' %}
+</body>
 </html>

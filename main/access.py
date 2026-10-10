@@ -24,6 +24,8 @@ POLICY = {
     'council.view': {'council', 'dehyari'},
     # municipality management ("mayor_*" views)
     'mayor.manage': {'dehyari'},
+    # office hours / appointments: every staff role can receive visitors
+    'office.provide': {'dehyari', 'engineer', 'inspector', 'accountant', 'council'},
     # technical staff dashboards and tools
     'staff.engineer': {'engineer', 'dehyari'},
     'staff.inspector': {'inspector', 'dehyari'},

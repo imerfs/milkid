@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ساعات کاری من - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 760px">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <h1 class="h3 mb-0"><i class="fas fa-clock ms-2"></i>ساعات کاری من</h1>
+        <a href="{% url 'main:appointments' %}" class="btn btn-outline-primary"><i class="fas fa-calendar-days ms-1"></i>وقت‌ها</a>
+    </div>
+    <p class="text-muted">روزهایی را که ملاقات می‌پذیرید فعال کنید. مردم فقط در همین ساعت‌ها، تا ۱۴ روز آینده، وقت می‌گیرند.</p>
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+
+    <form method="post" class="card" data-once>
+        {% csrf_token %}
+        <ul class="list-group list-group-flush">
+            {% for row in rows %}
+            <li class="list-group-item">
+                <div class="row g-2 align-items-center">
+                    <div class="col-12 col-md-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="on-{{ row.index }}" name="d{{ row.index }}_on" {% if row.rule %}checked{% endif %}>
+                            <label class="form-check-label fw-bold" for="on-{{ row.index }}">{{ row.name }}</label>
+                        </div>
+                    </div>
+                    <div class="col-4 col-md-3"><label class="visually-hidden" for="from-{{ row.index }}">از ساعت</label><input type="time" class="form-control" id="from-{{ row.index }}" name="d{{ row.index }}_from" value="{% if row.rule %}{{ row.rule.start_time|time:'H:i' }}{% else %}09:00{% endif %}"></div>
+                    <div class="col-4 col-md-3"><label class="visually-hidden" for="to-{{ row.index }}">تا ساعت</label><input type="time" class="form-control" id="to-{{ row.index }}" name="d{{ row.index }}_to" value="{% if row.rule %}{{ row.rule.end_time|time:'H:i' }}{% else %}13:00{% endif %}"></div>
+                    <div class="col-4 col-md-3">
+                        <label class="visually-hidden" for="len-{{ row.index }}">مدت هر وقت</label>
+                        <select class="form-select" id="len-{{ row.index }}" name="d{{ row.index }}_len">
+                            <option value="15" {% if row.rule.slot_minutes == 15 %}selected{% endif %}>۱۵ دقیقه</option>
+                            <option value="20" {% if row.rule.slot_minutes == 20 %}selected{% endif %}>۲۰ دقیقه</option>
+                            <option value="30" {% if not row.rule or row.rule.slot_minutes == 30 %}selected{% endif %}>۳۰ دقیقه</option>
+                            <option value="45" {% if row.rule.slot_minutes == 45 %}selected{% endif %}>۴۵ دقیقه</option>
+                            <option value="60" {% if row.rule.slot_minutes == 60 %}selected{% endif %}>۶۰ دقیقه</option>
+                        </select>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="card-footer"><button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk ms-1"></i>ذخیره‌ی ساعات کاری</button></div>
+    </form>
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

@@ -234,7 +234,7 @@
                             <p class="mb-1 small text-muted">{{ announcement.content|truncatechars:80 }}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">{{ announcement.created_at|date:"Y/m/d" }}</small>
-                                <span class="badge bg-{{ announcement.priority == 'urgent' and 'danger' or announcement.priority == 'high' and 'warning' or 'success' }}">
+                                <span class="badge bg-{% if announcement.priority == 'urgent' %}danger{% elif announcement.priority == 'high' %}warning{% else %}success{% endif %}">
                                     {{ announcement.get_priority_display }}
                                 </span>
                             </div>

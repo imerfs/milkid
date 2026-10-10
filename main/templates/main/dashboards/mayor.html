@@ -405,13 +405,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="employees">
+                        <a href="{% url 'main:role_grants' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="employees" data-real-link>
                             <i class="fas fa-users ml-3 w-5"></i>
                             <span>کارمندان</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="requests">
+                        <a href="{% url 'main:mayor_requests_list' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="requests" data-real-link>
                             <i class="fas fa-file-alt ml-3 w-5"></i>
                             <span>درخواست‌ها</span>
                         </a>
@@ -441,13 +441,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="announcements">
+                        <a href="{% url 'main:announcement_list' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="announcements" data-real-link>
                             <i class="fas fa-bullhorn ml-3 w-5"></i>
                             <span>اطلاعیه‌ها</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="profile">
+                        <a href="{% url 'main:user_profile' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="profile" data-real-link>
                             <i class="fas fa-user ml-3 w-5"></i>
                             <span>پروفایل</span>
                         </a>
@@ -720,15 +720,15 @@
                                     <h3 class="text-xl font-semibold text-gray-800">اقدامات سریع</h3>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
-                                    <button class="bg-blue-100 hover:bg-blue-200 text-blue-700 p-4 rounded-xl flex flex-col items-center transition-colors">
+                                    <button class="bg-blue-100 hover:bg-blue-200 text-blue-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:role_grants' %}'">
                                         <i class="fas fa-user-plus text-2xl mb-2"></i>
                                         <span class="text-sm">اضافه کردن کارمند</span>
                                     </button>
-                                    <button class="bg-purple-100 hover:bg-purple-200 text-purple-700 p-4 rounded-xl flex flex-col items-center transition-colors">
+                                    <button class="bg-purple-100 hover:bg-purple-200 text-purple-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:create_request' %}'">
                                         <i class="fas fa-file-medical text-2xl mb-2"></i>
                                         <span class="text-sm">ایجاد درخواست</span>
                                     </button>
-                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-4 rounded-xl flex flex-col items-center transition-colors">
+                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:create_announcement' %}'">
                                         <i class="fas fa-bullhorn text-2xl mb-2"></i>
                                         <span class="text-sm">ارسال اطلاعیه</span>
                                     </button>
@@ -801,7 +801,7 @@
                                                 <p class="text-xs text-gray-500 mt-1">۴ ساعت پیش</p>
                                             </div>
                                         </div>
-                                        <button class="text-yellow-600 hover:text-yellow-800 text-sm font-medium">مشاهده پروفایل</button>
+                                        <button class="text-yellow-600 hover:text-yellow-800 text-sm font-medium" onclick="location.href='{% url 'main:user_profile' %}'">مشاهده پروفایل</button>
                                     </div>
                                 </div>
                             </div>
@@ -3136,6 +3136,7 @@
             
             sidebarItems.forEach(item => {
                 item.addEventListener('click', function(e) {
+                    if (this.hasAttribute('data-real-link')) return;   // goes to a real page, not an in-page tab
                     e.preventDefault();
                     
                     // Remove active class from all sidebar items
@@ -3336,5 +3337,6 @@
             });
         });
     </script>
+    {% include 'partials/office_dock.html' %}
 </body>
 </html>

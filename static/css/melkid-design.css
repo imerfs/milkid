@@ -213,3 +213,6 @@ body.mk-bs main h1:not([class*="display"]):not([class*="fs-"]):not([class*="h1"]
 
 /* Persian script needs more air than Latin: Bootstrap pages only (Tailwind pages keep their own leading) */
 body.mk-bs { line-height: 1.75; }
+
+/* headings inside the (coloured) card header must keep the header's text colour */
+body.mk-bs .card-header :is(h1, h2, h3, h4, h5, h6) { color: inherit; }

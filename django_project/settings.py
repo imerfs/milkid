@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 
+from django.contrib.messages import constants as message_levels
+
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -100,6 +102,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'main.context_processors.seo',
+                'main.context_processors.office',
             ],
         },
     },
@@ -411,3 +414,11 @@ SITE_EMAIL = os.environ.get('SITE_EMAIL', '')
 SITE_PHONE = os.environ.get('SITE_PHONE', '')
 SITE_ADDRESS_LOCALITY = os.environ.get('SITE_ADDRESS_LOCALITY', '')
 SITE_ADDRESS_STREET = os.environ.get('SITE_ADDRESS_STREET', '')
+
+# Bootstrap calls the error alert 'danger'
+MESSAGE_TAGS = {message_levels.ERROR: 'danger'}
+
+# Tests create many users; the production hasher is deliberately slow
+import sys
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']

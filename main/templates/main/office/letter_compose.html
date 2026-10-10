@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if parent %}پاسخ به نامه{% else %}نامه‌ی جدید{% endif %} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-envelope-open-text ms-2"></i>{% if parent %}پاسخ به نامه{% else %}نامه‌ی جدید{% endif %}</h1>
+    {% include 'main/office/_letter_tabs.html' %}
+
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+    {% if parent %}
+    <div class="alert alert-secondary"><i class="fas fa-reply ms-1"></i>در پاسخ به: <a href="{% url 'main:letter_detail' parent.id %}">{{ parent.subject }}</a></div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="card card-body" data-once novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="token" value="{{ token }}">
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label for="to" class="form-label"><i class="fas fa-user ms-1"></i>گیرنده‌ها</label>
+                <select name="to" id="to" class="form-select" multiple size="6" aria-describedby="to-help">
+                    {% for u in people %}<option value="{{ u.id }}" {% if u.id|stringformat:"s" in selected_to %}selected{% endif %}>{{ u.get_full_name|default:u.username }} — {{ u.profile.get_role_display }}</option>{% endfor %}
+                </select>
+                <div id="to-help" class="form-text">برای انتخاب چند نفر، Ctrl (یا لمس طولانی) را نگه دارید.</div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="cc" class="form-label"><i class="fas fa-users ms-1"></i>رونوشت (اختیاری)</label>
+                <select name="cc" id="cc" class="form-select" multiple size="6">
+                    {% for u in people %}<option value="{{ u.id }}" {% if u.id|stringformat:"s" in selected_cc %}selected{% endif %}>{{ u.get_full_name|default:u.username }} — {{ u.profile.get_role_display }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <label for="subject" class="form-label"><i class="fas fa-heading ms-1"></i>موضوع</label>
+                <input type="text" name="subject" id="subject" class="form-control" maxlength="200" required value="{{ data.subject }}">
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="priority" class="form-label"><i class="fas fa-flag ms-1"></i>اولویت</label>
+                <select name="priority" id="priority" class="form-select">
+                    {% for value, label in priorities %}<option value="{{ value }}" {% if data.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-6 d-flex align-items-end">
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="confidential" id="confidential" {% if data.confidential %}checked{% endif %}>
+                    <label class="form-check-label" for="confidential"><i class="fas fa-lock ms-1"></i>محرمانه (متن در اعلان‌ها نمایش داده نمی‌شود)</label></div>
+            </div>
+            <div class="col-12">
+                <label for="body" class="form-label"><i class="fas fa-align-right ms-1"></i>متن نامه</label>
+                <textarea name="body" id="body" rows="9" class="form-control" maxlength="20000" required>{{ data.body }}</textarea>
+            </div>
+            <div class="col-12">
+                <label for="attachments" class="form-label"><i class="fas fa-paperclip ms-1"></i>پیوست (حداکثر ۵ فایل: PDF، تصویر، Word)</label>
+                <input type="file" name="attachments" id="attachments" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" name="action" value="send" class="btn btn-primary"><i class="fas fa-paper-plane ms-1"></i>ارسال</button>
+            <button type="submit" name="action" value="draft" class="btn btn-outline-secondary"><i class="fas fa-floppy-disk ms-1"></i>ذخیره به عنوان پیش‌نویس</button>
+        </div>
+    </form>
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}
