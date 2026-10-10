@@ -290,8 +290,7 @@
 let deleteAnnouncementId = null;
 
 function editAnnouncement(id) {
-    // TODO: پیاده‌سازی ویرایش اطلاعیه
-    alert('ویرایش اطلاعیه در نسخه بعدی پیاده‌سازی خواهد شد');
+    window.location.href = `/messaging/announcements/${id}/edit/`;
 }
 
 function deleteAnnouncement(id) {
@@ -301,13 +300,9 @@ function deleteAnnouncement(id) {
 
 document.getElementById('confirmDelete').addEventListener('click', function() {
     if (deleteAnnouncementId) {
-        // TODO: ارسال درخواست حذف به سرور
-        fetch(`/api/announcements/${deleteAnnouncementId}/delete/`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            }
+        fetch(`/messaging/announcements/${deleteAnnouncementId}/delete/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
         })
         .then(response => response.json())
         .then(data => {

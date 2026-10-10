@@ -271,6 +271,12 @@ urlpatterns = [
     path('messaging/announcements/', views.announcement_list, name='announcement_list'),
     path('messaging/announcements/<int:announcement_id>/', views.announcement_detail, name='announcement_detail'),
     path('messaging/announcements/create/', views.create_announcement, name='create_announcement'),
+    path('messaging/announcements/<int:announcement_id>/edit/', views.announcement_edit, name='announcement_edit'),
+    path('messaging/announcements/<int:announcement_id>/delete/', views.announcement_delete, name='announcement_delete'),
+    path('messaging/conversations/<int:conversation_id>/mute/', views.conversation_mute, name='conversation_mute'),
+    path('messaging/conversations/<int:conversation_id>/archive/', views.conversation_archive, name='conversation_archive'),
+    path('messaging/conversations/<int:conversation_id>/leave/', views.conversation_leave, name='conversation_leave'),
+    path('messaging/conversations/<int:conversation_id>/export/', views.conversation_export, name='conversation_export'),
     
     # Messaging System API
     path('api/messages/', views.api_messages_list, name='api_messages_list'),

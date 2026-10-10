@@ -1348,6 +1348,23 @@ class Conversation(models.Model):
     def __str__(self):
         return f"{self.subject}"
 
+class ConversationState(models.Model):
+    """
+    Per-user mute/archive flags for a conversation
+    """
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='user_states', verbose_name='مکالمه')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversation_states', verbose_name='کاربر')
+    is_muted = models.BooleanField(default=False, verbose_name='بی‌صدا')
+    is_archived = models.BooleanField(default=False, verbose_name='بایگانی شده')
+
+    class Meta:
+        verbose_name = 'وضعیت مکالمه'
+        verbose_name_plural = 'وضعیت مکالمات'
+        unique_together = ['conversation', 'user']
+
+    def __str__(self):
+        return f"{self.user} - {self.conversation}"
+
 class Message(models.Model):
     """
     Model for individual messages in a conversation

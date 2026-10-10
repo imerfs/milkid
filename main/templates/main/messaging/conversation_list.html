@@ -64,6 +64,17 @@
                         <i class="fas fa-arrow-right me-1"></i>
                         بازگشت
                     </a>
+                    {% if show_archived %}
+                    <a href="{% url 'main:conversation_list' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-inbox me-1"></i>
+                        صندوق ورودی
+                    </a>
+                    {% else %}
+                    <a href="{% url 'main:conversation_list' %}?archived=1" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-archive me-1"></i>
+                        بایگانی
+                    </a>
+                    {% endif %}
                     <a href="{% url 'main:start_conversation' %}" class="btn btn-primary">
                         <i class="fas fa-plus me-1"></i>
                         مکالمه جدید
@@ -320,8 +331,15 @@ function markAsRead(conversationId) {
 // بایگانی مکالمه
 function archiveConversation(conversationId) {
     if (confirm('آیا مطمئن هستید که می‌خواهید این مکالمه را بایگانی کنید؟')) {
-        // TODO: پیاده‌سازی بایگانی
-        alert('بایگانی مکالمه در نسخه بعدی پیاده‌سازی خواهد شد');
+        fetch(`/messaging/conversations/${conversationId}/archive/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { location.reload(); } else { alert('خطا در بایگانی مکالمه'); }
+        })
+        .catch(() => alert('خطا در ارتباط با سرور'));
     }
 }
 
