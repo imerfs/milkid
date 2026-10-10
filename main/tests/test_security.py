@@ -52,3 +52,43 @@ class LoginThrottleTests(TestCase):
                                     HTTP_X_REAL_IP='203.0.113.10',
                                     HTTP_X_FORWARDED_FOR=f'198.51.100.{i}').status_code
         self.assertEqual(last, 429)
+
+
+class StaffRegistrationTests(TestCase):
+    _n = 0
+
+    def _register(self, path, role):
+        StaffRegistrationTests._n += 1
+        nid = f'00123456{StaffRegistrationTests._n:02d}'
+        mobile = f'0912123456{StaffRegistrationTests._n}'
+        return self.client.post(path, {
+            'username': f'{role}1', 'password1': 'Str0ng-pass-993', 'password2': 'Str0ng-pass-993',
+            'email': f'{role}@example.com', 'first_name': 'a', 'last_name': 'b',
+            'national_id': nid, 'mobile_number': mobile, 'role': role,
+        })
+
+    def test_staff_roles_start_inactive_until_approved(self):
+        for i, role in enumerate(('accountant', 'inspector', 'dehyari', 'engineer', 'council')):
+            self._register(f'/register/{role}/', role)
+        self.assertEqual(User.objects.count(), 5)   # guards against a vacuous pass
+        for u in User.objects.all():
+            self.assertFalse(u.is_active, u.username)
+            self.assertEqual(u.profile.approval_status, 'pending', u.username)
+
+    def test_admin_role_cannot_be_self_selected(self):
+        from main.forms import CustomUserCreationForm
+        choices = dict(CustomUserCreationForm().fields['role'].choices)
+        self.assertNotIn('admin', choices)
+        self._register('/register/dehyari/', 'admin')
+        self.assertFalse(User.objects.filter(username='admin1').exists())
+
+
+class UploadGuardTests(TestCase):
+    def test_html_upload_is_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        User.objects.create_user('u2', password='x-pass-1234')
+        self.client.login(username='u2', password='x-pass-1234')
+        evil = SimpleUploadedFile('evil.html', b'<script>alert(1)</script>', content_type='text/html')
+        r = self.client.post('/dashboard/upload-document/', {'request_id': 1, 'document': evil},
+                             HTTP_ACCEPT='application/json')
+        self.assertEqual(r.status_code, 400)

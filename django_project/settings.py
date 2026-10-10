@@ -81,6 +81,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'main.upload_guard.UploadValidationMiddleware',  # extension/size/content checks on every upload
     'main.middleware.ActiveUserMiddleware',  # Online user tracking & access control
     'main.middleware.PerformanceMonitoringMiddleware',  # Performance monitoring
     'main.middleware.RequestLoggingMiddleware',  # Security logging

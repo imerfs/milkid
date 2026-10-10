@@ -175,7 +175,8 @@ class CustomUserCreationForm(UserCreationForm):
     )
 
     role = forms.ChoiceField(
-        choices=UserProfile.USER_ROLES,
+        # 'admin' is never self-service: admins are created/promoted by an existing admin only.
+        choices=[c for c in UserProfile.USER_ROLES if c[0] != 'admin'],
         required=True,
         label='نوع کاربری',
         initial='citizen',
@@ -368,21 +369,19 @@ class CustomUserCreationForm(UserCreationForm):
                 profile.city_village_name = district.name
 
             # Set approval status and user activity based on role
-            if profile.role in ['citizen', 'owner']:
-                # Citizens and owners are verified automatically
+            if profile.role in ['citizen', 'owner', 'resident']:
+                # Ordinary roles are verified automatically
                 profile.is_verified = True
                 profile.approval_status = 'approved'
                 user.is_active = True
-            elif profile.role in ['dehyari', 'admin', 'council', 'engineer']:
-                # Management roles need approval
+            else:
+                # Every staff role (dehyari, engineer, inspector, accountant, council, ...)
+                # stays inactive until an admin approves it. Previously inspector and
+                # accountant were activated immediately, so anyone could self-register
+                # into those roles and see/approve payments.
                 profile.approval_status = 'pending'
                 profile.is_verified = False
-                user.is_active = False  # Inactive until approved
-            else:
-                # Other roles are approved by default
-                profile.is_verified = True
-                profile.approval_status = 'approved'
-                user.is_active = True
+                user.is_active = False
 
             user.save()
             profile.save()
