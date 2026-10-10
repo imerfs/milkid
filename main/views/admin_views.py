@@ -18,6 +18,7 @@ import json
 import os
 
 from .common import role_required
+from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
     start_conversation, create_announcement, announcement_list, 
@@ -34,6 +35,7 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
 
 
+@policy_required('admin.manage')
 @login_required
 @ensure_csrf_cookie
 def admin_dashboard(request):
@@ -381,6 +383,7 @@ def admin_dashboard(request):
 
 
 
+@policy_required('admin.manage')
 def manage_property_ads(request):
     """مدیریت آگهی‌های املاک کاربران"""
     from main.models import PropertyAdvertisementEditLog
@@ -492,6 +495,7 @@ def manage_property_ads(request):
     return render(request, 'main/admin/manage_property_ads.html', context)
 
 
+@policy_required('admin.manage')
 def manage_users(request):
     """Enhanced user management for administrators"""
     # Get users by categories
@@ -572,6 +576,7 @@ def manage_users(request):
     return render(request, 'main/manage_users.html', context)
 
 
+@policy_required('admin.manage')
 def manage_requests(request):
     """Manage service requests"""
     # Get all requests with filters
@@ -608,6 +613,7 @@ def manage_requests(request):
     return render(request, 'main/manage_requests.html', context)
 
 
+@policy_required('admin.manage')
 def manage_municipalities(request):
     """Admin view for managing municipality applications"""
     municipalities = Municipality.objects.filter(status='pending').order_by('-created_at')
@@ -656,6 +662,7 @@ def manage_municipalities(request):
     return render(request, 'main/manage_municipalities.html', {'municipalities': municipalities})
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_users_list(request):
     """API endpoint for admin to get users list with search, filter, pagination"""
     try:
@@ -715,6 +722,7 @@ def admin_api_users_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_user_change_role(request, user_id):
     """API endpoint to change user role"""
     import json
@@ -748,6 +756,7 @@ def admin_api_user_change_role(request, user_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_user_toggle_active(request, user_id):
     """API endpoint to activate/deactivate user"""
     try:
@@ -776,6 +785,7 @@ def admin_api_user_toggle_active(request, user_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_municipalities_list(request):
     """API endpoint to get municipalities list"""
     try:
@@ -814,6 +824,7 @@ def admin_api_municipalities_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_municipality_action(request, municipality_id):
     """API endpoint to approve/reject municipality"""
     import json
@@ -884,6 +895,7 @@ def admin_api_municipality_action(request, municipality_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_services_list(request):
     """API endpoint to get services list"""
     try:
@@ -908,6 +920,7 @@ def admin_api_services_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_toggle_active(request, service_id):
     """API endpoint to toggle service active status"""
     try:
@@ -926,6 +939,7 @@ def admin_api_service_toggle_active(request, service_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_create(request):
     """API endpoint to create a new service"""
     import json
@@ -953,6 +967,7 @@ def admin_api_service_create(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_update(request, service_id):
     """API endpoint to update a service"""
     import json
@@ -976,6 +991,7 @@ def admin_api_service_update(request, service_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_delete(request, service_id):
     """API endpoint to delete a service"""
     try:
@@ -991,6 +1007,7 @@ def admin_api_service_delete(request, service_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_reports_chart_data(request):
     """API endpoint to get chart data for reports"""
     from datetime import datetime, timedelta
@@ -1065,6 +1082,7 @@ def admin_api_reports_chart_data(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_reports_export_excel(request):
     """API endpoint to export reports to Excel"""
     from openpyxl import Workbook
@@ -1143,6 +1161,7 @@ def admin_api_reports_export_excel(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_system_settings(request):
     """API endpoint to get system settings"""
     try:
@@ -1164,6 +1183,7 @@ def admin_api_system_settings(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_update_system_settings(request):
     """API endpoint to update system settings"""
     import json
@@ -1186,6 +1206,7 @@ def municipality_history(request, municipality_id):
     return render(request, 'main/admin/municipality_history.html', {'municipality': municipality})
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_approve_property_ad(request, ad_id):
     """API to approve a property advertisement"""
@@ -1213,6 +1234,7 @@ def api_approve_property_ad(request, ad_id):
     return redirect('main:admin_dashboard')
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_reject_property_ad(request, ad_id):
     """API to reject a property advertisement"""
@@ -1238,6 +1260,7 @@ def api_reject_property_ad(request, ad_id):
     return redirect('main:admin_dashboard')
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_delete_property_ad(request, ad_id):
     """API to delete a property advertisement"""
@@ -1253,6 +1276,7 @@ def api_delete_property_ad(request, ad_id):
     return redirect('main:admin_dashboard')
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_get_property_ad_detail(request, ad_id):
     """API to get full details and images of an ad for admin modal"""
@@ -1307,6 +1331,7 @@ def api_get_property_ad_detail(request, ad_id):
     return JsonResponse({'success': True, 'data': data})
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_approve_ad_edit(request, edit_id):
     """API to approve a property ad edit request"""
@@ -1331,6 +1356,7 @@ def api_approve_ad_edit(request, edit_id):
     return JsonResponse({'success': False, 'message': 'خطا در اعمال تغییرات ویرایش.'}, status=400)
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_reject_ad_edit(request, edit_id):
     """API to reject a property ad edit request"""
@@ -1353,6 +1379,7 @@ def api_reject_ad_edit(request, edit_id):
     return JsonResponse({'success': True, 'message': 'درخواست ویرایش رد شد.'})
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 @require_http_methods(["POST"])
 def api_toggle_user_access(request, user_id):
@@ -1397,6 +1424,7 @@ def api_toggle_user_access(request, user_id):
         return JsonResponse({'success': False, 'message': f'خطا: {str(e)}'}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_users_monitoring_stats(request):
     """API endpoint to fetch live user monitoring statistics and statuses"""
@@ -1441,6 +1469,7 @@ def api_users_monitoring_stats(request):
     })
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 @require_http_methods(["POST"])
 def api_delete_user(request, user_id):

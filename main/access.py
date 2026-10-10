@@ -26,6 +26,8 @@ POLICY = {
     'mayor.manage': {'dehyari'},
     # office hours / appointments: every staff role can receive visitors
     'office.provide': {'dehyari', 'engineer', 'inspector', 'accountant', 'council'},
+    # the admin panel (pages and JSON endpoints): admins only, so no other role is listed
+    'admin.manage': set(),
     # technical staff dashboards and tools
     'staff.engineer': {'engineer', 'dehyari'},
     'staff.inspector': {'inspector', 'dehyari'},
