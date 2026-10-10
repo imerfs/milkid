@@ -116,6 +116,7 @@ def dashboard(request):
         return redirect('main:home')
 
 
+@login_required
 def user_dashboard(request):
     """Enhanced dashboard for regular residents/owners"""
     user_profile = request.user.profile
@@ -150,6 +151,7 @@ def user_dashboard(request):
     return render(request, 'main/dashboards/user_dashboard.html', context)
 
 
+@login_required
 def dashboard_submit_request(request):
     """Submit a new service request from dashboard"""
     from django.http import HttpResponse
@@ -225,6 +227,7 @@ def dashboard_submit_request(request):
     return redirect('main:user_dashboard')
 
 
+@login_required
 def dashboard_track_requests(request):
     """Track all user requests with pagination and filtering"""
     status_filter = request.GET.get('status', '')
@@ -256,6 +259,7 @@ def dashboard_track_requests(request):
     return render(request, 'main/dashboards/track_requests.html', context)
 
 
+@login_required
 def dashboard_request_detail(request, request_id):
     """View detailed information about a specific request"""
     service_request = get_object_or_404(ServiceRequest, id=request_id, user=request.user)
@@ -270,6 +274,7 @@ def dashboard_request_detail(request, request_id):
     return render(request, 'main/dashboards/request_detail.html', context)
 
 
+@login_required
 def dashboard_upload_document(request):
     """Upload a document to a service request"""
     if request.method == 'POST':
@@ -296,6 +301,7 @@ def dashboard_upload_document(request):
     return redirect('main:user_dashboard')
 
 
+@login_required
 def dashboard_delete_document(request, document_id):
     """Delete a document from user's requests"""
     document = get_object_or_404(RequestDocument, id=document_id, request__user=request.user)
@@ -309,6 +315,7 @@ def dashboard_delete_document(request, document_id):
     return redirect(request.META.get('HTTP_REFERER', 'main:user_dashboard'))
 
 
+@login_required
 def dashboard_download_document(request, document_id):
     """Download a document with proper role-based access control"""
     document = get_object_or_404(RequestDocument, id=document_id)
@@ -332,6 +339,7 @@ def dashboard_download_document(request, document_id):
     raise Http404("فایل یافت نشد")
 
 
+@login_required
 def dashboard_payments(request):
     """View all user payments"""
     status_filter = request.GET.get('status', '')
@@ -359,6 +367,7 @@ def dashboard_payments(request):
     return render(request, 'main/dashboards/payments.html', context)
 
 
+@login_required
 def dashboard_messages(request):
     """View all user notifications and messages"""
     notifications_list = Notification.objects.filter(user=request.user).order_by('-created_at')
@@ -377,6 +386,7 @@ def dashboard_messages(request):
     return render(request, 'main/dashboards/messages.html', context)
 
 
+@login_required
 def notifications(request):
     """View user notifications"""
     user_notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
@@ -403,6 +413,7 @@ def notifications(request):
     return render(request, 'main/notifications.html', context)
 
 
+@login_required
 def analytics_dashboard(request):
     """Comprehensive analytics dashboard for municipalities"""
     municipality = None
