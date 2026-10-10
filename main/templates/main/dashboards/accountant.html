@@ -379,7 +379,7 @@
     
     <div class="flex h-screen">
         <!-- ===== Sidebar ===== -->
-        <aside id="sidebar" class="fixed right-0 top-0 z-40 h-screen w-64 bg-gray-800 dark:bg-gray-900 text-white shadow-lg transition-transform translate-x-0 md:translate-x-0 sidebar-scroll overflow-y-auto" role="navigation" aria-label="منوی اصلی">
+        <aside id="sidebar" class="fixed right-0 top-0 z-40 h-screen w-64 bg-gray-800 dark:bg-gray-900 text-white shadow-lg transition-transform translate-x-full md:translate-x-0 sidebar-scroll overflow-y-auto" role="navigation" aria-label="منوی اصلی">
             <div class="flex items-center justify-between p-6 border-b border-gray-700">
                 <div class="flex items-center">
                     <i class="fas fa-wallet text-2xl text-primary-400" aria-hidden="true"></i>
@@ -713,10 +713,14 @@
                 sidebar.classList.toggle('translate-x-full');
                 sidebar.classList.toggle('translate-x-0');
             });
-            document.getElementById('sidebar-close').addEventListener('click', () => {
+            const closeSidebar = () => {
                 sidebar.classList.add('translate-x-full');
                 sidebar.classList.remove('translate-x-0');
-            });
+            };
+            document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
+            // tapping a menu link or pressing Escape closes the drawer on phones
+            sidebar.addEventListener('click', (e) => { if (e.target.closest('a[href]')) closeSidebar(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
 
             // --- Dark mode ---
             const darkModeToggle = document.getElementById('dark-mode-toggle');
