@@ -155,6 +155,19 @@ def _legacy_mayor_staff_list(request):
     return render(request, 'main/mayor/staff_list.html', context)
 
 
+
+def _password_ok(request, password):
+    """Run Django's password validators; report the first problems as messages."""
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+    try:
+        validate_password(password or '')
+    except ValidationError as exc:
+        for msg in exc.messages:
+            messages.error(request, msg)
+        return False
+    return True
+
 @policy_required('mayor.manage')
 def mayor_staff_add(request):
     """Add new staff member"""
@@ -185,6 +198,8 @@ def mayor_staff_add(request):
             messages.error(request, 'نام کاربری تکراری است.')
         elif UserProfile.objects.filter(national_id=national_id).exists():
             messages.error(request, 'کد ملی تکراری است.')
+        elif not _password_ok(request, password):
+            pass
         else:
             user = User.objects.create_user(
                 username=username,
