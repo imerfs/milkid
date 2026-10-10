@@ -44,3 +44,6 @@ ipython>=8.15.0
 # Monitoring (optional)
 sentry-sdk>=1.32.0  # For error tracking
 django-silk>=5.0.4  # For profiling
+
+# Excel export
+openpyxl>=3.1
