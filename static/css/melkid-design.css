@@ -226,6 +226,10 @@ body.mk-tw { margin: 0; }                       /* Tailwind pages ship without a
 body.mk-bs, body.mk-tw { overflow-x: clip; }
 
 @media (max-width: 767.98px) {
+  /* the page itself must never slide sideways while scrolling */
+  html, body { overflow-x: hidden; overscroll-behavior-x: none; max-width: 100%; }
+  body { position: relative; }
+
   /* room for the bottom shortcut bar and the floating help buttons */
   body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 
