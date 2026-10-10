@@ -70,7 +70,8 @@ server {
     server_name $HOST_NAME _;
     client_max_body_size 20M;
 
-    location /static/ { alias $APP_DIR/staticfiles/; }
+    # revalidate on every load (cheap 304 via ETag) so a deploy shows up without clearing the browser cache
+    location /static/ { alias $APP_DIR/staticfiles/; add_header Cache-Control "no-cache"; }
     location /media/  { alias $APP_DIR/media/; }
     location / {
         proxy_pass http://127.0.0.1:8000;
