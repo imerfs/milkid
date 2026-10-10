@@ -17,7 +17,7 @@ class ScriptLoading(TestCase):
 
     def test_optional_enhancements_load_after_first_paint(self):
         page = self.page()
-        for name in ('voice-ui', 'gesture-navigation', 'onboarding', 'keyboard-shortcuts'):
+        for name in ('voice-ui', 'onboarding', 'keyboard-shortcuts'):
             self.assertNotRegex(page, r'<script[^>]+src="[^"]*%s\.js"' % name)
             self.assertIn(f'js/{name}.js', page)  # still referenced, by the idle loader
 

@@ -235,8 +235,6 @@ body.mk-bs, body.mk-tw { overflow-x: clip; }
 
   /* the old floating theme toggle sat on top of the menu button; the navbar has its own toggle */
   .theme-toggle, .theme-selector { display: none !important; }
-  /* tiny hand emoji drawn on every touch target by the gesture script */
-  .gesture-enabled::after, .gesture-indicator { display: none !important; }
 
   /* floating helpers: smaller, stacked in the corner, clear of the page content */
   .voice-button { width: 44px !important; height: 44px !important; bottom: 14px !important; right: 12px !important; left: auto !important; }

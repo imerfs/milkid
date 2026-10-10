@@ -654,35 +654,6 @@
 
 /* ========== Touch Gestures Support ========== */
 @media (max-width: 768px) and (pointer: coarse) {
-  /* Swipe indicators */
-  .swipeable {
-    position: relative;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .swipeable::after {
-    content: "← سوایپ کنید";
-    position: absolute;
-    top: 50%;
-    left: 1rem;
-    transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    pointer-events: none;
-    opacity: 0.8;
-    animation: fadeOut 3s ease-out forwards;
-  }
-
-  @keyframes fadeOut {
-    0%, 50% { opacity: 0.8; }
-    100% { opacity: 0; }
-  }
-
   /* Pull to refresh indicator */
   .pull-to-refresh {
     position: relative;

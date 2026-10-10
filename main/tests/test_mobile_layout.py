@@ -30,8 +30,22 @@ class PhoneStylesheet(TestCase):
 
     def test_legacy_floating_widgets_are_calmed_on_phones(self):
         phone = self.css.split('max-width: 767.98px', 1)[1]
-        for rule in ('.theme-toggle', '.gesture-enabled::after', '.voice-button', '.tutorial-trigger', '.mk-drawer-open'):
+        for rule in ('.theme-toggle', '.voice-button', '.tutorial-trigger', '.mk-drawer-open'):
             self.assertIn(rule, phone)
 
     def test_tailwind_pages_have_no_default_body_margin(self):
         self.assertIn('body.mk-tw { margin: 0; }', self.css)
+
+
+class NoScrollHijacking(TestCase):
+    """Fast flicks used to count as swipes that jumped to the top or bottom of the page or went back/forward."""
+
+    def test_gesture_script_is_gone_and_no_scroll_snap_remains(self):
+        root = Path(settings.BASE_DIR)
+        self.assertFalse((root / 'static' / 'js' / 'gesture-navigation.js').exists())
+        for css in (root / 'static' / 'css').glob('*.css'):
+            if css.name == 'tailwind.css':
+                continue            # only Tailwind's own reset variable, no snap behaviour
+            self.assertNotIn('scroll-snap', css.read_text(encoding='utf-8'), css.name)
+        html = (root / 'main' / 'templates' / 'base.html').read_text(encoding='utf-8')
+        self.assertNotIn('gesture-navigation', html)
