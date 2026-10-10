@@ -40,45 +40,37 @@ def validate_file_extension(file):
         )
 
 
+# Types libmagic reports per extension. PDF/JPEG/PNG are detected reliably, so they are strict;
+# Office/CAD formats are often reported as generic containers or text, so those are lenient but
+# executables (application/x-dosexec, x-executable, ...) never match any of them.
+ALLOWED_MIMES = {
+    'pdf': {'application/pdf'},
+    'jpg': {'image/jpeg'}, 'jpeg': {'image/jpeg'},
+    'png': {'image/png'},
+    'doc': {'application/msword', 'application/CDFV2', 'application/x-ole-storage', 'application/vnd.ms-office'},
+    'docx': {'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip',
+             'application/octet-stream'},
+    'dwg': {'image/vnd.dwg', 'application/acad', 'application/x-dwg', 'application/octet-stream'},
+    'dxf': {'image/vnd.dxf', 'application/dxf', 'text/plain', 'application/octet-stream'},
+}
+
+
 def validate_file_content(file):
     """
     Validate file content matches its extension (prevents file spoofing)
     """
+    ext = os.path.splitext(file.name)[1][1:].lower()
     try:
-        # Read first 2048 bytes to detect file type
         file_head = file.read(2048)
         file.seek(0)
-        
         mime = magic.from_buffer(file_head, mime=True)
-        
-        # Define allowed MIME types
-        allowed_mimes = {
-            'application/pdf': ['pdf'],
-            'image/jpeg': ['jpg', 'jpeg'],
-            'image/png': ['png'],
-            'application/msword': ['doc'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['docx'],
-            'image/vnd.dwg': ['dwg'],
-            'image/vnd.dxf': ['dxf'],
-        }
-        
-        ext = os.path.splitext(file.name)[1][1:].lower()
-        
-        # Check if MIME type matches extension
-        valid = False
-        for mime_type, extensions in allowed_mimes.items():
-            if mime == mime_type and ext in extensions:
-                valid = True
-                break
-        
-        if not valid:
-            raise ValidationError(
-                _('محتوای فایل با پسوند آن مطابقت ندارد. فایل ممکن است خطرناک باشد.')
-            )
-    
-    except Exception as e:
-        # If magic library not available, skip content validation
-        pass
+    except Exception:
+        return   # libmagic unavailable or unreadable: the extension and size checks still apply
+
+    if mime not in ALLOWED_MIMES.get(ext, set()):
+        raise ValidationError(
+            _('محتوای فایل با پسوند آن مطابقت ندارد. فایل ممکن است خطرناک باشد.')
+        )
 
 
 def validate_iranian_national_id(value):

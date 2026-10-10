@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static persian_filters jalali_tags %}
+
+{% block title %}{{ letter.subject }} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    {% include 'main/office/_letter_tabs.html' %}
+
+    <article class="card">
+        <div class="card-header d-flex flex-wrap justify-content-between gap-2">
+            <h1 class="h4 mb-0">{{ letter.subject }}</h1>
+            <div>
+                {% if letter.status == 'draft' %}<span class="badge bg-light text-dark border"><i class="fas fa-file-pen ms-1"></i>پیش‌نویس</span>{% endif %}
+                {% if letter.priority == 'immediate' %}<span class="badge bg-danger"><i class="fas fa-bolt ms-1"></i>آنی</span>
+                {% elif letter.priority == 'urgent' %}<span class="badge bg-warning text-dark"><i class="fas fa-clock ms-1"></i>فوری</span>{% endif %}
+                {% if letter.confidential %}<span class="badge bg-dark"><i class="fas fa-lock ms-1"></i>محرمانه</span>{% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-3">
+                {% if letter.number %}<dt class="col-4 col-md-2">شماره</dt><dd class="col-8 col-md-10">{{ letter.number|persian_numbers }}</dd>{% endif %}
+                <dt class="col-4 col-md-2">تاریخ</dt><dd class="col-8 col-md-10">{% if letter.sent_at %}{{ letter.sent_at|jalali_datetime }}{% else %}{{ letter.created_at|jalali_datetime }}{% endif %}</dd>
+                <dt class="col-4 col-md-2">فرستنده</dt><dd class="col-8 col-md-10"><i class="fas fa-user ms-1"></i>{{ letter.sender.get_full_name|default:letter.sender.username }} ({{ letter.sender.profile.get_role_display }})</dd>
+                <dt class="col-4 col-md-2">گیرندگان</dt>
+                <dd class="col-8 col-md-10">{% for r in recipients %}<span class="badge bg-light text-dark border">{{ r.user.get_full_name|default:r.user.username }}{% if r.kind == 'cc' %} (رونوشت){% endif %}{% if is_sender %} {% if r.read_at %}<i class="fas fa-check-double text-success" title="خوانده شد"></i>{% else %}<i class="fas fa-check text-muted" title="هنوز نخوانده"></i>{% endif %}{% endif %}</span> {% endfor %}</dd>
+            </dl>
+            {% if letter.parent %}<p class="text-muted"><i class="fas fa-reply ms-1"></i>در پاسخ به: {% if letter.parent.status == 'sent' %}<a href="{% url 'main:letter_detail' letter.parent.id %}">{{ letter.parent.subject }}</a>{% else %}{{ letter.parent.subject }}{% endif %}</p>{% endif %}
+            <hr>
+            <div class="mb-3" style="white-space: pre-wrap">{{ letter.body }}</div>
+
+            {% if attachments %}
+            <h2 class="h6"><i class="fas fa-paperclip ms-1"></i>پیوست‌ها</h2>
+            <ul class="list-unstyled">
+                {% for a in attachments %}<li><a href="{% url 'main:letter_attachment' a.id %}"><i class="fas fa-download ms-1"></i>{{ a.original_name }}</a> <small class="text-muted">({{ a.size|filesizeformat }})</small></li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        <div class="card-footer d-flex flex-wrap gap-2">
+            {% if letter.status == 'sent' %}<a href="{% url 'main:letter_reply' letter.id %}" class="btn btn-primary"><i class="fas fa-reply ms-1"></i>پاسخ</a>{% endif %}
+            {% if letter.status == 'draft' %}
+            <form method="post" action="{% url 'main:letter_send' letter.id %}" data-once>{% csrf_token %}<button type="submit" class="btn btn-success"><i class="fas fa-paper-plane ms-1"></i>ارسال پیش‌نویس</button></form>
+            {% endif %}
+            {% if mine %}
+            <form method="post" action="{% url 'main:letter_archive' letter.id %}" data-once>{% csrf_token %}<button type="submit" class="btn btn-outline-secondary"><i class="fas fa-box-archive ms-1"></i>{% if mine.archived %}بازگرداندن به ورودی{% else %}بایگانی{% endif %}</button></form>
+            {% endif %}
+            <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="fas fa-print ms-1"></i>چاپ</button>
+        </div>
+    </article>
+
+    {% if replies %}
+    <section class="mt-4" aria-labelledby="replies-h">
+        <h2 class="h5" id="replies-h"><i class="fas fa-comments ms-1"></i>پاسخ‌ها</h2>
+        <ul class="list-group">{% for r in replies %}<li class="list-group-item"><a href="{% url 'main:letter_detail' r.id %}">{{ r.subject }}</a> <small class="text-muted">— {{ r.sender.get_full_name|default:r.sender.username }}</small></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

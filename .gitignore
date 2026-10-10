@@ -174,3 +174,7 @@ graphify-out/cost.json
 media/
 request_documents/
 staticfiles/
+
+
+# frontend build
+node_modules/

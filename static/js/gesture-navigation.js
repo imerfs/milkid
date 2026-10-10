@@ -450,6 +450,7 @@ class GestureNavigation {
 
         const viewerImg = document.createElement('img');
         viewerImg.src = img.src;
+        viewerImg.alt = img.alt || 'تصویر بزرگ‌شده';
         viewerImg.style.cssText = `
             max-width: 90%;
             max-height: 90%;
@@ -562,7 +563,7 @@ class GestureNavigation {
 }
 
 // Initialize Gesture Navigation
-document.addEventListener('DOMContentLoaded', () => {
+(function (init) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); })(() => {
     window.gestureNavigation = new GestureNavigation();
     
     if (window.gestureNavigation.isEnabled) {

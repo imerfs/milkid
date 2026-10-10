@@ -329,7 +329,7 @@
 }
 
 .feedback-message.success {
-    background: #10b981;
+    background: #16a34a;
     color: white;
 }
 
@@ -476,7 +476,7 @@ textarea:focus {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb 0%, #059669 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #15803d 100%);
     color: white;
     border: none;
     box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);

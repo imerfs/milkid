@@ -1,0 +1,22 @@
+{% load static %}{% comment %}
+  Shared <head> metadata: robots, description, canonical, Open Graph, icons, JSON-LD.
+  Optional: description (overrides the page default). Public/private is decided in main/seo.py.
+{% endcomment %}{% with desc=description|default:seo.description %}
+    <meta name="robots" content="{{ seo.robots|default:'noindex, nofollow' }}">
+{% if seo.public %}
+{% if desc %}    <meta name="description" content="{{ desc }}">
+{% endif %}    <link rel="canonical" href="{{ seo.canonical }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ seo.site.name }}">
+    <meta property="og:locale" content="fa_IR">
+    <meta property="og:url" content="{{ seo.canonical }}">
+{% if desc %}    <meta property="og:description" content="{{ desc }}">
+{% endif %}    <meta property="og:image" content="{{ seo.base_url }}{% static 'icons/og-image.png' %}">
+    <meta name="twitter:card" content="summary_large_image">
+{% endif %}    <link rel="icon" href="{% static 'icons/favicon.svg' %}" type="image/svg+xml">
+    <link rel="icon" href="{% static 'icons/favicon.ico' %}" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+    <meta name="theme-color" content="#1e40af">
+{% for block in seo.jsonld %}    <script type="application/ld+json">{{ block|safe }}</script>
+{% endfor %}{% endwith %}

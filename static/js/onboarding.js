@@ -557,7 +557,7 @@ class OnboardingTutorial {
 }
 
 // Initialize Onboarding Tutorial
-document.addEventListener('DOMContentLoaded', () => {
+(function (init) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); })(() => {
     window.onboardingTutorial = new OnboardingTutorial();
     
     // Add tutorial trigger button to help menu

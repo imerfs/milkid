@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% load static persian_filters %}
 
+{% block title %}جزئیات آگهی ملک شما - ملک آیدی{% endblock %}
+
+
 {% block extra_css %}
 <style>
     .ad-detail-section {
@@ -63,7 +66,7 @@
     .status-approved {
         background: #d1fae5;
         color: #065f46;
-        border: 1px solid #10b981;
+        border: 1px solid #16a34a;
     }
     
     .status-rejected {
@@ -88,7 +91,7 @@
     }
     
     .price-highlight {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
         color: white;
         padding: 16px;
         border-radius: 8px;
