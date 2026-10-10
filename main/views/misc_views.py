@@ -198,7 +198,7 @@ def autocad_upload(request):
 
             try:
                 parser = AutoCADParser(autocad_obj.file.path)
-                property_data = parser.parse()
+                property_data = parser.parse_file()
 
                 PropertyData.objects.create(
                     autocad_file=autocad_obj,

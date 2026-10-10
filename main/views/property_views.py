@@ -27,7 +27,7 @@ from main.forms import (ContactForm, CustomUserCreationForm, CitizenRegistration
                    ServiceRequestForm, ProfileUpdateForm, DocumentUploadForm, ServiceWizardStepForm,
                    MunicipalityRegistrationForm, PropertyRegistrationForm, PropertySearchForm, ConstructionPermitForm,
                    PropertyAdvertisementForm)
-from main.models import (UserProfile, ServiceRequest, Notification, RequestDocument, Service, ServiceStep, Property, Municipality,
+from main.models import (PropertyImage, UserProfile, ServiceRequest, Notification, RequestDocument, Service, ServiceStep, Property, Municipality,
                    PropertyAdvertisement, AutoCADFile, PropertyData, Payment, Conversation, Message, MessageRecipient,
                    ViolationReport, Inspection, InspectionDocument, TechnicalReport, Province, County, District, CityVillage,
                    Vote, CouncilComment, PropertyAdvertisementEditLog)

@@ -161,7 +161,7 @@ def service_wizard(request, slug, step):
     service_step = get_object_or_404(ServiceStep, service=service, step_number=step)
     
     if request.method == 'POST':
-        form = ServiceWizardStepForm(request.POST, request.FILES, service_step=service_step)
+        form = ServiceWizardStepForm(service_step, request.POST, request.FILES)
         if form.is_valid():
             # Store step data in session
             if 'service_wizard_data' not in request.session:

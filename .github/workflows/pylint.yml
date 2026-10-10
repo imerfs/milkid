@@ -7,17 +7,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.10", "3.12"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+    - name: System libraries (file-type detection for uploads)
+      run: sudo apt-get update && sudo apt-get install -y libmagic1
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
+        pip install -r requirements.txt pylint pylint-django
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        pylint -E --load-plugins=pylint_django --django-settings-module=django_project.settings \
+          --disable=imported-auth-user $(git ls-files '*.py')
+      env:
+        DEBUG: "True"
+        DJANGO_SECRET_KEY: ci-only
