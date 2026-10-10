@@ -47,3 +47,6 @@ django-silk>=5.0.4  # For profiling
 
 # Excel export
 openpyxl>=3.1
+
+# Production server
+gunicorn>=22.0.0

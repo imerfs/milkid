@@ -216,3 +216,56 @@ body.mk-bs { line-height: 1.75; }
 
 /* headings inside the (coloured) card header must keep the header's text colour */
 body.mk-bs .card-header :is(h1, h2, h3, h4, h5, h6) { color: inherit; }
+
+
+/* ===================================================================
+   Phone layer (<768px). Loaded last on every page, so it can calm the
+   legacy floating widgets and give every page the same touch basics.
+   =================================================================== */
+body.mk-tw { margin: 0; }                       /* Tailwind pages ship without a reset: no 8px gutter */
+body.mk-bs, body.mk-tw { overflow-x: clip; }
+
+@media (max-width: 767.98px) {
+  /* room for the bottom shortcut bar and the floating help buttons */
+  body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+  /* the old floating theme toggle sat on top of the menu button; the navbar has its own toggle */
+  .theme-toggle, .theme-selector { display: none !important; }
+  /* tiny hand emoji drawn on every touch target by the gesture script */
+  .gesture-enabled::after, .gesture-indicator { display: none !important; }
+
+  /* floating helpers: smaller, stacked in the corner, clear of the page content */
+  .voice-button { width: 44px !important; height: 44px !important; bottom: 14px !important; right: 12px !important; left: auto !important; }
+  .tutorial-trigger { width: 40px !important; height: 40px !important; bottom: 66px !important; right: 14px !important; left: auto !important; }
+
+  /* touch targets and text */
+  .navbar .navbar-toggler { min-width: 44px; min-height: 44px; }
+  .navbar-collapse .nav-link, .navbar-collapse .dropdown-item { min-height: 44px; display: flex; align-items: center; }
+  footer a { display: inline-block; padding: .5rem .25rem; }
+  .btn, .form-control, .form-select { min-height: 44px; }
+  input, select, textarea { font-size: 16px !important; max-width: 100%; min-width: 0; }   /* 16px stops iOS zooming into fields */
+  input[type="date"], input[type="time"] { width: 100%; }
+
+  /* media and tables never push the page wider than the screen */
+  img, video, canvas { max-width: 100%; height: auto; }
+  .mk-bs table, .mk-tw main table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* dashboards with a floating menu button: keep the header text clear of it (RTL: the button is on the right) */
+  .mk-tw:has(button.fixed.right-5) header { padding-right: 4.5rem !important; }
+
+  /* page-title rows (title on one side, action buttons on the other) wrap instead of running off the screen */
+  .mk-tw main .flex.justify-between.items-center { flex-wrap: wrap; gap: .75rem; }
+  .mk-tw main h1, .mk-tw main h2 { min-width: 0; overflow-wrap: anywhere; }
+
+  /* toasts use the full width; the session clock is decoration and covered the shortcut bar */
+  #notification-container { left: 12px !important; right: 12px !important; width: auto !important; max-width: none !important; }
+  #notification-container .notification { max-width: 100%; white-space: normal; }
+  .session-timer { display: none !important; }
+
+  /* the shortcut bar sits under every open menu drawer instead of on top of it */
+  .office-dock { z-index: 35 !important; }
+
+  /* off-canvas drawer used by panels whose sidebar is desktop-only */
+  .mk-drawer-open { display: flex !important; position: fixed !important; top: 0; bottom: 0; right: 0; height: 100dvh; z-index: 60 !important; width: 17rem; max-width: 85vw; overflow-y: auto; }
+  .mk-drawer-backdrop { position: fixed; inset: 0; z-index: 55; background: rgba(15, 23, 42, .5); }
+}
