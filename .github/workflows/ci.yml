@@ -35,11 +35,43 @@ jobs:
           npm run build:css
           git diff --exit-code static/css/tailwind.css
 
+  test-postgres:
+    # The whole test suite on PostgreSQL, the database production runs on (the `test` job uses SQLite).
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: ci-only-not-a-secret
+      USE_POSTGRES: 'True'
+      PGDATABASE: ci
+      PGUSER: ci
+      PGPASSWORD: ci
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGSSLMODE: disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: sudo apt-get update && sudo apt-get install -y libmagic1
+      - run: pip install -r requirements.txt
+      - run: python manage.py migrate --noinput
+      - run: python manage.py test
+
   docker:
     # Builds the production image and starts the whole stack (web + PostgreSQL + nginx).
-    # continue-on-error until the app is verified on PostgreSQL; then remove it so this job gates merges.
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Compose file is valid
