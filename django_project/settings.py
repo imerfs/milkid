@@ -442,6 +442,10 @@ import sys
 if 'test' in sys.argv:
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 
+# The health check must answer over plain HTTP even when the site redirects everything else to HTTPS
+# (uptime monitors and the Docker probe call it directly).
+SECURE_REDIRECT_EXEMPT = [r'^healthz/$']
+
 # Error reporting: set SENTRY_DSN to turn it on (no personal data is sent)
 from django_project.observability import init_sentry  # noqa: E402
 init_sentry(os.environ.get('SENTRY_DSN', ''))

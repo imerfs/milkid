@@ -60,3 +60,15 @@ class SentrySetup(SimpleTestCase):
         kwargs = init.call_args.kwargs
         self.assertFalse(kwargs['send_default_pii'])
         self.assertEqual(kwargs['traces_sample_rate'], 0)
+
+
+class HealthzOverPlainHttp(TestCase):
+    """Uptime monitors and Docker probe over plain HTTP; a redirect to HTTPS would make them report 'down'."""
+
+    def test_is_not_redirected_when_the_site_forces_https(self):
+        from django.test import override_settings
+        with override_settings(SECURE_SSL_REDIRECT=True, ALLOWED_HOSTS=['testserver']):
+            response = self.client.get(reverse('healthz'))
+            other = self.client.get(reverse('main:home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(other.status_code, 301)                          # everything else still goes to HTTPS
