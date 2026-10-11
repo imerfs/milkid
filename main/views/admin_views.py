@@ -19,6 +19,7 @@ import os
 
 from .common import role_required
 from main import municipality_approval
+from main.accounts import soft_delete_user
 from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -134,10 +135,6 @@ def admin_dashboard(request):
                     user_profile_target.save()
 
                     if user_profile_target.role == 'dehyari':
-                        Municipality.objects.filter(
-                            manager_name__icontains=user_name,
-                            status='pending'
-                        ).delete()
                         messages.success(request, f'دهیار {user_name} تایید شد و به پنل دهیاری دسترسی پیدا کرد.')
                     else:
                         messages.success(request, f'کاربر {user_name} تایید شد و فعال گردید.')
@@ -172,10 +169,7 @@ def admin_dashboard(request):
                     if user_profile_target.user == request.user or user_profile_target.user.is_superuser:
                         messages.error(request, 'امکان حذف حساب کاربری مدیر ارشد یا حساب جاری وجود ندارد.')
                     else:
-                        target_user = user_profile_target.user
-                        from django.core.cache import cache
-                        cache.delete(f'user_last_seen_{target_user.id}')
-                        target_user.delete()
+                        soft_delete_user(user_profile_target.user)
                         messages.success(request, f'کاربر «{user_name}» با موفقیت از سیستم حذف گردید.')
 
                 elif action == 'toggle_access':
@@ -208,7 +202,7 @@ def admin_dashboard(request):
 
     # User monitoring & access control
     from django.core.cache import cache
-    all_profiles_qs = UserProfile.objects.select_related('user').all().order_by('-user__date_joined')
+    all_profiles_qs = UserProfile.objects.select_related('user').filter(deleted_at__isnull=True).order_by('-user__date_joined')
     now = timezone.now()
 
     all_users_list = []
@@ -489,8 +483,8 @@ def manage_property_ads(request):
 def manage_users(request):
     """Enhanced user management for administrators"""
     # Get users by categories
-    pending_users = UserProfile.objects.filter(approval_status='pending').order_by('-created_at')
-    all_users = UserProfile.objects.exclude(role='admin').order_by('-created_at')
+    pending_users = UserProfile.objects.filter(approval_status='pending', deleted_at__isnull=True).order_by('-created_at')
+    all_users = UserProfile.objects.exclude(role='admin').filter(deleted_at__isnull=True).order_by('-created_at')
 
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
@@ -508,13 +502,7 @@ def manage_users(request):
                 user_profile.user.save()
                 user_profile.save()
                 
-                # If approved user is dehyari, delete any related municipality registration request
                 if user_profile.role == 'dehyari':
-                    # Remove any pending municipality registration for this user
-                    Municipality.objects.filter(
-                        contact_person_name__icontains=user_name,
-                        status='pending'
-                    ).delete()
                     messages.success(request, f'دهیار {user_name} تایید شد و به پنل دهیاری دسترسی پیدا کرد.')
                 else:
                     messages.success(request, f'کاربر {user_name} تایید شد و فعال گردید.')
@@ -544,8 +532,7 @@ def manage_users(request):
                 messages.success(request, f'حساب کاربری {user_name} فعال شد.')
 
             elif action == 'delete':
-                # Delete user completely
-                user_profile.user.delete()
+                soft_delete_user(user_profile.user)
                 messages.info(request, f'کاربر {user_name} حذف شد.')
 
         except UserProfile.DoesNotExist:
@@ -645,7 +632,7 @@ def admin_api_users_list(request):
         page = int(request.GET.get('page', 1))
         per_page = int(request.GET.get('per_page', 20))
         
-        users = UserProfile.objects.all()
+        users = UserProfile.objects.filter(deleted_at__isnull=True)
         
         if search:
             users = users.filter(
@@ -712,7 +699,9 @@ def admin_api_user_change_role(request, user_id):
         
         user_profile.role = new_role
         user_profile.save()
-        
+        if new_role == 'dehyari':
+            municipality_approval.make_dehyari(user_profile)   # one dehyari per place, linked to its municipality
+
         Notification.objects.create(
             user=user_profile.user,
             notification_type='system',
@@ -1056,7 +1045,7 @@ def admin_api_reports_export_excel(request):
         if report_type == 'users':
             ws.title = 'گزارش کاربران'
             headers = ['ردیف', 'نام کامل', 'کد ملی', 'موبایل', 'نقش', 'وضعیت', 'تاریخ ثبت‌نام']
-            users = UserProfile.objects.all().order_by('-created_at')
+            users = UserProfile.objects.filter(deleted_at__isnull=True).order_by('-created_at')
             
             header_fill = PatternFill(start_color='0284c7', end_color='0284c7', fill_type='solid')
             header_font = Font(bold=True, color='FFFFFF', size=12)
@@ -1393,7 +1382,7 @@ def api_users_monitoring_stats(request):
     blocked_count = 0
     users_status_list = []
 
-    profiles = UserProfile.objects.select_related('user').all()
+    profiles = UserProfile.objects.select_related('user').filter(deleted_at__isnull=True)
     for prof in profiles:
         u = prof.user
         last_seen = cache.get(f'user_last_seen_{u.id}')
@@ -1440,12 +1429,8 @@ def api_delete_user(request, user_id):
         if user_target.is_superuser:
             return JsonResponse({'success': False, 'message': 'امکان حذف کاربر با دسترسی مدیر ارشد (Superuser) وجود ندارد.'}, status=400)
 
-        from django.core.cache import cache
         user_name = user_target.get_full_name() or user_target.username
-        cache.delete(f'user_last_seen_{user_target.id}')
-
-        # Cascade deletes UserProfile, etc.
-        user_target.delete()
+        soft_delete_user(user_target)   # keeps the person's requests, payments and messages
 
         return JsonResponse({
             'success': True,

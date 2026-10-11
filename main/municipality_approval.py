@@ -8,7 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from main.geography import norm
-from main.models import CityVillage, District, Notification, UserProfile
+from main.models import CityVillage, District, Municipality, Notification, UserProfile
 
 
 def create_pending_manager(municipality, data):
@@ -64,17 +64,45 @@ def ensure_settlement(municipality):
     return settlement
 
 
-def _dehyaris_of_place(municipality, settlement, exclude_user):
-    """Dehyari profiles registered for the same place (by link, or by name when the link is missing)."""
-    wanted = tuple(norm(getattr(municipality, n)) for n in ('province', 'county', 'city_village'))
+def dehyaris_of_place(province, county, city_village, settlement_id, exclude_user):
+    """Dehyari profiles of the same place (by link, or by name when the link is missing)."""
+    wanted = (norm(province), norm(county), norm(city_village))
     found = []
     for profile in UserProfile.objects.filter(role='dehyari').exclude(user=exclude_user).select_related('user'):
-        same_link = settlement is not None and profile.city_village_fk_id == settlement.id
+        same_link = settlement_id is not None and profile.city_village_fk_id == settlement_id
         same_name = (norm(profile.province), norm(profile.county),
                      norm(profile.city_village_name or profile.city_village)) == wanted
         if same_link or same_name:
             found.append(profile)
     return found
+
+
+def demote(profiles, place):
+    """Turn the given dehyaris into citizens (they are replaced) and tell them."""
+    for old in profiles:
+        old.role = 'citizen'
+        old.save(update_fields=['role'])
+        Notification.objects.create(
+            user=old.user, notification_type='system_update',
+            title='پایان مسئولیت دهیار',
+            message=f'دهیار جدید برای {place} تأیید شد و حساب شما به شهروند تبدیل شد.')
+    return [p.user for p in profiles]
+
+
+def make_dehyari(profile):
+    """An admin set ``profile`` to dehyari by hand: replace the place's previous dehyari and link its municipality."""
+    place = profile.city_village_name or profile.city_village
+    if not place:
+        return []
+    replaced = demote(dehyaris_of_place(profile.province, profile.county, place,
+                                        profile.city_village_fk_id, profile.user), place)
+    towns = Municipality.objects.filter(status='active')
+    town = (towns.filter(city_village_fk_id=profile.city_village_fk_id) if profile.city_village_fk_id
+            else towns.filter(city_village=place)).first()
+    if town:
+        town.admin_user = town.manager_user = profile.user
+        town.save(update_fields=['admin_user', 'manager_user'])
+    return replaced
 
 
 @transaction.atomic
@@ -91,18 +119,11 @@ def approve(municipality, approved_by):
 
     manager = municipality.admin_user
     settlement = ensure_settlement(municipality)
-    replaced = []
     if manager is None:
-        return replaced
+        return []
 
-    for old in _dehyaris_of_place(municipality, settlement, exclude_user=manager):
-        old.role = 'citizen'
-        old.save(update_fields=['role'])
-        replaced.append(old.user)
-        Notification.objects.create(
-            user=old.user, notification_type='system_update',
-            title='پایان مسئولیت دهیار',
-            message=f'دهیار جدید برای {municipality.city_village} تأیید شد و حساب شما به شهروند تبدیل شد.')
+    replaced = demote(dehyaris_of_place(municipality.province, municipality.county, municipality.city_village,
+                                        settlement.id if settlement else None, manager), municipality.city_village)
 
     profile = manager.profile
     profile.role = 'dehyari'
