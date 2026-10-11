@@ -17,6 +17,7 @@ from functools import wraps
 import json
 import os
 
+from main.municipality_approval import create_pending_manager
 from .common import role_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -114,11 +115,14 @@ def register_municipality(request):
     if request.method == 'POST':
         form = MunicipalityRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
-            municipality = form.save(commit=False)
-            municipality.status = 'pending'
-            municipality.save()
+            with transaction.atomic():
+                municipality = form.save(commit=False)
+                municipality.status = 'pending'
+                municipality.save()
+                # The dehyari's account is created inactive; an admin's approval activates it.
+                create_pending_manager(municipality, form.cleaned_data)
 
-            messages.success(request, 'درخواست ثبت شهرداری/دهیاری شما ثبت شد و در انتظار تایید مدیر سیستم است.')
+            messages.success(request, 'درخواست ثبت شهرداری/دهیاری شما ثبت شد. پس از تایید مدیر سیستم می‌توانید با نام کاربری و رمز عبور تعیین‌شده وارد شوید.')
             return redirect('main:home')
     else:
         form = MunicipalityRegistrationForm()
