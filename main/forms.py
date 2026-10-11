@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
+from . import geo_cascade
 from .models import UserProfile, ServiceRequest, RequestDocument, Service, ServiceStep, Municipality, Property, PropertyAdvertisement, PropertyImage, Province, County, District, CityVillage
 from .widgets import JalaliDateInput, JalaliDateTimeInput, JalaliDateField, JalaliDateTimeField
 
@@ -301,18 +302,7 @@ class CustomUserCreationForm(UserCreationForm):
         self.fields['password1'].label = 'رمز عبور'
         self.fields['password2'].label = 'تکرار رمز عبور'
         
-        # Populate geographic fields
-        self.fields['province'].queryset = Province.objects.all().order_by('name')
-        if self.is_bound:
-            self.fields['county'].queryset = County.objects.all()
-            self.fields['district'].queryset = District.objects.all()
-            self.fields['dehestan'].queryset = Dehestan.objects.all()
-            self.fields['city_village'].queryset = CityVillage.objects.all()
-        else:
-            self.fields['county'].queryset = County.objects.none()
-            self.fields['district'].queryset = District.objects.none()
-            self.fields['dehestan'].queryset = Dehestan.objects.none()
-            self.fields['city_village'].queryset = CityVillage.objects.none()
+        geo_cascade.apply_to_form(self, 'role')
 
     def clean_national_id(self):
         national_id = self.cleaned_data.get('national_id')
@@ -538,44 +528,7 @@ class CitizenRegistrationForm(UserCreationForm):
         self.fields['password1'].label = 'رمز عبور'
         self.fields['password2'].label = 'تکرار رمز عبور'
         
-        # Populate province queryset
-        self.fields['province'].queryset = Province.objects.all().order_by('name')
-        
-        if self.is_bound:
-            province_id = self.data.get('province')
-            county_id = self.data.get('county')
-            district_id = self.data.get('district')
-            city_village_id = self.data.get('city_village')
-            
-            if province_id and str(province_id).isdigit():
-                c_qs = County.objects.filter(province_id=int(province_id))
-                if county_id and str(county_id).isdigit():
-                    c_qs = c_qs | County.objects.filter(id=int(county_id))
-                self.fields['county'].queryset = c_qs.order_by('name')
-            else:
-                self.fields['county'].queryset = County.objects.all().order_by('name')
-                
-            if county_id and str(county_id).isdigit():
-                d_qs = District.objects.filter(county_id=int(county_id))
-                if district_id and str(district_id).isdigit():
-                    d_qs = d_qs | District.objects.filter(id=int(district_id))
-                self.fields['district'].queryset = d_qs.order_by('name')
-            else:
-                self.fields['district'].queryset = District.objects.all().order_by('name')
-                
-            if district_id and str(district_id).isdigit():
-                cv_qs = CityVillage.objects.filter(district_id=int(district_id))
-                if city_village_id and str(city_village_id).isdigit():
-                    cv_qs = cv_qs | CityVillage.objects.filter(id=int(city_village_id))
-                self.fields['city_village'].queryset = cv_qs.order_by('name')
-            elif city_village_id and str(city_village_id).isdigit():
-                self.fields['city_village'].queryset = CityVillage.objects.filter(id=int(city_village_id)).order_by('name')
-            else:
-                self.fields['city_village'].queryset = CityVillage.objects.all().order_by('name')
-        else:
-            self.fields['county'].queryset = County.objects.none()
-            self.fields['district'].queryset = District.objects.none()
-            self.fields['city_village'].queryset = CityVillage.objects.none()
+        geo_cascade.apply_to_form(self, 'citizen')
 
     def clean_national_id(self):
         national_id = self.cleaned_data.get('national_id')

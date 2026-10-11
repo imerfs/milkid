@@ -1,0 +1,8 @@
+/* Vazirmatn served from our own server (Google Fonts is slow or blocked in Iran). One variable file covers weights 100-900. */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../vendor/vazirmatn/Vazirmatn-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
