@@ -1,0 +1,10 @@
+[Unit]
+Description=MelkID database backup
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/milkid
+ExecStart=/opt/milkid/venv/bin/python manage.py backup_db --media --keep 14

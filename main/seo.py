@@ -52,7 +52,7 @@ PAGES = {
 
 # Paths crawlers must not fetch (prefix match). Public pages are deliberately absent.
 DISALLOW = [
-    '/admin/', '/api/', '/dashboard/', '/mayor/', '/council/', '/technical/', '/autocad/',
+    '/healthz/', '/admin/', '/api/', '/dashboard/', '/mayor/', '/council/', '/technical/', '/autocad/',
     '/messaging/', '/payments/', '/profile/', '/notifications/', '/requests/', '/analytics/',
     '/manage-', '/my-', '/edit-property-ad/', '/view-property-ad/', '/update-request-status/',
     '/pending-verification/', '/access-blocked/', '/logout/', '/test', '/construction-permit/',

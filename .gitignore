@@ -177,3 +177,6 @@ staticfiles/
 
 # frontend build
 node_modules/
+
+# database backups
+backups/

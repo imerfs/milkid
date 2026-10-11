@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+node_modules
+venv
+.venv
+__pycache__
+*.pyc
+db.sqlite3
+.env
+media
+logs
+backups
+staticfiles
+graphify-out
+docs
