@@ -1,3 +1,4 @@
+import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
@@ -1282,10 +1283,30 @@ class MunicipalityRegistrationForm(forms.ModelForm):
         if manager_username and User.objects.filter(username=manager_username).exists():
             self.add_error('manager_username', 'این نام کاربری قبلاً استفاده شده است.')
         
-        if manager_password and len(manager_password) < 8:
-            self.add_error('manager_password', 'رمز عبور باید حداقل 8 کاراکتر باشد.')
-        
+        if manager_password:
+            from django.contrib.auth.password_validation import validate_password
+            from django.core.exceptions import ValidationError as DjangoValidationError
+            try:
+                validate_password(manager_password)
+            except DjangoValidationError as exc:
+                for message in exc.messages:
+                    self.add_error('manager_password', message)
+
         return cleaned_data
+
+    def clean_manager_national_id(self):
+        national_id = (self.cleaned_data.get('manager_national_id') or '').strip()
+        if not (national_id.isdigit() and len(national_id) == 10):
+            raise forms.ValidationError('کد ملی باید ۱۰ رقم باشد.')
+        if UserProfile.objects.filter(national_id=national_id).exists():
+            raise forms.ValidationError('این کد ملی قبلاً ثبت شده است.')
+        return national_id
+
+    def clean_manager_phone(self):
+        phone = (self.cleaned_data.get('manager_phone') or '').strip()
+        if not re.fullmatch(r'09\d{9}', phone):
+            raise forms.ValidationError('شماره موبایل صحیح وارد کنید (مثل 09121234567).')
+        return phone
     
     def clean_manager_email(self):
         """اعتبارسنجی ایمیل مدیر - فقط بررسی تکراری نبودن"""

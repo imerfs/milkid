@@ -18,6 +18,7 @@ import json
 import os
 
 from .common import role_required
+from main import municipality_approval
 from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -99,18 +100,7 @@ def admin_dashboard(request):
             try:
                 municipality = Municipality.objects.get(id=municipality_id)
                 if action == 'approve':
-                    municipality.status = 'active'
-                    municipality.verified_at = timezone.now()
-                    municipality.verified_by = request.user
-                    municipality.save()
-
-                    if municipality.admin_user:
-                        municipality.admin_user.profile.is_verified = True
-                        municipality.admin_user.profile.role = 'dehyari'
-                        municipality.admin_user.profile.save()
-                        municipality.admin_user.is_active = True
-                        municipality.admin_user.save()
-
+                    municipality_approval.approve(municipality, request.user)
                     messages.success(request, f'درخواست {municipality.name} تایید شد و به سامانه پیوست.')
 
                 elif action == 'reject':
@@ -626,26 +616,9 @@ def manage_municipalities(request):
             municipality = Municipality.objects.get(id=municipality_id)
             
             if action == 'approve':
-                municipality.status = 'active'
-                municipality.verified_at = timezone.now()
-                municipality.verified_by = request.user
-                municipality.save()
-                
-                if municipality.admin_user:
-                    municipality.admin_user.profile.is_verified = True
-                    municipality.admin_user.profile.save()
-                    
-                    if municipality.municipality_type == 'shahrdari':
-                        municipality.admin_user.profile.role = 'dehyari'
-                    else:
-                        municipality.admin_user.profile.role = 'dehyari'
-                    municipality.admin_user.profile.save()
-                    
-                    municipality.admin_user.is_active = True
-                    municipality.admin_user.save()
-                
+                municipality_approval.approve(municipality, request.user)
                 messages.success(request, f'{municipality.name} تایید شد و به اطلاعات جغرافیایی اضافه گردید. مدیر می‌تواند وارد پنل مدیریت شود.')
-                
+
             elif action == 'reject':
                 municipality.status = 'rejected'
                 municipality.save()
@@ -841,25 +814,7 @@ def admin_api_municipality_action(request, municipality_id):
             action = request.POST.get('action')
 
         if action == 'approve':
-            municipality.status = 'active'
-            municipality.verified_at = timezone.now()
-            municipality.verified_by = request.user
-            municipality.save()
-
-            if municipality.admin_user:
-                municipality.admin_user.profile.is_verified = True
-                municipality.admin_user.profile.role = 'dehyari'
-                municipality.admin_user.profile.save()
-                municipality.admin_user.is_active = True
-                municipality.admin_user.save()
-
-                Notification.objects.create(
-                    user=municipality.admin_user,
-                    notification_type='request_status',
-                    title='شهرداری/دهیاری تایید شد',
-                    message=f'شهرداری/دهیاری {municipality.name} تایید شد.'
-                )
-
+            municipality_approval.approve(municipality, request.user)
             return JsonResponse({
                 'success': True,
                 'message': f'درخواست «{municipality.name}» با موفقیت تایید و فعال گردید.'
