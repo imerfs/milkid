@@ -2238,12 +2238,20 @@
                 });
             }
 
+            // A canvas can hold one chart: the report chart is drawn both on load and when its data arrives,
+            // whichever comes second used to throw "Canvas is already in use"
+            function freshChart(canvas, config) {
+                const existing = Chart.getChart(canvas);
+                if (existing) existing.destroy();
+                return new Chart(canvas, config);
+            }
+
             // Initialize charts
             function initializeCharts() {
                 // Monthly Chart
                 const monthlyCtx = document.getElementById('monthlyChart');
                 if (monthlyCtx) {
-                    new Chart(monthlyCtx, {
+                    freshChart(monthlyCtx, {
                         type: 'line',
                         data: {
                             labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
@@ -2298,7 +2306,7 @@
                 // Reports Chart
                 const reportsCtx = document.getElementById('reportsChart');
                 if (reportsCtx) {
-                    new Chart(reportsCtx, {
+                    freshChart(reportsCtx, {
                         type: 'bar',
                         data: {
                             labels: ['فشم', 'لواسان', 'رودهن', 'دیزین', 'میگون'],
@@ -2776,7 +2784,7 @@
                 const ctx = document.getElementById('reportsChart');
                 if (!ctx) return;
                 
-                new Chart(ctx, {
+                freshChart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
