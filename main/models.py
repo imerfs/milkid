@@ -252,6 +252,7 @@ class UserProfile(GeographyLink):
 
     # Additional fields
     is_verified = models.BooleanField(default=False, verbose_name='تایید شده')
+    deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='تاریخ حذف')
     is_active = models.BooleanField(default=True, verbose_name='فعال')
     approval_status = models.CharField(
         max_length=20,

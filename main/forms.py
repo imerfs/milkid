@@ -1129,6 +1129,10 @@ class EventPermitForm(forms.ModelForm):
             'contact_phone': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
+# bakhshdari / farmandari share the whole flow (inactive account, approval, replacement) but are not open yet
+ENABLED_MUNICIPALITY_TYPES = ('dehyari', 'shahrdari')
+
+
 class MunicipalityRegistrationForm(forms.ModelForm):
     """
     Form for registering new municipality/rural council with geographic dropdowns
@@ -1235,7 +1239,9 @@ class MunicipalityRegistrationForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+        self.fields['municipality_type'].choices = [
+            c for c in Municipality.MUNICIPALITY_TYPES if c[0] in ENABLED_MUNICIPALITY_TYPES]
+
         # If this is an update form (instance exists)
         if self.instance and self.instance.pk:
             # Try to populate geographic fields from stored text values

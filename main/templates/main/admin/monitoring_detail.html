@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load jalali_tags %}
+{% block title %}نظارت - ملک آیدی{% endblock %}
+{% block content %}
+<div class="container py-4" dir="rtl">
+  <a href="{% url 'main:admin_monitoring' %}?tab={% if kind == 'chat' %}chats{% else %}letters{% endif %}" class="btn btn-outline-secondary btn-sm mb-3">بازگشت به فهرست</a>
+  {% if kind == 'letter' %}
+    <div class="card"><div class="card-body">
+      <h2 class="h5">{{ letter.subject }}{% if letter.confidential %} <span class="badge bg-danger">محرمانه</span>{% endif %}</h2>
+      <p class="text-muted small mb-2">
+        شماره {{ letter.number }} · از: {{ letter.sender.get_full_name|default:letter.sender.username }} ·
+        {{ letter.sent_at|jalali_datetime }} · اولویت: {{ letter.get_priority_display }}
+      </p>
+      <p class="small">گیرندگان: {% for r in letter.recipients.all %}{{ r.user.get_full_name|default:r.user.username }} ({{ r.get_kind_display }}{% if r.read_at %}، خوانده‌شده{% endif %}){% if not forloop.last %}، {% endif %}{% endfor %}</p>
+      <hr>
+      <div style="white-space: pre-wrap">{{ letter.body }}</div>
+      {% if letter.attachments.all %}<hr><p class="small mb-1">پیوست‌ها:</p><ul class="small">{% for a in letter.attachments.all %}<li>{{ a.original_name }}</li>{% endfor %}</ul>{% endif %}
+    </div></div>
+  {% else %}
+    <div class="card"><div class="card-body">
+      <h2 class="h5">{{ chat.subject }}</h2>
+      <p class="text-muted small">شرکت‌کنندگان: {% for u in chat.participants.all %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}، {% endif %}{% endfor %}</p>
+      <hr>
+      {% for m in chat_messages %}
+        <div class="mb-3"><strong>{{ m.sender.get_full_name|default:m.sender.username }}</strong>
+          <span class="text-muted small">{{ m.created_at|jalali_datetime }}</span>
+          <div style="white-space: pre-wrap">{{ m.body }}</div></div>
+      {% empty %}<p class="text-muted">پیامی نیست.</p>{% endfor %}
+    </div></div>
+  {% endif %}
+</div>
+{% endblock %}
