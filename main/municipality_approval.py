@@ -19,7 +19,7 @@ def create_pending_manager(municipality, data):
     user.set_password(data['manager_password'])
     user.save()
 
-    profile = user.profile
+    profile = UserProfile.objects.get(user=user)     # created by the post_save signal
     profile.national_id = data['manager_national_id']
     profile.mobile_number = data['manager_phone']
     profile.role = 'citizen'            # becomes 'dehyari' only when an admin approves the municipality
