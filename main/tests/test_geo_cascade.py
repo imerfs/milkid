@@ -120,3 +120,41 @@ class RegistrationPages(TestCase):
         self.assertNotIn('/api/provinces/', html)
         self.assertIn('hx-get="/geo/options/?form=role&amp;changed=district"', html)
         self.assertIn('id_is_village_role', html)               # the village checkbox keeps working
+
+
+class MunicipalityRegistration(TestCase):
+    def test_choosing_a_province_fills_counties_and_clears_the_district_only(self):
+        p, *_ = tree()
+        html = self.client.get(reverse('main:geo_options'), {'form': 'municipality', 'changed': 'province', 'province': p.id}).content.decode()
+        found = selects(html)
+        self.assertEqual(found['id_county'][1:], ['بیرجند', 'قاین'])
+        self.assertEqual(len(found['id_district']), 1)
+        self.assertNotIn('id_city_village', found)                          # the settlement is typed as text on this form
+        self.assertEqual(html.count('hx-swap-oob="true"'), 2)
+
+    def test_page_uses_htmx_and_the_old_scripts_are_gone(self):
+        html = self.client.get(reverse('main:register_municipality')).content.decode()
+        self.assertIn('/static/vendor/htmx/htmx.min.js', html)
+        self.assertNotIn('geographic_selector.js', html)
+        self.assertNotIn('/api/get-counties/', html)
+        self.assertIn('hx-get="/geo/options/?form=municipality&amp;changed=province"', html)
+
+    def test_a_county_of_another_province_is_rejected(self):
+        from main.forms import MunicipalityRegistrationForm
+        p, *_ = tree()
+        stranger = County.objects.create(province=Province.objects.create(name='دیگر'), name='جای دیگر')
+        form = MunicipalityRegistrationForm(data={'province': p.id, 'county': stranger.id})
+        form.is_valid()
+        self.assertIn('county', form.errors)
+
+    def test_editing_keeps_the_stored_place_selected(self):
+        from main.forms import MunicipalityRegistrationForm
+        from main.tests.helpers import make_municipality, make_user
+        p, c, c2, d, d2, *_ = tree()
+        town = make_municipality(make_user('dehyari'))
+        town.district = 'مرکزی'
+        town.save()
+        form = MunicipalityRegistrationForm(instance=town)
+        self.assertEqual(form.fields['county'].initial, c)
+        self.assertEqual({county.pk for county in form.fields['county'].queryset}, {c.pk, c2.pk})
+        self.assertEqual({x.pk for x in form.fields['district'].queryset}, {d.pk, d2.pk})

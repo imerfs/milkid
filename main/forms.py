@@ -1254,6 +1254,8 @@ class MunicipalityRegistrationForm(forms.ModelForm):
                             self.fields['district'].initial = district_obj
                 except (Province.DoesNotExist, County.DoesNotExist, District.DoesNotExist):
                     pass
+
+        geo_cascade.apply_to_form(self, 'municipality')
     
     def clean(self):
         cleaned_data = super().clean()
