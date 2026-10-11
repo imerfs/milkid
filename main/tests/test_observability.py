@@ -44,7 +44,8 @@ class JsonLogs(SimpleTestCase):
             raise ValueError('boom')
         except ValueError:
             import sys
-            line = observability.JsonFormatter().format(self.record(level=logging.ERROR, exc_info=sys.exc_info()))
+            exc_info = sys.exc_info()
+        line = observability.JsonFormatter().format(self.record(level=logging.ERROR, exc_info=exc_info))
         self.assertIn('ValueError: boom', json.loads(line)['exception'])
 
 
