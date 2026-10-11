@@ -103,7 +103,7 @@ def property_listings(request):
             ads = PropertyAdvertisement.objects.filter(status=status_filter).order_by('-created_at')
 
     # Search query
-    search_query = request.GET.get('search') or request.GET.get('q', '')
+    search_query = request.GET.get('search') or request.GET.get('q') or request.GET.get('query', '')
     if search_query:
         search_query = search_query.strip()
         ads = ads.filter(

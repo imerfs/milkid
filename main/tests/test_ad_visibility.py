@@ -35,3 +35,23 @@ class AdVisibility(TestCase):
         ad.save()
         html = client_for().get(reverse('main:property_listings'), {'status': 'all'}).content.decode()
         self.assertNotIn('آدرس-محرمانه-۱۲۳', html)
+
+
+class ListingFilters(TestCase):
+    def test_header_search_box_name_is_understood(self):
+        ad = make_ad('approved')
+        ad.address = 'خیابان-یکتا-۹۹'
+        ad.save()
+        other = make_ad('approved')
+        other.address = 'بلوار-دیگر'
+        other.save()
+        html = client_for().get(reverse('main:property_listings'), {'query': 'یکتا'}).content.decode()
+        self.assertIn('خیابان-یکتا-۹۹', html)
+        self.assertNotIn('بلوار-دیگر', html)
+
+    def test_filters_and_pagination_update_only_the_results_through_htmx(self):
+        html = client_for().get(reverse('main:property_listings')).content.decode()
+        self.assertIn('/static/vendor/htmx/htmx.min.js', html)
+        self.assertIn('id="ads-results"', html)
+        self.assertGreaterEqual(html.count('hx-select="#ads-results"'), 4)      # 3 forms + the results (pagination links)
+        self.assertGreaterEqual(html.count('hx-push-url="true"'), 4)            # the address bar still changes
