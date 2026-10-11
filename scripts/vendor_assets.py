@@ -53,6 +53,9 @@ def main():
     copy(NM / 'chart.js/dist/chart.umd.min.js', 'chartjs/chart.umd.min.js', strip_map=True)
     copy(NM / 'sortablejs/Sortable.min.js', 'sortablejs/Sortable.min.js')
 
+    # HTMX (dependent dropdowns and partial page updates)
+    copy(NM / 'htmx.org/dist/htmx.min.js', 'htmx/htmx.min.js')
+
     # Material Icons (one dashboard still uses the ligature font)
     mi = NM / 'material-icons/iconfont'
     copy(mi / 'material-icons.woff2', 'material-icons/material-icons.woff2')

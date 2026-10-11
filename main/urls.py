@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from . import views, api_views
+from . import views, api_views, geo_cascade
 
 app_name = 'main'
 
@@ -196,6 +196,7 @@ urlpatterns = [
     path('municipality-history/', views.municipality_history, name='municipality_history'),
     
     # AJAX Geographic APIs
+    path('geo/options/', geo_cascade.geo_options, name='geo_options'),
     path('api/get-counties/', views.get_counties, name='get_counties'),
     path('api/get-districts/', views.get_districts, name='get_districts'),
     path('api/get-settlements/', views.get_settlements, name='get_settlements'),

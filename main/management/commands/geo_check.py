@@ -6,19 +6,14 @@ Prints what is wrong and exits with status 1 when a hard problem exists (orphans
 softer findings (spelling variants, missing villages) are reported but do not fail the run.
 """
 import collections
-import re
 
 from django.core.management.base import BaseCommand
 from django.db.models import Count
 
-from main.models import CityVillage, County, Dehestan, District, Province
+from main.geography import norm  # noqa: F401  (geo_dedupe imports it from here)
+from main.models import CityVillage, County, Dehestan, District, Municipality, Province, PropertyAdvertisement, UserProfile
 
 IRAN_PROVINCES = 31
-
-
-def norm(name):
-    """Compare names regardless of Arabic letters, half-spaces and spaces."""
-    return re.sub(r'\s+', '', name.replace('ي', 'ی').replace('ك', 'ک').replace('‌', ''))
 
 
 def spelling_variants(model, parent_field):
@@ -65,6 +60,11 @@ def collect():
     linked = CityVillage.objects.exclude(municipality=None).count()
     if flagged != linked:
         soft.append(f'{flagged} settlements are flagged as having a municipality but {linked} are linked to one')
+
+    for model in (UserProfile, Municipality, PropertyAdvertisement):
+        unlinked = model.objects.exclude(province__isnull=True).exclude(province='').filter(province_fk=None).count()
+        if unlinked:
+            soft.append(f'{unlinked} {model.__name__} rows name a province that matches no geography row')
     return hard, soft, figures
 
 
