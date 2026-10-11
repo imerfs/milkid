@@ -228,10 +228,22 @@ def property_listings(request):
     return render(request, 'main/property_listings.html', context)
 
 
+def _may_see_unapproved(user, ad):
+    """Only the owner and administrators may read an advertisement that is not approved."""
+    if not user.is_authenticated:
+        return False
+    if user == ad.user or user.is_staff or user.is_superuser:
+        return True
+    profile = getattr(user, 'profile', None)
+    return bool(profile and profile.role == 'admin')
+
+
 def property_detail(request, property_id):
     """View property details (supports PropertyAdvertisement and legacy Property)"""
     ad = PropertyAdvertisement.objects.filter(id=property_id).first()
     if ad:
+        if ad.status != 'approved' and not _may_see_unapproved(request.user, ad):
+            raise Http404
         context = {
             'property': ad,
             'ad': ad,
