@@ -130,7 +130,7 @@ if os.environ.get('USE_POSTGRES', 'False').lower() == 'true':
             'HOST': os.environ['PGHOST'],
             'PORT': os.environ['PGPORT'],
             'OPTIONS': {
-                'sslmode': 'require',
+                'sslmode': os.environ.get('PGSSLMODE', 'require'),   # 'disable' inside a private Docker network
             },
         }
     }
@@ -265,6 +265,9 @@ else:
         }
     }
 
+# Where `manage.py backup_db` writes its copies
+BACKUP_DIR = Path(os.environ.get('BACKUP_DIR', BASE_DIR / 'backups'))
+
 # Session caching
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
@@ -282,6 +285,9 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
+        'json': {
+            '()': 'django_project.observability.JsonFormatter',
+        },
     },
     'filters': {
         'require_debug_true': {
@@ -295,7 +301,7 @@ LOGGING = {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+            'formatter': 'json' if os.environ.get('LOG_FORMAT') == 'json' else 'simple',
         },
         'file': {
             'level': 'INFO',
@@ -435,3 +441,7 @@ MESSAGE_TAGS = {message_levels.ERROR: 'danger'}
 import sys
 if 'test' in sys.argv:
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
+# Error reporting: set SENTRY_DSN to turn it on (no personal data is sent)
+from django_project.observability import init_sentry  # noqa: E402
+init_sentry(os.environ.get('SENTRY_DSN', ''))

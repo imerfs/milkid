@@ -23,6 +23,8 @@ jobs:
       - name: Migrations are committed
         run: python manage.py makemigrations --check --dry-run
       - run: python manage.py test
+      - name: Static files collect (vendored libraries, fonts)
+        run: python manage.py collectstatic --noinput
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -32,3 +34,24 @@ jobs:
           npm ci
           npm run build:css
           git diff --exit-code static/css/tailwind.css
+
+  docker:
+    # Builds the production image and starts the whole stack (web + PostgreSQL + nginx).
+    # continue-on-error until the app is verified on PostgreSQL; then remove it so this job gates merges.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose file is valid
+        run: |
+          cp .env.docker.example .env
+          sed -i 's/^PGPASSWORD=.*/PGPASSWORD=ci-only/; s/^DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=ci-only-not-a-secret/; s/^REPLIT_DOMAINS=.*/REPLIT_DOMAINS=localhost,127.0.0.1/' .env
+          docker compose config -q
+      - name: Build and start the stack
+        run: docker compose up -d --build --wait --wait-timeout 240
+      - name: Health check through nginx
+        run: curl -fsS http://localhost/healthz/
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=100
+      - run: docker compose down -v
