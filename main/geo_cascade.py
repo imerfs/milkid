@@ -9,10 +9,11 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 ORDER = ('province', 'county', 'district', 'dehestan', 'city_village')
-FORM_SUFFIX = {'citizen': '_citizen', 'role': '_role'}
+FORM_SUFFIX = {'citizen': '_citizen', 'role': '_role', 'municipality': ''}
 FORM_LEVELS = {                       # the selects each form has, top to bottom
     'citizen': ('province', 'county', 'district', 'city_village'),
     'role': ('province', 'county', 'district', 'dehestan', 'city_village'),
+    'municipality': ('province', 'county', 'district'),      # its settlement is typed as text
 }
 PARENT = {'county': 'province', 'district': 'county', 'dehestan': 'district', 'city_village': 'district'}
 EMPTY_LABEL = {
@@ -85,8 +86,11 @@ def apply_to_form(form, form_key):
     for level in levels:
         form.fields[level].widget.attrs.update(select_attrs(form_key, level))
 
-    data = form.data if form.is_bound else {}
-    chosen = {name: to_int(data.get(name)) for name in ('province', 'county', 'district')}
+    if form.is_bound:
+        chosen = {name: to_int(form.data.get(name)) for name in ('province', 'county', 'district')}
+    else:                                                # editing: the form was given initial values (rows or ids)
+        chosen = {name: to_int(getattr(form.fields[name].initial, 'pk', form.fields[name].initial))
+                  for name in ('province', 'county', 'district')}
     form.fields['province'].queryset = Province.objects.order_by('name')
     for level in levels[1:]:
         parent = chosen[PARENT[level]]
@@ -99,8 +103,9 @@ def apply_to_form(form, form_key):
 
 
 def _form_class(form_key):
-    from main.forms import CitizenRegistrationForm, CustomUserCreationForm
-    return {'citizen': CitizenRegistrationForm, 'role': CustomUserCreationForm}[form_key]
+    from main.forms import CitizenRegistrationForm, CustomUserCreationForm, MunicipalityRegistrationForm
+    return {'citizen': CitizenRegistrationForm, 'role': CustomUserCreationForm,
+            'municipality': MunicipalityRegistrationForm}[form_key]
 
 
 @require_GET

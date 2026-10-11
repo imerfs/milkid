@@ -4,9 +4,6 @@
 {% block title %}ثبت نام شهرداری/دهیاری - ملک آیدی{% endblock %}
 
 {% block extra_head %}
-<!-- Geographic Selector JavaScript -->
-<script src="{% static 'js/geographic_selector.js' %}" defer></script>
-
 <style>
     .form-step {
         display: none;
@@ -415,71 +412,6 @@ document.addEventListener('change', (e) => {
         }
     }
 });
-
-// Geographic Dropdown Handlers
-document.addEventListener('DOMContentLoaded', function() {
-    const provinceSelect = document.getElementById('id_province');
-    const countySelect = document.getElementById('id_county');
-    const districtSelect = document.getElementById('id_district');
-    
-    // Province change handler
-    if (provinceSelect) {
-        provinceSelect.addEventListener('change', function() {
-            const provinceId = this.value;
-            
-            // Reset dependent dropdowns
-            countySelect.innerHTML = '<option value="">ابتدا استان را انتخاب کنید</option>';
-            districtSelect.innerHTML = '<option value="">ابتدا شهرستان را انتخاب کنید</option>';
-            
-            if (provinceId) {
-                // Show loading
-                countySelect.innerHTML = '<option value="">در حال بارگذاری...</option>';
-                
-                // Fetch counties
-                fetch(`/api/get-counties/?province_id=${provinceId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        countySelect.innerHTML = '<option value="">انتخاب شهرستان</option>';
-                        data.forEach(county => {
-                            countySelect.innerHTML += `<option value="${county.id}">${county.name}</option>`;
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching counties:', error);
-                        countySelect.innerHTML = '<option value="">خطا در بارگذاری شهرستان‌ها</option>';
-                    });
-            }
-        });
-    }
-    
-    // County change handler
-    if (countySelect) {
-        countySelect.addEventListener('change', function() {
-            const countyId = this.value;
-            
-            // Reset district dropdown
-            districtSelect.innerHTML = '<option value="">ابتدا شهرستان را انتخاب کنید</option>';
-            
-            if (countyId) {
-                // Show loading
-                districtSelect.innerHTML = '<option value="">در حال بارگذاری...</option>';
-                
-                // Fetch districts
-                fetch(`/api/get-districts/?county_id=${countyId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        districtSelect.innerHTML = '<option value="">انتخاب بخش</option>';
-                        data.forEach(district => {
-                            districtSelect.innerHTML += `<option value="${district.id}">${district.name}</option>`;
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching districts:', error);
-                        districtSelect.innerHTML = '<option value="">خطا در بارگذاری بخش‌ها</option>';
-                    });
-            }
-        });
-    }
-});
+// The province -> county -> district dropdowns are driven by HTMX (see main/geo_cascade.py)
 </script>
 {% endblock %}

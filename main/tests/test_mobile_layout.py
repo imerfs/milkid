@@ -49,3 +49,10 @@ class NoScrollHijacking(TestCase):
             self.assertNotIn('scroll-snap', css.read_text(encoding='utf-8'), css.name)
         html = (root / 'main' / 'templates' / 'base.html').read_text(encoding='utf-8')
         self.assertNotIn('gesture-navigation', html)
+
+
+class AdminCharts(TestCase):
+    def test_a_canvas_never_gets_a_second_chart_without_destroying_the_first(self):
+        html = (Path(settings.BASE_DIR) / 'main' / 'templates' / 'main' / 'dashboards' / 'admin_dashboard.html').read_text(encoding='utf-8')
+        self.assertEqual(html.count('new Chart('), 1)                 # only inside freshChart()
+        self.assertIn('Chart.getChart(canvas)', html)

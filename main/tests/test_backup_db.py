@@ -7,11 +7,15 @@ from pathlib import Path
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TransactionTestCase, override_settings
+from unittest import mock, skipUnless
+
+from django.db import connection
+from django.test import SimpleTestCase, TransactionTestCase, override_settings
 
 from main.models import Province
 
 
+@skipUnless(connection.vendor == 'sqlite', 'these tests read the SQLite copy; the PostgreSQL path is covered below')
 class BackupDb(TransactionTestCase):   # SQLite backup waits forever on a test-wide open transaction
     def run_backup(self, directory, *args):
         out = StringIO()
@@ -56,3 +60,33 @@ class BackupDb(TransactionTestCase):   # SQLite backup waits forever on a test-w
     def test_rejects_a_nonsense_keep_value(self):
         with tempfile.TemporaryDirectory() as tmp, self.assertRaises(CommandError):
             self.run_backup(tmp, '--keep', '0')
+
+
+class PostgresBackup(SimpleTestCase):
+    """The pg_dump call, checked without a PostgreSQL server (runs on every database)."""
+    DB = {'NAME': 'melkid', 'USER': 'app', 'PASSWORD': 'secret', 'HOST': 'db', 'PORT': '5432'}
+
+    def run_backup(self, **run_kwargs):
+        from main.management.commands.backup_db import Command
+        with tempfile.TemporaryDirectory() as tmp, mock.patch('main.management.commands.backup_db.subprocess.run', **run_kwargs) as run:
+            Command().backup_postgres(Path(tmp), '20260101-000000', self.DB)
+        return run
+
+    def test_dumps_in_custom_format_with_the_connection_settings_and_no_password_on_the_command_line(self):
+        run = self.run_backup()
+        command = run.call_args.args[0]
+        self.assertEqual(command[:2], ['pg_dump', '--format=custom'])
+        for part in ('db', '5432', 'app', 'melkid'):
+            self.assertIn(part, command)
+        self.assertNotIn('secret', command)                                    # the password travels in the environment
+        self.assertEqual(run.call_args.kwargs['env']['PGPASSWORD'], 'secret')
+
+    def test_a_failed_dump_is_reported_and_leaves_no_half_written_file(self):
+        import subprocess
+        error = subprocess.CalledProcessError(1, 'pg_dump', stderr='connection refused')
+        with self.assertRaisesMessage(CommandError, 'connection refused'):
+            self.run_backup(side_effect=error)
+
+    def test_a_missing_pg_dump_says_what_to_install(self):
+        with self.assertRaisesMessage(CommandError, 'pg_dump is not installed'):
+            self.run_backup(side_effect=FileNotFoundError())

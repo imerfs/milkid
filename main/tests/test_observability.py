@@ -40,11 +40,10 @@ class JsonLogs(SimpleTestCase):
         self.assertNotIn('\n', line)
 
     def test_exceptions_are_included(self):
-        try:
+        with self.assertRaises(ValueError) as caught:
             raise ValueError('boom')
-        except ValueError:
-            import sys
-            exc_info = sys.exc_info()
+        error = caught.exception
+        exc_info = (type(error), error, error.__traceback__)
         line = observability.JsonFormatter().format(self.record(level=logging.ERROR, exc_info=exc_info))
         self.assertIn('ValueError: boom', json.loads(line)['exception'])
 

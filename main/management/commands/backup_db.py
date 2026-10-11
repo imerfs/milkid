@@ -76,8 +76,8 @@ class Command(BaseCommand):
                 shutil.copyfileobj(src, out)
         return written
 
-    def backup_postgres(self, target, stamp):
-        db = settings.DATABASES['default']
+    def backup_postgres(self, target, stamp, db=None):
+        db = db or settings.DATABASES['default']
         written = target / f'db-{stamp}.dump'
         env = dict(os.environ, PGPASSWORD=str(db.get('PASSWORD') or ''))
         command = ['pg_dump', '--format=custom', '--no-owner', '-h', str(db['HOST']), '-p', str(db['PORT']),
