@@ -802,6 +802,8 @@ class ModernUI {
     }
 
     enhanceFileInput(input) {
+        // DragDropManager already gave this input a drop zone with its own preview
+        if (input.previousElementSibling?.classList.contains('drop-zone')) return;
         const wrapper = document.createElement('div');
         wrapper.className = 'file-input-wrapper';
         wrapper.style.cssText = `
