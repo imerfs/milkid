@@ -26,12 +26,13 @@
     <h2 class="h5">پرداخت‌ها</h2>
     <div class="table-responsive card mb-3">
         <table class="table table-sm align-middle mb-0">
-            <thead><tr><th>تاریخ</th><th>روش</th><th>حساب</th><th>پیگیری</th><th class="text-end">مبلغ</th><th>سند</th></tr></thead>
+            <thead><tr><th>تاریخ</th><th>روش</th><th>حساب</th><th>پیگیری</th><th class="text-end">مبلغ</th><th>سند</th><th></th></tr></thead>
             <tbody>
             {% for pay in payments %}
             <tr><td>{{ pay.date|jalali_date|fa }}</td><td>{{ pay.get_method_display }}</td><td>{{ pay.bank_account.title }}</td><td>{{ pay.reference|fa }}</td>
-                <td class="text-end">{{ pay.amount|rial }}</td><td><a href="{% url 'main:acc_voucher_detail' pay.voucher_id %}">{{ pay.voucher.number|fa }}</a></td></tr>
-            {% empty %}<tr><td colspan="6" class="text-center text-muted py-3">پرداختی ثبت نشده است.</td></tr>{% endfor %}
+                <td class="text-end">{{ pay.amount|rial }}</td><td><a href="{% url 'main:acc_voucher_detail' pay.voucher_id %}">{{ pay.voucher.number|fa }}</a></td>
+                <td>{% if not year.is_closed %}<form method="post" action="{% url 'main:acc_payment_cancel' pay.id %}" data-once>{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">ابطال پرداخت</button></form>{% endif %}</td></tr>
+            {% empty %}<tr><td colspan="7" class="text-center text-muted py-3">پرداختی ثبت نشده است.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>

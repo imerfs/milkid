@@ -426,3 +426,16 @@ def acc_bill_cancel(request, bill_id):
     except OfficeError as exc:
         messages.error(request, str(exc))
     return redirect('main:acc_bill_detail', bill_id=bill.id)
+
+
+@_guard()
+@require_POST
+def acc_payment_cancel(request, payment_id):
+    muni = ledger.municipality_of(request.user)
+    payment = get_object_or_404(BillPayment, pk=payment_id, bill__municipality=muni)
+    try:
+        bills.cancel_payment(request.user, payment)
+        messages.success(request, 'پرداخت ابطال شد و سند آن حذف شد.')
+    except OfficeError as exc:
+        messages.error(request, str(exc))
+    return redirect('main:acc_bill_detail', bill_id=payment.bill_id)

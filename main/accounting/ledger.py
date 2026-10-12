@@ -12,7 +12,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from main.access import can, role_of
-from main.models import Account, FiscalYear, Municipality, Voucher, VoucherLine
+from main.models import Account, BillPayment, FiscalYear, Municipality, Voucher, VoucherLine
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.roles import is_admin, municipality_for
 
@@ -148,10 +148,17 @@ def _editable(voucher):
         raise Conflict('سال مالی بسته شده است.')
 
 
+def _not_from_bill(voucher):
+    """A bill payment's voucher is changed only by cancelling the payment, or bill and ledger would drift apart."""
+    if BillPayment.objects.filter(voucher=voucher).exists():
+        raise Conflict('این سند از پرداخت فیش ساخته شده است؛ برای اصلاح، پرداخت را از صفحه‌ی فیش ابطال کنید.')
+
+
 def check_editable(actor, voucher):
-    """Raise Conflict if the voucher may not be edited (final or in a closed year)."""
+    """Raise Conflict if the voucher may not be edited (final, in a closed year or created by a bill payment)."""
     _own(municipality_of(actor), voucher)
     _editable(voucher)
+    _not_from_bill(voucher)
 
 
 def create_voucher(actor, year, on, kind, description, lines, *, number_hint=None):
@@ -181,6 +188,7 @@ def update_voucher(actor, voucher, *, description, lines, on=None, kind=None):
         voucher = _locked(Voucher, voucher.pk)
         voucher.fiscal_year = FiscalYear.objects.get(pk=voucher.fiscal_year_id)
         _editable(voucher)
+        _not_from_bill(voucher)
         on, kind = on or voucher.date, kind or voucher.kind
         _check_header(voucher.fiscal_year, on, kind)
         voucher.description, voucher.date, voucher.kind = _text(description, 'شرح سند'), on, kind
@@ -230,6 +238,7 @@ def delete_voucher(actor, voucher):
         voucher = _locked(Voucher, voucher.pk)
         voucher.fiscal_year = FiscalYear.objects.get(pk=voucher.fiscal_year_id)
         _editable(voucher)
+        _not_from_bill(voucher)
         voucher.deleted_at = timezone.now()
         voucher.save(update_fields=['deleted_at'])
 

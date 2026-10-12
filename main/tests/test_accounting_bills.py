@@ -198,3 +198,62 @@ class BillViewTests(BillBase):
         self.assertEqual(c.post(reverse('main:acc_bill_pay', args=[bill.id]), {'amount': '1'}).status_code, 404)
         self.assertEqual(c.post(reverse('main:acc_bill_cancel', args=[bill.id])).status_code, 404)
         self.assertEqual(self.client.get(reverse('main:acc_bill_cancel', args=[bill.id])).status_code, 405)
+
+
+class PaymentVoucherLockTests(BillBase):
+    def test_payment_voucher_cannot_be_edited_or_deleted(self):
+        b = self.bill(500)
+        v = self.pay(b, 500).voucher
+        for call in (
+            lambda: ledger.update_voucher(self.dehyar, v, description='x', lines=[
+                {'account': self.bank, 'debit': 1, 'credit': 0}, {'account': self.tax, 'debit': 0, 'credit': 1}]),
+            lambda: ledger.delete_voucher(self.dehyar, v),
+            lambda: ledger.check_editable(self.dehyar, v),
+        ):
+            with self.assertRaises(Conflict):
+                call()
+        self.assertEqual(bills.summary(b)['paid'], 500)
+
+    def test_payment_voucher_can_still_be_finalized(self):
+        v = self.pay(self.bill(500), 500).voucher
+        self.assertEqual(ledger.finalize(self.dehyar, v).status, 'final')
+
+    def test_cancel_payment_removes_payment_and_voucher(self):
+        b = self.bill(500)
+        p = self.pay(b, 500)
+        bills.cancel_payment(self.dehyar, p)
+        self.assertEqual(bills.summary(b)['status'], 'unpaid')
+        p.voucher.refresh_from_db()
+        self.assertIsNotNone(p.voucher.deleted_at)
+        self.assertFalse(BillPayment.objects.exists())
+        self.pay(b, 500)  # the amount is payable again
+
+    def test_cancel_refused_for_final_voucher_until_reverted(self):
+        p = self.pay(self.bill(500), 500)
+        ledger.finalize(self.dehyar, p.voucher)
+        with self.assertRaises(Conflict):
+            bills.cancel_payment(self.dehyar, p)
+        self.assertTrue(BillPayment.objects.exists())
+
+    def test_cancel_refused_in_closed_year_and_for_other_tenant(self):
+        p = self.pay(self.bill(500), 500)
+        other = make_user('dehyari')
+        make_municipality(other, village='روستای دیگر')
+        with self.assertRaises(NotFound):
+            bills.cancel_payment(other, p)
+        self.year.is_closed = True
+        self.year.save()
+        with self.assertRaises(Conflict):
+            bills.cancel_payment(self.dehyar, p)
+
+    def test_cancel_payment_page(self):
+        client = client_for(self.dehyar)
+        p = self.pay(self.bill(500), 500)
+        url = reverse('main:acc_payment_cancel', args=[p.id])
+        self.assertEqual(client.get(url).status_code, 405)
+        other = make_user('dehyari')
+        make_municipality(other, village='روستای دیگر')
+        self.assertEqual(client_for(other).post(url).status_code, 404)
+        self.assertRedirects(client.post(url), reverse('main:acc_bill_detail', args=[p.bill_id]),
+                             fetch_redirect_response=False)
+        self.assertFalse(BillPayment.objects.exists())

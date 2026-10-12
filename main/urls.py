@@ -66,6 +66,7 @@ urlpatterns = [
     path('accounting/<int:year_id>/bills/', views.acc_bills, name='acc_bills'),
     path('accounting/bills/<int:bill_id>/', views.acc_bill_detail, name='acc_bill_detail'),
     path('accounting/bills/<int:bill_id>/pay/', views.acc_bill_pay, name='acc_bill_pay'),
+    path('accounting/payments/<int:payment_id>/cancel/', views.acc_payment_cancel, name='acc_payment_cancel'),
     path('accounting/bills/<int:bill_id>/cancel/', views.acc_bill_cancel, name='acc_bill_cancel'),
     path('accounting/<int:year_id>/trial-balance/', views.acc_trial, name='acc_trial'),
     path('accounting/<int:year_id>/ledger/<int:account_id>/', views.acc_ledger, name='acc_ledger'),
