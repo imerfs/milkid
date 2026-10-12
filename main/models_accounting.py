@@ -171,3 +171,19 @@ class VoucherLine(models.Model):
             models.CheckConstraint(
                 condition=(Q(debit__gt=0, credit=0) | Q(credit__gt=0, debit=0)), name='voucher_line_one_side'),
         ]
+
+
+class BudgetLine(models.Model):
+    """Approved budget of one resource/use account in a fiscal year (whole rials). Actuals come from voucher lines."""
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.CASCADE, related_name='budget_lines')
+    account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='budget_lines')
+    amount = models.DecimalField(default=0, verbose_name='بودجه مصوب', **MONEY)
+
+    class Meta:
+        verbose_name = 'ردیف بودجه'
+        verbose_name_plural = 'ردیف‌های بودجه'
+        ordering = ['account__code']
+        constraints = [
+            models.UniqueConstraint(fields=['fiscal_year', 'account'], name='uniq_budget_line'),
+            models.CheckConstraint(condition=Q(amount__gte=0), name='budget_amount_not_negative'),
+        ]

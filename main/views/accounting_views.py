@@ -4,12 +4,13 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from openpyxl import Workbook
 
 from main.access import policy_required
-from main.accounting import chart, ledger
+from main.accounting import budget, chart, ledger
 from main.accounting.parse import jalali_str, parse_amount, parse_int_or_none, parse_jalali
 from main.models import Account, CostCenter, FiscalYear, Party, Voucher
 from main.office.errors import Conflict, Invalid, NotFound, OfficeError
@@ -300,3 +301,55 @@ def acc_ledger(request, year_id, account_id):
     return render(request, 'main/accounting/ledger.html', {
         'year': year, 'account': account, 'final_only': final_only,
         'rows': ledger.account_ledger(request.user, year, account, include_temporary=not final_only)})
+
+
+# ---------- budget ----------
+
+@_guard()
+def acc_budget(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    muni = ledger.municipality_of(request.user)
+    error, status = None, 200
+    if request.method == 'POST':
+        try:
+            account = Account.objects.filter(municipality=muni, pk=parse_int_or_none(request.POST.get('account'))).first()
+            if account is None:
+                raise Invalid('حساب را انتخاب کنید.')
+            budget.set_budget(request.user, year, account, parse_amount(request.POST.get('amount')))
+            messages.success(request, 'بودجه ذخیره شد.')
+            return redirect('main:acc_budget', year_id=year.id)
+        except OfficeError as exc:
+            error, status = str(exc), exc.status
+    final_only = request.GET.get('final') == '1'
+    rows, totals = budget.report(request.user, year, include_temporary=not final_only)
+    choices = Account.objects.filter(municipality=muni, kind__in=budget.BUDGET_KINDS, is_postable=True)
+    return render(request, 'main/accounting/budget.html', {
+        'year': year, 'rows': rows, 'totals': totals, 'choices': choices, 'final_only': final_only,
+        'error': error, 'p': request.POST}, status=status)
+
+
+def _cell(text):
+    """Excel runs cells starting with = + - @ as formulas; titles come from users, so keep them text."""
+    text = str(text)
+    return "'" + text if text[:1] in ('=', '+', '-', '@') else text
+
+
+@_guard()
+def acc_budget_export(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    rows, totals = budget.report(request.user, year, include_temporary=request.GET.get('final') != '1')
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f'بودجه {year.year}'
+    ws.sheet_view.rightToLeft = True
+    ws.append(['کد', 'شرح', 'نوع', 'بودجه مصوب', 'عملکرد', 'باقی‌مانده', 'درصد'])
+    for r in rows:
+        ws.append([r['code'], _cell(r['title']), 'منابع' if r['kind'] == 'resource' else 'مصارف',
+                   int(r['budget']), int(r['actual']), int(r['remaining']), r['percent']])
+    for key, label in (('resource', 'جمع منابع'), ('use', 'جمع مصارف')):
+        t = totals[key]
+        ws.append(['', label, '', int(t['budget']), int(t['actual']), int(t['budget'] - t['actual']), None])
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="budget-{year.year}.xlsx"'
+    wb.save(response)
+    return response

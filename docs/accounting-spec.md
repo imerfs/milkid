@@ -88,7 +88,8 @@ the existing `Payment` stores toman, the future bridge multiplies by 10).
 - `VoucherLine(voucher, row, account, party, cost_center, description, debit, credit)`; check constraints:
   amounts `>= 0`, exactly one side positive.
 - `BudgetLine(fiscal_year, account, amount)` unique `(fiscal_year, account)`; account must be `budget_resource` or `budget_use`.
-  (Phase 3.)
+  Built: `main/accounting/budget.py`, page `accounting/<year>/budget/` and Excel export. Budget is **not enforced**
+  (**Default**): the report flags accounts over budget instead of blocking vouchers. Credit provision (تامین اعتبار) is not built.
 
 ## 4. Business rules (tests first)
 
