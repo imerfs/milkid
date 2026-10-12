@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("main", "0048_financial_settings"),
+        ("main", "0049_merge_redirects_and_finance"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
