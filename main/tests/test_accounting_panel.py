@@ -5,7 +5,7 @@ from datetime import date
 from django.urls import reverse
 
 from main.accounting import bills, budget, ledger
-from main.models import Bill, BillPayment, Party, Voucher
+from main.models import Account, Bill, BillPayment, Party, Voucher
 from main.tests.helpers import client_for, make_municipality, make_user as _make_user
 from main.tests.test_accounting_views import AccountingPagesBase, make_user
 
@@ -63,12 +63,17 @@ class PanelTests(PanelBase):
         self.bill()
         self.assertContains(self.get(tab='bills'), 'ثبت پرداخت')
 
-    def test_no_year_shows_setup_hint_and_foreign_year_is_not_shown(self):
+    def test_no_year_shows_setup_tab_and_foreign_year_is_not_shown(self):
         other = make_user('dehyari')
         make_municipality(other, village='روستای دیگر')
         c = client_for(other)
-        self.assertContains(c.get(reverse('main:acc_panel')), 'هنوز سال مالی باز نشده')
-        self.assertContains(c.get(reverse('main:acc_panel'), {'year': self.year.id}), 'سال مالی انتخاب‌شده پیدا نشد')
+        r = c.get(reverse('main:acc_panel'))
+        self.assertContains(r, 'سال مالی‌ای باز نشده')
+        self.assertContains(r, reverse('main:acc_p_year_open'))
+        self.assertEqual(r.context['tab'], 'setup')
+        r = c.get(reverse('main:acc_panel'), {'year': self.year.id, 'tab': 'vouchers'})
+        self.assertEqual((r.context['year'], r.context['tab']), (None, 'setup'))
+        self.assertContains(r, 'سال مالی انتخاب‌شده پیدا نشد')
 
     def test_closed_year_hides_operation_buttons(self):
         self.year.is_closed = True
@@ -288,3 +293,68 @@ class BudgetModalTests(PanelBase):
             r = self.client.post(url, data)
             self.assertEqual(r.status_code, 400, data)
             self.assertContains(r, 'role="alert"', status_code=400)
+
+
+class SetupTabTests(PanelBase):
+    def test_open_year_and_seed_from_the_panel(self):
+        other = make_user('dehyari')
+        muni = make_municipality(other, village='روستای دیگر')
+        c = client_for(other)
+        r = c.post(reverse('main:acc_p_seed'))
+        self.assertEqual(r.status_code, 204)
+        self.assertTrue(Account.objects.filter(municipality=muni).exists())
+        r = c.post(reverse('main:acc_p_year_open'), {'year': '۱۴۰۵'})
+        self.assertEqual(r.status_code, 204)
+        self.assertTrue(muni.fiscal_years.filter(year=1405).exists())
+        again = c.post(reverse('main:acc_p_year_open'), {'year': '1405'})
+        self.assertEqual(again.status_code, 409)
+        self.assertIn('accError', trigger(again))
+        self.assertEqual(c.post(reverse('main:acc_p_year_open'), {'year': 'x'}).status_code, 400)
+
+    def test_setup_actions_need_post_and_the_right_role(self):
+        self.assertEqual(self.client.get(reverse('main:acc_p_seed')).status_code, 405)
+        self.assertEqual(client_for(make_user('citizen')).post(reverse('main:acc_p_year_open'), {'year': '1405'}).status_code, 302)
+
+
+class ListTabTests(PanelBase):
+    def tab(self, tab, **params):
+        return self.client.get(reverse('main:acc_panel'), {'year': self.year.id, 'tab': tab, **params})
+
+    def test_trial_and_ledger_modal(self):
+        self.voucher(), self.voucher(status='final')
+        r = self.tab('trial')
+        self.assertEqual(r.context['totals']['debit'], 2000)
+        self.assertEqual(self.tab('trial', final=1).context['totals']['debit'], 1000)
+        self.assertContains(r, reverse('main:acc_p_ledger', args=[self.year.id, self.bank.id]))
+        led = self.client.get(reverse('main:acc_p_ledger', args=[self.year.id, self.bank.id]))
+        self.assertEqual(len(led.context['rows']), 2)
+
+    def test_parties_tab_search_and_modal_create(self):
+        self.assertContains(self.tab('parties', q='رضایی'), 'علی رضایی')
+        self.assertNotContains(self.tab('parties', q='نامعلوم'), 'علی رضایی')
+        url = reverse('main:acc_p_party_new')
+        self.assertContains(self.client.get(url), 'طرف حساب جدید')
+        ok = self.client.post(url, {'kind': 'real', 'name': 'زهرا احمدی', 'national_id': '۰۰۱۲۳۴۵۶۷۹'})
+        self.assertEqual(ok.status_code, 204)
+        self.assertTrue(Party.objects.filter(municipality=self.muni, name='زهرا احمدی', national_id='0012345679').exists())
+        for bad in ({'name': ''}, {'name': 'x', 'national_id': '123'}, {'name': 'x', 'kind': 'zzz'}):
+            r = self.client.post(url, {'kind': 'real', **bad})
+            self.assertEqual(r.status_code, 400, bad)
+            self.assertContains(r, 'role="alert"', status_code=400)
+
+    def test_accounts_tab_and_modal_create(self):
+        self.assertContains(self.tab('accounts', q=self.tax.title[:6]), self.tax.title)
+        url = reverse('main:acc_p_account_new')
+        self.assertContains(self.client.get(url), 'حساب جدید')
+        data = {'code': 'X100', 'title': 'حساب آزمون', 'kind': 'asset', 'nature': 'debit', 'is_postable': 'on'}
+        self.assertEqual(self.client.post(url, data).status_code, 204)
+        self.assertEqual(self.client.post(url, data).status_code, 409)  # duplicate code
+        self.assertEqual(self.client.post(url, {**data, 'code': 'ک ۱'}).status_code, 400)
+
+    def test_other_municipality_cannot_see_these_rows(self):
+        other = make_user('dehyari')
+        make_municipality(other, village='روستای دیگر')
+        c = client_for(other)
+        self.assertNotContains(c.get(reverse('main:acc_panel'), {'tab': 'parties'}), 'علی رضایی')
+        self.assertNotContains(c.get(reverse('main:acc_panel'), {'tab': 'accounts'}), self.tax.title)
+        self.assertEqual(c.get(reverse('main:acc_p_ledger', args=[self.year.id, self.bank.id])).status_code, 404)

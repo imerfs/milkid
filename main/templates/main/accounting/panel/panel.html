@@ -2,6 +2,7 @@
 {% url 'main:acc_panel' as panel_url %}
 <div data-year="{{ year.id }}" data-panel-url="{{ panel_url }}" hx-target="#acc-panel" hx-swap="innerHTML">
     <!-- Toolbar: fiscal year + the operations of the page -->
+    {% if year %}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
         <div class="flex items-center gap-3">
             <label for="acc-year" class="text-sm text-gray-600 dark:text-gray-300">سال مالی</label>
@@ -44,21 +45,18 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">مانده وصول‌نشده: {{ summary.open_bill_remaining|rial }} ریال</p>
         </div>
     </div>
+    {% endif %}
 
     <!-- Tabs + table -->
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
         <div class="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto" role="tablist" aria-label="بخش‌های حسابداری">
-            <button type="button" role="tab" aria-selected="{% if tab == 'vouchers' %}true{% else %}false{% endif %}" data-tab="vouchers" hx-get="{{ panel_url }}?year={{ year.id }}&tab=vouchers" class="px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 {% if tab == 'vouchers' %}border-primary-600 text-primary-600{% else %}border-transparent text-gray-600 dark:text-gray-300 hover:text-primary-600{% endif %}"><i class="fas fa-file-invoice ml-1" aria-hidden="true"></i>اسناد حسابداری</button>
-            <button type="button" role="tab" aria-selected="{% if tab == 'bills' %}true{% else %}false{% endif %}" data-tab="bills" hx-get="{{ panel_url }}?year={{ year.id }}&tab=bills" class="px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 {% if tab == 'bills' %}border-primary-600 text-primary-600{% else %}border-transparent text-gray-600 dark:text-gray-300 hover:text-primary-600{% endif %}"><i class="fas fa-receipt ml-1" aria-hidden="true"></i>فیش‌های نقدی</button>
-            <button type="button" role="tab" aria-selected="{% if tab == 'budget' %}true{% else %}false{% endif %}" data-tab="budget" hx-get="{{ panel_url }}?year={{ year.id }}&tab=budget" class="px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 {% if tab == 'budget' %}border-primary-600 text-primary-600{% else %}border-transparent text-gray-600 dark:text-gray-300 hover:text-primary-600{% endif %}"><i class="fas fa-chart-pie ml-1" aria-hidden="true"></i>بودجه و عملکرد</button>
-            <span class="flex-1"></span>
-            <a href="{% url 'main:acc_trial' year.id %}" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 whitespace-nowrap"><i class="fas fa-scale-balanced ml-1" aria-hidden="true"></i>تراز آزمایشی</a>
+            {% for key, label, icon, needs_year in tab_list %}{% if year or not needs_year %}
+            <button type="button" role="tab" aria-selected="{% if tab == key %}true{% else %}false{% endif %}" data-tab="{{ key }}" hx-get="{{ panel_url }}?{% if year %}year={{ year.id }}&{% endif %}tab={{ key }}" class="px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 {% if tab == key %}border-primary-600 text-primary-600{% else %}border-transparent text-gray-600 dark:text-gray-300 hover:text-primary-600{% endif %}"><i class="fas fa-{{ icon }} ml-1" aria-hidden="true"></i>{{ label }}</button>
+            {% endif %}{% endfor %}
         </div>
 
         <div class="p-4 md:p-6" role="tabpanel">
-            {% if tab == 'vouchers' %}{% include 'main/accounting/panel/_vouchers.html' %}
-            {% elif tab == 'bills' %}{% include 'main/accounting/panel/_bills.html' %}
-            {% else %}{% include 'main/accounting/panel/_budget.html' %}{% endif %}
+            {% include tab_template %}
         </div>
     </div>
 </div>

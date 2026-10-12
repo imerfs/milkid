@@ -1,0 +1,25 @@
+{% load accounting_tags %}
+<div class="flex flex-wrap items-center gap-2 mb-4">
+    <button type="button" class="px-3 py-1 rounded-md text-sm {% if not final_only %}bg-gray-800 text-white{% else %}bg-gray-100 dark:bg-gray-700{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=trial">همه اسناد</button>
+    <button type="button" class="px-3 py-1 rounded-md text-sm {% if final_only %}bg-gray-800 text-white{% else %}bg-gray-100 dark:bg-gray-700{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=trial&final=1">فقط قطعی</button>
+</div>
+<div class="overflow-x-auto">
+    <table class="w-full text-right">
+        <thead class="border-b-2 border-gray-200 dark:border-gray-700">
+            <tr><th class="py-3 px-2 font-semibold text-sm hidden sm:table-cell">کد</th><th class="py-3 px-2 font-semibold text-sm">شرح حساب</th><th class="py-3 px-2 font-semibold text-sm">بدهکار</th><th class="py-3 px-2 font-semibold text-sm">بستانکار</th><th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">مانده</th></tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+            <tr class="border-b border-gray-100 dark:border-gray-700">
+                <td class="py-3 px-2 hidden sm:table-cell text-gray-500" dir="ltr">{{ r.code }}</td>
+                <td class="py-3 px-2"><button type="button" class="text-primary-600 hover:underline text-right" hx-get="{% url 'main:acc_p_ledger' year.id r.account_id %}{% if final_only %}?final=1{% endif %}" hx-target="#acc-modal-body">{{ r.title }}</button></td>
+                <td class="py-3 px-2 whitespace-nowrap">{{ r.debit|rial }}</td><td class="py-3 px-2 whitespace-nowrap">{{ r.credit|rial }}</td>
+                <td class="py-3 px-2 hidden md:table-cell whitespace-nowrap">{{ r.balance|rial }}{% if r.balance > 0 %} بدهکار{% elif r.balance < 0 %} بستانکار{% endif %}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="py-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-scale-balanced text-3xl mb-2" aria-hidden="true"></i><p>هنوز گردشی ثبت نشده است.</p></td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot class="font-bold border-t-2 border-gray-200 dark:border-gray-700"><tr><td class="hidden sm:table-cell"></td><td class="py-3 px-2">جمع</td><td class="py-3 px-2">{{ totals.debit|rial }}</td><td class="py-3 px-2">{{ totals.credit|rial }}</td><td class="hidden md:table-cell"></td></tr></tfoot>
+    </table>
+</div>

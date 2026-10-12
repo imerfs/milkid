@@ -6,21 +6,29 @@ services as the classic pages in accounting_views and answer with fragments the 
 import json
 from datetime import date
 
+import jdatetime
 from django.core.paginator import Paginator
-from django.db.models import F, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
-from main.accounting import bills, budget, ledger
+from main.accounting import bills, budget, chart, ledger
 from main.accounting.parse import jalali_str, parse_amount, parse_jalali
-from main.models import Account, BillPayment, FiscalYear, Party, Voucher
+from main.models import Account, BillPayment, FiscalYear, Party, Payment, Voucher
 from main.office.errors import Invalid, OfficeError
 from main.views.accounting_views import (
-    PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines)
+    PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines, new_account,
+    new_party)
 
-TABS = ('vouchers', 'bills', 'budget')
+YEAR_TABS = ('vouchers', 'bills', 'budget', 'trial')
+TABS = YEAR_TABS + ('parties', 'accounts', 'online', 'setup')
 PANEL = 'main/accounting/panel/'
+# (key, label, icon, needs a fiscal year) in tab-bar order
+TAB_LIST = [('vouchers', 'اسناد حسابداری', 'file-invoice', True), ('bills', 'فیش‌های نقدی', 'receipt', True),
+            ('budget', 'بودجه و عملکرد', 'chart-pie', True), ('trial', 'تراز آزمایشی', 'scale-balanced', True),
+            ('parties', 'طرف‌حساب‌ها', 'address-book', False), ('accounts', 'سرفصل حساب‌ها', 'sitemap', False),
+            ('online', 'پرداخت‌های آنلاین', 'credit-card', False), ('setup', 'سال مالی', 'calendar-days', False)]
 
 
 def _trigger(response, **events):
@@ -85,45 +93,162 @@ def _bills_filtered(request, qs):
     return qs
 
 
+def _paged(request, qs):
+    return Paginator(qs, PAGE_SIZE).get_page(request.GET.get('page'))
+
+
+def _tab_vouchers(request, year, ctx):
+    qs = _filtered(request, ledger.vouchers_for(request.user, year)).annotate(
+        total=Sum('lines__debit'), credit_total=Sum('lines__credit')).order_by('-number')
+    ctx['page'] = _paged(request, qs)
+
+
+def _tab_bills(request, year, ctx):
+    page = _paged(request, _bills_filtered(request, bills.bills_for(request.user, year)))
+    page.object_list = list(page.object_list)
+    for b in page.object_list:
+        b.paid = b.paid or 0
+        b.state = 'canceled' if b.canceled_at else 'paid' if b.paid >= b.amount else 'partial' if b.paid else 'unpaid'
+    ctx['page'] = page
+
+
+def _tab_budget(request, year, ctx):
+    ctx['final_only'] = request.GET.get('final') == '1'
+    ctx['rows'], ctx['totals'] = budget.report(request.user, year, include_temporary=not ctx['final_only'])
+
+
+def _tab_trial(request, year, ctx):
+    ctx['final_only'] = request.GET.get('final') == '1'
+    ctx['rows'], ctx['totals'] = ledger.trial_balance(request.user, year, include_temporary=not ctx['final_only'])
+
+
+def _tab_parties(request, year, ctx):
+    q = request.GET.get('q', '').strip()
+    qs = Party.objects.filter(municipality=ctx['muni'])
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(national_id__icontains=q))
+    ctx['page'] = _paged(request, qs)
+
+
+def _tab_accounts(request, year, ctx):
+    q = request.GET.get('q', '').strip()
+    qs = Account.objects.filter(municipality=ctx['muni'])
+    if q:
+        qs = qs.filter(Q(title__icontains=q) | Q(code__startswith=q))
+    ctx['page'] = _paged(request, qs)
+
+
+def _tab_online(request, year, ctx):
+    """Citizens' online payments: the pending ones to approve, then the history. Same rules as the old dashboard."""
+    g = request.GET
+    qs = Payment.objects.select_related('user')
+    ctx['pending'] = qs.filter(status='pending').order_by('-created_at')[:10]
+    ctx['pending_count'] = qs.filter(status='pending').count()
+    if g.get('pay_status') in ('pending', 'completed', 'rejected'):
+        qs = qs.filter(status=g['pay_status'])
+    if g.get('q', '').strip():
+        q = g['q'].strip()
+        qs = qs.filter(Q(description__icontains=q) | Q(receipt_number__icontains=q) | Q(user__first_name__icontains=q)
+                       | Q(user__last_name__icontains=q) | Q(user__username__icontains=q))
+    ctx['page'] = _paged(request, qs.order_by('-created_at'))
+    ctx['income_types'] = ('property_tax', 'permit_fee')
+
+
+def _tab_setup(request, year, ctx):
+    ctx['has_accounts'] = Account.objects.filter(municipality=ctx['muni']).exists()
+    ctx['years_counted'] = ctx['years'].annotate(
+        count=Count('vouchers', filter=Q(vouchers__deleted_at__isnull=True)))
+    ctx['this_year'] = jdatetime.date.today().year
+
+
+TAB_BUILDERS = {'vouchers': _tab_vouchers, 'bills': _tab_bills, 'budget': _tab_budget, 'trial': _tab_trial,
+                'parties': _tab_parties, 'accounts': _tab_accounts, 'online': _tab_online, 'setup': _tab_setup}
+
+
 def render_panel(request, year, status=200):
+    """Tab bar plus one tab; `year` is None until a fiscal year exists (only the year-free tabs then work)."""
     user, g = request.user, request.GET
     tab = g.get('tab') if g.get('tab') in TABS else 'vouchers'
+    if year is None and tab in YEAR_TABS:
+        tab = 'setup'
     ctx = {'year': year, 'years': years_for(user), 'tab': tab, 'g': g, 'kinds': Voucher.KINDS,
-           'summary': _summary(user, year)}
+           'muni': ledger.municipality_of(user), 'tab_list': TAB_LIST, 'tab_template': f'{PANEL}_{tab}.html',
+           'filtered': any(g.get(k) for k in ('q', 'status', 'kind', 'bill_status', 'pay_status'))}
     keep = g.copy()
     keep.pop('page', None)
-    keep['year'], keep['tab'] = year.id, tab
-    ctx['filtered'] = any(g.get(k) for k in ('q', 'status', 'kind', 'bill_status'))
+    keep['tab'] = tab
+    if year is not None:
+        keep['year'] = year.id
+        ctx['summary'] = _summary(user, year)
     ctx['query'] = keep.urlencode()
-    if tab == 'vouchers':
-        qs = _filtered(request, ledger.vouchers_for(user, year)).annotate(
-            total=Sum('lines__debit'), credit_total=Sum('lines__credit')).order_by('-number')
-        ctx['page'] = Paginator(qs, PAGE_SIZE).get_page(g.get('page'))
-    elif tab == 'bills':
-        qs = _bills_filtered(request, bills.bills_for(user, year))
-        page = Paginator(qs, PAGE_SIZE).get_page(g.get('page'))
-        page.object_list = list(page.object_list)
-        for b in page.object_list:
-            b.paid = b.paid or 0
-            b.state = 'canceled' if b.canceled_at else 'paid' if b.paid >= b.amount else 'partial' if b.paid else 'unpaid'
-        ctx['page'] = page
-    else:
-        ctx['rows'], ctx['totals'] = budget.report(user, year, include_temporary=g.get('final') != '1')
-        ctx['final_only'] = g.get('final') == '1'
+    TAB_BUILDERS[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 
 @_guard()
 def acc_panel(request):
-    """The workspace itself: summary cards, tabbed tables and filters for one fiscal year."""
-    muni = ledger.municipality_of(request.user)
+    """The workspace itself: summary cards, tabs and filters for one fiscal year (the latest unless ?year=)."""
     years = years_for(request.user)
     wanted = request.GET.get('year', '')
     year = years.filter(pk=wanted).first() if wanted.isdigit() else years.first()
-    if year is None:
-        return render(request, PANEL + 'empty.html', {
-            'has_accounts': Account.objects.filter(municipality=muni).exists(), 'bad_year': bool(wanted)})
     return render_panel(request, year)
+
+
+# ---------- setup: fiscal years and the default chart of accounts ----------
+
+@_guard()
+@require_POST
+def acc_p_seed(request):
+    return _done(f'سرفصل حساب‌های پیش‌فرض ({chart.seed_default_accounts(request.user)} حساب) ثبت شد.')
+
+
+@_guard()
+@require_POST
+def acc_p_year_open(request):
+    try:
+        year = ledger.open_year(request.user, request.POST.get('year', '').translate(
+            str.maketrans('۰۱۲۳۴۵۶۷۸۹', '0123456789')))
+    except OfficeError as exc:
+        return _failed(exc)
+    return _done(f'سال مالی {year.year} باز شد.')
+
+
+# ---------- parties and chart of accounts ----------
+
+@_guard()
+def acc_p_party_new(request):
+    muni = ledger.municipality_of(request.user)
+    if request.method == 'POST':
+        try:
+            new_party(muni, request.POST)
+        except OfficeError as exc:
+            return render(request, PANEL + 'party_form.html', {'error': str(exc), 'p': request.POST}, status=exc.status)
+        return _done('طرف حساب افزوده شد.')
+    return render(request, PANEL + 'party_form.html', {'p': {}})
+
+
+@_guard()
+def acc_p_account_new(request):
+    muni = ledger.municipality_of(request.user)
+    ctx = {'accounts': Account.objects.filter(municipality=muni, is_postable=False), 'kinds': Account.KINDS,
+           'natures': Account.NATURES, 'p': request.POST if request.method == 'POST' else {'is_postable': 'on'}}
+    if request.method == 'POST':
+        try:
+            new_account(muni, request.POST)
+        except OfficeError as exc:
+            return render(request, PANEL + 'account_form.html', {**ctx, 'error': str(exc)}, status=exc.status)
+        return _done('حساب افزوده شد.')
+    return render(request, PANEL + 'account_form.html', ctx)
+
+
+@_guard()
+def acc_p_ledger(request, year_id, account_id):
+    year = ledger.get_year(request.user, year_id)
+    account = get_object_or_404(Account, pk=account_id, municipality=ledger.municipality_of(request.user))
+    final_only = request.GET.get('final') == '1'
+    return render(request, PANEL + 'ledger.html', {
+        'year': year, 'account': account,
+        'rows': ledger.account_ledger(request.user, year, account, include_temporary=not final_only)})
 
 
 # ---------- vouchers ----------

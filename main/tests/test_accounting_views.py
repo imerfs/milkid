@@ -243,7 +243,9 @@ class ReportPageTests(AccountingPagesBase):
 
 
 class DashboardLinkTests(AccountingPagesBase):
-    def test_accountant_dashboard_links_to_the_real_pages(self):
+    def test_accountant_dashboard_stays_on_the_page_and_has_no_dead_links(self):
         html = self.client.get(reverse('main:accountant_dashboard')).content.decode()
-        self.assertIn(f'href="{reverse("main:acc_home")}"', html)
-        self.assertIn(f'href="{reverse("main:acc_parties")}"', html)
+        for tab in ('setup', 'vouchers', 'parties', 'bills', 'online', 'trial', 'budget', 'accounts'):
+            self.assertIn(f'data-acc-tab="{tab}"', html)
+        self.assertNotIn('href="#"', html)
+        self.assertNotIn(f'href="{reverse("main:acc_home")}"', html)
