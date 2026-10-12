@@ -133,6 +133,46 @@ class AjaxSubmit(TestCase):
         self.assertIn('role="progressbar"', html)
 
 
+class DecreeViewer(TestCase):
+    def setUp(self):
+        cache.clear()
+        root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, root, True)
+        override = override_settings(PRIVATE_MEDIA_ROOT=root)
+        override.enable()
+        self.addCleanup(override.disable)
+        p, c, d = place()
+        self.client.post(reverse('main:register_municipality'), registration_data(p, c, d))
+        self.town = Municipality.objects.get()
+        self.page = reverse('main:municipality_decree_view', args=[self.town.id])
+        self.file = reverse('main:municipality_decree', args=[self.town.id])
+
+    def test_admin_sees_the_decree_inside_the_site(self):
+        admin = client_for(make_user('admin'))
+        html = admin.get(self.page).content.decode()
+        self.assertIn(self.file + '?inline=1', html)
+        self.assertIn('<iframe', html)            # the stored file is a PDF
+        inline = admin.get(self.file + '?inline=1')
+        self.assertEqual(inline['Content-Type'], 'application/pdf')
+        self.assertTrue(inline['Content-Disposition'].startswith('inline'))
+        self.assertEqual(inline['X-Content-Type-Options'], 'nosniff')
+
+    def test_docx_is_never_shown_inline(self):
+        from django.core.files.base import ContentFile
+        self.town.governor_decree.save('decree.docx', ContentFile(b'PK\x03\x04'))
+        admin = client_for(make_user('admin'))
+        response = admin.get(self.file + '?inline=1')
+        self.assertTrue(response['Content-Disposition'].startswith('attachment'))
+        self.assertIn('دانلود', admin.get(self.page).content.decode())
+        self.assertNotIn('<iframe', admin.get(self.page).content.decode())
+
+    def test_viewer_page_is_admin_only(self):
+        self.assertNotEqual(client_for().get(self.page).status_code, 200)
+        for role in ('citizen', 'dehyari', 'accountant'):
+            self.assertNotEqual(client_for(make_user(role)).get(self.page).status_code, 200, role)
+
+
+
 class PasswordFields(TestCase):
     def test_both_password_fields_get_the_eye_toggle_hook(self):
         cache.clear()

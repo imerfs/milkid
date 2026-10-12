@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}حکم فرماندار - {{ town.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h1 class="h4 mb-0"><i class="fas fa-file-alt me-2"></i>حکم فرماندار: {{ town.name }}</h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'main:municipality_decree' town.id %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-download me-1"></i>دانلود فایل</a>
+            <a href="{% url 'main:manage_municipalities' %}" class="btn btn-outline-secondary btn-sm">بازگشت</a>
+        </div>
+    </div>
+    {% if is_pdf %}
+        <iframe src="{% url 'main:municipality_decree' town.id %}?inline=1" title="حکم فرماندار {{ town.name }}"
+                style="width:100%;height:75vh;border:1px solid #dee2e6;border-radius:.5rem;"></iframe>
+    {% elif is_image %}
+        <img src="{% url 'main:municipality_decree' town.id %}?inline=1" alt="حکم فرماندار {{ town.name }}"
+             class="img-fluid border rounded">
+    {% else %}
+        <div class="alert alert-info">پیش‌نمایش این نوع فایل ممکن نیست. برای دیدن آن را دانلود کنید.</div>
+    {% endif %}
+</div>
+{% endblock %}
