@@ -14,6 +14,7 @@ from .letter_views import *
 from .appointment_views import *
 from .monitoring_views import *
 from .server_views import *
+from .twofactor_views import *
 from .accounting_views import *
 from .accounting_panel import *
 

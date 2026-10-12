@@ -18,6 +18,7 @@ urlpatterns = [
     path('register/citizen/', views.register, name='register_citizen'),
     path('register/staff-info/', views.staff_registration_info, name='staff_registration_info'),
     path('logout/', views.logout_view, name='logout'),
+    path('2fa/verify/', views.two_factor_verify, name='two_factor_verify'),
     path('pending-verification/', views.pending_verification, name='pending_verification'),
     path('access-blocked/', views.access_blocked, name='access_blocked'),
 
@@ -37,6 +38,9 @@ urlpatterns = [
     path('dashboard/admin/server/files/upload/', views.admin_server_file_upload, name='admin_server_file_upload'),
     path('dashboard/admin/server/cache/clear/', views.admin_server_cache_clear, name='admin_server_cache_clear'),
     path('dashboard/admin/server/files/', views.admin_server_files, name='admin_server_files'),
+    path('dashboard/admin/server/2fa/start/', views.admin_two_factor_start, name='admin_two_factor_start'),
+    path('dashboard/admin/server/2fa/confirm/', views.admin_two_factor_confirm, name='admin_two_factor_confirm'),
+    path('dashboard/admin/server/2fa/disable/', views.admin_two_factor_disable, name='admin_two_factor_disable'),
     path('dashboard/admin/server/files/download/', views.admin_server_file_download, name='admin_server_file_download'),
     path('dashboard/admin/server/files/delete/', views.admin_server_file_delete, name='admin_server_file_delete'),
     path('dashboard/admin/monitoring/letters/<int:letter_id>/', views.admin_monitoring_letter, name='admin_monitoring_letter'),

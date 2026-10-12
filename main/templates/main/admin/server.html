@@ -16,6 +16,7 @@
     <li class="nav-item"><a class="nav-link {% if tab == 'logs' %}active{% endif %}" href="?tab=logs">گزارش خطاها</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'ips' %}active{% endif %}" href="?tab=ips">مسدودسازی IP</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'cache' %}active{% endif %}" href="?tab=cache">حافظهٔ نهان</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'security' %}active{% endif %}" href="?tab=security">ورود دو مرحله‌ای</a></li>
     <li class="nav-item"><a class="nav-link" href="{% url 'main:admin_server_files' %}">فایل‌ها</a></li>
   </ul>
 
@@ -92,6 +93,30 @@
         <td><form method="post" action="{% url 'main:admin_server_ip_unblock' b.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">رفع مسدودیت</button></form></td></tr>
       {% empty %}<tr><td colspan="5" class="text-center text-muted">نشانی مسدودی وجود ندارد.</td></tr>{% endfor %}
     </table>
+
+  {% elif tab == 'security' %}
+    {% if device.confirmed %}
+      <div class="alert alert-success">ورود دو مرحله‌ای برای حساب شما فعال است. پس از رمز عبور، کد شش‌رقمی برنامهٔ احراز هویت پرسیده می‌شود.</div>
+      <form method="post" action="{% url 'main:admin_two_factor_disable' %}" class="d-flex gap-2" style="max-width:28rem">
+        {% csrf_token %}<input name="code" class="form-control" dir="ltr" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="کد فعلی" required>
+        <button class="btn btn-outline-danger">غیرفعال کردن</button>
+      </form>
+    {% elif device %}
+      <ol>
+        <li>برنامهٔ Google Authenticator یا Microsoft Authenticator را روی گوشی باز کنید.</li>
+        <li>گزینهٔ «وارد کردن کلید راه‌اندازی» (Enter a setup key) را بزنید و این کلید را وارد کنید (نوع: بر پایهٔ زمان):
+          <div class="h5 my-2" dir="ltr">{{ setup_key }}</div>
+          <div class="small text-muted" dir="ltr" style="word-break:break-all">{{ setup_uri }}</div></li>
+        <li>کد شش‌رقمی‌ای که برنامه نشان می‌دهد را اینجا وارد کنید:</li>
+      </ol>
+      <form method="post" action="{% url 'main:admin_two_factor_confirm' %}" class="d-flex gap-2" style="max-width:28rem">
+        {% csrf_token %}<input name="code" class="form-control" dir="ltr" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        <button class="btn btn-primary">تأیید و فعال‌سازی</button>
+      </form>
+    {% else %}
+      <p>با ورود دو مرحله‌ای، اگر رمز عبور شما لو برود هم کسی بدون گوشی شما نمی‌تواند وارد پنل مدیریت شود.</p>
+      <form method="post" action="{% url 'main:admin_two_factor_start' %}">{% csrf_token %}<button class="btn btn-primary">شروع فعال‌سازی</button></form>
+    {% endif %}
 
   {% else %}
     <p>پاک‌کردن حافظهٔ نهان داده‌های موقت را بازسازی می‌کند و شمارندهٔ محدودیت ورود را صفر می‌کند. کاربران وارد شده خارج نمی‌شوند.</p>

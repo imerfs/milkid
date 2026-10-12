@@ -18,13 +18,13 @@ from django.urls import reverse
 from django.utils.text import get_valid_filename
 from django.views.decorators.http import require_POST
 
-from main import ipblock, serverops
+from main import ipblock, serverops, twofactor
 from main.access import policy_required
-from main.models import BlockedIP
+from main.models import BlockedIP, TwoFactorDevice
 from main.ratelimit import client_ip
 
 audit = logging.getLogger('django.security.serverpanel')
-TABS = ('resources', 'database', 'backups', 'logs', 'ips', 'cache')
+TABS = ('resources', 'database', 'backups', 'logs', 'ips', 'cache', 'security')
 
 
 def _back(tab, **query):
@@ -53,6 +53,12 @@ def admin_server(request):
         ctx.update(logs=logs, chosen=chosen, content=serverops.tail_log(chosen) if chosen else '')
     elif tab == 'ips':
         ctx.update(blocked=BlockedIP.objects.select_related('created_by'), my_ip=client_ip(request))
+    elif tab == 'security':
+        device = TwoFactorDevice.objects.filter(user=request.user).first()
+        ctx['device'] = device
+        if device is not None and not device.confirmed:
+            ctx['setup_key'] = ' '.join(device.secret[i:i + 4] for i in range(0, len(device.secret), 4))
+            ctx['setup_uri'] = twofactor.provisioning_uri(device.secret, request.user.username)
     return render(request, 'main/admin/server.html', ctx)
 
 

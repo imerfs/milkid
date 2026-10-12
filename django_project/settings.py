@@ -84,6 +84,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'main.upload_guard.UploadValidationMiddleware',  # extension/size/content checks on every upload
     'main.middleware.ForcePasswordChangeMiddleware',  # first-login password change
+    'main.twofactor.TwoFactorMiddleware',  # second login step for users with 2FA on
     'main.middleware.ActiveUserMiddleware',  # Online user tracking & access control
     'main.middleware.PerformanceMonitoringMiddleware',  # Performance monitoring
     'main.middleware.RequestLoggingMiddleware',  # Security logging
