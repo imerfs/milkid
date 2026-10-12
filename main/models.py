@@ -255,6 +255,9 @@ class UserProfile(GeographyLink):
     # Additional fields
     is_verified = models.BooleanField(default=False, verbose_name='تایید شده')
     deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='تاریخ حذف')
+    # Original unique values of a deleted account (the live ones are released for a new registration).
+    deleted_username = models.CharField(max_length=150, blank=True, default='', editable=False)
+    deleted_national_id = models.CharField(max_length=10, blank=True, default='', editable=False)
     is_active = models.BooleanField(default=True, verbose_name='فعال')
     approval_status = models.CharField(
         max_length=20,
