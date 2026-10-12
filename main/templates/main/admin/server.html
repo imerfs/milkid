@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load jalali_tags %}
+{% block title %}مدیریت سرور - ملک آیدی{% endblock %}
+{% block content %}
+<div class="container py-4" dir="rtl">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0"><i class="fas fa-server ml-2"></i>مدیریت سرور</h1>
+    <a href="{% url 'main:admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">بازگشت به پنل مدیریت</a>
+  </div>
+  {% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link {% if tab == 'resources' %}active{% endif %}" href="?tab=resources">منابع</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'database' %}active{% endif %}" href="?tab=database">پایگاه داده</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'backups' %}active{% endif %}" href="?tab=backups">پشتیبان‌گیری</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'logs' %}active{% endif %}" href="?tab=logs">گزارش خطاها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'ips' %}active{% endif %}" href="?tab=ips">مسدودسازی IP</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'cache' %}active{% endif %}" href="?tab=cache">حافظهٔ نهان</a></li>
+    <li class="nav-item"><a class="nav-link" href="{% url 'main:admin_server_files' %}">فایل‌ها</a></li>
+  </ul>
+
+  {% if tab == 'resources' %}
+    {% if res.warnings %}<div class="alert alert-warning">مصرف بالا: {{ res.warnings|join:'، ' }} (بیش از ۸۵٪)</div>{% endif %}
+    <div class="row g-3 mb-4">
+      <div class="col-md-4"><div class="card p-3"><div class="small text-muted">پردازنده ({{ res.cpus }} هسته)</div>
+        {% if res.load %}<div class="h5">{{ res.load_percent }}٪</div><div class="small">میانگین بار: {{ res.load.0 }} / {{ res.load.1 }} / {{ res.load.2 }}</div>{% else %}<div class="text-muted">در دسترس نیست</div>{% endif %}</div></div>
+      <div class="col-md-4"><div class="card p-3"><div class="small text-muted">حافظه (RAM)</div>
+        {% if res.mem_total %}<div class="h5">{{ res.mem_percent }}٪</div><div class="small">{{ res.mem_used|filesizeformat }} از {{ res.mem_total|filesizeformat }}</div>{% else %}<div class="text-muted">در دسترس نیست</div>{% endif %}</div></div>
+      <div class="col-md-4"><div class="card p-3"><div class="small text-muted">دیسک</div>
+        <div class="h5">{{ res.disk_percent }}٪</div><div class="small">{{ res.disk_used|filesizeformat }} از {{ res.disk_total|filesizeformat }}</div></div></div>
+    </div>
+    {% if last_backup is None %}<div class="alert alert-warning">هنوز هیچ نسخه پشتیبانی از پایگاه داده وجود ندارد.</div>
+    {% elif last_backup > 48 %}<div class="alert alert-warning">آخرین پشتیبان {{ last_backup }} ساعت پیش ساخته شده؛ زمان‌بندی خودکار (milkid-backup.timer) را بررسی کنید.</div>{% endif %}
+    {% if res.net_rx is not None %}<p class="small text-muted">ترافیک شبکه از زمان روشن شدن: دریافت {{ res.net_rx|filesizeformat }}، ارسال {{ res.net_tx|filesizeformat }}</p>{% endif %}
+    {% if res.uptime_days is not None %}<p class="small text-muted">زمان روشن بودن سرور: {{ res.uptime_days }} روز</p>{% endif %}
+    <h2 class="h6">مصرف فضا به تفکیک پوشه</h2>
+    <table class="table table-sm w-auto">
+      {% for label, size in folders %}<tr><td>{{ label }}</td><td>{{ size|filesizeformat }}</td></tr>{% endfor %}
+      {% if db_size is not None %}<tr><td>پایگاه داده (SQLite)</td><td>{{ db_size|filesizeformat }}</td></tr>{% endif %}
+    </table>
+
+  {% elif tab == 'database' %}
+    <p>نوع: <strong>{{ db.vendor }}</strong>{% if db.size %}، حجم: {{ db.size|filesizeformat }}{% endif %}، مجموع رکوردها: {{ db.total_rows }}</p>
+    <div class="d-flex gap-2 mb-3">
+      <form method="post" action="{% url 'main:admin_server_db_maintain' %}">{% csrf_token %}<input type="hidden" name="action" value="check"><button class="btn btn-outline-primary">بررسی سلامت جداول</button></form>
+      <form method="post" action="{% url 'main:admin_server_db_maintain' %}">{% csrf_token %}<input type="hidden" name="action" value="optimize"><button class="btn btn-outline-success">بهینه‌سازی</button></form>
+    </div>
+    <div class="table-responsive" style="max-height:60vh">
+    <table class="table table-sm">
+      <thead><tr><th>جدول</th><th>تعداد رکورد</th></tr></thead>
+      {% for name, count in db.tables %}<tr><td dir="ltr" class="text-end">{{ name }}</td><td>{{ count }}</td></tr>{% endfor %}
+    </table></div>
+
+  {% elif tab == 'backups' %}
+    <form method="post" action="{% url 'main:admin_server_backup' %}" class="mb-3 d-flex align-items-center gap-3">
+      {% csrf_token %}
+      <button class="btn btn-primary">ساخت نسخه پشتیبان از پایگاه داده</button>
+      <label class="small"><input type="checkbox" name="media" value="1"> فایل‌های بارگذاری‌شده هم باشد</label>
+    </form>
+    <p class="small text-muted">پشتیبان خودکار هر شب ساعت ۰۳:۳۰ (UTC) با milkid-backup.timer ساخته می‌شود و ۱۴ نسخهٔ آخر نگه داشته می‌شود. بازگردانی عمداً از داخل وب انجام نمی‌شود (جایگزینی پایگاه داده در حال کار خطرناک است)؛ مراحل آن در docs/operations.md آمده است.</p>
+    <table class="table align-middle">
+      <thead><tr><th>نام</th><th>حجم</th><th>زمان</th><th></th></tr></thead>
+      {% for b in backups %}
+      <tr><td dir="ltr" class="text-end">{{ b.name }}</td><td>{{ b.size|filesizeformat }}</td><td>{{ b.mtime|date:'Y-m-d H:i' }}</td>
+        <td class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'main:admin_server_backup_download' b.name %}">دانلود</a>
+          <form method="post" action="{% url 'main:admin_server_backup_delete' b.name %}" onsubmit="return confirm('این نسخه حذف شود؟')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form>
+        </td></tr>
+      {% empty %}<tr><td colspan="4" class="text-center text-muted">هنوز نسخه‌ای ساخته نشده است.</td></tr>{% endfor %}
+    </table>
+
+  {% elif tab == 'logs' %}
+    {% if logs %}
+    <form method="get" class="mb-2 d-flex gap-2"><input type="hidden" name="tab" value="logs">
+      <select name="file" class="form-select w-auto" onchange="this.form.submit()">{% for l in logs %}<option {% if l == chosen %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    </form>
+    <pre dir="ltr" class="border rounded p-3 small" style="max-height:60vh;overflow:auto;white-space:pre-wrap">{{ content }}</pre>
+    {% else %}<p class="text-muted">فایل گزارشی وجود ندارد.</p>{% endif %}
+
+  {% elif tab == 'ips' %}
+    <form method="post" action="{% url 'main:admin_server_ip_block' %}" class="row g-2 mb-3">
+      {% csrf_token %}
+      <div class="col-md-3"><input name="ip" class="form-control" dir="ltr" placeholder="مثلاً 203.0.113.5" required></div>
+      <div class="col-md-6"><input name="reason" class="form-control" maxlength="200" placeholder="دلیل (اختیاری)"></div>
+      <div class="col-md-3"><button class="btn btn-danger">مسدود کن</button></div>
+    </form>
+    <p class="small text-muted">نشانی شما: <span dir="ltr">{{ my_ip }}</span> (قابل مسدود شدن نیست). اعمال تغییر تا یک دقیقه طول می‌کشد.</p>
+    <table class="table align-middle">
+      <thead><tr><th>IP</th><th>دلیل</th><th>توسط</th><th>تاریخ</th><th></th></tr></thead>
+      {% for b in blocked %}
+      <tr><td dir="ltr" class="text-end">{{ b.ip }}</td><td>{{ b.reason }}</td><td>{{ b.created_by.username }}</td><td>{{ b.created_at|jalali_datetime }}</td>
+        <td><form method="post" action="{% url 'main:admin_server_ip_unblock' b.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">رفع مسدودیت</button></form></td></tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted">نشانی مسدودی وجود ندارد.</td></tr>{% endfor %}
+    </table>
+
+  {% else %}
+    <p>پاک‌کردن حافظهٔ نهان داده‌های موقت را بازسازی می‌کند و شمارندهٔ محدودیت ورود را صفر می‌کند. کاربران وارد شده خارج نمی‌شوند.</p>
+    <form method="post" action="{% url 'main:admin_server_cache_clear' %}" onsubmit="return confirm('حافظهٔ نهان پاک شود؟')">{% csrf_token %}<button class="btn btn-warning">پاک‌کردن حافظهٔ نهان</button></form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}فایل‌های سرور - ملک آیدی{% endblock %}
+{% block content %}
+<div class="container py-4" dir="rtl">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0"><i class="fas fa-folder-open ml-2"></i>فایل‌های بارگذاری‌شده</h1>
+    <a href="{% url 'main:admin_server' %}" class="btn btn-outline-secondary btn-sm">بازگشت به مدیریت سرور</a>
+  </div>
+  {% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+  <p class="small text-muted">فقط داخل پوشه‌های media و private_media. حذف فایل برگشت‌پذیر نیست؛ ابتدا پشتیبان بگیرید.</p>
+  <ul class="nav nav-pills mb-3">
+    {% for r in roots %}<li class="nav-item"><a class="nav-link {% if r == root_key %}active{% endif %}" href="?root={{ r }}">{{ r }}</a></li>{% endfor %}
+  </ul>
+  {% if missing %}<p class="text-muted">این پوشه هنوز وجود ندارد.</p>{% else %}
+  <div class="row g-2 mb-3">
+    <form method="get" class="col-md-6 d-flex gap-2">
+      <input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+      <input name="q" value="{{ q }}" class="form-control" placeholder="جستجوی نام فایل در این پوشه و زیرپوشه‌ها">
+      <button class="btn btn-outline-primary">جستجو</button>
+    </form>
+    <form method="post" enctype="multipart/form-data" action="{% url 'main:admin_server_file_upload' %}" class="col-md-6 d-flex gap-2">
+      {% csrf_token %}<input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+      <input type="file" name="file" class="form-control" required>
+      <button class="btn btn-primary">بارگذاری</button>
+    </form>
+  </div>
+  <p dir="ltr" class="text-end small">/{{ rel }}{% if q %} — search: {{ q }}{% endif %}</p>
+  <table class="table table-sm align-middle">
+    {% if rel %}<tr><td colspan="3"><a href="?root={{ root_key }}&path={{ parent|urlencode }}">⬆ پوشهٔ بالاتر</a></td></tr>{% endif %}
+    {% for row in rows %}
+    <tr>
+      <td dir="ltr" class="text-end">
+        {% if row.is_dir %}<a href="?root={{ root_key }}&path={% if rel %}{{ rel|urlencode }}/{% endif %}{{ row.name|urlencode }}">📁 {{ row.name }}</a>{% else %}{{ row.name }}{% endif %}
+      </td>
+      <td>{{ row.size|filesizeformat }}</td>
+      <td class="d-flex gap-2">
+        {% if not row.is_dir %}
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'main:admin_server_file_download' %}?root={{ root_key }}&path={% if rel %}{{ rel|urlencode }}/{% endif %}{{ row.name|urlencode }}">دانلود</a>
+        <form method="post" action="{% url 'main:admin_server_file_delete' %}" onsubmit="return confirm('این فایل برای همیشه حذف شود؟')">{% csrf_token %}
+          <input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{% if rel %}{{ rel }}/{% endif %}{{ row.name }}">
+          <button class="btn btn-sm btn-outline-danger">حذف</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="3" class="text-center text-muted">پوشه خالی است.</td></tr>{% endfor %}
+  </table>{% endif %}
+</div>
+{% endblock %}
