@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load accounting_tags %}
+
+{% block title %}سرفصل حساب‌ها - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-sitemap ms-2"></i>سرفصل حساب‌ها</h1>
+    {% include 'main/accounting/_nav.html' with tab='accounts' %}
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+
+    {% if not accounts %}
+    <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span>حسابی ثبت نشده است.</span>
+        <form method="post" action="{% url 'main:acc_seed' %}" data-once>{% csrf_token %}<button class="btn btn-primary btn-sm" type="submit">ساخت سرفصل پیش‌فرض</button></form>
+    </div>
+    {% endif %}
+
+    <div class="table-responsive card mb-4">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>کد</th><th>شرح</th><th>نوع</th><th>ماهیت</th><th>ثبت سند</th></tr></thead>
+            <tbody>
+            {% for a in accounts %}
+            <tr><td dir="ltr" class="text-end">{{ a.code }}</td><td>{{ a.title }}{% if a.requires_party %} <span class="badge bg-info text-dark">طرف حساب</span>{% endif %}</td>
+                <td>{{ a.get_kind_display }}</td><td>{{ a.get_nature_display }}</td><td>{% if a.is_postable %}<i class="fas fa-check text-success" aria-label="بله"></i>{% else %}<span class="text-muted">سرفصل</span>{% endif %}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <form method="post" class="card card-body" data-once novalidate>
+        {% csrf_token %}
+        <h2 class="h6">افزودن حساب</h2>
+        <div class="row g-2">
+            <div class="col-6 col-md-3"><label class="form-label" for="code">کد (انگلیسی)</label><input class="form-control" id="code" name="code" dir="ltr" maxlength="20" value="{{ p.code }}" required></div>
+            <div class="col-12 col-md-5"><label class="form-label" for="title">شرح حساب</label><input class="form-control" id="title" name="title" maxlength="200" value="{{ p.title }}" required></div>
+            <div class="col-6 col-md-4"><label class="form-label" for="parent">سرفصل بالاتر</label>
+                <select class="form-select" id="parent" name="parent"><option value="">—</option>{% for a in accounts %}{% if not a.is_postable %}<option value="{{ a.id }}">{{ a.code }} - {{ a.title }}</option>{% endif %}{% endfor %}</select></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="kind">نوع</label><select class="form-select" id="kind" name="kind">{% for k, l in kinds %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="nature">ماهیت</label><select class="form-select" id="nature" name="nature">{% for k, l in natures %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></div>
+            <div class="col-12 col-md-6 align-self-end d-flex gap-3">
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="is_postable" name="is_postable" checked><label class="form-check-label" for="is_postable">در سند ثبت می‌شود</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="requires_party" name="requires_party"><label class="form-check-label" for="requires_party">طرف حساب لازم است</label></div>
+            </div>
+        </div>
+        <div><button class="btn btn-primary mt-3" type="submit">افزودن</button></div>
+    </form>
+</div>
+{% endblock %}

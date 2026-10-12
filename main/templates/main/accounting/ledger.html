@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load accounting_tags jalali_tags %}
+
+{% block title %}دفتر {{ account.title }} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-book ms-2"></i>گردش حساب {{ account.code }} - {{ account.title }}</h1>
+    {% include 'main/accounting/_nav.html' with tab='trial' %}
+    <div class="mb-3">
+        <a class="btn btn-sm {% if not final_only %}btn-dark{% else %}btn-outline-secondary{% endif %}" href="?">همه اسناد</a>
+        <a class="btn btn-sm {% if final_only %}btn-dark{% else %}btn-outline-secondary{% endif %}" href="?final=1">فقط قطعی</a>
+    </div>
+    <div class="table-responsive card">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>تاریخ</th><th>سند</th><th>شرح</th><th class="text-end">بدهکار</th><th class="text-end">بستانکار</th><th class="text-end">مانده</th></tr></thead>
+            <tbody>
+            {% for r in rows %}
+            <tr><td>{{ r.voucher.date|jalali_date|fa }}</td><td><a href="{% url 'main:acc_voucher_detail' r.voucher.id %}">{{ r.voucher.number|fa }}</a></td><td>{{ r.description|truncatechars:60 }}</td>
+                <td class="text-end">{{ r.debit|rial }}</td><td class="text-end">{{ r.credit|rial }}</td><td class="text-end">{{ r.balance|rial }}</td></tr>
+            {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">برای این حساب گردشی ثبت نشده است.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

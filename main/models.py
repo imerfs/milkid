@@ -1560,3 +1560,5 @@ class CityVillageRequest(models.Model):
 
 # Office system models (role grants, letters, appointments)
 from .models_office import *  # noqa: E402,F401,F403
+
+from .models_accounting import *  # noqa: E402,F401,F403

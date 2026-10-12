@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load accounting_tags %}
+
+{% block title %}تراز آزمایشی {{ year.year|fa }} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-scale-balanced ms-2"></i>تراز آزمایشی سال {{ year.year|fa }}</h1>
+    {% include 'main/accounting/_nav.html' with tab='trial' %}
+    <div class="mb-3">
+        <a class="btn btn-sm {% if not final_only %}btn-dark{% else %}btn-outline-secondary{% endif %}" href="?">همه اسناد</a>
+        <a class="btn btn-sm {% if final_only %}btn-dark{% else %}btn-outline-secondary{% endif %}" href="?final=1">فقط قطعی</a>
+    </div>
+    <div class="table-responsive card">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>کد</th><th>شرح حساب</th><th class="text-end">بدهکار</th><th class="text-end">بستانکار</th><th class="text-end">مانده</th></tr></thead>
+            <tbody>
+            {% for r in rows %}
+            <tr><td dir="ltr" class="text-end">{{ r.code }}</td><td><a href="{% url 'main:acc_ledger' year.id r.account_id %}">{{ r.title }}</a></td>
+                <td class="text-end">{{ r.debit|rial }}</td><td class="text-end">{{ r.credit|rial }}</td>
+                <td class="text-end">{{ r.balance|rial }}{% if r.balance > 0 %} بد{% elif r.balance < 0 %} بس{% endif %}</td></tr>
+            {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">هنوز گردشی ثبت نشده است.</td></tr>{% endfor %}
+            </tbody>
+            <tfoot><tr class="fw-bold"><td colspan="2">جمع</td><td class="text-end">{{ totals.debit|rial }}</td><td class="text-end">{{ totals.credit|rial }}</td><td></td></tr></tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}
