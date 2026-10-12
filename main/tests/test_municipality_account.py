@@ -31,7 +31,7 @@ def registration_data(p, c, d, **over):
         'establishment_date': '2020-01-01', 'population': 500, 'area_hectares': '12.5',
         'manager_name': 'علی رضایی', 'manager_national_id': '0012345679',
         'manager_phone': '09121234567', 'manager_email': 'ali@example.ir',
-        'manager_username': 'ali_dehyar', 'manager_password': PASSWORD,
+        'manager_username': 'ali_dehyar', 'manager_password': PASSWORD, 'manager_password2': PASSWORD,
         'governor_decree': SimpleUploadedFile('decree.pdf', b'%PDF-1.4\n1 0 obj\n<<>>\nendobj\n', 'application/pdf'),
     }
     data.update(over)
@@ -86,6 +86,15 @@ class Registration(TestCase):
         response = self.register(manager_national_id='0987654321', manager_password='12345678')
         self.assertIn('manager_password', response.context['form'].errors)
         self.assertFalse(User.objects.filter(username='ali_dehyar').exists())
+
+
+    def test_password_repeat_must_match(self):
+        response = self.register(manager_password2='Different-pass-9999')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('manager_password2', response.context['form'].errors)
+        self.assertEqual(Municipality.objects.count(), 0)
+        response = self.register(manager_password2='')
+        self.assertIn('manager_password2', response.context['form'].errors)
 
 
 class Approval(TestCase):

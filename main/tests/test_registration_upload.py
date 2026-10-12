@@ -170,3 +170,12 @@ class DecreeViewer(TestCase):
         self.assertNotEqual(client_for().get(self.page).status_code, 200)
         for role in ('citizen', 'dehyari', 'accountant'):
             self.assertNotEqual(client_for(make_user(role)).get(self.page).status_code, 200, role)
+
+
+
+class PasswordFields(TestCase):
+    def test_both_password_fields_get_the_eye_toggle_hook(self):
+        cache.clear()
+        html = self.client.get(reverse('main:register_municipality')).content.decode()
+        self.assertEqual(html.count('data-pw-toggle'), 2)
+        self.assertIn('name="manager_password2"', html)

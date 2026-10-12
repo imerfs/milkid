@@ -1184,9 +1184,19 @@ class MunicipalityRegistrationForm(forms.ModelForm):
         label='رمز عبور مدیر سیستم',
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'رمز عبور برای حساب کاربری مدیر'
+            'placeholder': 'رمز عبور برای حساب کاربری مدیر',
+            'data-pw-toggle': '',
         }),
         help_text='این رمز برای ایجاد حساب کاربری مدیر سیستم استفاده خواهد شد'
+    )
+
+    manager_password2 = forms.CharField(
+        label='تکرار رمز عبور مدیر سیستم',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'رمز عبور را دوباره وارد کنید',
+            'data-pw-toggle': '',
+        }),
     )
     
     manager_username = forms.CharField(
@@ -1291,6 +1301,9 @@ class MunicipalityRegistrationForm(forms.ModelForm):
         if manager_username and User.objects.filter(username=manager_username).exists():
             self.add_error('manager_username', 'این نام کاربری قبلاً استفاده شده است.')
         
+        if manager_password and cleaned_data.get('manager_password2') and manager_password != cleaned_data['manager_password2']:
+            self.add_error('manager_password2', 'رمز عبور و تکرار آن یکسان نیستند.')
+
         if manager_password:
             from django.contrib.auth.password_validation import validate_password
             from django.core.exceptions import ValidationError as DjangoValidationError
