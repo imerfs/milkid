@@ -1,23 +1,23 @@
 {% load accounting_tags %}
-<div class="flex flex-col sm:flex-row gap-3 mb-4 justify-between">
-    <form hx-get="{{ panel_url }}" hx-trigger="submit, keyup changed delay:400ms from:input[name=q]" role="search" class="sm:w-80">
-        <input type="hidden" name="tab" value="parties">
-        <label class="relative block"><span class="sr-only">جستجوی نام یا کد ملی</span>
-            <input type="search" name="q" value="{{ g.q }}" placeholder="جستجوی نام یا کد ملی..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i></label>
-    </form>
-    <button type="button" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm" hx-get="{% url 'main:acc_p_party_new' %}" hx-target="#acc-modal-body"><i class="fas fa-user-plus ml-1" aria-hidden="true"></i>طرف حساب جدید</button>
+<div class="ac-card">
+    <div class="ac-tools">
+        <form hx-get="{{ panel_url }}" hx-trigger="submit, keyup changed delay:400ms from:input[name=q]" role="search">
+            <input type="hidden" name="tab" value="parties">
+            <label class="ac-searchbox"><span class="ac-sr">جستجوی نام یا کد ملی</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="نام یا کد ملی..."></label>
+        </form>
+        <button type="button" class="ac-btn ac-btn-brand ac-spaced" hx-get="{% url 'main:acc_p_party_new' %}" hx-target="#acc-modal-body"><i class="fas fa-user-plus" aria-hidden="true"></i><span class="lbl">طرف حساب جدید</span></button>
+    </div>
+    <div class="ac-table-wrap">
+        <table>
+            <thead><tr><th>نام</th><th>نوع</th><th>کد ملی / شناسه ملی</th><th>تماس</th></tr></thead>
+            <tbody>
+            {% for p in page %}
+                <tr><td>{{ p.name }}</td><td><span class="ac-tag">{{ p.get_kind_display }}</span></td><td dir="ltr" class="muted" style="text-align:end">{{ p.national_id }}</td><td dir="ltr" class="muted" style="text-align:end">{{ p.mobile|default:p.phone }}</td></tr>
+            {% empty %}
+                <tr><td colspan="4"><div class="ac-empty"><span class="eic"><i class="fas fa-address-book" aria-hidden="true"></i></span><h4>{% if filtered %}موردی پیدا نشد{% else %}طرف‌حسابی ثبت نشده است{% endif %}</h4></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'main/accounting/panel/_pager.html' %}
 </div>
-<div class="overflow-x-auto">
-    <table class="w-full text-right">
-        <thead class="border-b-2 border-gray-200 dark:border-gray-700"><tr><th class="py-3 px-2 font-semibold text-sm">نام</th><th class="py-3 px-2 font-semibold text-sm hidden sm:table-cell">نوع</th><th class="py-3 px-2 font-semibold text-sm">کد ملی / شناسه ملی</th><th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">تماس</th></tr></thead>
-        <tbody>
-        {% for p in page %}
-            <tr class="border-b border-gray-100 dark:border-gray-700"><td class="py-3 px-2">{{ p.name }}</td><td class="py-3 px-2 hidden sm:table-cell">{{ p.get_kind_display }}</td><td class="py-3 px-2" dir="ltr">{{ p.national_id }}</td><td class="py-3 px-2 hidden md:table-cell" dir="ltr">{{ p.mobile|default:p.phone }}</td></tr>
-        {% empty %}
-            <tr><td colspan="4" class="py-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-address-book text-3xl mb-2" aria-hidden="true"></i><p>{% if filtered %}موردی پیدا نشد.{% else %}طرف‌حسابی ثبت نشده است.{% endif %}</p></td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% include 'main/accounting/panel/_pager.html' %}

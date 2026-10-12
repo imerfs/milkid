@@ -5,7 +5,7 @@ from datetime import date
 from django.urls import reverse
 
 from main.accounting import bills, budget, ledger
-from main.models import Account, Bill, BillPayment, Party, Voucher
+from main.models import Account, Bill, BillPayment, FiscalYear, Party, Voucher
 from main.tests.helpers import client_for, make_municipality, make_user as _make_user
 from main.tests.test_accounting_views import AccountingPagesBase, make_user
 
@@ -358,3 +358,30 @@ class ListTabTests(PanelBase):
         self.assertNotContains(c.get(reverse('main:acc_panel'), {'tab': 'parties'}), 'علی رضایی')
         self.assertNotContains(c.get(reverse('main:acc_panel'), {'tab': 'accounts'}), self.tax.title)
         self.assertEqual(c.get(reverse('main:acc_p_ledger', args=[self.year.id, self.bank.id])).status_code, 404)
+
+
+class OverviewPageTests(PanelBase):
+    """The landing page of the workspace."""
+
+    def get(self, **params):
+        return self.client.get(reverse('main:acc_panel'), params)
+
+    def test_default_page_is_the_overview_with_kpis_and_actions(self):
+        r = self.get()
+        self.assertEqual(r.context['tab'], 'overview')
+        self.assertContains(r, 'ac-kpis')
+        self.assertContains(r, 'سند جدید')
+        self.assertContains(r, 'آخرین اسناد')
+
+    def test_overview_lists_open_bills_and_flags_work_to_do(self):
+        self.voucher()
+        self.bill(5000)
+        self.bill(700)
+        r = self.get(tab='overview')
+        self.assertEqual(len(r.context['open_bills']), 2)
+        self.assertEqual(len(r.context['recent_vouchers']), 1)
+        self.assertTrue(r.context['attention'])  # a temporary voucher is waiting to be finalised
+
+    def test_without_a_year_the_overview_falls_back_to_setup(self):
+        FiscalYear.objects.all().delete()
+        self.assertEqual(self.get(tab='overview').context['tab'], 'setup')

@@ -181,6 +181,14 @@ def inspector_dashboard(request):
     return render(request, 'main/dashboards/Technical supervisor.html', context)
 
 
+# Menu entries of the accountant page that are not built yet; shown disabled.
+ACCOUNTANT_SOON = [
+    'تصاویر اسناد', 'تامین اعتبار', 'خزانه اسناد پرداختی', 'قراردادها', 'ضمانت‌نامه‌ها',
+    'درآمد حمل و نقل', 'تقسیط', 'تغییر وضعیت درآمد', 'خزانه', 'تصاویر پرونده تقسیط',
+    'حقوق: اصلی، مزایا، بدهی', 'حقوق: کارکرد', 'حقوق: ماموریت', 'حقوق: مزایا و بدهی مخصوص',
+    'حقوق: پرداخت‌های متفرقه', 'حقوق: کارگران روزمزد', 'حقوق: اطلاعات عیدی', 'حقوق: محاسبات فردی']
+
+
 @policy_required('staff.accountant')
 def accountant_dashboard(request):
     """Dashboard for financial manager (مسئول مالی): one page; the workspace loads from main/views/accounting_panel."""
@@ -198,6 +206,7 @@ def accountant_dashboard(request):
         'acc_muni_name': acc_muni_name or '',
         'user_profile': request.user.profile,
         'notifications': Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5],
+        'acc_soon': ACCOUNTANT_SOON,
     })
 
 
