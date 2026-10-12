@@ -124,6 +124,7 @@ urlpatterns = [
     path('manage-requests/', views.manage_requests, name='manage_requests'),
     path('update-request-status/<int:request_id>/', views.update_request_status, name='update_request_status'),
     path('manage-users/', views.manage_users, name='manage_users'),
+    path('manage-users/<int:user_id>/', views.admin_user_detail, name='admin_user_detail'),
     path('manage-property-ads/', views.manage_property_ads, name='manage_property_ads'),
     path('api/admin/property-ads/<int:ad_id>/approve/', views.api_approve_property_ad, name='api_admin_approve_property_ad'),
     path('api/admin/property-ads/<int:ad_id>/reject/', views.api_reject_property_ad, name='api_admin_reject_property_ad'),

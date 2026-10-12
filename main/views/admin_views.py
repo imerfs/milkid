@@ -481,6 +481,14 @@ def manage_property_ads(request):
 
 
 @policy_required('admin.manage')
+def admin_user_detail(request, user_id):
+    """Read-only profile page for one user (admins only; no password hash is exposed)."""
+    profile = get_object_or_404(UserProfile.objects.select_related('user'), user_id=user_id)
+    towns = Municipality.objects.filter(Q(admin_user=profile.user) | Q(manager_user=profile.user)).distinct()
+    return render(request, 'main/admin/user_detail.html', {'profile': profile, 'subject': profile.user, 'towns': towns})
+
+
+@policy_required('admin.manage')
 def manage_users(request):
     """Enhanced user management for administrators"""
     # Get users by categories
