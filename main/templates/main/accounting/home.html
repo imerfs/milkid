@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load accounting_tags %}
+
+{% block title %}حسابداری - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-calculator ms-2"></i>حسابداری {{ muni.name }}</h1>
+    {% include 'main/accounting/_nav.html' %}
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+
+    {% if not has_accounts %}
+    <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2" role="status">
+        <span><i class="fas fa-circle-info ms-1"></i>هنوز سرفصل حساب‌ها ثبت نشده است. سرفصل پیش‌فرض دهیاری (بانک‌ها، بدهکاران، بستانکاران، منابع و مصارف بودجه) را بسازید و بعد حساب‌های خود را اضافه کنید.</span>
+        <form method="post" action="{% url 'main:acc_seed' %}" data-once>{% csrf_token %}<button class="btn btn-primary btn-sm" type="submit">ساخت سرفصل پیش‌فرض</button></form>
+    </div>
+    {% endif %}
+
+    <section class="card mb-4" aria-labelledby="years-h">
+        <div class="card-header"><h2 class="h5 mb-0" id="years-h">سال‌های مالی</h2></div>
+        <ul class="list-group list-group-flush">
+            {% for y in years %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{% url 'main:acc_vouchers' y.id %}" class="fw-bold text-decoration-none">سال {{ y.year|fa }}</a>
+                <span><span class="badge bg-secondary">{{ y.count|rial }} سند</span>{% if y.is_closed %} <span class="badge bg-dark">بسته</span>{% endif %}</span>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center text-muted py-4">سال مالی‌ای باز نشده است. سال جاری را از فرم پایین باز کنید.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <form method="post" class="card card-body" data-once novalidate>
+        {% csrf_token %}
+        <h2 class="h6">باز کردن سال مالی جدید</h2>
+        <div class="row g-2 align-items-end">
+            <div class="col-8 col-md-4">
+                <label for="year" class="form-label">سال شمسی</label>
+                <input type="text" inputmode="numeric" name="year" id="year" class="form-control" dir="ltr" placeholder="۱۴۰۴" maxlength="4" required>
+            </div>
+            <div class="col-4"><button class="btn btn-primary" type="submit">باز کردن</button></div>
+        </div>
+        <div class="form-text">سال از اول فروردین تا آخر اسفند است؛ سند افتتاحیه را خودتان با نوع «افتتاحیه» ثبت کنید.</div>
+    </form>
+</div>
+{% endblock %}

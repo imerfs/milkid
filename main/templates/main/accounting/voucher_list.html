@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load accounting_tags jalali_tags %}
+
+{% block title %}اسناد حسابداری {{ year.year|fa }} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1100px">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0"><i class="fas fa-file-invoice ms-2"></i>اسناد حسابداری سال {{ year.year|fa }}</h1>
+        {% if not year.is_closed %}<a href="{% url 'main:acc_voucher_new' year.id %}" class="btn btn-primary"><i class="fas fa-plus ms-1"></i>سند جدید</a>{% endif %}
+    </div>
+    {% include 'main/accounting/_nav.html' with tab='vouchers' %}
+
+    <form method="get" class="card card-body mb-3" role="search">
+        <div class="row g-2">
+            <div class="col-12 col-md-4"><label class="form-label" for="q">شرح سند</label><input class="form-control" id="q" name="q" value="{{ g.q }}"></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="status">وضعیت</label>
+                <select class="form-select" id="status" name="status"><option value="">همه</option><option value="temporary" {% if g.status == 'temporary' %}selected{% endif %}>موقت</option><option value="final" {% if g.status == 'final' %}selected{% endif %}>قطعی</option></select></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="kind">نوع</label>
+                <select class="form-select" id="kind" name="kind"><option value="">همه</option>{% for k, label in kinds %}<option value="{{ k }}" {% if g.kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="nf">از شماره</label><input class="form-control" id="nf" name="number_from" inputmode="numeric" dir="ltr" value="{{ g.number_from }}"></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="nt">تا شماره</label><input class="form-control" id="nt" name="number_to" inputmode="numeric" dir="ltr" value="{{ g.number_to }}"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="df">از تاریخ</label><input class="form-control" id="df" name="date_from" dir="ltr" placeholder="۱۴۰۴/۰۱/۰۱" value="{{ g.date_from }}"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="dt">تا تاریخ</label><input class="form-control" id="dt" name="date_to" dir="ltr" placeholder="۱۴۰۴/۱۲/۲۹" value="{{ g.date_to }}"></div>
+            <div class="col-12 col-md-auto align-self-end"><button class="btn btn-outline-primary" type="submit"><i class="fas fa-magnifying-glass ms-1"></i>جستجو</button></div>
+        </div>
+    </form>
+
+    <div class="table-responsive card">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>شماره</th><th>شناسه</th><th>تاریخ</th><th>نوع</th><th>شرح</th><th class="text-end">مبلغ (ریال)</th><th>وضعیت</th></tr></thead>
+            <tbody>
+            {% for v in page %}
+            <tr>
+                <td><a href="{% url 'main:acc_voucher_detail' v.id %}" class="fw-bold">{{ v.number|fa }}</a></td>
+                <td class="text-muted">{{ v.ref|fa }}</td>
+                <td>{{ v.date|jalali_date|fa }}</td>
+                <td>{{ v.get_kind_display }}</td>
+                <td>{{ v.description|truncatechars:70 }}</td>
+                <td class="text-end">{{ v.total|rial }}</td>
+                <td>{% if v.total != v.credit_total %}<span class="badge bg-danger">بی‌حساب</span>{% elif v.status == 'final' %}<span class="badge bg-success">قطعی</span>{% else %}<span class="badge bg-warning text-dark">موقت</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-5"><i class="fas fa-file-circle-plus fa-2x mb-2" aria-hidden="true"></i><p class="mb-0">{% if query %}سندی با این جستجو پیدا نشد.{% else %}هنوز سندی ثبت نشده است.{% endif %}</p></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page.has_other_pages %}
+    <nav class="d-flex justify-content-between mt-3" aria-label="صفحه‌بندی">
+        {% if page.has_previous %}<a class="btn btn-outline-secondary" href="?page={{ page.previous_page_number }}&{{ query }}">قبلی</a>{% else %}<span></span>{% endif %}
+        <span class="align-self-center text-muted">صفحه {{ page.number|fa }} از {{ page.paginator.num_pages|fa }}</span>
+        {% if page.has_next %}<a class="btn btn-outline-secondary" href="?page={{ page.next_page_number }}&{{ query }}">بعدی</a>{% else %}<span></span>{% endif %}
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

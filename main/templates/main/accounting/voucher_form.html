@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static accounting_tags %}
+
+{% block title %}{% if voucher %}ویرایش سند {{ voucher.number|fa }}{% else %}سند جدید{% endif %} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1100px">
+    <h1 class="h3 mb-3"><i class="fas fa-file-pen ms-2"></i>{% if voucher %}ویرایش سند شماره {{ voucher.number|fa }}{% else %}ثبت سند جدید{% endif %} <small class="text-muted">سال {{ year.year|fa }}</small></h1>
+    {% include 'main/accounting/_nav.html' with tab='vouchers' %}
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+
+    {% if accounts is not None %}
+    <form method="post" class="card card-body" id="voucher-form" data-once novalidate>
+        {% csrf_token %}
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3"><label class="form-label" for="date">تاریخ (شمسی)</label><input class="form-control" id="date" name="date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ date }}" required></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="kind">نوع سند</label>
+                <select class="form-select" id="kind" name="kind">{% for k, label in kinds %}<option value="{{ k }}" {% if kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <div class="col-12 col-md-6"><label class="form-label" for="description">شرح سند</label><input class="form-control" id="description" name="description" maxlength="500" value="{{ description }}" required></div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm align-middle" id="lines">
+                <thead><tr><th style="min-width:220px">حساب</th><th style="min-width:160px">طرف حساب</th><th style="min-width:130px">مرکز هزینه</th><th style="min-width:160px">شرح</th><th style="min-width:130px">بدهکار</th><th style="min-width:130px">بستانکار</th><th></th></tr></thead>
+                <tbody>
+                {% for r in rows %}{% include 'main/accounting/_line_row.html' %}{% endfor %}
+                </tbody>
+                <tfoot><tr class="fw-bold"><td colspan="4">جمع</td><td id="sum-debit" class="text-end">۰</td><td id="sum-credit" class="text-end">۰</td><td></td></tr></tfoot>
+            </table>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary" id="add-line"><i class="fas fa-plus ms-1"></i>ردیف جدید</button>
+            <span id="balance-badge" class="badge bg-secondary" role="status" aria-live="polite">بی‌حساب</span>
+            <span class="ms-auto"></span>
+            <button class="btn btn-primary" type="submit"><i class="fas fa-floppy-disk ms-1"></i>ذخیره</button>
+            <a class="btn btn-outline-secondary" href="{% if voucher %}{% url 'main:acc_voucher_detail' voucher.id %}{% else %}{% url 'main:acc_vouchers' year.id %}{% endif %}">انصراف</a>
+        </div>
+        <div class="form-text">مبلغ‌ها به ریال و عدد صحیح‌اند؛ هر ردیف فقط یکی از بدهکار یا بستانکار دارد. سند بی‌حساب را می‌شود ذخیره کرد ولی قطعی نمی‌شود.</div>
+    </form>
+
+    <template id="line-template">{% include 'main/accounting/_line_row.html' with r=empty_row %}</template>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'js/accounting.js' %}" defer></script>{% endblock %}

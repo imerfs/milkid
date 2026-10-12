@@ -148,6 +148,12 @@ def _editable(voucher):
         raise Conflict('سال مالی بسته شده است.')
 
 
+def check_editable(actor, voucher):
+    """Raise Conflict if the voucher may not be edited (final or in a closed year)."""
+    _own(municipality_of(actor), voucher)
+    _editable(voucher)
+
+
 def create_voucher(actor, year, on, kind, description, lines, *, number_hint=None):
     muni = municipality_of(actor)
     _own(muni, year)
@@ -238,9 +244,9 @@ def trial_balance(actor, year, include_temporary=True):
     muni = municipality_of(actor)
     _own(muni, year)
     rows = [
-        {'code': r['account__code'], 'title': r['account__title'], 'debit': r['d'], 'credit': r['c'],
+        {'account_id': r['account_id'], 'code': r['account__code'], 'title': r['account__title'], 'debit': r['d'], 'credit': r['c'],
          'balance': r['d'] - r['c']}
-        for r in _lines(muni, year, include_temporary).values('account__code', 'account__title')
+        for r in _lines(muni, year, include_temporary).values('account_id', 'account__code', 'account__title')
         .annotate(d=Sum('debit'), c=Sum('credit')).order_by('account__code')]
     totals = {'debit': sum(r['debit'] for r in rows), 'credit': sum(r['credit'] for r in rows)}
     return rows, totals

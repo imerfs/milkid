@@ -1,0 +1,11 @@
+{% load accounting_tags %}
+{% comment %}Tabs of the accounting section. Needs `year` (optional) and `tab`.{% endcomment %}
+<nav class="d-flex flex-wrap align-items-center gap-2 mb-3" aria-label="بخش حسابداری">
+    <a href="{% url 'main:acc_home' %}" class="btn btn-outline-secondary"><i class="fas fa-calendar-days ms-1"></i>سال‌های مالی</a>
+    {% if year %}
+    <a href="{% url 'main:acc_vouchers' year.id %}" class="btn {% if tab == 'vouchers' %}btn-dark{% else %}btn-outline-secondary{% endif %}"><i class="fas fa-file-invoice ms-1"></i>اسناد {{ year.year|fa }}</a>
+    <a href="{% url 'main:acc_trial' year.id %}" class="btn {% if tab == 'trial' %}btn-dark{% else %}btn-outline-secondary{% endif %}"><i class="fas fa-scale-balanced ms-1"></i>تراز</a>
+    {% endif %}
+    <a href="{% url 'main:acc_accounts' %}" class="btn {% if tab == 'accounts' %}btn-dark{% else %}btn-outline-secondary{% endif %}"><i class="fas fa-sitemap ms-1"></i>حساب‌ها</a>
+    <a href="{% url 'main:acc_parties' %}" class="btn {% if tab == 'parties' %}btn-dark{% else %}btn-outline-secondary{% endif %}"><i class="fas fa-address-book ms-1"></i>طرف‌حساب‌ها</a>
+</nav>

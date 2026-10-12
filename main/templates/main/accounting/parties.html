@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}طرف‌حساب‌ها - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-address-book ms-2"></i>طرف‌حساب‌ها</h1>
+    {% include 'main/accounting/_nav.html' with tab='parties' %}
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+
+    <form method="get" class="row g-2 mb-3" role="search">
+        <div class="col"><label for="q" class="visually-hidden">جستجوی نام یا کد ملی</label><input type="search" class="form-control" id="q" name="q" value="{{ q }}" placeholder="جستجوی نام یا کد ملی"></div>
+        <div class="col-auto"><button class="btn btn-outline-primary" type="submit"><i class="fas fa-magnifying-glass ms-1"></i>جستجو</button></div>
+    </form>
+
+    <div class="table-responsive card mb-4">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>نام</th><th>نوع</th><th>کد/شناسه ملی</th><th>تلفن</th></tr></thead>
+            <tbody>
+            {% for p in parties %}<tr><td>{{ p.name }}</td><td>{{ p.get_kind_display }}</td><td dir="ltr" class="text-end">{{ p.national_id }}</td><td dir="ltr" class="text-end">{{ p.mobile|default:p.phone }}</td></tr>
+            {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">{% if q %}موردی پیدا نشد.{% else %}طرف‌حسابی ثبت نشده است.{% endif %}</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <form method="post" class="card card-body" data-once novalidate>
+        {% csrf_token %}
+        <h2 class="h6">افزودن طرف حساب</h2>
+        <div class="row g-2">
+            <div class="col-6 col-md-3"><label class="form-label" for="kind">نوع</label><select class="form-select" id="kind" name="kind"><option value="real">حقیقی</option><option value="legal" {% if p.kind == 'legal' %}selected{% endif %}>حقوقی</option></select></div>
+            <div class="col-12 col-md-5"><label class="form-label" for="name">نام</label><input class="form-control" id="name" name="name" maxlength="200" value="{{ p.name }}" required></div>
+            <div class="col-12 col-md-4"><label class="form-label" for="national_id">کد ملی (۱۰ رقم) / شناسه ملی (۱۱ رقم)</label><input class="form-control" id="national_id" name="national_id" inputmode="numeric" dir="ltr" maxlength="11" value="{{ p.national_id }}"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="mobile">همراه</label><input class="form-control" id="mobile" name="mobile" inputmode="tel" dir="ltr" maxlength="20" value="{{ p.mobile }}"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="phone">تلفن</label><input class="form-control" id="phone" name="phone" inputmode="tel" dir="ltr" maxlength="20" value="{{ p.phone }}"></div>
+            <div class="col-12 col-md-6"><label class="form-label" for="address">نشانی</label><input class="form-control" id="address" name="address" maxlength="500" value="{{ p.address }}"></div>
+        </div>
+        <div><button class="btn btn-primary mt-3" type="submit">افزودن</button></div>
+    </form>
+</div>
+{% endblock %}

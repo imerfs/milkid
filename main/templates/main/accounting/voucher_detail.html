@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load accounting_tags jalali_tags %}
+
+{% block title %}سند {{ voucher.number|fa }} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1000px">
+    <h1 class="h3 mb-3"><i class="fas fa-file-invoice ms-2"></i>سند شماره {{ voucher.number|fa }} <small class="text-muted">(شناسه {{ voucher.ref|fa }})</small></h1>
+    {% include 'main/accounting/_nav.html' with tab='vouchers' %}
+
+    <section class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-6 col-md-3"><small class="text-muted d-block">تاریخ</small>{{ voucher.date|jalali_date|fa }}</div>
+                <div class="col-6 col-md-3"><small class="text-muted d-block">نوع</small>{{ voucher.get_kind_display }}</div>
+                <div class="col-6 col-md-3"><small class="text-muted d-block">وضعیت</small>
+                    {% if not balanced %}<span class="badge bg-danger">بی‌حساب</span> {% endif %}
+                    {% if voucher.status == 'final' %}<span class="badge bg-success">قطعی</span>{% else %}<span class="badge bg-warning text-dark">موقت</span>{% endif %}</div>
+                <div class="col-6 col-md-3"><small class="text-muted d-block">ثبت‌کننده</small>{{ voucher.created_by.get_full_name|default:voucher.created_by.username }}</div>
+                <div class="col-12"><small class="text-muted d-block">شرح</small>{{ voucher.description }}</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="table-responsive card mb-3">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>ردیف</th><th>کد حساب</th><th>شرح حساب</th><th>طرف حساب</th><th>شرح</th><th class="text-end">بدهکار</th><th class="text-end">بستانکار</th></tr></thead>
+            <tbody>
+            {% for l in lines %}
+            <tr><td>{{ l.row|fa }}</td><td dir="ltr" class="text-end">{{ l.account.code }}</td><td>{{ l.account.title }}</td><td>{{ l.party.name|default:'' }}</td><td>{{ l.description }}</td>
+                <td class="text-end">{{ l.debit|rial }}</td><td class="text-end">{{ l.credit|rial }}</td></tr>
+            {% endfor %}
+            </tbody>
+            <tfoot><tr class="fw-bold"><td colspan="5">جمع</td><td class="text-end">{{ debit|rial }}</td><td class="text-end">{{ credit|rial }}</td></tr></tfoot>
+        </table>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        {% if voucher.status == 'temporary' and not year.is_closed %}
+        <a class="btn btn-outline-primary" href="{% url 'main:acc_voucher_edit' voucher.id %}"><i class="fas fa-pen ms-1"></i>ویرایش</a>
+        <form method="post" action="{% url 'main:acc_voucher_finalize' voucher.id %}" data-once data-confirm="سند قطعی شود؟ بعد از قطعی شدن قابل ویرایش نیست.">{% csrf_token %}<button class="btn btn-success" type="submit"><i class="fas fa-lock ms-1"></i>قطعی کردن</button></form>
+        <form method="post" action="{% url 'main:acc_voucher_delete' voucher.id %}" data-once data-confirm="این سند حذف شود؟">{% csrf_token %}<button class="btn btn-outline-danger" type="submit"><i class="fas fa-trash ms-1"></i>حذف</button></form>
+        {% elif voucher.status == 'final' and not year.is_closed %}
+        <form method="post" action="{% url 'main:acc_voucher_revert' voucher.id %}" data-once data-confirm="سند به حالت موقت برگردد؟ فقط دهیار اجازه دارد.">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit"><i class="fas fa-lock-open ms-1"></i>برگرداندن به موقت</button></form>
+        {% endif %}
+        <a class="btn btn-outline-secondary" href="{% url 'main:acc_vouchers' year.id %}">بازگشت به فهرست</a>
+    </div>
+</div>
+{% endblock %}

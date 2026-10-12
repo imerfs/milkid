@@ -59,6 +59,20 @@ urlpatterns = [
     path('council/financial/', views.council_financial_reports, name='council_financial_reports'),
     
     # Mayor/Dehyari Dashboard Actions
+    # Accounting
+    path('accounting/', views.acc_home, name='acc_home'),
+    path('accounting/seed/', views.acc_seed, name='acc_seed'),
+    path('accounting/accounts/', views.acc_accounts, name='acc_accounts'),
+    path('accounting/parties/', views.acc_parties, name='acc_parties'),
+    path('accounting/<int:year_id>/vouchers/', views.acc_vouchers, name='acc_vouchers'),
+    path('accounting/<int:year_id>/vouchers/new/', views.acc_voucher_new, name='acc_voucher_new'),
+    path('accounting/<int:year_id>/trial-balance/', views.acc_trial, name='acc_trial'),
+    path('accounting/<int:year_id>/ledger/<int:account_id>/', views.acc_ledger, name='acc_ledger'),
+    path('accounting/vouchers/<int:voucher_id>/', views.acc_voucher_detail, name='acc_voucher_detail'),
+    path('accounting/vouchers/<int:voucher_id>/edit/', views.acc_voucher_edit, name='acc_voucher_edit'),
+    path('accounting/vouchers/<int:voucher_id>/finalize/', views.acc_voucher_finalize, name='acc_voucher_finalize'),
+    path('accounting/vouchers/<int:voucher_id>/revert/', views.acc_voucher_revert, name='acc_voucher_revert'),
+    path('accounting/vouchers/<int:voucher_id>/delete/', views.acc_voucher_delete, name='acc_voucher_delete'),
     path('letters/', views.letters_inbox, name='letters_inbox'),
     path('letters/sent/', views.letters_sent, name='letters_sent'),
     path('letters/drafts/', views.letters_drafts, name='letters_drafts'),

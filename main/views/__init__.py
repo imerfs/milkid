@@ -13,6 +13,7 @@ from .office_views import *
 from .letter_views import *
 from .appointment_views import *
 from .monitoring_views import *
+from .accounting_views import *
 
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 

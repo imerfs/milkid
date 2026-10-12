@@ -1,0 +1,302 @@
+"""Accounting pages (vouchers, chart of accounts, parties, trial balance, ledger). Rules live in main/accounting."""
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Q, Sum
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
+
+from main.access import policy_required
+from main.accounting import chart, ledger
+from main.accounting.parse import jalali_str, parse_amount, parse_int_or_none, parse_jalali
+from main.models import Account, CostCenter, FiscalYear, Party, Voucher
+from main.office.errors import Conflict, Invalid, NotFound, OfficeError
+
+PAGE_SIZE = 25
+
+
+def _404_on_not_found(view):
+    """Rules raise NotFound for foreign or missing rows; the site answers its 404 page."""
+    def wrapped(request, *args, **kwargs):
+        try:
+            return view(request, *args, **kwargs)
+        except NotFound:
+            raise Http404()
+    wrapped.__name__ = view.__name__
+    wrapped.__doc__ = view.__doc__
+    return wrapped
+
+
+def _guard(action='staff.accountant'):
+    def decorator(view):
+        return policy_required(action)(_404_on_not_found(view))
+    return decorator
+
+
+def _fail(request, exc):
+    messages.error(request, str(exc))
+
+
+# ---------- years ----------
+
+@_guard()
+def acc_home(request):
+    muni = ledger.municipality_of(request.user)
+    error, status = None, 200
+    if request.method == 'POST':
+        try:
+            year = ledger.open_year(request.user, request.POST.get('year', '').translate(
+                str.maketrans('۰۱۲۳۴۵۶۷۸۹', '0123456789')))
+            messages.success(request, 'سال مالی باز شد.')
+            return redirect('main:acc_vouchers', year_id=year.id)
+        except OfficeError as exc:
+            error, status = str(exc), exc.status
+    years = (FiscalYear.objects.filter(municipality=muni).annotate(
+        count=Count('vouchers', filter=Q(vouchers__deleted_at__isnull=True))).order_by('-year'))
+    return render(request, 'main/accounting/home.html', {
+        'muni': muni, 'years': years, 'error': error,
+        'has_accounts': Account.objects.filter(municipality=muni).exists()}, status=status)
+
+
+@_guard()
+@require_POST
+def acc_seed(request):
+    count = chart.seed_default_accounts(request.user)
+    messages.success(request, f'سرفصل حساب‌های پیش‌فرض ({count} حساب) ثبت شد.')
+    return redirect('main:acc_accounts')
+
+
+# ---------- vouchers ----------
+
+def _filtered(request, qs):
+    g = request.GET
+    if g.get('q', '').strip():
+        qs = qs.filter(description__icontains=g['q'].strip())
+    if g.get('status') in ('temporary', 'final'):
+        qs = qs.filter(status=g['status'])
+    if g.get('kind') in dict(Voucher.KINDS):
+        qs = qs.filter(kind=g['kind'])
+    lo, hi = parse_int_or_none(g.get('number_from')), parse_int_or_none(g.get('number_to'))
+    if lo is not None:
+        qs = qs.filter(number__gte=lo)
+    if hi is not None:
+        qs = qs.filter(number__lte=hi)
+    for key, lookup in (('date_from', 'date__gte'), ('date_to', 'date__lte')):
+        try:
+            qs = qs.filter(**{lookup: parse_jalali(g.get(key, ''))})
+        except Invalid:
+            pass
+    return qs
+
+
+@_guard()
+def acc_vouchers(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    qs = _filtered(request, ledger.vouchers_for(request.user, year)).annotate(
+        total=Sum('lines__debit'), credit_total=Sum('lines__credit')).order_by('number')
+    page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get('page'))
+    query = request.GET.copy()
+    query.pop('page', None)
+    return render(request, 'main/accounting/voucher_list.html', {
+        'year': year, 'page': page, 'kinds': Voucher.KINDS, 'g': request.GET, 'query': query.urlencode()})
+
+
+def _row_dicts(post):
+    keys = ('account', 'party', 'cost_center', 'line_description', 'debit', 'credit')
+    cols = {k: post.getlist(k) for k in keys}
+    return [{k: cols[k][i] if i < len(cols[k]) else '' for k in keys} for i in range(len(cols['account']))]
+
+
+def _service_lines(muni, rows):
+    def find(model, raw):
+        pk = parse_int_or_none(raw)
+        return model.objects.filter(municipality=muni, pk=pk).first() if pk else None
+
+    lines = []
+    for r in rows:
+        if not any(str(r[k]).strip() for k in r):
+            continue
+        lines.append({'account': find(Account, r['account']), 'party': find(Party, r['party']),
+                      'cost_center': find(CostCenter, r['cost_center']), 'description': r['line_description'],
+                      'debit': parse_amount(r['debit']), 'credit': parse_amount(r['credit'])})
+    return lines
+
+
+def _form_context(request, muni, year, voucher, rows, error):
+    return {
+        'year': year, 'voucher': voucher, 'rows': rows or [{}, {}], 'error': error, 'kinds': Voucher.KINDS,
+        'accounts': Account.objects.filter(municipality=muni, is_postable=True),
+        'parties': Party.objects.filter(municipality=muni),
+        'cost_centers': CostCenter.objects.filter(municipality=muni)}
+
+
+def _voucher_form(request, year, voucher=None):
+    muni = ledger.municipality_of(request.user)
+    if request.method == 'POST':
+        rows = _row_dicts(request.POST)
+        try:
+            on, kind = parse_jalali(request.POST.get('date', '')), request.POST.get('kind', '')
+            description, lines = request.POST.get('description', ''), _service_lines(muni, rows)
+            if voucher is None:
+                saved = ledger.create_voucher(request.user, year, on, kind, description, lines)
+            else:
+                saved = ledger.update_voucher(request.user, voucher, description=description, lines=lines,
+                                              on=on, kind=kind)
+            messages.success(request, f'سند شماره {saved.number} ذخیره شد.')
+            return redirect('main:acc_voucher_detail', voucher_id=saved.id)
+        except OfficeError as exc:
+            ctx = _form_context(request, muni, year, voucher, rows, str(exc))
+            ctx.update(date=request.POST.get('date', ''), kind=request.POST.get('kind', ''),
+                       description=request.POST.get('description', ''))
+            return render(request, 'main/accounting/voucher_form.html', ctx, status=exc.status)
+    rows = ([{'account': l.account_id, 'party': l.party_id or '', 'cost_center': l.cost_center_id or '',
+              'line_description': l.description, 'debit': l.debit or '', 'credit': l.credit or ''}
+             for l in voucher.lines.all()] if voucher else [])
+    ctx = _form_context(request, muni, year, voucher, rows, None)
+    ctx.update(date=jalali_str(voucher.date) if voucher else '', kind=voucher.kind if voucher else 'general',
+               description=voucher.description if voucher else '')
+    return render(request, 'main/accounting/voucher_form.html', ctx)
+
+
+@_guard()
+def acc_voucher_new(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    if year.is_closed:
+        return render(request, 'main/accounting/voucher_form.html', {'year': year, 'error': 'سال مالی بسته شده است.'},
+                      status=409)
+    return _voucher_form(request, year)
+
+
+@_guard()
+def acc_voucher_edit(request, voucher_id):
+    voucher = ledger.get_voucher(request.user, voucher_id)
+    try:
+        ledger.check_editable(request.user, voucher)
+    except Conflict as exc:
+        return render(request, 'main/accounting/voucher_form.html',
+                      {'year': voucher.fiscal_year, 'voucher': voucher, 'error': str(exc)}, status=409)
+    return _voucher_form(request, voucher.fiscal_year, voucher)
+
+
+@_guard()
+def acc_voucher_detail(request, voucher_id):
+    voucher = ledger.get_voucher(request.user, voucher_id)
+    lines = voucher.lines.select_related('account', 'party', 'cost_center')
+    totals = lines.aggregate(d=Sum('debit'), c=Sum('credit'))
+    return render(request, 'main/accounting/voucher_detail.html', {
+        'voucher': voucher, 'year': voucher.fiscal_year, 'lines': lines, 'debit': totals['d'] or 0,
+        'credit': totals['c'] or 0, 'balanced': ledger.is_balanced(voucher)})
+
+
+def _act(request, voucher_id, action, done):
+    voucher = ledger.get_voucher(request.user, voucher_id)
+    try:
+        action(request.user, voucher)
+        messages.success(request, done)
+    except OfficeError as exc:
+        _fail(request, exc)
+    return voucher
+
+
+@_guard()
+@require_POST
+def acc_voucher_finalize(request, voucher_id):
+    v = _act(request, voucher_id, ledger.finalize, 'سند قطعی شد.')
+    return redirect('main:acc_voucher_detail', voucher_id=v.id)
+
+
+@_guard()
+@require_POST
+def acc_voucher_revert(request, voucher_id):
+    v = _act(request, voucher_id, ledger.revert_to_temporary, 'سند به حالت موقت برگشت.')
+    return redirect('main:acc_voucher_detail', voucher_id=v.id)
+
+
+@_guard()
+@require_POST
+def acc_voucher_delete(request, voucher_id):
+    v = _act(request, voucher_id, ledger.delete_voucher, 'سند حذف شد.')
+    return redirect('main:acc_vouchers', year_id=v.fiscal_year_id)
+
+
+# ---------- chart of accounts and parties ----------
+
+@_guard()
+def acc_accounts(request):
+    muni = ledger.municipality_of(request.user)
+    error, status, posted = None, 200, request.POST
+    if request.method == 'POST':
+        try:
+            code, title = request.POST.get('code', '').strip(), request.POST.get('title', '').strip()
+            if not code.isascii() or not code.isalnum() or len(code) > 20 or not title or len(title) > 200:
+                raise Invalid('کد (حروف و رقم انگلیسی، حداکثر ۲۰) و شرح حساب را درست وارد کنید.')
+            kind, nature = request.POST.get('kind'), request.POST.get('nature')
+            if kind not in dict(Account.KINDS) or nature not in dict(Account.NATURES):
+                raise Invalid('نوع یا ماهیت حساب نامعتبر است.')
+            parent = Account.objects.filter(municipality=muni, pk=parse_int_or_none(request.POST.get('parent'))).first()
+            try:
+                with transaction.atomic():
+                    Account.objects.create(
+                        municipality=muni, code=code, title=title, kind=kind, nature=nature, parent=parent,
+                        is_postable=bool(request.POST.get('is_postable')),
+                        requires_party=bool(request.POST.get('requires_party')))
+            except IntegrityError:
+                raise Conflict('این کد حساب قبلاً ثبت شده است.')
+            messages.success(request, 'حساب افزوده شد.')
+            return redirect('main:acc_accounts')
+        except OfficeError as exc:
+            error, status = str(exc), exc.status
+    return render(request, 'main/accounting/accounts.html', {
+        'accounts': Account.objects.filter(municipality=muni), 'kinds': Account.KINDS, 'natures': Account.NATURES,
+        'error': error, 'p': posted}, status=status)
+
+
+@_guard()
+def acc_parties(request):
+    muni = ledger.municipality_of(request.user)
+    error, status = None, 200
+    if request.method == 'POST':
+        from main.accounting.parse import digits
+        party = Party(municipality=muni, kind=request.POST.get('kind', 'real'),
+                      name=request.POST.get('name', '').strip(), national_id=digits(request.POST.get('national_id')),
+                      phone=digits(request.POST.get('phone')), mobile=digits(request.POST.get('mobile')),
+                      address=request.POST.get('address', '').strip())
+        try:
+            if party.kind not in dict(Party.KINDS) or not party.name:
+                raise ValidationError('نوع و نام طرف حساب را درست وارد کنید.')
+            party.full_clean()
+            party.save()
+            messages.success(request, 'طرف حساب افزوده شد.')
+            return redirect('main:acc_parties')
+        except ValidationError as exc:
+            error, status = ' '.join(exc.messages), 400
+    q = request.GET.get('q', '').strip()
+    parties = Party.objects.filter(municipality=muni)
+    if q:
+        parties = parties.filter(name__icontains=q) | parties.filter(national_id__icontains=q)
+    return render(request, 'main/accounting/parties.html', {
+        'parties': parties[:200], 'q': q, 'error': error, 'p': request.POST}, status=status)
+
+
+# ---------- reports ----------
+
+@_guard()
+def acc_trial(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    final_only = request.GET.get('final') == '1'
+    rows, totals = ledger.trial_balance(request.user, year, include_temporary=not final_only)
+    return render(request, 'main/accounting/trial_balance.html', {
+        'year': year, 'rows': rows, 'totals': totals, 'final_only': final_only})
+
+
+@_guard()
+def acc_ledger(request, year_id, account_id):
+    year = ledger.get_year(request.user, year_id)
+    muni = ledger.municipality_of(request.user)
+    account = get_object_or_404(Account, pk=account_id, municipality=muni)
+    final_only = request.GET.get('final') == '1'
+    return render(request, 'main/accounting/ledger.html', {
+        'year': year, 'account': account, 'final_only': final_only,
+        'rows': ledger.account_ledger(request.user, year, account, include_temporary=not final_only)})
