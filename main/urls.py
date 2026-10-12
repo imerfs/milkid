@@ -85,6 +85,7 @@ urlpatterns = [
     path('appointments/hours/', views.availability, name='availability'),
     path('mayor/roles/', views.role_grants, name='role_grants'),
     path('mayor/roles/grant/', views.role_grant, name='role_grant'),
+    path('mayor/roles/create/', views.role_create_account, name='role_create_account'),
     path('mayor/roles/<int:user_id>/revoke/', views.role_revoke, name='role_revoke'),
     path('mayor/staff/', views.mayor_staff_list, name='mayor_staff_list'),
     path('mayor/staff/add/', views.mayor_staff_add, name='mayor_staff_add'),

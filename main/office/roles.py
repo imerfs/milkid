@@ -1,4 +1,8 @@
 """Giving and taking back staff roles. The dehyari acts inside their own village only."""
+import re
+import secrets
+
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 
@@ -96,3 +100,50 @@ def staff_and_candidates(actor, query=''):
     else:
         candidates = candidates.none()   # never list a whole village: the dehyari searches by name/ID
     return staff, candidates.order_by('user__last_name')[:20]
+
+
+_USERNAME = re.compile(r'^[A-Za-z0-9._-]{3,30}$')
+_NATIONAL_ID = re.compile(r'^\d{10}$')
+_MOBILE = re.compile(r'^09\d{9}$')
+_PASSWORD_ALPHABET = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+
+def create_staff_account(actor, data):
+    """Dehyari creates a ready-to-use staff account in their own village.
+
+    Returns (user, temporary_password); the password is not stored anywhere else.
+    """
+    village = village_of(actor)
+    if village is None:
+        raise Invalid('فقط دهیار می‌تواند حساب کارمند بسازد.')
+    role = data.get('role', '')
+    if role not in GRANTABLE:
+        raise Invalid('نقش انتخاب‌شده معتبر نیست.')
+    username = (data.get('username') or '').strip()
+    first = (data.get('first_name') or '').strip()
+    last = (data.get('last_name') or '').strip()
+    national_id = (data.get('national_id') or '').strip()
+    mobile = (data.get('mobile_number') or '').strip()
+    if not _USERNAME.match(username):
+        raise Invalid('نام کاربری باید ۳ تا ۳۰ حرف انگلیسی، عدد، نقطه یا خط تیره باشد.')
+    if not first or not last or len(first) > 30 or len(last) > 30:
+        raise Invalid('نام و نام خانوادگی را وارد کنید (حداکثر ۳۰ نویسه).')
+    if not _NATIONAL_ID.match(national_id):
+        raise Invalid('کد ملی باید ۱۰ رقم باشد.')
+    if not _MOBILE.match(mobile):
+        raise Invalid('شماره موبایل صحیح وارد کنید (مثال: 09123456789).')
+    municipality = Municipality.objects.filter(admin_user=actor).first()
+    password = ''.join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(12))
+    with transaction.atomic():
+        if User.objects.filter(username__iexact=username).exists():
+            raise Invalid('این نام کاربری قبلاً استفاده شده است.')
+        if UserProfile.objects.filter(national_id=national_id).exists():
+            raise Invalid('این کد ملی قبلاً ثبت شده است.')
+        user = User.objects.create_user(username=username, password=password, first_name=first, last_name=last)
+        UserProfile.objects.filter(user=user).update(
+            role=role, national_id=national_id, mobile_number=mobile, is_verified=True, approval_status='approved',
+            province=municipality.province, county=municipality.county, district=municipality.district,
+            city_village=municipality.city_village, is_village=True)
+        RoleGrant.objects.create(user=user, role=role, previous_role='citizen', granted_by=actor,
+                                 municipality=municipality)
+    return user, password

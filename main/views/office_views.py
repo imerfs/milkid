@@ -46,3 +46,15 @@ def role_revoke(request, user_id):
         return _roles_page(request, exc.status, str(exc))
     messages.success(request, 'نقش برداشته شد و کاربر به شهروند بازگشت.' if changed else 'این کاربر نقش سازمانی نداشت.')
     return redirect('main:role_grants')
+
+
+@policy_required('mayor.manage')
+@require_POST
+def role_create_account(request):
+    try:
+        user, password = roles.create_staff_account(request.user, request.POST)
+    except OfficeError as exc:
+        return _roles_page(request, exc.status, str(exc))
+    messages.success(request, f'حساب «{user.username}» ساخته شد. رمز موقت: «{password}» ' 
+                              '(فقط همین بار نمایش داده می‌شود؛ آن را به کاربر بدهید تا پس از ورود تغییر دهد).')
+    return redirect('main:role_grants')
