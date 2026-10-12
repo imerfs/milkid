@@ -11,6 +11,9 @@
 <a href="#acc-workspace" class="ac-item" data-acc-tab="received"><i class="fas fa-money-check ic" aria-hidden="true"></i>خزانه دریافتی</a>
 <a href="#acc-workspace" class="ac-item" data-acc-tab="transport"><i class="fas fa-truck ic" aria-hidden="true"></i>حمل و نقل</a>
 <a href="#acc-workspace" class="ac-item" data-acc-tab="reports"><i class="fas fa-file-lines ic" aria-hidden="true"></i>گزارش‌ها</a>
+<a href="#acc-workspace" class="ac-item" data-acc-tab="pstaff"><i class="fas fa-users ic" aria-hidden="true"></i>پرسنل</a>
+<a href="#acc-workspace" class="ac-item" data-acc-tab="pattendance"><i class="fas fa-clock ic" aria-hidden="true"></i>کارکرد</a>
+<a href="#acc-workspace" class="ac-item" data-acc-tab="prun"><i class="fas fa-money-bill-wave ic" aria-hidden="true"></i>حقوق</a>
 <a href="#acc-workspace" class="ac-item" data-acc-tab="budget"><i class="fas fa-chart-pie ic" aria-hidden="true"></i>بودجه</a>
 <a href="#acc-workspace" class="ac-item" data-acc-tab="trial"><i class="fas fa-scale-balanced ic" aria-hidden="true"></i>تراز آزمایشی</a>
 <a href="#acc-workspace" class="ac-item" data-acc-tab="parties"><i class="fas fa-address-book ic" aria-hidden="true"></i>طرف‌حساب‌ها</a>
@@ -47,16 +50,30 @@
     <a href="#acc-workspace" class="ac-item" data-acc-tab="transport"><i class="fas fa-truck ic" aria-hidden="true"></i>درآمد حمل و نقل</a>
     <a href="#acc-workspace" class="ac-item" data-acc-tab="planimages"><i class="fas fa-images ic" aria-hidden="true"></i>تصاویر پرونده تقسیط</a>
 </nav>
+<div class="ac-label-s">حقوق و دستمزد</div>
+<nav class="ac-nav" aria-label="حقوق و دستمزد">
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pstaff"><i class="fas fa-users ic" aria-hidden="true"></i>اطلاعات پرسنل</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pattendance"><i class="fas fa-clock ic" aria-hidden="true"></i>کارکرد</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pmission"><i class="fas fa-plane ic" aria-hidden="true"></i>ماموریت</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pspecialallow"><i class="fas fa-gift ic" aria-hidden="true"></i>مزایای مخصوص</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pspecialdebt"><i class="fas fa-file-invoice-dollar ic" aria-hidden="true"></i>بدهی مخصوص</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pmisc"><i class="fas fa-wallet ic" aria-hidden="true"></i>پرداخت‌های متفرقه</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pworkers"><i class="fas fa-helmet-safe ic" aria-hidden="true"></i>کارگران روزمزد</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="peidi"><i class="fas fa-gift ic" aria-hidden="true"></i>اطلاعات عیدی</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="pcalc"><i class="fas fa-sliders ic" aria-hidden="true"></i>محاسبات فردی</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="prun"><i class="fas fa-money-bill-wave ic" aria-hidden="true"></i>محاسبه و فیش حقوق</a>
+    <a href="#acc-workspace" class="ac-item" data-acc-tab="psettings"><i class="fas fa-gear ic" aria-hidden="true"></i>تنظیمات حقوق</a>
+</nav>
 <div class="ac-label-s">پرداخت‌ها و تنظیمات</div>
 <nav class="ac-nav" aria-label="پرداخت‌ها و تنظیمات">
     <a href="#acc-workspace" class="ac-item" data-acc-tab="online"><i class="fas fa-credit-card ic" aria-hidden="true"></i>پرداخت‌های آنلاین</a>
     <a href="#acc-workspace" class="ac-item" data-acc-tab="settings"><i class="fas fa-sliders ic" aria-hidden="true"></i>تنظیمات مالی</a>
     <a href="#acc-workspace" class="ac-item" data-acc-tab="setup"><i class="fas fa-calendar-days ic" aria-hidden="true"></i>سال مالی و شروع کار</a>
 </nav>
-<details class="ac-fold">
+{% if soon %}<details class="ac-fold">
     <summary><div class="ac-label-s">به‌زودی <i class="fas fa-chevron-down" aria-hidden="true" style="font-size:10px"></i></div></summary>
     <nav class="ac-nav" aria-label="بخش‌های به‌زودی">
         {% for name in soon %}<span class="ac-item" aria-disabled="true"><i class="fas fa-lock ic" aria-hidden="true"></i>{{ name }}<span class="ac-soon">به‌زودی</span></span>{% endfor %}
     </nav>
-</details>
+</details>{% endif %}
 {% endif %}

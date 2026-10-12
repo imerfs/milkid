@@ -1,0 +1,22 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='بدهی‌های '|add:emp.full_name subtitle='قسط هر ماه از حقوق کسر می‌شود تا بدهی تسویه شود؛ کسر پس از قطعی شدن حقوق ماه ثبت می‌شود.' %}
+<div class="ac-mb" data-acc-dirty>
+    {% if notice %}<div class="ac-mnote" role="status">{{ notice }}</div>{% endif %}
+    <div class="ac-lines" style="margin-bottom:16px"><table>
+        <thead><tr><th>عنوان</th><th>کل بدهی</th><th>قسط</th><th>پرداخت‌شده</th><th>مانده</th><th>شروع</th><th>وضعیت</th><th><span class="ac-sr">عملیات</span></th></tr></thead>
+        <tbody>
+        {% for d in debts %}
+            <tr>
+                <td>{{ d.title }}</td><td class="num-cell">{{ d.total|rial }}</td><td class="num-cell">{{ d.installment|rial }}</td><td class="num-cell">{{ d.paid|rial }}</td><td class="num-cell"><b>{{ d.remaining|rial }}</b></td>
+                <td class="nw">{{ months|get:d.start_month }} {{ d.start_year|fa }}</td>
+                <td><span class="ac-st {% if d.remaining == 0 %}ok{% elif d.active %}brand{% else %}warn{% endif %}">{% if d.remaining == 0 %}تسویه{% elif d.active %}فعال{% else %}متوقف{% endif %}</span></td>
+                <td><div class="acts">
+                    {% if d.remaining > 0 %}<form hx-post="{% url 'main:acc_p_debt_toggle' d.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML">{% csrf_token %}<button class="ac-link" type="submit">{% if d.active %}توقف{% else %}فعال‌سازی{% endif %}</button></form>{% endif %}
+                    {% if d.paid == 0 %}<form hx-post="{% url 'main:acc_p_debt_delete' d.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" hx-confirm="این بدهی حذف شود؟">{% csrf_token %}<button class="ac-link bad" type="submit">حذف</button></form>{% endif %}
+                </div></td>
+            </tr>
+        {% empty %}<tr><td colspan="8" class="muted" style="text-align:center;padding:16px">بدهی ثبت نشده است.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+    <div class="ac-foot"><button type="button" class="ac-btn ac-btn-brand" hx-get="{% url 'main:acc_p_debt_new' emp.id %}" hx-target="#acc-modal-body"><i class="fas fa-plus" aria-hidden="true"></i>بدهی جدید</button></div>
+</div>

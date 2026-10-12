@@ -23,9 +23,11 @@ from main.views.accounting_views import (
 
 YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'credit', 'contracts', 'payables', 'images',
              'statuschange', 'plans', 'received', 'transport', 'planimages', 'reports')
-TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings')
+PAYROLL_TABS = ('pstaff', 'pcalc', 'pattendance', 'pmission', 'pspecialallow', 'pspecialdebt', 'pmisc', 'pworkers', 'peidi', 'prun',
+                'psettings')
+TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings') + PAYROLL_TABS
 # Tabs drawn by the generic register template (see main/views/accounting_finance.py)
-REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages')
+REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages') + PAYROLL_TABS
 PANEL = 'main/accounting/panel/'
 # (key, label, icon, needs a fiscal year, page subtitle) in menu order
 TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت مالی سال جاری و کارهای باز، یک‌جا.'),
@@ -44,6 +46,17 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('transport', 'درآمد حمل و نقل', 'truck', True, 'عوارض و بهای خدمات حمل و نقل.'),
             ('planimages', 'تصاویر پرونده تقسیط', 'images', True, 'مدارک و نامه‌های پرونده‌های تقسیط.'),
             ('reports', 'گزارش‌گیری', 'file-lines', True, 'گزارش اسناد، دفاتر، فیش‌ها، تقسیط، ضمانت‌نامه‌ها و ... با خروجی اکسل.'),
+            ('pstaff', 'اطلاعات پرسنل', 'users', False, 'پرسنل، مزایای ماهانه و بدهی‌های هر نفر.'),
+            ('pattendance', 'کارکرد ماهانه', 'clock', False, 'کارکرد، غیبت، اضافه کار و شب کاری هر ماه.'),
+            ('pmission', 'ماموریت', 'plane', False, 'ماموریت‌های پرسنل و هزینه‌های آن‌ها.'),
+            ('pspecialallow', 'مزایای مخصوص', 'gift', False, 'مزایایی که به همه پرسنل یک گروه محاسباتی داده می‌شود.'),
+            ('pspecialdebt', 'بدهی مخصوص', 'file-invoice-dollar', False, 'کسوراتی که از همه پرسنل یک گروه محاسباتی کم می‌شود.'),
+            ('pmisc', 'پرداخت‌های متفرقه', 'wallet', False, 'واریزی‌های غیرحقوقی و علی‌الحساب هر ماه.'),
+            ('pworkers', 'کارگران روزمزد', 'helmet-safe', False, 'کارگران روزمزد و کارکرد ماهانه آن‌ها.'),
+            ('peidi', 'اطلاعات عیدی', 'gift', False, 'تنظیم و محاسبه عیدی سالانه پرسنل.'),
+            ('pcalc', 'نحوه محاسبات فردی', 'sliders', False, 'نرخ‌ها و مبالغ اختصاصی هر فرد که جایگزین تنظیمات عمومی می‌شود.'),
+            ('prun', 'محاسبه و فیش حقوق', 'money-bill-wave', False, 'محاسبه ماهانه حقوق، فیش هر فرد، قطعی‌کردن و خروجی اکسل.'),
+            ('psettings', 'تنظیمات حقوق', 'gear', False, 'نرخ بیمه، ضریب اضافه کار و سایر پارامترهای محاسبه.'),
             ('settings', 'تنظیمات مالی', 'sliders', False, 'مراکز هزینه، شرح‌های استاندارد و امضاکنندگان.'),
             ('parties', 'طرف‌حساب‌ها', 'address-book', False, 'اشخاص و سازمان‌هایی که با دهیاری حساب دارند.'),
             ('accounts', 'سرفصل حساب‌ها', 'sitemap', False, 'درخت حساب‌های دهیاری.'),
@@ -223,9 +236,9 @@ def render_panel(request, year, status=200):
     if tab in TAB_BUILDERS:
         TAB_BUILDERS[tab](request, year, ctx)
     else:
-        from main.views import accounting_finance, accounting_income, accounting_reports, accounting_settings   # late: they import this module
+        from main.views import accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings   # late: they import this module
         {**accounting_finance.BUILDERS, **accounting_income.BUILDERS, **accounting_reports.BUILDERS,
-         **accounting_settings.BUILDERS}[tab](request, year, ctx)
+         **accounting_settings.BUILDERS, **accounting_payroll.BUILDERS}[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 

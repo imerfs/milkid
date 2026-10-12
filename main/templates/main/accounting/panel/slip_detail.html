@@ -1,0 +1,25 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='فیش حقوقی '|add:slip.employee.full_name subtitle=period %}
+<div class="ac-mb">
+    <dl class="ac-dl">
+        <div><dt>شماره شناسایی</dt><dd>{{ slip.employee.code|fa }}</dd></div>
+        <div><dt>شماره ملی</dt><dd>{{ slip.employee.national_id|fa }}</dd></div>
+        <div><dt>شغل</dt><dd>{{ slip.employee.job_title }}</dd></div>
+        <div><dt>وضعیت ماه</dt><dd><span class="ac-st {% if slip.run.status == 'final' %}ok{% else %}warn{% endif %}">{{ slip.run.get_status_display }}</span></dd></div>
+    </dl>
+    <div class="ac-fgrid">
+        <div class="ac-field s2"><h3 class="ac-sec-title">حقوق و مزایا</h3><div class="ac-lines"><table><tbody>
+            {% for label, v in earn %}<tr><td>{{ label }}</td><td class="num-cell">{{ v|rial }}</td></tr>{% endfor %}
+            <tr><td><b>جمع ناخالص</b></td><td class="num-cell"><b>{{ slip.gross|rial }}</b></td></tr>
+        </tbody></table></div></div>
+        <div class="ac-field s2"><h3 class="ac-sec-title">کسورات</h3><div class="ac-lines"><table><tbody>
+            {% for label, v in cut %}<tr><td>{{ label }}</td><td class="num-cell">{{ v|rial }}</td></tr>{% empty %}<tr><td class="muted" colspan="2">کسوراتی وجود ندارد.</td></tr>{% endfor %}
+            <tr><td><b>جمع کسورات</b></td><td class="num-cell"><b>{{ slip.deductions|rial }}</b></td></tr>
+        </tbody></table></div></div>
+    </div>
+    <dl class="ac-dl" style="margin-top:12px">
+        <div><dt>مشمول بیمه</dt><dd>{{ slip.insurable|rial }} ریال</dd></div>
+        <div><dt>بیمه سهم کارفرما</dt><dd>{{ slip.insurance_org|rial }} ریال</dd></div>
+        <div class="wide"><dt>خالص پرداختی</dt><dd style="font-size:18px">{{ slip.net|rial }} ریال</dd></div>
+    </dl>
+</div>

@@ -30,8 +30,8 @@ def tab_settings(request, year, ctx):
     # pylint: disable=not-callable  # cells/getter are the callables unpacked from KINDS; pylint misreads the mixed tuples
     ctx['sections'] = [
         {'title': title + ('‌ها' if key != 'center' else 'ها'), 'new_url': _url('acc_p_setting_new', key), 'label': title,
-         'columns': columns, 'rows': [{'cells': cells(o), 'delete': _url('acc_p_setting_delete', key, o.id)}
-                                      for o in getter(request.user)]}
+         'columns': columns, 'rows': [{'cells': cells(o), 'delete': _url('acc_p_setting_delete', key, o.id)}  # pylint: disable=not-callable
+                                      for o in getter(request.user)]}  # pylint: disable=not-callable
         for key, (title, _f, _a, _d, getter, _m, cells, columns) in KINDS.items()]
 
 
