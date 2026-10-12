@@ -19,5 +19,5 @@
         {% endfor %}
         {% if file_field %}<div class="ac-field s4"><label for="f-file">فایل</label><input class="ac-in" id="f-file" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png"></div>{% endif %}
     </div>
-    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>انصراف</button><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>{{ submit }}</button></div>
+    <div class="ac-foot">{% if back_url %}<button type="button" class="ac-btn" hx-get="{{ back_url }}" hx-target="#acc-modal-body">بازگشت</button>{% else %}<button type="button" class="ac-btn" data-acc-close>انصراف</button>{% endif %}<button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>{{ submit }}</button></div>
 </form>

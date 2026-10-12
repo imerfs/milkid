@@ -32,13 +32,13 @@ def _cell(c):
     return {'t': 'text', 'v': c}
 
 
-def _reg(ctx, columns, rows, *, empty, new_url=None, new_label='', icon='file', intro=None):
+def _reg(ctx, columns, rows, *, empty, new_url=None, new_label='', icon='file', intro=None, filters=None):
     for row in rows:
         row['cells'] = [_cell(c) for c in row['cells']]
     if intro:
         intro['rows'] = [[_cell(c) for c in r] for r in intro['rows']]
     ctx['reg'] = {'columns': columns, 'rows': rows, 'empty': empty, 'new_url': new_url, 'new_label': new_label,
-                  'icon': icon, 'intro': intro}
+                  'icon': icon, 'intro': intro, 'filters': filters}
 
 
 def _url(name, *args):

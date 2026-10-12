@@ -22,10 +22,10 @@ from main.views.accounting_views import (
     new_party)
 
 YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'credit', 'contracts', 'payables', 'images',
-             'statuschange')
+             'statuschange', 'plans', 'received', 'transport', 'planimages')
 TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup')
 # Tabs drawn by the generic register template (see main/views/accounting_finance.py)
-REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images')
+REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages')
 PANEL = 'main/accounting/panel/'
 # (key, label, icon, needs a fiscal year, page subtitle) in menu order
 TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت مالی سال جاری و کارهای باز، یک‌جا.'),
@@ -39,6 +39,10 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('payables', 'خزانه اسناد پرداختی', 'money-check-dollar', True, 'چک‌ها و سفته‌های صادرشده تا زمان پاس‌شدن.'),
             ('images', 'تصاویر اسناد', 'images', True, 'اسکن و تصویر مدارک پشتوانه اسناد.'),
             ('statuschange', 'تغییر وضعیت اسناد', 'check-double', True, 'قطعی یا موقت‌کردن گروهی اسناد بر اساس بازه شماره.'),
+            ('plans', 'تقسیط', 'calendar-check', True, 'پرونده‌های تقسیط بدهی، اقساط و پرداخت‌ها.'),
+            ('received', 'خزانه اسناد دریافتی', 'money-check', True, 'چک و سفته‌های دریافتی: ارسال به خزانه، وصول یا برگشت.'),
+            ('transport', 'درآمد حمل و نقل', 'truck', True, 'عوارض و بهای خدمات حمل و نقل.'),
+            ('planimages', 'تصاویر پرونده تقسیط', 'images', True, 'مدارک و نامه‌های پرونده‌های تقسیط.'),
             ('parties', 'طرف‌حساب‌ها', 'address-book', False, 'اشخاص و سازمان‌هایی که با دهیاری حساب دارند.'),
             ('accounts', 'سرفصل حساب‌ها', 'sitemap', False, 'درخت حساب‌های دهیاری.'),
             ('online', 'پرداخت‌های آنلاین', 'credit-card', False, 'پرداخت‌های شهروندان: تایید، رد و سابقه.'),
@@ -217,8 +221,8 @@ def render_panel(request, year, status=200):
     if tab in TAB_BUILDERS:
         TAB_BUILDERS[tab](request, year, ctx)
     else:
-        from main.views import accounting_finance   # imported late: that module imports this one
-        accounting_finance.BUILDERS[tab](request, year, ctx)
+        from main.views import accounting_finance, accounting_income   # imported late: they import this module
+        {**accounting_finance.BUILDERS, **accounting_income.BUILDERS}[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 

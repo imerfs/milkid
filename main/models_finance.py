@@ -124,6 +124,8 @@ class Guarantee(models.Model):
     municipality = models.ForeignKey('main.Municipality', on_delete=models.CASCADE, related_name='guarantees')
     contract = models.ForeignKey(Contract, on_delete=models.PROTECT, null=True, blank=True, related_name='guarantees',
                                  verbose_name='قرارداد')
+    plan = models.ForeignKey('main.InstallmentPlan', on_delete=models.PROTECT, null=True, blank=True,
+                             related_name='guarantees', verbose_name='پرونده تقسیط')
     party = models.ForeignKey('main.Party', on_delete=models.PROTECT, related_name='guarantees', verbose_name='صاحب ضمانت‌نامه')
     kind = models.CharField(max_length=20, choices=KINDS, verbose_name='نوع ضمانت‌نامه')
     doc_kind = models.CharField(max_length=20, choices=DOC_KINDS, verbose_name='نوع مدرک')
@@ -194,7 +196,9 @@ class PayableEvent(models.Model):
 class DocumentImage(models.Model):
     """تصاویر اسناد: scan/photo of the paper behind a voucher. Private storage, served only to the same municipality."""
     municipality = models.ForeignKey('main.Municipality', on_delete=models.CASCADE, related_name='document_images')
-    voucher = models.ForeignKey('main.Voucher', on_delete=models.PROTECT, related_name='images')
+    voucher = models.ForeignKey('main.Voucher', on_delete=models.PROTECT, null=True, blank=True, related_name='images')
+    plan = models.ForeignKey('main.InstallmentPlan', on_delete=models.PROTECT, null=True, blank=True,
+                             related_name='images')
     title = models.CharField(max_length=150, verbose_name='عنوان')
     file = models.FileField(upload_to='voucher_images/%Y/%m/', storage=PrivateStorage())
     content_type = models.CharField(max_length=60, blank=True)
@@ -206,3 +210,6 @@ class DocumentImage(models.Model):
         verbose_name = 'تصویر سند'
         verbose_name_plural = 'تصاویر اسناد'
         ordering = ['-id']
+        constraints = [models.CheckConstraint(
+            condition=Q(voucher__isnull=False, plan__isnull=True) | Q(voucher__isnull=True, plan__isnull=False),
+            name='image_of_voucher_or_plan')]

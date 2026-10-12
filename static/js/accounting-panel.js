@@ -77,7 +77,12 @@
         // closes on the X / cancel buttons and on a click on the backdrop
         if (e.target.closest('[data-acc-close]') || e.target === dialog) dialog.close();
     });
-    dialog.addEventListener('close', function () { body.innerHTML = ''; });
+    dialog.addEventListener('close', function () {
+        // a detail window that changed something while it stayed open (e.g. a paid instalment) refreshes the page behind it
+        var dirty = body.querySelector('[data-acc-dirty]');
+        body.innerHTML = '';
+        if (dirty) reload();
+    });
 
     // Menu links open a page of the workspace (optionally filtered) instead of leaving the page.
     document.querySelectorAll('[data-acc-tab]').forEach(function (link) {

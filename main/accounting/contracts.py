@@ -163,12 +163,14 @@ def expiry_state(guarantee, today):
     return 'soon' if guarantee.expires_on <= today + timedelta(days=EXPIRY_WARNING_DAYS) else 'ok'
 
 
-def create_guarantee(actor, *, party, kind, doc_kind, serial, date, expires_on, amount, contract=None, bank='',
-                     description=''):
+def create_guarantee(actor, *, party, kind, doc_kind, serial, date, expires_on, amount, contract=None, plan=None,
+                     bank='', description=''):
     muni = municipality_of(actor)
     party = _own_or_invalid(muni, party, 'صاحب ضمانت‌نامه')
     if contract is not None:
         _own_or_invalid(muni, contract, 'قرارداد')
+    if plan is not None:
+        _own_or_invalid(muni, plan, 'پرونده تقسیط')
     if kind not in dict(Guarantee.KINDS):
         raise Invalid('نوع ضمانت‌نامه نامعتبر است.')
     if doc_kind not in dict(Guarantee.DOC_KINDS):
@@ -184,7 +186,7 @@ def create_guarantee(actor, *, party, kind, doc_kind, serial, date, expires_on, 
         if Guarantee.objects.filter(municipality=muni, doc_kind=doc_kind, serial=serial).exists():
             raise Conflict('این مدرک با همین شماره قبلاً ثبت شده است.')
         return Guarantee.objects.create(
-            municipality=muni, contract=contract, party=party, kind=kind, doc_kind=doc_kind, serial=serial,
+            municipality=muni, contract=contract, plan=plan, party=party, kind=kind, doc_kind=doc_kind, serial=serial,
             bank=_text(bank, 'بانک', False)[:100], date=date, expires_on=expires_on, amount=amount,
             description=_text(description, 'توضیحات', False)[:300], created_by=actor)
 

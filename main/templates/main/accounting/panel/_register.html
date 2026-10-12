@@ -11,6 +11,11 @@
 {% endif %}
 <div class="ac-card">
     <div class="ac-tools">
+        {% if reg.filters %}<form hx-get="{{ panel_url }}" hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name=q]">
+            <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="{{ tab }}">
+            {% if reg.filters.q %}<label class="ac-searchbox"><span class="ac-sr">جستجو</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="{{ reg.filters.q }}..."></label>{% endif %}
+            {% if reg.filters.select %}{% with sel=reg.filters.select %}<label class="ac-select"><span class="ac-sr">{{ sel.1 }}</span><select name="{{ sel.0 }}"><option value="">{{ sel.1 }}</option>{% for k, label in sel.2 %}<option value="{{ k }}" {% if g|get:sel.0 == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>{% endwith %}{% endif %}
+        </form>{% endif %}
         <span class="muted" style="font-size:11.5px">{{ reg.rows|length|fa }} مورد</span>
         <span class="ac-spaced"></span>
         {% if reg.new_url %}<button type="button" class="ac-btn ac-btn-brand" hx-get="{{ reg.new_url }}" hx-target="#acc-modal-body"><i class="fas fa-plus" aria-hidden="true"></i>{{ reg.new_label }}</button>{% endif %}
