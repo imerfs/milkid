@@ -1,0 +1,10 @@
+{% load accounting_tags %}
+{% if page.has_other_pages %}
+<nav class="flex justify-between items-center mt-4 text-sm" aria-label="صفحه‌بندی">
+    <span class="text-gray-600 dark:text-gray-400">صفحه {{ page.number|fa }} از {{ page.paginator.num_pages|fa }}</span>
+    <div class="flex gap-2">
+        {% if page.has_previous %}<button type="button" class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md" hx-get="{{ panel_url }}?{{ query }}&page={{ page.previous_page_number }}">قبلی</button>{% endif %}
+        {% if page.has_next %}<button type="button" class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md" hx-get="{{ panel_url }}?{{ query }}&page={{ page.next_page_number }}">بعدی</button>{% endif %}
+    </div>
+</nav>
+{% endif %}

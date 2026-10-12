@@ -185,6 +185,8 @@ def inspector_dashboard(request):
 def accountant_dashboard(request):
     """Dashboard for financial manager (مسئول مالی)"""
     from main.models import Payment, Notification
+    from main.accounting import ledger
+    from main.office.errors import OfficeError
     from django.db.models import Sum, Count, Q
     from datetime import datetime, timedelta
     from dateutil.relativedelta import relativedelta
@@ -299,7 +301,15 @@ def accountant_dashboard(request):
         'payment_type_data': json.dumps(payment_type_data),
     }
     
+    # The accounting workspace needs a municipality; an accountant without one still gets the payments below.
+    try:
+        acc_muni_name = ledger.municipality_of(request.user).name
+    except OfficeError:
+        acc_muni_name = None
+
     context = {
+        'acc_ready': acc_muni_name is not None,
+        'acc_muni_name': acc_muni_name or '',
         'user_profile': user_profile,
         'stats': stats,
         'transactions': transactions_page,

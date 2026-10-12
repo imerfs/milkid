@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Accounting workspace (dashboard modals): shared form controls. */
+@layer components {
+  .acc-label { @apply block text-sm text-gray-600 dark:text-gray-300 mb-1; }
+  .acc-input { @apply w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500; }
+  .acc-btn { @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700; }
+  .acc-btn-primary { @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white; }
+  .acc-btn-success { @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium bg-success-600 hover:bg-success-700 text-white; }
+  .acc-btn-danger { @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium border border-error-500 text-error-600 hover:bg-error-50; }
+}

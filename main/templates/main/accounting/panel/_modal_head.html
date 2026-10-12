@@ -1,0 +1,5 @@
+<div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+    <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 border-r-4 border-primary-500 pr-3" id="acc-modal-title">{{ title }}</h2>
+    <button type="button" data-acc-close class="text-gray-400 hover:text-gray-700 dark:hover:text-white w-8 h-8" aria-label="بستن"><i class="fas fa-times" aria-hidden="true"></i></button>
+</div>
+{% if error %}<div class="mx-5 mt-4 p-3 rounded-lg bg-error-50 text-error-800 text-sm" role="alert"><i class="fas fa-triangle-exclamation ml-1" aria-hidden="true"></i>{{ error }}</div>{% endif %}
