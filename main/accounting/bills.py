@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from main.accounting import ledger
 from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, municipality_of
-from main.models import Bill, BillPayment, Municipality
+from main.models import Bill, BillPayment, Municipality, Voucher
 from main.office.errors import Conflict, Invalid
 
 
@@ -92,3 +92,22 @@ def cancel_bill(actor, bill):
             bill.canceled_at = timezone.now()
             bill.save(update_fields=['canceled_at'])
     return bill
+
+
+def cancel_payment(actor, payment):
+    """Undo a payment: drop it and soft-delete its (still temporary) voucher in one step."""
+    muni = municipality_of(actor)
+    _own(muni, payment.bill)
+    with transaction.atomic():
+        payment = BillPayment.objects.select_related('voucher__fiscal_year').get(pk=payment.pk)
+        voucher = _locked(Voucher, payment.voucher_id)
+        _locked(Bill, payment.bill_id)
+        if voucher.status != 'temporary':
+            raise Conflict('سند این پرداخت قطعی شده است؛ ابتدا دهیار آن را به موقت برگرداند.')
+        if payment.voucher.fiscal_year.is_closed:
+            raise Conflict('سال مالی بسته شده است.')
+        bill_id = payment.bill_id
+        payment.delete()
+        voucher.deleted_at = timezone.now()
+        voucher.save(update_fields=['deleted_at'])
+    return bill_id
