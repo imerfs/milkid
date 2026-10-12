@@ -133,3 +133,66 @@ class Version(TestCase):
             (git / 'refs' / 'heads' / 'main').write_text('0123456789abcdef\n')
             with override_settings(BASE_DIR=Path(tmp)):
                 self.assertEqual(serverops.code_version(), {'branch': 'main', 'commit': '0123456'})
+
+
+class Services(TestCase):
+    def test_tab_renders_without_network_and_hides_the_password(self):
+        admin = client_for(make_user('admin'))
+        with override_settings(EMAIL_HOST_PASSWORD='s3cret-pass'):
+            response = admin.get(reverse('main:admin_server'), {'tab': 'services'})
+        self.assertContains(response, 'SMTP')
+        self.assertNotContains(response, 's3cret-pass')
+
+    def test_test_email_goes_out_and_bad_address_is_refused(self):
+        from django.core import mail
+        admin = client_for(make_user('admin'))
+        admin.post(reverse('main:admin_server_email_test'), {'to': 'ops@example.com'})
+        admin.post(reverse('main:admin_server_email_test'), {'to': 'not-an-email'})
+        self.assertEqual([m.to for m in mail.outbox], [['ops@example.com']])
+
+    def test_email_test_is_admin_only(self):
+        from django.core import mail
+        client_for(make_user('accountant')).post(reverse('main:admin_server_email_test'), {'to': 'x@example.com'})
+        self.assertEqual(mail.outbox, [])
+
+    def test_site_domains_skip_dev_hosts_and_ips(self):
+        from main import hostinfo
+        with override_settings(ALLOWED_HOSTS=['amirl.ir', 'localhost', '127.0.0.1', '10.0.0.5', '.example.org'],
+                               SITE_URL='https://amirl.ir'):
+            self.assertEqual(hostinfo.site_domains(), ['amirl.ir', 'example.org'])
+
+    def test_dns_reply_parsing(self):
+        """A canned MX + TXT answer, so the parser is checked without the network."""
+        import struct
+        from unittest import mock
+        from main import hostinfo
+
+        def fake_reply(rtype, rdata_list):
+            def build(packet):
+                qid = struct.unpack('>H', packet[:2])[0]
+                question = packet[12:-11]          # drop our EDNS OPT record
+                header = struct.pack('>HHHHHH', qid, 0x8180, 1, len(rdata_list), 0, 0)
+                answers = b''.join(b'\xc0\x0c' + struct.pack('>HHIH', rtype, 1, 300, len(r)) + r for r in rdata_list)
+                return header + question + answers
+            return build
+
+        class FakeSocket:
+            def __init__(self, builder):
+                self.builder, self.reply = builder, b''
+            def __enter__(self):
+                return self
+            def __exit__(self, *exc):
+                return False
+            def settimeout(self, t):
+                pass
+            def sendto(self, packet, addr):
+                self.reply = self.builder(packet)
+            def recv(self, n):
+                return self.reply
+
+        mx = struct.pack('>H', 10) + b'\x04mail\xc0\x0c'
+        with mock.patch('main.hostinfo.socket.socket', lambda *a: FakeSocket(fake_reply(15, [mx]))):
+            self.assertEqual(hostinfo.dns_query('amirl.ir', 'MX', server='127.0.0.1'), ['10 mail.amirl.ir'])
+        txt = b'\x07v=spf1 ' + b'\x04-all'
+        with mock.patch('main.hostinfo.socket.socket', lambda *a: FakeSocket(fake_reply(16, [txt]))):
+            self.assertEqual(hostinfo.dns_query('amirl.ir', 'TXT', server='127.0.0.1'), ['v=spf1 -all'])

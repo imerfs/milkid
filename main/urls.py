@@ -36,6 +36,7 @@ urlpatterns = [
     path('dashboard/admin/server/ips/<int:block_id>/unblock/', views.admin_server_ip_unblock, name='admin_server_ip_unblock'),
     path('dashboard/admin/server/database/', views.admin_server_db_maintain, name='admin_server_db_maintain'),
     path('dashboard/admin/server/files/upload/', views.admin_server_file_upload, name='admin_server_file_upload'),
+    path('dashboard/admin/server/email/test/', views.admin_server_email_test, name='admin_server_email_test'),
     path('dashboard/admin/server/cache/clear/', views.admin_server_cache_clear, name='admin_server_cache_clear'),
     path('dashboard/admin/server/files/', views.admin_server_files, name='admin_server_files'),
     path('dashboard/admin/server/files/action/', views.admin_server_file_action, name='admin_server_file_action'),
