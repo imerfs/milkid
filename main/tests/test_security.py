@@ -54,33 +54,22 @@ class LoginThrottleTests(TestCase):
         self.assertEqual(last, 429)
 
 
-class StaffRegistrationTests(TestCase):
-    _n = 0
+class StaffRegistrationClosedTests(TestCase):
+    """Staff roles are never self-registered; the dehyari grants them (see test_role_grants)."""
 
-    def _register(self, path, role):
-        StaffRegistrationTests._n += 1
-        nid = f'00123456{StaffRegistrationTests._n:02d}'
-        mobile = f'0912123456{StaffRegistrationTests._n}'
-        return self.client.post(path, {
-            'username': f'{role}1', 'password1': 'Str0ng-pass-993', 'password2': 'Str0ng-pass-993',
-            'email': f'{role}@example.com', 'first_name': 'a', 'last_name': 'b',
-            'national_id': nid, 'mobile_number': mobile, 'role': role,
-        })
+    def test_public_staff_registration_routes_are_gone(self):
+        for role in ('dehyari', 'engineer', 'council', 'accountant', 'inspector', 'admin'):
+            self.assertEqual(self.client.get(f'/register/{role}/').status_code, 404, role)
+            r = self.client.post(f'/register/{role}/', {'username': f'{role}1', 'role': role,
+                                                        'password1': 'Str0ng-pass-993', 'password2': 'Str0ng-pass-993'})
+            self.assertEqual(r.status_code, 404, role)
+        self.assertEqual(User.objects.count(), 0)
 
-    def test_staff_roles_start_inactive_until_approved(self):
-        for i, role in enumerate(('accountant', 'inspector', 'dehyari', 'engineer', 'council')):
-            self._register(f'/register/{role}/', role)
-        self.assertEqual(User.objects.count(), 5)   # guards against a vacuous pass
-        for u in User.objects.all():
-            self.assertFalse(u.is_active, u.username)
-            self.assertEqual(u.profile.approval_status, 'pending', u.username)
-
-    def test_admin_role_cannot_be_self_selected(self):
-        from main.forms import CustomUserCreationForm
-        choices = dict(CustomUserCreationForm().fields['role'].choices)
-        self.assertNotIn('admin', choices)
-        self._register('/register/dehyari/', 'admin')
-        self.assertFalse(User.objects.filter(username='admin1').exists())
+    def test_choice_page_links_only_citizen_and_municipality(self):
+        html = self.client.get('/register/').content.decode()
+        self.assertIn('/register/citizen/', html)
+        for role in ('dehyari', 'engineer', 'council', 'accountant', 'inspector'):
+            self.assertNotIn(f'/register/{role}/', html)
 
 
 class UploadGuardTests(TestCase):

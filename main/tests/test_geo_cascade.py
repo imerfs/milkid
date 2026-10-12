@@ -114,13 +114,6 @@ class RegistrationPages(TestCase):
         self.assertNotIn('geographic_selector.js', html)
         self.assertIn('hx-get="/geo/options/?form=citizen&amp;changed=province"', html)
 
-    def test_role_page_uses_htmx_and_no_longer_fetches_the_json_api_itself(self):
-        html = self.client.get(reverse('main:register_dehyari')).content.decode()
-        self.assertIn('/static/vendor/htmx/htmx.min.js', html)
-        self.assertNotIn('/api/provinces/', html)
-        self.assertIn('hx-get="/geo/options/?form=role&amp;changed=district"', html)
-        self.assertIn('id_is_village_role', html)               # the village checkbox keeps working
-
 
 class MunicipalityRegistration(TestCase):
     def test_choosing_a_province_fills_counties_and_clears_the_district_only(self):
