@@ -21,8 +21,11 @@ from main.views.accounting_views import (
     PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines, new_account,
     new_party)
 
-YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial')
-TABS = YEAR_TABS + ('parties', 'accounts', 'online', 'setup')
+YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'credit', 'contracts', 'payables', 'images',
+             'statuschange')
+TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup')
+# Tabs drawn by the generic register template (see main/views/accounting_finance.py)
+REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images')
 PANEL = 'main/accounting/panel/'
 # (key, label, icon, needs a fiscal year, page subtitle) in menu order
 TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت مالی سال جاری و کارهای باز، یک‌جا.'),
@@ -30,6 +33,12 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('bills', 'فیش‌های نقدی', 'receipt', True, 'صدور فیش و ثبت پرداخت‌ها.'),
             ('budget', 'بودجه و عملکرد', 'chart-pie', True, 'بودجه مصوب در برابر عملکرد هر حساب.'),
             ('trial', 'تراز آزمایشی', 'scale-balanced', True, 'جمع بدهکار و بستانکار همه حساب‌ها.'),
+            ('credit', 'تامین اعتبار', 'hand-holding-dollar', True, 'رزرو اعتبار بودجه برای حساب‌های مصرف، بدون عبور از بودجه مصوب.'),
+            ('contracts', 'قراردادها', 'file-signature', True, 'قراردادها، صورت‌وضعیت‌ها و کسورات پیمانکار.'),
+            ('guarantees', 'ضمانت‌نامه‌ها', 'shield-halved', False, 'ضمانت‌نامه‌ها، چک و سفته‌های دریافتی و سررسید آن‌ها.'),
+            ('payables', 'خزانه اسناد پرداختی', 'money-check-dollar', True, 'چک‌ها و سفته‌های صادرشده تا زمان پاس‌شدن.'),
+            ('images', 'تصاویر اسناد', 'images', True, 'اسکن و تصویر مدارک پشتوانه اسناد.'),
+            ('statuschange', 'تغییر وضعیت اسناد', 'check-double', True, 'قطعی یا موقت‌کردن گروهی اسناد بر اساس بازه شماره.'),
             ('parties', 'طرف‌حساب‌ها', 'address-book', False, 'اشخاص و سازمان‌هایی که با دهیاری حساب دارند.'),
             ('accounts', 'سرفصل حساب‌ها', 'sitemap', False, 'درخت حساب‌های دهیاری.'),
             ('online', 'پرداخت‌های آنلاین', 'credit-card', False, 'پرداخت‌های شهروندان: تایید، رد و سابقه.'),
@@ -196,7 +205,7 @@ def render_panel(request, year, status=200):
         tab = 'setup'
     ctx = {'year': year, 'years': years_for(user), 'tab': tab, 'g': g, 'kinds': Voucher.KINDS,
            'muni': ledger.municipality_of(user), 'tab_list': TAB_LIST,
-           'tab_meta': next(t for t in TAB_LIST if t[0] == tab), 'tab_template': f'{PANEL}_{tab}.html',
+           'tab_meta': next(t for t in TAB_LIST if t[0] == tab), 'tab_template': f'{PANEL}_register.html' if tab in REGISTER_TABS else f'{PANEL}_{tab}.html',
            'filtered': any(g.get(k) for k in ('q', 'status', 'kind', 'bill_status', 'pay_status'))}
     keep = g.copy()
     keep.pop('page', None)
@@ -205,7 +214,11 @@ def render_panel(request, year, status=200):
         keep['year'] = year.id
         ctx['summary'] = _summary(user, year)
     ctx['query'] = keep.urlencode()
-    TAB_BUILDERS[tab](request, year, ctx)
+    if tab in TAB_BUILDERS:
+        TAB_BUILDERS[tab](request, year, ctx)
+    else:
+        from main.views import accounting_finance   # imported late: that module imports this one
+        accounting_finance.BUILDERS[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 

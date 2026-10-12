@@ -32,8 +32,13 @@
     function syncMenu() {
         var v = view();
         if (!v) return;
+        var url = panel.dataset.url || '';
+        var queried = false;   // a menu entry that shares its page with another one (e.g. drafts) wins when its filter is on
+        document.querySelectorAll('#ac-side [data-acc-query]').forEach(function (a) {
+            if (a.dataset.accTab === v.dataset.tab && url.indexOf(a.dataset.accQuery) !== -1) queried = true;
+        });
         document.querySelectorAll('[data-acc-tab]').forEach(function (a) {
-            var on = a.dataset.accTab === v.dataset.tab;
+            var on = a.dataset.accTab === v.dataset.tab && (a.dataset.accQuery ? url.indexOf(a.dataset.accQuery) !== -1 : !queried);
             a.classList.toggle('active', on);
             if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
         });

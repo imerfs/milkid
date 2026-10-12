@@ -1,0 +1,24 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='تامین اعتبار جدید' subtitle='مبلغ هر ردیف از بودجه حساب مصرف کم می‌شود؛ بیشتر از بودجه مصوب پذیرفته نمی‌شود.' %}
+<form method="post" hx-post="{% url 'main:acc_p_credit_new' year.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
+    {% csrf_token %}
+    <div class="ac-fgrid">
+        {% for f in head %}<div class="ac-field s{{ f.size }}"><label for="f-{{ f.name }}">{{ f.label }}</label><input class="ac-in" id="f-{{ f.name }}" name="{{ f.name }}" {% if f.kind == 'date' %}dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱"{% endif %} value="{{ p|get:f.name }}"></div>{% endfor %}
+    </div>
+    <h3 class="ac-sec-title">ردیف‌های اعتبار</h3>
+    <div class="ac-lines" style="margin-bottom:12px"><table>
+        <thead><tr><th>ردیف</th><th>حساب مصرف</th><th>حساب منبع</th><th>پروژه / خدمت</th><th>مبلغ (ریال)</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+        <tr>
+            <td class="nw">{{ forloop.counter|fa }}</td>
+            <td><select class="ac-in" name="use_account" aria-label="حساب مصرف ردیف {{ forloop.counter }}"><option value=""></option>{% for a in use %}<option value="{{ a.id }}" {% if r.use_account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></td>
+            <td><select class="ac-in" name="source_account" aria-label="حساب منبع ردیف {{ forloop.counter }}"><option value=""></option>{% for a in source %}<option value="{{ a.id }}" {% if r.source_account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></td>
+            <td><input class="ac-in" name="project" maxlength="200" aria-label="پروژه ردیف {{ forloop.counter }}" value="{{ r.project }}"><input type="hidden" name="description" value="{{ r.description }}"></td>
+            <td><input class="ac-in" name="amount" inputmode="numeric" dir="ltr" aria-label="مبلغ ردیف {{ forloop.counter }}" value="{{ r.amount }}"></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>انصراف</button><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ثبت تامین اعتبار</button></div>
+</form>

@@ -1,0 +1,29 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='سند پرداختی' %}
+<div class="ac-mb">
+    <dl class="ac-dl">
+        <div><dt>نوع</dt><dd>{{ d.get_kind_display }} {{ d.serial|fa }}</dd></div>
+        <div><dt>وضعیت</dt><dd><span class="ac-st {% if d.status == 'passed' %}ok{% elif d.status == 'returned' %}bad{% elif d.status == 'issued' %}brand{% endif %}">{{ d.get_status_display }}</span></dd></div>
+        <div><dt>در وجه</dt><dd>{{ d.party.name }}</dd></div>
+        <div><dt>حساب بانک</dt><dd>{{ d.bank_account.title }}</dd></div>
+        <div><dt>سررسید</dt><dd>{{ d.due_date|jalali_date|fa }}</dd></div>
+        <div><dt>مبلغ</dt><dd>{{ d.amount|rial }} ریال</dd></div>
+    </dl>
+    <h3 class="ac-sec-title">سابقه</h3>
+    <div class="ac-lines" style="margin-bottom:16px"><table>
+        <thead><tr><th>تاریخ</th><th>وضعیت</th><th>توضیح</th><th>کاربر</th></tr></thead>
+        <tbody>{% for e in events %}<tr><td class="nw">{{ e.date|jalali_date|fa }}</td><td>{{ e.get_status_display }}</td><td>{{ e.note|default:'—' }}</td><td>{{ e.user.get_full_name|default:e.user.username }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% if statuses and not d.fiscal_year.is_closed %}
+    <form method="post" hx-post="{% url 'main:acc_p_payable_status' d.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-box" novalidate>
+        {% csrf_token %}
+        <h3 class="ac-sec-title">تغییر وضعیت</h3>
+        <div class="ac-fgrid">
+            <div class="ac-field s2"><label for="ps-status">وضعیت جدید</label><select class="ac-in" id="ps-status" name="status">{% for k, label in statuses %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select></div>
+            <div class="ac-field s2"><label for="ps-date">تاریخ</label><input class="ac-in" id="ps-date" name="date" dir="ltr" value="{{ p|get:'date' }}"></div>
+            <div class="ac-field s4"><label for="ps-note">توضیح</label><input class="ac-in" id="ps-note" name="note" maxlength="300" value="{{ p|get:'note' }}"></div>
+        </div>
+        <div class="ac-foot"><button type="submit" class="ac-btn ac-btn-brand">ثبت تغییر</button></div>
+    </form>
+    {% endif %}
+</div>

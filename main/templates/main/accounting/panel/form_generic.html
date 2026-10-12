@@ -1,0 +1,23 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' %}
+<form method="post" hx-post="{{ action }}" hx-target="#acc-modal-body" hx-swap="innerHTML"{% if multipart %} hx-encoding="multipart/form-data"{% endif %} class="ac-mb" novalidate>
+    {% csrf_token %}
+    <div class="ac-fgrid">
+        {% for f, opts in fields %}
+        {% if f.kind == 'bool' %}
+        <div class="ac-field s{{ f.size }}"><label><input type="checkbox" name="{{ f.name }}" {% if p|get:f.name %}checked{% endif %}> {{ f.label }}</label></div>
+        {% else %}
+        <div class="ac-field s{{ f.size }}"><label for="f-{{ f.name }}">{{ f.label }}{% if not f.required %} <span class="muted">(اختیاری)</span>{% endif %}</label>
+            {% if f.kind == 'select' or f.kind == 'fk' %}
+            <select class="ac-in" id="f-{{ f.name }}" name="{{ f.name }}">{% if not f.required %}<option value="">—</option>{% elif f.kind == 'fk' %}<option value="">انتخاب کنید</option>{% endif %}{% for k, label in opts %}<option value="{{ k }}" {% if p|get:f.name|stringformat:'s' == k|stringformat:'s' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            {% elif f.kind == 'date' %}<input class="ac-in" id="f-{{ f.name }}" name="{{ f.name }}" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ p|get:f.name }}">
+            {% elif f.kind == 'amount' %}<input class="ac-in" id="f-{{ f.name }}" name="{{ f.name }}" inputmode="numeric" dir="ltr" value="{{ p|get:f.name }}">
+            {% elif f.kind == 'pct' %}<input class="ac-in" id="f-{{ f.name }}" name="{{ f.name }}" inputmode="decimal" dir="ltr" value="{{ p|get:f.name }}">
+            {% else %}<input class="ac-in" id="f-{{ f.name }}" name="{{ f.name }}" maxlength="{{ f.maxlength }}" value="{{ p|get:f.name }}">{% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% if file_field %}<div class="ac-field s4"><label for="f-file">فایل</label><input class="ac-in" id="f-file" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png"></div>{% endif %}
+    </div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>انصراف</button><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>{{ submit }}</button></div>
+</form>

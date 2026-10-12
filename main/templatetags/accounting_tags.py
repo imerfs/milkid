@@ -17,3 +17,13 @@ def rial(value):
 def fa(value):
     """Persian digits for any text, zero included."""
     return str(value if value is not None else '').translate(_PERSIAN)
+
+
+@register.filter
+def get(mapping, key):
+    """mapping[key] for dicts and QueryDicts, '' when absent (used by the generic modal form)."""
+    try:
+        value = mapping.get(key, '')
+    except AttributeError:
+        return ''
+    return '' if value is None else value

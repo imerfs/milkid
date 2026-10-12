@@ -1,0 +1,22 @@
+{% load accounting_tags %}
+<div class="ac-card" style="padding:18px">
+    <dl class="ac-dl" style="margin-bottom:16px">
+        <div><dt>کل اسناد</dt><dd>{{ counts.total|fa }}</dd></div>
+        <div><dt>قطعی</dt><dd>{{ counts.final|fa }}</dd></div>
+        <div><dt>موقت</dt><dd>{{ counts.temporary|fa }}</dd></div>
+    </dl>
+    {% if year.is_closed %}<p class="muted">سال مالی بسته است و وضعیت اسناد تغییر نمی‌کند.</p>
+    {% elif not counts.total %}<p class="muted">سندی در این سال مالی ثبت نشده است.</p>
+    {% else %}
+    <form hx-post="{% url 'main:acc_p_status_change' year.id %}" hx-swap="none" hx-confirm="وضعیت اسناد بازه انتخابی تغییر کند؟" novalidate>
+        {% csrf_token %}
+        <div class="ac-fgrid">
+            <div class="ac-field s1"><label for="sc-from">از شماره سند</label><input class="ac-in" id="sc-from" name="number_from" inputmode="numeric" dir="ltr" value="{{ first_no }}"></div>
+            <div class="ac-field s1"><label for="sc-to">تا شماره سند</label><input class="ac-in" id="sc-to" name="number_to" inputmode="numeric" dir="ltr" value="{{ last_no }}"></div>
+            <div class="ac-field s2"><label for="sc-target">تغییر وضعیت به</label><select class="ac-in" id="sc-target" name="target"><option value="final">قطعی</option><option value="temporary">موقت (فقط دهیار)</option></select></div>
+        </div>
+        <p class="muted" style="font-size:12px">اسناد بی‌حساب قطعی نمی‌شوند و در پیام نتیجه با شماره آمده‌اند. هر سند همان قواعد ثبت تکی را دارد.</p>
+        <div class="ac-foot"><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-check-double" aria-hidden="true"></i>اعمال تغییر وضعیت</button></div>
+    </form>
+    {% endif %}
+</div>
