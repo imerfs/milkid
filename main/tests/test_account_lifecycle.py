@@ -58,6 +58,22 @@ class SoftDelete(TestCase):
         self.assertIn('0012345678', html.split('deleted-users-table')[1])
         self.assertFalse(self.client.login(username=f'deleted-{old.id}', password='x-pass-12345'))
 
+    def test_migration_releases_values_of_users_deleted_earlier(self):
+        import importlib
+        from django.apps import apps
+        old = self.citizen
+        old.profile.national_id = '0012345678'
+        old.profile.deleted_at = timezone.now()
+        old.profile.save()
+        username = old.username
+        importlib.import_module('main.migrations.0041_release_deleted_user_values').release(apps, None)
+        old.refresh_from_db()
+        old.profile.refresh_from_db()
+        self.assertEqual(old.username, f'deleted-{old.id}')
+        self.assertIsNone(old.profile.national_id)
+        self.assertEqual((old.profile.deleted_username, old.profile.deleted_national_id), (username, '0012345678'))
+        User.objects.create_user(username=username, password='x-pass-12345')
+
     def test_admin_cannot_delete_themselves(self):
         self.assertEqual(self.delete_via_api(self.admin).status_code, 400)
 
