@@ -748,16 +748,33 @@ def admin_api_user_toggle_active(request, user_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+INLINE_DECREE_TYPES = {'.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png'}
+
+
 @policy_required('admin.manage')
 def municipality_decree(request, municipality_id):
     """Download a municipality's governor decree (admins only; the file is not under /media/)."""
     town = get_object_or_404(Municipality, pk=municipality_id)
     if not town.governor_decree:
         raise Http404
-    response = FileResponse(town.governor_decree.open('rb'), as_attachment=True,
-                            filename=os.path.basename(town.governor_decree.name))
+    name = os.path.basename(town.governor_decree.name)
+    kind = INLINE_DECREE_TYPES.get(os.path.splitext(name)[1].lower())
+    inline = request.GET.get('inline') == '1' and kind is not None      # only PDF/images are shown in the page
+    response = FileResponse(town.governor_decree.open('rb'), as_attachment=not inline, filename=name,
+                            content_type=kind if inline else None)
     response['X-Content-Type-Options'] = 'nosniff'
     return response
+
+
+@policy_required('admin.manage')
+def municipality_decree_view(request, municipality_id):
+    """In-site viewer for the governor decree: PDF/image inline, anything else as a download."""
+    town = get_object_or_404(Municipality, pk=municipality_id)
+    if not town.governor_decree:
+        raise Http404
+    kind = INLINE_DECREE_TYPES.get(os.path.splitext(town.governor_decree.name)[1].lower())
+    return render(request, 'main/municipality_decree.html', {
+        'town': town, 'is_pdf': kind == 'application/pdf', 'is_image': bool(kind and kind.startswith('image/'))})
 
 
 @policy_required('admin.manage', api=True)
@@ -787,7 +804,7 @@ def admin_api_municipalities_list(request):
             'status_display': mun.get_status_display(),
             'created_at': mun.created_at.strftime('%Y/%m/%d') if mun.created_at else '',
             'has_decree': bool(mun.governor_decree),
-            'decree_url': reverse('main:municipality_decree', args=[mun.id]) if mun.governor_decree else '',
+            'decree_url': reverse('main:municipality_decree_view', args=[mun.id]) if mun.governor_decree else '',
         } for mun in municipalities]
 
         return JsonResponse({

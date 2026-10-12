@@ -196,6 +196,7 @@ urlpatterns = [
     # Municipality Registration
     path('register-municipality/', views.register_municipality, name='register_municipality'),
     path('municipality/<int:municipality_id>/decree/', views.municipality_decree, name='municipality_decree'),
+    path('municipality/<int:municipality_id>/decree/view/', views.municipality_decree_view, name='municipality_decree_view'),
     path('manage-municipalities/', views.manage_municipalities, name='manage_municipalities'),
     path('municipality-history/', views.municipality_history, name='municipality_history'),
     
