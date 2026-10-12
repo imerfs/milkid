@@ -1,6 +1,5 @@
 """Giving and taking back staff roles. The dehyari acts inside their own village only."""
 import re
-import secrets
 
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -105,13 +104,12 @@ def staff_and_candidates(actor, query=''):
 _USERNAME = re.compile(r'^[A-Za-z0-9._-]{3,30}$')
 _NATIONAL_ID = re.compile(r'^\d{10}$')
 _MOBILE = re.compile(r'^09\d{9}$')
-_PASSWORD_ALPHABET = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 
 def create_staff_account(actor, data):
     """Dehyari creates a ready-to-use staff account in their own village.
 
-    Returns (user, temporary_password); the password is not stored anywhere else.
+    The initial password is the national ID; the user must change it on first login.
     """
     village = village_of(actor)
     if village is None:
@@ -133,17 +131,16 @@ def create_staff_account(actor, data):
     if not _MOBILE.match(mobile):
         raise Invalid('شماره موبایل صحیح وارد کنید (مثال: 09123456789).')
     municipality = Municipality.objects.filter(admin_user=actor).first()
-    password = ''.join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(12))
     with transaction.atomic():
         if User.objects.filter(username__iexact=username).exists():
             raise Invalid('این نام کاربری قبلاً استفاده شده است.')
         if UserProfile.objects.filter(national_id=national_id).exists():
             raise Invalid('این کد ملی قبلاً ثبت شده است.')
-        user = User.objects.create_user(username=username, password=password, first_name=first, last_name=last)
+        user = User.objects.create_user(username=username, password=national_id, first_name=first, last_name=last)
         UserProfile.objects.filter(user=user).update(
-            role=role, national_id=national_id, mobile_number=mobile, is_verified=True, approval_status='approved',
+            role=role, national_id=national_id, mobile_number=mobile, is_verified=True, approval_status='approved', must_change_password=True,
             province=municipality.province, county=municipality.county, district=municipality.district,
             city_village=municipality.city_village, is_village=True)
         RoleGrant.objects.create(user=user, role=role, previous_role='citizen', granted_by=actor,
                                  municipality=municipality)
-    return user, password
+    return user

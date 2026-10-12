@@ -83,6 +83,7 @@ urlpatterns = [
     path('appointments/providers/<int:provider_id>/', views.appointment_book, name='appointment_book'),
     path('appointments/<int:appointment_id>/action/', views.appointment_action, name='appointment_action'),
     path('appointments/hours/', views.availability, name='availability'),
+    path('password/change/', views.password_change, name='password_change'),
     path('mayor/roles/', views.role_grants, name='role_grants'),
     path('mayor/roles/grant/', views.role_grant, name='role_grant'),
     path('mayor/roles/create/', views.role_create_account, name='role_create_account'),
