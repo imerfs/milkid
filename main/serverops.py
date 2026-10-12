@@ -211,3 +211,119 @@ def search_media(root, directory, query, limit=200):
                 if len(rows) >= limit:
                     return rows
     return rows
+
+
+# ---- file manager operations (all paths already resolved inside one media root) ----
+
+ZIP_MAX_MEMBERS = 5000
+ZIP_MAX_BYTES = 500 * 1024 * 1024
+
+
+class FileOpError(ValueError):
+    """User-facing reason a file operation was refused."""
+
+
+def _allowed_extensions():
+    return set(getattr(settings, 'ALLOWED_FILE_EXTENSIONS', ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'dwg', 'dxf']))
+
+
+def make_folder(directory, name):
+    from django.utils.text import get_valid_filename
+    target = directory / get_valid_filename(name or '')
+    if not name or target.exists():
+        raise FileOpError('نام پوشه خالی است یا از قبل وجود دارد.')
+    target.mkdir()
+    return target
+
+
+def move(root, source, dest):
+    """Rename or move ``source`` to ``dest`` (both inside ``root``)."""
+    if source == root or dest.exists() or not dest.parent.is_dir():
+        raise FileOpError('مقصد معتبر نیست یا از قبل وجود دارد.')
+    if source.is_dir() and (dest == source or source in dest.parents):
+        raise FileOpError('پوشه را نمی‌توان به داخل خودش منتقل کرد.')
+    source.rename(dest)
+
+
+def copy(source, dest):
+    if not source.is_file() or dest.exists() or not dest.parent.is_dir():
+        raise FileOpError('فقط فایل قابل کپی است و مقصد نباید از قبل وجود داشته باشد.')
+    shutil.copy2(source, dest)
+
+
+def remove_folder(root, directory):
+    if directory == root or any(directory.iterdir()):
+        raise FileOpError('فقط پوشهٔ خالی قابل حذف است.')
+    directory.rmdir()
+
+
+def compress(source):
+    """Zip a file or folder next to it as ``<name>.zip`` (symlinks are skipped)."""
+    import zipfile
+    archive = source.with_name(source.name + '.zip')
+    if archive.exists():
+        raise FileOpError('فایل فشرده‌ای با همین نام وجود دارد.')
+    with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as zf:
+        if source.is_file():
+            zf.write(source, source.name)
+        else:
+            for base, dirs, files in os.walk(source):
+                dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(base, d))]
+                for name in files:
+                    path = Path(base) / name
+                    if not path.is_symlink():
+                        zf.write(path, path.relative_to(source.parent).as_posix())
+    return archive
+
+
+def extract(archive):
+    """Extract a zip into a new folder beside it. Members that would escape the folder, links,
+    or extensions uploads may not have are skipped; size and count are capped (zip bombs)."""
+    import stat
+    import zipfile
+    target = archive.with_suffix('')
+    if archive.suffix.lower() != '.zip' or target.exists():
+        raise FileOpError('فقط فایل zip قابل استخراج است و پوشهٔ مقصد نباید وجود داشته باشد.')
+    try:
+        zf = zipfile.ZipFile(archive)
+    except zipfile.BadZipFile:
+        raise FileOpError('فایل zip خراب است.')
+    with zf:
+        members = zf.infolist()
+        if len(members) > ZIP_MAX_MEMBERS or sum(m.file_size for m in members) > ZIP_MAX_BYTES:
+            raise FileOpError('فایل فشرده بیش از حد بزرگ است.')
+        target.mkdir()
+        allowed, extracted, skipped = _allowed_extensions(), 0, 0
+        for member in members:
+            dest = (target / member.filename).resolve()
+            is_link = stat.S_ISLNK(member.external_attr >> 16)
+            if member.is_dir() or is_link or target.resolve() not in dest.parents:
+                skipped += not member.is_dir()
+                continue
+            if dest.suffix[1:].lower() not in allowed:
+                skipped += 1
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            with zf.open(member) as src, open(dest, 'wb') as out:
+                shutil.copyfileobj(src, out)
+            extracted += 1
+    return target, extracted, skipped
+
+
+def code_version():
+    """Current git branch and commit of the deployed code, read from .git without running git."""
+    git = Path(settings.BASE_DIR) / '.git'
+    head = _read_first_line(git / 'HEAD').strip()
+    if not head:
+        return None
+    if not head.startswith('ref: '):
+        return {'branch': None, 'commit': head[:7]}
+    ref = head[5:]
+    commit = _read_first_line(git / ref).strip()
+    if not commit:
+        try:
+            with open(git / 'packed-refs') as handle:
+                commit = next((line.split()[0] for line in handle if line.strip().endswith(' ' + ref)), '')
+        except OSError:
+            commit = ''
+    return {'branch': ref.rsplit('/', 1)[-1], 'commit': commit[:7] or None}

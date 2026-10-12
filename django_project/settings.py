@@ -75,6 +75,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'main.ipblock.BlockedIPMiddleware',  # admin-managed IP block list
+    'main.siteextras.RedirectMiddleware',  # admin-managed 301/302 redirects
     'main.ratelimit.AuthThrottleMiddleware',  # brute-force / spam throttling
     'main.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -87,6 +88,7 @@ MIDDLEWARE = [
     'main.twofactor.TwoFactorMiddleware',  # second login step for users with 2FA on
     'main.middleware.ActiveUserMiddleware',  # Online user tracking & access control
     'main.middleware.PerformanceMonitoringMiddleware',  # Performance monitoring
+    'main.siteextras.PageViewMiddleware',  # daily page-view counts for the admin stats tab
     'main.middleware.RequestLoggingMiddleware',  # Security logging
     'main.middleware.ErrorHandlingMiddleware',  # Error handling
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',  # Disabled for development in iframe
