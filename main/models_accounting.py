@@ -187,3 +187,45 @@ class BudgetLine(models.Model):
             models.UniqueConstraint(fields=['fiscal_year', 'account'], name='uniq_budget_line'),
             models.CheckConstraint(condition=Q(amount__gte=0), name='budget_amount_not_negative'),
         ]
+
+
+class Bill(models.Model):
+    """Cash bill (فیش نقدی): a revenue claim against a party. Paid amount comes from its payments."""
+    municipality = models.ForeignKey('main.Municipality', on_delete=models.CASCADE, related_name='bills')
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.PROTECT, related_name='bills')
+    number = models.PositiveIntegerField(verbose_name='شماره فیش')   # restarts every fiscal year
+    date = models.DateField(verbose_name='تاریخ')
+    party = models.ForeignKey(Party, on_delete=models.PROTECT, related_name='bills', verbose_name='پرداخت‌کننده')
+    income_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='bills', verbose_name='حساب درآمد')
+    description = models.CharField(max_length=500, verbose_name='شرح')
+    amount = models.DecimalField(verbose_name='مبلغ فیش', **MONEY)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+    canceled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'فیش نقدی'
+        verbose_name_plural = 'فیش‌های نقدی'
+        ordering = ['fiscal_year', 'number']
+        constraints = [
+            models.UniqueConstraint(fields=['fiscal_year', 'number'], name='uniq_bill_number'),
+            models.CheckConstraint(condition=Q(amount__gt=0), name='bill_amount_positive'),
+        ]
+
+
+class BillPayment(models.Model):
+    METHODS = [('cash', 'نقد'), ('card', 'کارتخوان'), ('transfer', 'حواله بانکی'), ('cheque', 'چک')]
+
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='payments')
+    date = models.DateField(verbose_name='تاریخ پرداخت')
+    method = models.CharField(max_length=10, choices=METHODS, verbose_name='روش پرداخت')
+    amount = models.DecimalField(verbose_name='مبلغ', **MONEY)
+    bank_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='+', verbose_name='حساب بانک/صندوق')
+    reference = models.CharField(max_length=100, blank=True, verbose_name='شماره پیگیری / چک')
+    voucher = models.OneToOneField(Voucher, on_delete=models.PROTECT, related_name='bill_payment')
+
+    class Meta:
+        verbose_name = 'پرداخت فیش'
+        verbose_name_plural = 'پرداخت‌های فیش'
+        ordering = ['date', 'id']
+        constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name='bill_payment_positive')]

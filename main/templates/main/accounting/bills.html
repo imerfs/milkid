@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load accounting_tags jalali_tags %}
+
+{% block title %}فیش‌های نقدی {{ year.year|fa }} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1000px">
+    <h1 class="h3 mb-3"><i class="fas fa-receipt ms-2"></i>فیش‌های نقدی سال {{ year.year|fa }}</h1>
+    {% include 'main/accounting/_nav.html' with tab='bills' %}
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+    {% if not year.is_closed %}
+    <form method="post" class="card card-body mb-3" data-once>
+        {% csrf_token %}
+        <div class="row g-2">
+            <div class="col-6 col-md-2"><label class="form-label" for="f-date">تاریخ</label><input class="form-control" id="f-date" name="date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ p.date }}" required></div>
+            <div class="col-12 col-md-4"><label class="form-label" for="f-party">پرداخت‌کننده</label>
+                <select class="form-select" id="f-party" name="party" required><option value="">انتخاب کنید</option>
+                    {% for x in parties %}<option value="{{ x.id }}" {% if p.party == x.id|stringformat:'s' %}selected{% endif %}>{{ x.name }}</option>{% endfor %}</select>
+                <a class="small" href="{% url 'main:acc_parties' %}">افزودن طرف حساب</a></div>
+            <div class="col-12 col-md-4"><label class="form-label" for="f-income">حساب درآمد</label>
+                <select class="form-select" id="f-income" name="income_account" required><option value="">انتخاب کنید</option>
+                    {% for a in incomes %}<option value="{{ a.id }}" {% if p.income_account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></div>
+            <div class="col-12 col-md-2"><label class="form-label" for="f-amount">مبلغ (ریال)</label><input class="form-control" id="f-amount" name="amount" inputmode="numeric" value="{{ p.amount }}" required></div>
+            <div class="col-12 col-md-10"><label class="form-label" for="f-desc">شرح</label><input class="form-control" id="f-desc" name="description" maxlength="500" value="{{ p.description }}" required></div>
+            <div class="col-12 col-md-2 align-self-end"><button class="btn btn-primary w-100" type="submit">صدور فیش</button></div>
+        </div>
+    </form>
+    {% endif %}
+    <div class="table-responsive card">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>شماره</th><th>تاریخ</th><th>پرداخت‌کننده</th><th>شرح</th><th class="text-end">مبلغ</th><th class="text-end">پرداخت‌شده</th><th>وضعیت</th></tr></thead>
+            <tbody>
+            {% for b in page %}
+            <tr><td><a class="fw-bold" href="{% url 'main:acc_bill_detail' b.id %}">{{ b.number|fa }}</a></td>
+                <td>{{ b.date|jalali_date|fa }}</td><td>{{ b.party.name }}</td><td>{{ b.description|truncatechars:50 }}</td>
+                <td class="text-end">{{ b.amount|rial }}</td><td class="text-end">{{ b.paid|rial }}</td>
+                <td>{% if b.canceled_at %}<span class="badge bg-secondary">ابطال</span>{% elif b.paid >= b.amount %}<span class="badge bg-success">پرداخت‌شده</span>{% elif b.paid %}<span class="badge bg-warning text-dark">قسمتی</span>{% else %}<span class="badge bg-light text-dark border">پرداخت‌نشده</span>{% endif %}</td></tr>
+            {% empty %}<tr><td colspan="7" class="text-center text-muted py-4">فیشی صادر نشده است.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page.has_other_pages %}<div class="mt-3 d-flex gap-2">
+        {% if page.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="?page={{ page.previous_page_number }}">قبلی</a>{% endif %}
+        {% if page.has_next %}<a class="btn btn-sm btn-outline-secondary" href="?page={{ page.next_page_number }}">بعدی</a>{% endif %}</div>{% endif %}
+</div>
+{% endblock %}

@@ -116,7 +116,11 @@ Phase 2: chart of accounts (tree + add/edit), parties, voucher list (filters fro
 status, text, amount) with status badge, voucher form (header + lines table with live debit/credit totals and balance badge),
 finalize / revert, trial balance, account ledger. Reached from the accountant dashboard sidebar (replacing the dead «ثبت اسناد»,
 «طرف حسابها» links).
-Phase 3: budget and budget-vs-actual, credit provision, Excel export. Phase 4: bills, payments, installments tied to `Payment`.
+Phase 3 (built): budget and budget-vs-actual, Excel export. Phase 4 (built): cash bills (`Bill`, `BillPayment`, `main/accounting/bills.py`).
+A payment posts a temporary income voucher (debit bank/cash account, credit the bill's income account, party on both lines);
+paid never exceeds the bill; a bill with payments cannot be canceled. **Default**: a bill has one income line (the reference allows
+several lines with quantity, discount and tax); installments and the bridge to the resident-facing `Payment` (toman) are not built.
+Not built: credit provision (تامین اعتبار).
 
 ## 6. Not built (and why)
 
