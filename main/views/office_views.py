@@ -1,5 +1,9 @@
 """Views of the office system: role grants, letters, appointments."""
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
@@ -52,9 +56,38 @@ def role_revoke(request, user_id):
 @require_POST
 def role_create_account(request):
     try:
-        user, password = roles.create_staff_account(request.user, request.POST)
+        user = roles.create_staff_account(request.user, request.POST)
     except OfficeError as exc:
         return _roles_page(request, exc.status, str(exc))
-    messages.success(request, f'حساب «{user.username}» ساخته شد. رمز موقت: «{password}» ' 
-                              '(فقط همین بار نمایش داده می‌شود؛ آن را به کاربر بدهید تا پس از ورود تغییر دهد).')
+    messages.success(request, f'حساب «{user.username}» ساخته شد. رمز اولیه همان کد ملی کاربر است و '
+                              'کاربر در اولین ورود باید آن را تغییر دهد.')
     return redirect('main:role_grants')
+
+
+@login_required
+def password_change(request):
+    """Change own password; also the forced first-login step for accounts created by a dehyari."""
+    user, error = request.user, None
+    if request.method == 'POST':
+        old, new = request.POST.get('old_password', ''), request.POST.get('new_password', '')
+        if not user.check_password(old):
+            error = 'رمز فعلی درست نیست.'
+        elif new == old or new == user.profile.national_id:
+            error = 'رمز جدید نباید با رمز قبلی یا کد ملی یکسان باشد.'
+        elif new != request.POST.get('new_password2', ''):
+            error = 'تکرار رمز جدید یکسان نیست.'
+        else:
+            try:
+                validate_password(new, user)
+            except ValidationError as exc:
+                error = ' '.join(exc.messages)
+        if error is None:
+            user.set_password(new)
+            user.save(update_fields=['password'])
+            user.profile.must_change_password = False
+            user.profile.save(update_fields=['must_change_password'])
+            update_session_auth_hash(request, user)
+            messages.success(request, 'رمز عبور شما تغییر کرد.')
+            return redirect('main:home')
+    return render(request, 'main/password_change.html', {'error': error,
+                  'forced': user.profile.must_change_password}, status=400 if error else 200)

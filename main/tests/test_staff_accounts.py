@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from main.models import RoleGrant
@@ -28,14 +28,41 @@ class StaffAccountCreation(TestCase):
             self.assertTrue(user.is_active and user.profile.is_verified)
             self.assertTrue(RoleGrant.objects.filter(user=user, role=role, granted_by=self.dehyari).exists())
 
-    def test_temporary_password_is_shown_once_and_works(self):
-        c = client_for(self.dehyari)
-        r = c.post(self.url, VALID, follow=True)
-        shown = [m.message for m in r.context['messages']]
-        pw = next(m.split('«')[2].split('»')[0] for m in shown if 'رمز موقت' in m)
-        self.assertGreaterEqual(len(pw), 10)
-        self.assertTrue(client_for().login(username='ali.fani', password=pw))
-        self.assertTrue(User.objects.get(username='ali.fani').has_usable_password())
+    def test_initial_password_is_national_id_and_must_be_changed(self):
+        self.create()
+        user = User.objects.get(username='ali.fani')
+        self.assertTrue(user.profile.must_change_password)
+        c = Client()
+        self.assertTrue(c.login(username='ali.fani', password=VALID['national_id']))
+        change = reverse('main:password_change')
+        for url in ('/', reverse('main:letters_inbox')):
+            self.assertRedirects(c.get(url), change, fetch_redirect_response=False)
+        self.assertEqual(c.get(change).status_code, 200)
+        self.assertEqual(c.get(reverse('main:logout')).status_code, 302)   # logout stays reachable
+
+    def test_password_change_rules_and_unlock(self):
+        self.create()
+        c = Client()
+        c.login(username='ali.fani', password=VALID['national_id'])
+        url = reverse('main:password_change')
+        def post(old, new, new2=None):
+            return c.post(url, {'old_password': old, 'new_password': new, 'new_password2': new2 or new})
+        nid = VALID['national_id']
+        self.assertEqual(post('wrong', 'Zx-93kd-Qw71').status_code, 400)       # wrong current password
+        self.assertEqual(post(nid, nid).status_code, 400)                      # same as national id / old
+        self.assertEqual(post(nid, 'Zx-93kd-Qw71', 'other').status_code, 400)  # mismatch
+        self.assertEqual(post(nid, '12345').status_code, 400)                  # weak
+        self.assertTrue(User.objects.get(username='ali.fani').profile.must_change_password)
+        self.assertEqual(post(nid, 'Zx-93kd-Qw71').status_code, 302)
+        user = User.objects.get(username='ali.fani')
+        self.assertFalse(user.profile.must_change_password)
+        self.assertTrue(user.check_password('Zx-93kd-Qw71'))
+        self.assertEqual(c.get(reverse('main:letters_inbox')).status_code, 200)  # no longer redirected
+
+    def test_existing_accounts_are_not_forced(self):
+        user = make_user('citizen')
+        self.assertFalse(user.profile.must_change_password)
+        self.assertNotEqual(client_for(user).get(reverse('main:letters_inbox')).status_code, 302)
 
     def test_dehyari_and_admin_roles_cannot_be_created(self):
         for role in ('dehyari', 'admin', 'citizen', 'resident', ''):
