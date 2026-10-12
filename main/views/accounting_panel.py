@@ -21,14 +21,19 @@ from main.views.accounting_views import (
     PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines, new_account,
     new_party)
 
-YEAR_TABS = ('vouchers', 'bills', 'budget', 'trial')
+YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial')
 TABS = YEAR_TABS + ('parties', 'accounts', 'online', 'setup')
 PANEL = 'main/accounting/panel/'
-# (key, label, icon, needs a fiscal year) in tab-bar order
-TAB_LIST = [('vouchers', 'اسناد حسابداری', 'file-invoice', True), ('bills', 'فیش‌های نقدی', 'receipt', True),
-            ('budget', 'بودجه و عملکرد', 'chart-pie', True), ('trial', 'تراز آزمایشی', 'scale-balanced', True),
-            ('parties', 'طرف‌حساب‌ها', 'address-book', False), ('accounts', 'سرفصل حساب‌ها', 'sitemap', False),
-            ('online', 'پرداخت‌های آنلاین', 'credit-card', False), ('setup', 'سال مالی', 'calendar-days', False)]
+# (key, label, icon, needs a fiscal year, page subtitle) in menu order
+TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت مالی سال جاری و کارهای باز، یک‌جا.'),
+            ('vouchers', 'اسناد حسابداری', 'file-invoice', True, 'ثبت، ویرایش و قطعی‌کردن اسناد.'),
+            ('bills', 'فیش‌های نقدی', 'receipt', True, 'صدور فیش و ثبت پرداخت‌ها.'),
+            ('budget', 'بودجه و عملکرد', 'chart-pie', True, 'بودجه مصوب در برابر عملکرد هر حساب.'),
+            ('trial', 'تراز آزمایشی', 'scale-balanced', True, 'جمع بدهکار و بستانکار همه حساب‌ها.'),
+            ('parties', 'طرف‌حساب‌ها', 'address-book', False, 'اشخاص و سازمان‌هایی که با دهیاری حساب دارند.'),
+            ('accounts', 'سرفصل حساب‌ها', 'sitemap', False, 'درخت حساب‌های دهیاری.'),
+            ('online', 'پرداخت‌های آنلاین', 'credit-card', False, 'پرداخت‌های شهروندان: تایید، رد و سابقه.'),
+            ('setup', 'سال مالی و شروع کار', 'calendar-days', False, 'باز کردن سال مالی و ساخت سرفصل‌های پیش‌فرض.')]
 
 
 def _trigger(response, **events):
@@ -97,6 +102,24 @@ def _paged(request, qs):
     return Paginator(qs, PAGE_SIZE).get_page(request.GET.get('page'))
 
 
+def _tab_overview(request, year, ctx):
+    """Landing page: where the year stands (budget vs actual), the latest vouchers, open bills, what needs attention."""
+    summary = ctx['summary']
+    rows, _ = budget.report(request.user, year)
+    ctx['top_rows'] = sorted((r for r in rows if r['percent'] is not None), key=lambda r: -r['percent'])[:5]
+    ctx['over_count'] = sum(1 for r in rows if r['over'])
+    ctx['recent_vouchers'] = ledger.vouchers_for(request.user, year).annotate(
+        total=Sum('lines__debit'), credit_total=Sum('lines__credit')).order_by('-number')[:5]
+    ctx['open_bills'] = _open_bills(bills.bills_for(request.user, year)).select_related('party').order_by('-date')[:5]
+    for b in ctx['open_bills']:
+        b.left = b.amount - (b.paid or 0)
+    circ = 2 * 3.14159 * 54  # donut circumference for r=54, matches the SVG in _overview.html
+    ctx['donut_use'] = round(summary['use_pct'] * circ / 100, 1)
+    ctx['donut_res'] = round(summary['resource_pct'] * circ / 100, 1)
+    ctx['donut_len'] = round(circ, 1)
+    ctx['attention'] = bool(summary['unbalanced_count'] or ctx['over_count'] or summary['temporary_count'])
+
+
 def _tab_vouchers(request, year, ctx):
     qs = _filtered(request, ledger.vouchers_for(request.user, year)).annotate(
         total=Sum('lines__debit'), credit_total=Sum('lines__credit')).order_by('-number')
@@ -161,18 +184,19 @@ def _tab_setup(request, year, ctx):
     ctx['this_year'] = jdatetime.date.today().year
 
 
-TAB_BUILDERS = {'vouchers': _tab_vouchers, 'bills': _tab_bills, 'budget': _tab_budget, 'trial': _tab_trial,
+TAB_BUILDERS = {'overview': _tab_overview, 'vouchers': _tab_vouchers, 'bills': _tab_bills, 'budget': _tab_budget, 'trial': _tab_trial,
                 'parties': _tab_parties, 'accounts': _tab_accounts, 'online': _tab_online, 'setup': _tab_setup}
 
 
 def render_panel(request, year, status=200):
     """Tab bar plus one tab; `year` is None until a fiscal year exists (only the year-free tabs then work)."""
     user, g = request.user, request.GET
-    tab = g.get('tab') if g.get('tab') in TABS else 'vouchers'
+    tab = g.get('tab') if g.get('tab') in TABS else 'overview'
     if year is None and tab in YEAR_TABS:
         tab = 'setup'
     ctx = {'year': year, 'years': years_for(user), 'tab': tab, 'g': g, 'kinds': Voucher.KINDS,
-           'muni': ledger.municipality_of(user), 'tab_list': TAB_LIST, 'tab_template': f'{PANEL}_{tab}.html',
+           'muni': ledger.municipality_of(user), 'tab_list': TAB_LIST,
+           'tab_meta': next(t for t in TAB_LIST if t[0] == tab), 'tab_template': f'{PANEL}_{tab}.html',
            'filtered': any(g.get(k) for k in ('q', 'status', 'kind', 'bill_status', 'pay_status'))}
     keep = g.copy()
     keep.pop('page', None)

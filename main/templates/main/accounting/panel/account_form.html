@@ -1,16 +1,16 @@
 {% load accounting_tags %}
 {% include 'main/accounting/panel/_modal_head.html' with title='حساب جدید' %}
-<form method="post" hx-post="{% url 'main:acc_p_account_new' %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="p-5" novalidate>
+<form method="post" hx-post="{% url 'main:acc_p_account_new' %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
     {% csrf_token %}
-    <div class="grid grid-cols-2 gap-3">
-        <div class="col-span-2 md:col-span-1"><label class="acc-label" for="ac-code">کد (انگلیسی)</label><input class="acc-input" id="ac-code" name="code" dir="ltr" maxlength="20" value="{{ p.code }}" required></div>
-        <div class="col-span-2 md:col-span-1"><label class="acc-label" for="ac-parent">سرفصل بالاتر</label>
-            <select class="acc-input" id="ac-parent" name="parent"><option value="">—</option>{% for a in accounts %}<option value="{{ a.id }}" {% if p.parent == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></div>
-        <div class="col-span-2"><label class="acc-label" for="ac-title">شرح حساب</label><input class="acc-input" id="ac-title" name="title" maxlength="200" value="{{ p.title }}" required></div>
-        <div><label class="acc-label" for="ac-kind">نوع</label><select class="acc-input" id="ac-kind" name="kind">{% for k, l in kinds %}<option value="{{ k }}" {% if p.kind == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
-        <div><label class="acc-label" for="ac-nature">ماهیت</label><select class="acc-input" id="ac-nature" name="nature">{% for k, l in natures %}<option value="{{ k }}" {% if p.nature == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
-        <label class="col-span-2 md:col-span-1 flex items-center gap-2 text-sm"><input type="checkbox" name="is_postable" {% if p.is_postable %}checked{% endif %}> در سند ثبت می‌شود</label>
-        <label class="col-span-2 md:col-span-1 flex items-center gap-2 text-sm"><input type="checkbox" name="requires_party" {% if p.requires_party %}checked{% endif %}> طرف حساب لازم است</label>
+    <div class="ac-fgrid">
+        <div class="ac-field s2"><label for="ac-code">کد (انگلیسی)</label><input class="ac-in" id="ac-code" name="code" dir="ltr" maxlength="20" value="{{ p.code }}" required></div>
+        <div class="ac-field s2"><label for="ac-parent">سرفصل بالاتر</label>
+            <select class="ac-in" id="ac-parent" name="parent"><option value="">—</option>{% for a in accounts %}<option value="{{ a.id }}" {% if p.parent == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></div>
+        <div class="ac-field s4"><label for="ac-title">شرح حساب</label><input class="ac-in" id="ac-title" name="title" maxlength="200" value="{{ p.title }}" required></div>
+        <div class="ac-field s2"><label for="ac-kind">نوع</label><select class="ac-in" id="ac-kind" name="kind">{% for k, l in kinds %}<option value="{{ k }}" {% if p.kind == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="ac-field s2"><label for="ac-nature">ماهیت</label><select class="ac-in" id="ac-nature" name="nature">{% for k, l in natures %}<option value="{{ k }}" {% if p.nature == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <label class="ac-check s2"><input type="checkbox" name="is_postable" {% if p.is_postable %}checked{% endif %}> در سند ثبت می‌شود</label>
+        <label class="ac-check s2"><input type="checkbox" name="requires_party" {% if p.requires_party %}checked{% endif %}> طرف حساب لازم است</label>
     </div>
-    <div class="flex justify-end gap-2 mt-5"><button type="button" class="acc-btn" data-acc-close>انصراف</button><button type="submit" class="acc-btn-primary"><i class="fas fa-floppy-disk ml-1" aria-hidden="true"></i>ذخیره</button></div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>انصراف</button><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button></div>
 </form>
