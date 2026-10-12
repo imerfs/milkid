@@ -1578,3 +1578,12 @@ class BlockedIP(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class TwoFactorDevice(models.Model):
+    """TOTP secret of a user who turned on two-step login (main.twofactor)."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='two_factor')
+    secret = models.CharField(max_length=64)
+    confirmed = models.BooleanField(default=False)
+    last_step = models.BigIntegerField(null=True, blank=True)   # last accepted time step, against replay
+    created_at = models.DateTimeField(auto_now_add=True)
