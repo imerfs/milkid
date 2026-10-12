@@ -558,6 +558,7 @@ def manage_users(request):
     context = {
         'pending_users': pending_users,
         'all_users': users_page,
+        'deleted_users': UserProfile.objects.filter(deleted_at__isnull=False).select_related('user').order_by('-deleted_at'),
     }
     return render(request, 'main/manage_users.html', context)
 

@@ -209,6 +209,36 @@
             </div>
         </div>
     </div>
+    <!-- Deleted Users Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-user-slash me-2"></i>کاربران حذف‌شده ({{ deleted_users|length }})</h5></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="deleted-users-table">
+                            <thead>
+                                <tr><th>نام کامل</th><th>نام کاربری</th><th>کد ملی</th><th>نقش</th><th>تاریخ حذف</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for p in deleted_users %}
+                                <tr>
+                                    <td>{{ p.user.get_full_name|default:"-" }}</td>
+                                    <td>{{ p.deleted_username|default:p.user.username }}</td>
+                                    <td>{{ p.deleted_national_id|default:"-" }}</td>
+                                    <td>{{ p.get_role_display }}</td>
+                                    <td>{{ p.deleted_at|date:"Y/m/d H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">کاربر حذف‌شده‌ای وجود ندارد</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
