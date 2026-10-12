@@ -91,3 +91,12 @@ class DecreeDownload(TestCase):
     def test_missing_decree_is_404(self):
         Municipality.objects.filter(pk=self.town.pk).update(governor_decree='')
         self.assertEqual(client_for(make_user('admin')).get(self.url).status_code, 404)
+
+
+class SinglePageForm(TestCase):
+    def test_one_page_with_a_single_submit_button(self):
+        cache.clear()
+        html = self.client.get(reverse('main:register_municipality')).content.decode()
+        self.assertIn('type="submit"', html)
+        for gone in ('next-btn', 'prev-btn', 'step-indicator'):
+            self.assertNotIn(gone, html)

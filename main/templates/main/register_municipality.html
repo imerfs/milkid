@@ -6,44 +6,7 @@
 {% block extra_head %}
 <style>
     .form-step {
-        display: none;
-    }
-    .form-step.active {
-        display: block;
-    }
-    /* After a server-side error show every step at once so all errors are visible */
-    #municipality-form.show-all .form-step {
-        display: block;
-        margin-bottom: 1.5rem;
-    }
-    #municipality-form.show-all #prev-btn,
-    #municipality-form.show-all #next-btn {
-        display: none !important;
-    }
-    #municipality-form.show-all #submit-btn {
-        display: block !important;
-    }
-    .step-indicator {
         margin-bottom: 2rem;
-    }
-    .step-indicator .step {
-        display: inline-block;
-        width: 30px;
-        height: 30px;
-        line-height: 30px;
-        text-align: center;
-        background: #dee2e6;
-        border-radius: 50%;
-        margin: 0 10px;
-        transition: all 0.3s ease;
-    }
-    .step-indicator .step.active {
-        background: #3b82f6;
-        color: white;
-    }
-    .step-indicator .step.completed {
-        background: #28a745;
-        color: white;
     }
 </style>
 {% endblock %}
@@ -62,13 +25,6 @@
                 </div>
                 
                 <div class="card-body p-5">
-                    <!-- Step Indicator -->
-                    <div class="step-indicator text-center">
-                        <div class="step active" id="step-1"></div>
-                        <div class="step" id="step-2"></div>
-                        <div class="step" id="step-3"></div>
-                        <div class="step" id="step-4"></div>
-                    </div>
                     
                     {% if form.errors %}
                         <div class="alert alert-danger">
@@ -87,11 +43,11 @@
                         </div>
                     {% endif %}
                     
-                    <form method="post" enctype="multipart/form-data" id="municipality-form"{% if form.errors %} class="show-all"{% endif %}>
+                    <form method="post" enctype="multipart/form-data" id="municipality-form">
                         {% csrf_token %}
                         
                         <!-- Step 1: Basic Info -->
-                        <div class="form-step active" id="form-step-1">
+                        <div class="form-step" id="form-step-1">
                             <h4 class="mb-4 text-primary">
                                 <i class="fas fa-info-circle me-2"></i>اطلاعات پایه
                             </h4>
@@ -268,15 +224,8 @@
                             </div>
                         </div>
                         
-                        <!-- Navigation Buttons -->
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-secondary" id="prev-btn" style="display: none;">
-                                <i class="fas fa-arrow-right me-2"></i>مرحله قبل
-                            </button>
-                            <button type="button" class="btn btn-primary" id="next-btn">
-                                مرحله بعد<i class="fas fa-arrow-left ms-2"></i>
-                            </button>
-                            <button type="button" class="btn btn-success" id="submit-btn" style="display: none;">
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success btn-lg w-100" id="submit-btn">
                                 <i class="fas fa-check me-2"></i>ثبت درخواست
                             </button>
                         </div>
@@ -287,150 +236,5 @@
     </div>
 </div>
 
-<script>
-let currentStep = 1;
-const totalSteps = 4;
 
-// Required fields for each step
-const requiredFieldsByStep = {
-    1: ['name', 'municipality_type', 'province', 'county', 'district', 'settlement_type', 'city_village'],
-    2: ['official_phone', 'official_email', 'postal_code', 'address'],
-    3: ['establishment_date_year', 'establishment_date_month', 'establishment_date_day', 'population', 'area_hectares'],
-    4: ['manager_name', 'manager_national_id', 'manager_phone', 'manager_email', 'manager_username', 'manager_password', 'governor_decree']
-};
-
-function validateStep(step) {
-    const requiredFields = requiredFieldsByStep[step] || [];
-    let isValid = true;
-    let firstInvalidField = null;
-    
-    requiredFields.forEach(fieldName => {
-        const field = document.querySelector(`[name="${fieldName}"]`);
-        if (field) {
-            const value = field.type === 'file' ? field.files.length > 0 : field.value.trim();
-            
-            if (!value) {
-                isValid = false;
-                field.classList.add('is-invalid');
-                if (!firstInvalidField) {
-                    firstInvalidField = field;
-                }
-                
-                // Show error message
-                let errorDiv = field.parentNode.querySelector('.field-error');
-                if (!errorDiv) {
-                    errorDiv = document.createElement('div');
-                    errorDiv.className = 'field-error text-danger mt-1';
-                    errorDiv.innerHTML = '<small><i class="fas fa-exclamation-circle"></i> این فیلد ضروری است</small>';
-                    field.parentNode.appendChild(errorDiv);
-                }
-            } else {
-                field.classList.remove('is-invalid');
-                const errorDiv = field.parentNode.querySelector('.field-error');
-                if (errorDiv) {
-                    errorDiv.remove();
-                }
-            }
-        }
-    });
-    
-    if (!isValid && firstInvalidField) {
-        firstInvalidField.focus();
-        
-        // Show alert
-        const alert = document.createElement('div');
-        alert.className = 'alert alert-warning alert-dismissible fade show mt-3';
-        alert.innerHTML = `
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            لطفاً تمام فیلدهای ضروری را تکمیل کنید.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.querySelector('.form-step.active').insertBefore(alert, document.querySelector('.form-step.active').firstChild);
-        
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
-        }, 4000);
-    }
-    
-    return isValid;
-}
-
-function showStep(step) {
-    // Hide all steps
-    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.step').forEach(s => {
-        s.classList.remove('active');
-        if (parseInt(s.id.split('-')[1]) < step) {
-            s.classList.add('completed');
-        }
-    });
-    
-    // Show current step
-    document.getElementById(`form-step-${step}`).classList.add('active');
-    document.getElementById(`step-${step}`).classList.add('active');
-    
-    // Update buttons
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const submitBtn = document.getElementById('submit-btn');
-    
-    prevBtn.style.display = step > 1 ? 'block' : 'none';
-    nextBtn.style.display = step < totalSteps ? 'block' : 'none';
-    submitBtn.style.display = step === totalSteps ? 'block' : 'none';
-}
-
-document.getElementById('next-btn').addEventListener('click', () => {
-    if (validateStep(currentStep) && currentStep < totalSteps) {
-        currentStep++;
-        showStep(currentStep);
-    }
-});
-
-document.getElementById('prev-btn').addEventListener('click', () => {
-    if (currentStep > 1) {
-        currentStep--;
-        showStep(currentStep);
-    }
-});
-
-document.getElementById('submit-btn').addEventListener('click', () => {
-    const showAll = document.getElementById('municipality-form').classList.contains('show-all');
-    const steps = showAll ? [1, 2, 3, 4] : [currentStep];
-    if (steps.map(validateStep).every(Boolean)) {
-        // Show loading
-        const submitBtn = document.getElementById('submit-btn');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال ارسال...';
-        submitBtn.disabled = true;
-        
-        // Submit form
-        document.getElementById('municipality-form').submit();
-    }
-});
-
-// Clear validation errors on input
-document.addEventListener('input', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
-        e.target.classList.remove('is-invalid');
-        const errorDiv = e.target.parentNode.querySelector('.field-error');
-        if (errorDiv) {
-            errorDiv.remove();
-        }
-    }
-});
-
-// Clear file validation errors on file change
-document.addEventListener('change', (e) => {
-    if (e.target.type === 'file') {
-        e.target.classList.remove('is-invalid');
-        const errorDiv = e.target.parentNode.querySelector('.field-error');
-        if (errorDiv) {
-            errorDiv.remove();
-        }
-    }
-});
-// The province -> county -> district dropdowns are driven by HTMX (see main/geo_cascade.py)
-</script>
 {% endblock %}
