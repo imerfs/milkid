@@ -841,6 +841,8 @@ class ModernUI {
             display: none;
         `;
 
+        if (!input.id) input.id = 'file-' + Math.random().toString(36).slice(2);
+        label.htmlFor = input.id;
         input.style.display = 'none';
         input.parentNode.insertBefore(wrapper, input);
         wrapper.appendChild(label);

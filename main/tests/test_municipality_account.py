@@ -2,6 +2,7 @@
 import json
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -42,6 +43,9 @@ def existing_place():
 
 
 class Registration(TestCase):
+    def setUp(self):
+        cache.clear()  # registration is throttled per IP; tests share the cache
+
     def register(self, **over):
         p, c, d = existing_place() if Province.objects.exists() else place()
         return self.client.post(reverse('main:register_municipality'), registration_data(p, c, d, **over))
@@ -86,6 +90,7 @@ class Registration(TestCase):
 
 class Approval(TestCase):
     def setUp(self):
+        cache.clear()
         self.p, self.c, self.d = place()
         self.admin = make_user('admin')
 
