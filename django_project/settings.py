@@ -441,6 +441,17 @@ SITE_PHONE = os.environ.get('SITE_PHONE', '')
 SITE_ADDRESS_LOCALITY = os.environ.get('SITE_ADDRESS_LOCALITY', '')
 SITE_ADDRESS_STREET = os.environ.get('SITE_ADDRESS_STREET', '')
 
+# Outgoing email (SMTP). Defaults match Django's (localhost:25); set these in .env to use a real mailbox.
+EMAIL_HOST = os.environ.get('EMAIL_HOST') or 'localhost'
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT') or '25')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER') or ''
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') or ''
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT') or '10')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'webmaster@localhost'
+SERVER_EMAIL = os.environ.get('SERVER_EMAIL') or DEFAULT_FROM_EMAIL
+
 # Bootstrap calls the error alert 'danger'
 MESSAGE_TAGS = {message_levels.ERROR: 'danger'}
 

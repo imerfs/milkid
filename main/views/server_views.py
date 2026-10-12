@@ -4,15 +4,18 @@ Admin-only (policy ``admin.manage``). Every mutation is a POST and is written to
 security log with the acting admin.
 """
 import ipaddress
-from datetime import timedelta
 import logging
+from datetime import timedelta
 from io import StringIO
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.core.validators import validate_email
 from django.db.models import Sum
 from django.http import FileResponse, Http404
 from django.shortcuts import redirect, render
@@ -21,13 +24,13 @@ from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.views.decorators.http import require_POST
 
-from main import ipblock, serverops, siteextras, twofactor
+from main import hostinfo, ipblock, serverops, siteextras, twofactor
 from main.access import policy_required
 from main.models import BlockedIP, DailyPageView, SiteRedirect, TwoFactorDevice
 from main.ratelimit import client_ip
 
 audit = logging.getLogger('django.security.serverpanel')
-TABS = ('resources', 'stats', 'database', 'backups', 'logs', 'ips', 'redirects', 'cache', 'security')
+TABS = ('resources', 'stats', 'database', 'backups', 'logs', 'ips', 'redirects', 'services', 'cache', 'security')
 
 
 def _back(tab, **query):
@@ -52,6 +55,10 @@ def admin_server(request):
         ctx.update(days=views.values('day').annotate(total=Sum('views')).order_by('-day'),
                    top_pages=views.values('path').annotate(total=Sum('views')).order_by('-total')[:20],
                    month_total=views.aggregate(total=Sum('views'))['total'] or 0)
+    elif tab == 'services':
+        ctx.update(email=hostinfo.email_settings(), runtime=hostinfo.runtime(), domains=hostinfo.site_domains())
+        if request.GET.get('check') == '1':      # network lookups only on demand: they can take seconds
+            ctx['domain_reports'] = [hostinfo.domain_report(d) for d in ctx['domains'][:5]]
     elif tab == 'redirects':
         ctx['redirects'] = SiteRedirect.objects.all()
     elif tab == 'database':
@@ -306,3 +313,24 @@ def admin_server_redirect_delete(request, redirect_id):
     audit.warning('server panel: %s deleted redirect %s', request.user.username, redirect_id)
     messages.success(request, 'تغییر مسیر حذف شد.')
     return _back('redirects')
+
+
+@policy_required('admin.manage')
+@require_POST
+def admin_server_email_test(request):
+    to = request.POST.get('to', '').strip() or request.user.email
+    try:
+        validate_email(to)
+    except ValidationError:
+        messages.error(request, 'نشانی ایمیل گیرنده معتبر نیست.')
+        return _back('services')
+    try:
+        send_mail('ایمیل آزمایشی ملک آیدی', 'این ایمیل برای آزمایش تنظیمات ارسال ایمیل سامانه فرستاده شده است.',
+                  None, [to], fail_silently=False)
+    except Exception as error:   # any SMTP/socket failure is shown to the admin, never raised
+        audit.warning('server panel: test email to %s by %s failed: %s', to, request.user.username, error)
+        messages.error(request, f'ارسال ناموفق بود: {error}')
+    else:
+        audit.warning('server panel: test email sent to %s by %s', to, request.user.username)
+        messages.success(request, f'ایمیل آزمایشی به {to} فرستاده شد.')
+    return _back('services')
