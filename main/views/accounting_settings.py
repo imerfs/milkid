@@ -29,8 +29,8 @@ KINDS = {
 def tab_settings(request, year, ctx):
     ctx['sections'] = [
         {'title': title + ('‌ها' if key != 'center' else 'ها'), 'new_url': _url('acc_p_setting_new', key), 'label': title,
-         'columns': columns, 'rows': [{'cells': cells(o), 'delete': _url('acc_p_setting_delete', key, o.id)}
-                                      for o in getter(request.user)]}
+         'columns': columns, 'rows': [{'cells': cells(o), 'delete': _url('acc_p_setting_delete', key, o.id)}  # pylint: disable=not-callable
+                                      for o in getter(request.user)]}  # pylint: disable=not-callable
         for key, (title, _f, _a, _d, getter, _m, cells, columns) in KINDS.items()]
 
 
