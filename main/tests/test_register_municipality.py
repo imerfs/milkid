@@ -1,9 +1,13 @@
 """Municipality registration: server errors must all show at once, on a single page."""
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
 
 class RegisterMunicipalityErrorsTest(TestCase):
+    def setUp(self):
+        cache.clear()  # /register is throttled per IP; other tests share the cache
+
     def test_invalid_post_shows_all_steps_and_every_error(self):
         resp = self.client.post(reverse('main:register_municipality'), {})
         self.assertEqual(resp.status_code, 200)
