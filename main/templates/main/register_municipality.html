@@ -14,6 +14,18 @@
     .form-step.active {
         display: block;
     }
+    /* After a server-side error show every step at once so all errors are visible */
+    #municipality-form.show-all .form-step {
+        display: block;
+        margin-bottom: 1.5rem;
+    }
+    #municipality-form.show-all #prev-btn,
+    #municipality-form.show-all #next-btn {
+        display: none !important;
+    }
+    #municipality-form.show-all #submit-btn {
+        display: block !important;
+    }
     .step-indicator {
         margin-bottom: 2rem;
     }
@@ -66,14 +78,19 @@
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>خطا در پر کردن فرم:</strong>
                             <ul class="mb-0 mt-2">
-                            {% for field, errors in form.errors.items %}
-                                <li><strong>{{ form.field.label|default:field }}:</strong> {{ errors.0 }}</li>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
                             {% endfor %}
                             </ul>
                         </div>
                     {% endif %}
                     
-                    <form method="post" enctype="multipart/form-data" id="municipality-form">
+                    <form method="post" enctype="multipart/form-data" id="municipality-form"{% if form.errors %} class="show-all"{% endif %}>
                         {% csrf_token %}
                         
                         <!-- Step 1: Basic Info -->
@@ -382,7 +399,9 @@ document.getElementById('prev-btn').addEventListener('click', () => {
 });
 
 document.getElementById('submit-btn').addEventListener('click', () => {
-    if (validateStep(currentStep)) {
+    const showAll = document.getElementById('municipality-form').classList.contains('show-all');
+    const steps = showAll ? [1, 2, 3, 4] : [currentStep];
+    if (steps.map(validateStep).every(Boolean)) {
         // Show loading
         const submitBtn = document.getElementById('submit-btn');
         const originalText = submitBtn.innerHTML;
