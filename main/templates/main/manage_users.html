@@ -157,6 +157,7 @@
                                     <td>{{ user_profile.created_at|persian_date:"Y/m/d" }}</td>
                                     <td>
                                         <div class="btn-group-vertical" role="group">
+                                            <a href="{% url 'main:admin_user_detail' user_profile.user_id %}" class="btn btn-sm btn-outline-primary mb-1"><i class="fas fa-eye me-1"></i>مشاهده اطلاعات</a>
                                             {% if user_profile.is_active and user_profile.user.is_active %}
                                                 <!-- User is active - show freeze option -->
                                                 <form method="post" class="d-inline mb-1">
