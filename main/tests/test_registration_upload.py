@@ -131,3 +131,11 @@ class AjaxSubmit(TestCase):
     def test_page_has_the_progress_bar(self):
         html = self.client.get(reverse('main:register_municipality')).content.decode()
         self.assertIn('role="progressbar"', html)
+
+
+class PasswordFields(TestCase):
+    def test_both_password_fields_get_the_eye_toggle_hook(self):
+        cache.clear()
+        html = self.client.get(reverse('main:register_municipality')).content.decode()
+        self.assertEqual(html.count('data-pw-toggle'), 2)
+        self.assertIn('name="manager_password2"', html)

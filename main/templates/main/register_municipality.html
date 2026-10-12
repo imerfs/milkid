@@ -196,6 +196,10 @@
                                         <small class="form-text text-muted">{{ form.manager_password.help_text }}</small>
                                     {% endif %}
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="{{ form.manager_password2.id_for_label }}">{{ form.manager_password2.label }}</label>
+                                    {{ form.manager_password2 }}
+                                </div>
                                 <div class="col-12 mb-3">
                                     <label class="form-label text-danger">
                                         <i class="fas fa-asterisk text-danger" style="font-size: 8px;"></i>
