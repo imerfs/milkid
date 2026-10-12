@@ -1,0 +1,16 @@
+{% if office %}
+<nav class="office-dock" aria-label="میان‌بر مکاتبات و وقت‌ها" style="position:fixed;left:12px;bottom:12px;z-index:1000;display:flex;gap:6px;padding:6px;border-radius:999px;background:#1e40af;box-shadow:0 4px 14px rgba(15,23,42,.35)">
+    <a href="{% url 'main:letters_inbox' %}" title="مکاتبات اداری" aria-label="مکاتبات اداری" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none">
+        <i class="fas fa-envelope-open-text" aria-hidden="true"></i>
+        {% if office.letters_unread %}<span style="position:absolute;top:2px;left:2px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#dc2626;color:#fff;font-size:11px;line-height:18px;text-align:center">{{ office.letters_unread }}</span>{% endif %}
+    </a>
+    <a href="{% url 'main:letter_compose' %}" title="نامه‌ی جدید" aria-label="نامه‌ی جدید" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none"><i class="fas fa-pen-to-square" aria-hidden="true"></i></a>
+    <a href="{% url 'main:appointments' %}" title="وقت‌های ملاقات" aria-label="وقت‌های ملاقات" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none">
+        <i class="fas fa-calendar-check" aria-hidden="true"></i>
+        {% if office.appointments_pending %}<span style="position:absolute;top:2px;left:2px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#f59e0b;color:#111;font-size:11px;line-height:18px;text-align:center">{{ office.appointments_pending }}</span>{% endif %}
+    </a>
+    {% if office.can_grant_roles %}
+    <a href="{% url 'main:role_grants' %}" title="نقش‌های دهیاری" aria-label="نقش‌های دهیاری" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none"><i class="fas fa-user-shield" aria-hidden="true"></i></a>
+    {% endif %}
+</nav>
+{% endif %}

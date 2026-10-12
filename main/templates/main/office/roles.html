@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static persian_filters jalali_tags %}
+
+{% block title %}نقش‌های دهیاری - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h1 class="h3 mb-0"><i class="fas fa-user-shield ms-2"></i>نقش‌های دهیاری</h1>
+        <a href="{% url 'main:dehyari_dashboard' %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-arrow-right ms-1"></i>بازگشت به پنل</a>
+    </div>
+    <p class="text-muted">به ساکنان روستای خود نقش حسابدار، کارشناس فنی، ناظر فنی یا شورا بدهید یا پس بگیرید. هر تغییر ثبت می‌شود و کاربر خبردار می‌شود.</p>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>
+    {% endif %}
+
+    <section class="card mb-4" aria-labelledby="staff-heading">
+        <div class="card-header"><h2 class="h5 mb-0" id="staff-heading"><i class="fas fa-users ms-2"></i>کارکنان فعلی</h2></div>
+        <div class="card-body p-0">
+            {% for profile in staff %}
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge rounded-pill bg-primary fs-6 px-3 py-2"><i class="fas {{ role_icons|dict_get:profile.role }} ms-1"></i>{{ profile.get_role_display }}</span>
+                    <div>
+                        <div class="fw-bold">{{ profile.user.get_full_name|default:profile.user.username }}</div>
+                        <small class="text-muted">{{ profile.user.username }}{% if profile.mobile_number %} · <i class="fas fa-mobile-screen"></i> {{ profile.mobile_number }}{% endif %}</small>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'main:role_revoke' profile.user_id %}" data-once data-confirm="نقش این کاربر برداشته شود؟">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-user-minus ms-1"></i>برداشتن نقش</button>
+                </form>
+            </div>
+            {% empty %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-user-gear fa-2x mb-2" aria-hidden="true"></i>
+                <p class="mb-0">هنوز نقشی به کسی داده نشده است. از بخش پایین کاربر را جستجو کنید.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="card" aria-labelledby="grant-heading">
+        <div class="card-header"><h2 class="h5 mb-0" id="grant-heading"><i class="fas fa-user-plus ms-2"></i>دادن نقش جدید</h2></div>
+        <div class="card-body">
+            <form method="get" class="row g-2 mb-3" role="search">
+                <div class="col">
+                    <label for="q" class="visually-hidden">نام، نام کاربری، کد ملی یا موبایل</label>
+                    <input type="search" id="q" name="q" value="{{ q }}" class="form-control" placeholder="نام، نام کاربری، کد ملی یا موبایل">
+                </div>
+                <div class="col-auto"><button class="btn btn-primary" type="submit"><i class="fas fa-magnifying-glass ms-1"></i>جستجو</button></div>
+            </form>
+
+            {% if q %}
+                {% for profile in candidates %}
+                <form method="post" action="{% url 'main:role_grant' %}" class="row g-2 align-items-center border rounded p-2 mb-2" data-once>
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ profile.user_id }}">
+                    <div class="col-12 col-md">
+                        <div class="fw-bold">{{ profile.user.get_full_name|default:profile.user.username }}</div>
+                        <small class="text-muted">{{ profile.user.username }} · {{ profile.get_role_display }}</small>
+                    </div>
+                    <div class="col-8 col-md-4">
+                        <label class="visually-hidden" for="role-{{ profile.user_id }}">نقش</label>
+                        <select name="role" id="role-{{ profile.user_id }}" class="form-select" required>
+                            <option value="" selected disabled>انتخاب نقش…</option>
+                            {% for value, label, icon in grantable %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-auto"><button type="submit" class="btn btn-success w-100"><i class="fas fa-check ms-1"></i>اعطا</button></div>
+                </form>
+                {% empty %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-user-slash fa-2x mb-2" aria-hidden="true"></i>
+                    <p class="mb-0">کاربری با این مشخصات در روستای شما پیدا نشد.</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted mb-0"><i class="fas fa-circle-info ms-1"></i>برای دیدن نتیجه، نام یا کد ملی را جستجو کنید.</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

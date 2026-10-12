@@ -117,7 +117,40 @@ class CityVillage(models.Model):
         ]
         return "، ".join(parts)
 
-class UserProfile(models.Model):
+class GeographyLink(models.Model):
+    """Links to the geography tables, kept in step with the plain-text place columns of the model.
+
+    Migration in stages: (1) these links are filled from the text on every save (text is the source of truth),
+    (2) reads move to the links, (3) forms write the links and the text is derived, (4) the text columns go away.
+    """
+    province_fk = models.ForeignKey('Province', null=True, blank=True, editable=False,
+                                    on_delete=models.SET_NULL, related_name='+')
+    county_fk = models.ForeignKey('County', null=True, blank=True, editable=False,
+                                  on_delete=models.SET_NULL, related_name='+')
+    district_fk = models.ForeignKey('District', null=True, blank=True, editable=False,
+                                    on_delete=models.SET_NULL, related_name='+')
+    city_village_fk = models.ForeignKey('CityVillage', null=True, blank=True, editable=False,
+                                        on_delete=models.SET_NULL, related_name='+')
+
+    GEO_TEXT = ('province', 'county', 'district', 'city_village')
+    GEO_LINKS = ('province_fk', 'county_fk', 'district_fk', 'city_village_fk')
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if update_fields is None or set(update_fields) & set(self.GEO_TEXT):
+            from main.geography import resolve
+            found = resolve(*(getattr(self, name) for name in self.GEO_TEXT))
+            for name, value in found.items():
+                setattr(self, name, value)
+            if update_fields is not None:
+                kwargs['update_fields'] = list(set(update_fields) | set(self.GEO_LINKS))
+        super().save(*args, **kwargs)
+
+
+class UserProfile(GeographyLink):
     """
     Extended user profile with Persian-specific fields and role management
     """
@@ -219,6 +252,7 @@ class UserProfile(models.Model):
 
     # Additional fields
     is_verified = models.BooleanField(default=False, verbose_name='تایید شده')
+    deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='تاریخ حذف')
     is_active = models.BooleanField(default=True, verbose_name='فعال')
     approval_status = models.CharField(
         max_length=20,
@@ -865,7 +899,7 @@ class EventPermit(models.Model):
     def __str__(self):
         return f"{self.event_name} - {self.get_event_type_display()}"
 
-class Municipality(models.Model):
+class Municipality(GeographyLink):
     """
     Model for municipality/rural council registration
     """
@@ -1023,7 +1057,7 @@ def create_user_profile(sender, instance, created, **kwargs):
             }
         )
 
-class PropertyAdvertisement(models.Model):
+class PropertyAdvertisement(GeographyLink):
     """
     Model for property advertisements submitted by users
     """
@@ -1348,6 +1382,23 @@ class Conversation(models.Model):
     def __str__(self):
         return f"{self.subject}"
 
+class ConversationState(models.Model):
+    """
+    Per-user mute/archive flags for a conversation
+    """
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='user_states', verbose_name='مکالمه')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversation_states', verbose_name='کاربر')
+    is_muted = models.BooleanField(default=False, verbose_name='بی‌صدا')
+    is_archived = models.BooleanField(default=False, verbose_name='بایگانی شده')
+
+    class Meta:
+        verbose_name = 'وضعیت مکالمه'
+        verbose_name_plural = 'وضعیت مکالمات'
+        unique_together = ['conversation', 'user']
+
+    def __str__(self):
+        return f"{self.user} - {self.conversation}"
+
 class Message(models.Model):
     """
     Model for individual messages in a conversation
@@ -1505,3 +1556,5 @@ class CityVillageRequest(models.Model):
     def __str__(self):
         return f"درخواست افزودن {self.name} ({self.get_settlement_type_display()}) - {self.district.name}"
 
+# Office system models (role grants, letters, appointments)
+from .models_office import *  # noqa: E402,F401,F403

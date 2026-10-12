@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}گرفتن وقت ملاقات - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <h1 class="h3 mb-0"><i class="fas fa-calendar-plus ms-2"></i>گرفتن وقت ملاقات</h1>
+        <a href="{% url 'main:appointments' %}" class="btn btn-outline-primary"><i class="fas fa-calendar-days ms-1"></i>وقت‌های من</a>
+    </div>
+    <p class="text-muted">با کدام کارمند دهیاری می‌خواهید ملاقات کنید؟</p>
+    <div class="row g-3">
+        {% for card in cards %}
+        <div class="col-12 col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fs-3 text-primary"><i class="fas {{ card.icon }}" aria-hidden="true"></i></span>
+                        <div>
+                            <div class="fw-bold">{{ card.user.get_full_name|default:card.user.username }}</div>
+                            <small class="text-muted">{{ card.user.profile.get_role_display }}</small>
+                        </div>
+                    </div>
+                    {% if card.has_hours %}
+                    <a href="{% url 'main:appointment_book' card.user.id %}" class="btn btn-primary"><i class="fas fa-calendar-check ms-1"></i>انتخاب زمان</a>
+                    {% else %}
+                    <span class="badge bg-light text-dark border">ساعت کاری ثبت نشده</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center text-muted py-5"><i class="fas fa-user-clock fa-2x mb-2" aria-hidden="true"></i><p class="mb-0">در روستای شما هنوز کارمندی برای ملاقات ثبت نشده است.</p></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

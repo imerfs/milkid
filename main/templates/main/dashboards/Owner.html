@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="fa" dir="rtl">
     <head>
@@ -5,17 +6,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>پنل کاربری - ملک آیدی</title>
 
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet"
-        />
+        <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+        
+        
+        <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
 
         <style>
             body {
@@ -95,8 +89,11 @@
                 justify-content: center;
             }
         </style>
-    </head>
-    <body class="text-gray-800">
+        {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+</head>
+    <body class="text-gray-800 mk-tw">
         <!-- Mobile Menu Overlay -->
         <div
             id="mobile-overlay"
@@ -140,7 +137,7 @@
                         </div>
                     </a>
                     <a
-                        href="#"
+                        href="{% url 'main:create_request' %}"
                         class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('new-request', this)"
                     >
@@ -150,7 +147,7 @@
                         </div>
                     </a>
                     <a
-                        href="#"
+                        href="{% url 'main:my_requests' %}"
                         class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('tracking', this)"
                     >
@@ -185,7 +182,7 @@
                         >
                     </a>
                     <a
-                        href="#"
+                        href="{% url 'main:letters_inbox' %}"
                         class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('messages', this)"
                     >
@@ -623,7 +620,7 @@
                                     </div>
                                     <button
                                         class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold"
-                                    >
+                                     onclick="location.href='{% url 'main:payments_debts' %}'">
                                         پرداخت آنلاین
                                     </button>
                                 </div>
@@ -832,5 +829,6 @@
                 }
             });
         </script>
-    </body>
+        {% include 'partials/office_dock.html' %}
+</body>
 </html>

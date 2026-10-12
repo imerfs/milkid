@@ -1,94 +1,33 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ملک آیدی - سامانه دیجیتال خدمات دهیاری و املاک</title>
+    <title>سامانه دیجیتال خدمات دهیاری و املاک - ملک آیدی</title>
     <!-- SEO Meta Tags -->
-    <meta name="description" content="ملک آیدی - سامانه جامع خدمات دهیاری، صدور پروانه ساخت، مدیریت املاک و جلوگیری از کلاهبرداری در املاک روستایی. سریع، شفاف و هوشمند">
     <meta name="keywords" content="دهیاری، پروانه ساخت، روستا، ملک آیدی، خدمات آنلاین، ساخت و ساز روستایی, صدور سند, جستجوی ملک, هوش مصنوعی, جلوگیری از کلاهبرداری">
     <meta name="author" content="MelkID Team">
-    <!-- Open Graph -->
-    <meta property="og:title" content="ملک آیدی - سامانه دیجیتال خدمات دهیاری و املاک">
-    <meta property="og:description" content="دریافت خدمات دهیاری، مدیریت املاک و جلوگیری از کلاهبرداری با استفاده از هوش مصنوعی">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://melkid.ir">
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#16a085">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ملک آیدی">
     <!-- Icons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" onerror="this.href='https://placehold.co/32x32/14b8a6/FFFFFF?text=M'">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" onerror="this.href='https://placehold.co/180x180/14b8a6/FFFFFF?text=M'">
     <link rel="manifest" href="/static/manifest.json">
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
     <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'vazir': ['Vazirmatn', 'Tahoma', 'sans-serif']
-                    },
-                    colors: {
-                        primary: {
-                            50: '#f0fdfa',
-                            100: '#ccfbf1',
-                            200: '#99f6e4',
-                            300: '#5eead4',
-                            400: '#2dd4bf',
-                            500: '#14b8a6',
-                            600: '#0d9488',
-                            700: '#0f766e',
-                            800: '#115e59',
-                            900: '#134e4a'
-                        },
-                        accent: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e'
-                        },
-                        secondary: {
-                            50: '#f5f3ff',
-                            100: '#ede9fe',
-                            200: '#ddd6fe',
-                            300: '#c4b5fd',
-                            400: '#a78bfa',
-                            500: '#8b5cf6',
-                            600: '#7c3aed',
-                            700: '#6d28d9',
-                            800: '#5b21b6',
-                            900: '#4c1d95'
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 1s ease-in-out',
-                        'slide-up': 'slideUp 0.8s ease-out',
-                        'float': 'float 3s ease-in-out infinite',
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         body { 
             font-family: 'vazir', 'Tahoma', 'sans-serif';
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+        /* home keeps its own timings (the shared stylesheet uses the dashboard ones) */
+        .animate-fade-in { animation: fadeIn 1s ease-in-out; }
+        .animate-slide-up { animation: slideUp 0.8s ease-out; }
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -103,7 +42,7 @@
             100% { transform: translateY(0px); }
         }
         .hero-pattern {
-            background-color: #16a085;
+            background-color: #1e3a8a;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='m0 40l40-40h-40v40zm0-40l40 40v-40h-40z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
         .service-card:hover {
@@ -111,16 +50,16 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
         .ai-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
         }
         .fraud-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
         }
         .property-card {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         }
         .testimonial-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
         }
         .highlight-box {
             position: relative;
@@ -141,8 +80,11 @@
             transform: translateX(-100%);
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="bg-gray-50 text-gray-800 font-vazir">
+<body class="bg-gray-50 text-gray-800 font-vazir mk-tw">
     <!-- Header -->
     <header class="bg-white shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -153,7 +95,7 @@
                         <i class="fas fa-home text-white text-xl"></i>
                     </div>
                     <div class="mr-3">
-                        <h1 class="text-2xl font-bold text-primary-600">ملک آیدی</h1>
+                        <p class="text-2xl font-bold text-primary-600">ملک آیدی</p>
                         <p class="text-xs text-gray-500">سامانه دیجیتال دهیاری و املاک</p>
                     </div>
                 </div>
@@ -903,9 +845,9 @@
                 <div>
                     <h4 class="text-lg font-semibold mb-4">خدمات</h4>
                     <ul class="space-y-2">
-                        <li><a href="#services" class="text-gray-400 hover:text-white">پروانه ساخت</a></li>
-                        <li><a href="#services" class="text-gray-400 hover:text-white">تایید سکونت</a></li>
-                        <li><a href="#services" class="text-gray-400 hover:text-white">سند کردن ملک</a></li>
+                        <li><a href="{% url 'main:services_catalog' %}" class="text-gray-400 hover:text-white">پروانه ساخت</a></li>
+                        <li><a href="{% url 'main:services_catalog' %}" class="text-gray-400 hover:text-white">تایید سکونت</a></li>
+                        <li><a href="{% url 'main:services_catalog' %}" class="text-gray-400 hover:text-white">سند کردن ملک</a></li>
                         <li><a href="#property-listing" class="text-gray-400 hover:text-white">فروش و خرید ملک</a></li>
                     </ul>
                 </div>
@@ -913,9 +855,9 @@
                     <h4 class="text-lg font-semibold mb-4">پشتیبانی</h4>
                     <ul class="space-y-2">
                         <li><a href="#how-it-works" class="text-gray-400 hover:text-white">راهنمای استفاده</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">سوالات متداول</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">تماس با ما</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">درباره ما</a></li>
+                                                <li><a href="{% url 'main:contact' %}" class="text-gray-400 hover:text-white">تماس با ما</a></li>
+                        <li><a href="{% url 'main:about' %}" class="text-gray-400 hover:text-white">درباره ما</a></li>
+                        <li><a href="{% url 'sitemap' %}" class="text-gray-400 hover:text-white">نقشه سایت</a></li>
                     </ul>
                 </div>
                 <div>

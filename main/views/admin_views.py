@@ -18,6 +18,9 @@ import json
 import os
 
 from .common import role_required
+from main import municipality_approval
+from main.accounts import soft_delete_user
+from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
     start_conversation, create_announcement, announcement_list, 
@@ -34,6 +37,7 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
 
 
+@policy_required('admin.manage')
 @login_required
 @ensure_csrf_cookie
 def admin_dashboard(request):
@@ -97,18 +101,7 @@ def admin_dashboard(request):
             try:
                 municipality = Municipality.objects.get(id=municipality_id)
                 if action == 'approve':
-                    municipality.status = 'active'
-                    municipality.verified_at = timezone.now()
-                    municipality.verified_by = request.user
-                    municipality.save()
-
-                    if municipality.admin_user:
-                        municipality.admin_user.profile.is_verified = True
-                        municipality.admin_user.profile.role = 'dehyari'
-                        municipality.admin_user.profile.save()
-                        municipality.admin_user.is_active = True
-                        municipality.admin_user.save()
-
+                    municipality_approval.approve(municipality, request.user)
                     messages.success(request, f'درخواست {municipality.name} تایید شد و به سامانه پیوست.')
 
                 elif action == 'reject':
@@ -142,10 +135,6 @@ def admin_dashboard(request):
                     user_profile_target.save()
 
                     if user_profile_target.role == 'dehyari':
-                        Municipality.objects.filter(
-                            manager_name__icontains=user_name,
-                            status='pending'
-                        ).delete()
                         messages.success(request, f'دهیار {user_name} تایید شد و به پنل دهیاری دسترسی پیدا کرد.')
                     else:
                         messages.success(request, f'کاربر {user_name} تایید شد و فعال گردید.')
@@ -180,10 +169,7 @@ def admin_dashboard(request):
                     if user_profile_target.user == request.user or user_profile_target.user.is_superuser:
                         messages.error(request, 'امکان حذف حساب کاربری مدیر ارشد یا حساب جاری وجود ندارد.')
                     else:
-                        target_user = user_profile_target.user
-                        from django.core.cache import cache
-                        cache.delete(f'user_last_seen_{target_user.id}')
-                        target_user.delete()
+                        soft_delete_user(user_profile_target.user)
                         messages.success(request, f'کاربر «{user_name}» با موفقیت از سیستم حذف گردید.')
 
                 elif action == 'toggle_access':
@@ -216,7 +202,7 @@ def admin_dashboard(request):
 
     # User monitoring & access control
     from django.core.cache import cache
-    all_profiles_qs = UserProfile.objects.select_related('user').all().order_by('-user__date_joined')
+    all_profiles_qs = UserProfile.objects.select_related('user').filter(deleted_at__isnull=True).order_by('-user__date_joined')
     now = timezone.now()
 
     all_users_list = []
@@ -381,6 +367,7 @@ def admin_dashboard(request):
 
 
 
+@policy_required('admin.manage')
 def manage_property_ads(request):
     """مدیریت آگهی‌های املاک کاربران"""
     from main.models import PropertyAdvertisementEditLog
@@ -492,11 +479,12 @@ def manage_property_ads(request):
     return render(request, 'main/admin/manage_property_ads.html', context)
 
 
+@policy_required('admin.manage')
 def manage_users(request):
     """Enhanced user management for administrators"""
     # Get users by categories
-    pending_users = UserProfile.objects.filter(approval_status='pending').order_by('-created_at')
-    all_users = UserProfile.objects.exclude(role='admin').order_by('-created_at')
+    pending_users = UserProfile.objects.filter(approval_status='pending', deleted_at__isnull=True).order_by('-created_at')
+    all_users = UserProfile.objects.exclude(role='admin').filter(deleted_at__isnull=True).order_by('-created_at')
 
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
@@ -514,13 +502,7 @@ def manage_users(request):
                 user_profile.user.save()
                 user_profile.save()
                 
-                # If approved user is dehyari, delete any related municipality registration request
                 if user_profile.role == 'dehyari':
-                    # Remove any pending municipality registration for this user
-                    Municipality.objects.filter(
-                        contact_person_name__icontains=user_name,
-                        status='pending'
-                    ).delete()
                     messages.success(request, f'دهیار {user_name} تایید شد و به پنل دهیاری دسترسی پیدا کرد.')
                 else:
                     messages.success(request, f'کاربر {user_name} تایید شد و فعال گردید.')
@@ -550,8 +532,7 @@ def manage_users(request):
                 messages.success(request, f'حساب کاربری {user_name} فعال شد.')
 
             elif action == 'delete':
-                # Delete user completely
-                user_profile.user.delete()
+                soft_delete_user(user_profile.user)
                 messages.info(request, f'کاربر {user_name} حذف شد.')
 
         except UserProfile.DoesNotExist:
@@ -572,6 +553,7 @@ def manage_users(request):
     return render(request, 'main/manage_users.html', context)
 
 
+@policy_required('admin.manage')
 def manage_requests(request):
     """Manage service requests"""
     # Get all requests with filters
@@ -608,6 +590,7 @@ def manage_requests(request):
     return render(request, 'main/manage_requests.html', context)
 
 
+@policy_required('admin.manage')
 def manage_municipalities(request):
     """Admin view for managing municipality applications"""
     municipalities = Municipality.objects.filter(status='pending').order_by('-created_at')
@@ -620,26 +603,9 @@ def manage_municipalities(request):
             municipality = Municipality.objects.get(id=municipality_id)
             
             if action == 'approve':
-                municipality.status = 'active'
-                municipality.verified_at = timezone.now()
-                municipality.verified_by = request.user
-                municipality.save()
-                
-                if municipality.admin_user:
-                    municipality.admin_user.profile.is_verified = True
-                    municipality.admin_user.profile.save()
-                    
-                    if municipality.municipality_type == 'shahrdari':
-                        municipality.admin_user.profile.role = 'dehyari'
-                    else:
-                        municipality.admin_user.profile.role = 'dehyari'
-                    municipality.admin_user.profile.save()
-                    
-                    municipality.admin_user.is_active = True
-                    municipality.admin_user.save()
-                
+                municipality_approval.approve(municipality, request.user)
                 messages.success(request, f'{municipality.name} تایید شد و به اطلاعات جغرافیایی اضافه گردید. مدیر می‌تواند وارد پنل مدیریت شود.')
-                
+
             elif action == 'reject':
                 municipality.status = 'rejected'
                 municipality.save()
@@ -656,6 +622,7 @@ def manage_municipalities(request):
     return render(request, 'main/manage_municipalities.html', {'municipalities': municipalities})
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_users_list(request):
     """API endpoint for admin to get users list with search, filter, pagination"""
     try:
@@ -665,7 +632,7 @@ def admin_api_users_list(request):
         page = int(request.GET.get('page', 1))
         per_page = int(request.GET.get('per_page', 20))
         
-        users = UserProfile.objects.all()
+        users = UserProfile.objects.filter(deleted_at__isnull=True)
         
         if search:
             users = users.filter(
@@ -715,6 +682,7 @@ def admin_api_users_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_user_change_role(request, user_id):
     """API endpoint to change user role"""
     import json
@@ -731,7 +699,9 @@ def admin_api_user_change_role(request, user_id):
         
         user_profile.role = new_role
         user_profile.save()
-        
+        if new_role == 'dehyari':
+            municipality_approval.make_dehyari(user_profile)   # one dehyari per place, linked to its municipality
+
         Notification.objects.create(
             user=user_profile.user,
             notification_type='system',
@@ -748,6 +718,7 @@ def admin_api_user_change_role(request, user_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_user_toggle_active(request, user_id):
     """API endpoint to activate/deactivate user"""
     try:
@@ -776,6 +747,7 @@ def admin_api_user_toggle_active(request, user_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_municipalities_list(request):
     """API endpoint to get municipalities list"""
     try:
@@ -814,6 +786,7 @@ def admin_api_municipalities_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_municipality_action(request, municipality_id):
     """API endpoint to approve/reject municipality"""
     import json
@@ -830,25 +803,7 @@ def admin_api_municipality_action(request, municipality_id):
             action = request.POST.get('action')
 
         if action == 'approve':
-            municipality.status = 'active'
-            municipality.verified_at = timezone.now()
-            municipality.verified_by = request.user
-            municipality.save()
-
-            if municipality.admin_user:
-                municipality.admin_user.profile.is_verified = True
-                municipality.admin_user.profile.role = 'dehyari'
-                municipality.admin_user.profile.save()
-                municipality.admin_user.is_active = True
-                municipality.admin_user.save()
-
-                Notification.objects.create(
-                    user=municipality.admin_user,
-                    notification_type='request_status',
-                    title='شهرداری/دهیاری تایید شد',
-                    message=f'شهرداری/دهیاری {municipality.name} تایید شد.'
-                )
-
+            municipality_approval.approve(municipality, request.user)
             return JsonResponse({
                 'success': True,
                 'message': f'درخواست «{municipality.name}» با موفقیت تایید و فعال گردید.'
@@ -884,6 +839,7 @@ def admin_api_municipality_action(request, municipality_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_services_list(request):
     """API endpoint to get services list"""
     try:
@@ -908,6 +864,7 @@ def admin_api_services_list(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_toggle_active(request, service_id):
     """API endpoint to toggle service active status"""
     try:
@@ -926,6 +883,7 @@ def admin_api_service_toggle_active(request, service_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_create(request):
     """API endpoint to create a new service"""
     import json
@@ -953,6 +911,7 @@ def admin_api_service_create(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_update(request, service_id):
     """API endpoint to update a service"""
     import json
@@ -976,6 +935,7 @@ def admin_api_service_update(request, service_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_service_delete(request, service_id):
     """API endpoint to delete a service"""
     try:
@@ -991,6 +951,7 @@ def admin_api_service_delete(request, service_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_reports_chart_data(request):
     """API endpoint to get chart data for reports"""
     from datetime import datetime, timedelta
@@ -1065,6 +1026,7 @@ def admin_api_reports_chart_data(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_reports_export_excel(request):
     """API endpoint to export reports to Excel"""
     from openpyxl import Workbook
@@ -1083,7 +1045,7 @@ def admin_api_reports_export_excel(request):
         if report_type == 'users':
             ws.title = 'گزارش کاربران'
             headers = ['ردیف', 'نام کامل', 'کد ملی', 'موبایل', 'نقش', 'وضعیت', 'تاریخ ثبت‌نام']
-            users = UserProfile.objects.all().order_by('-created_at')
+            users = UserProfile.objects.filter(deleted_at__isnull=True).order_by('-created_at')
             
             header_fill = PatternFill(start_color='0284c7', end_color='0284c7', fill_type='solid')
             header_font = Font(bold=True, color='FFFFFF', size=12)
@@ -1143,6 +1105,7 @@ def admin_api_reports_export_excel(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_system_settings(request):
     """API endpoint to get system settings"""
     try:
@@ -1164,6 +1127,7 @@ def admin_api_system_settings(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 def admin_api_update_system_settings(request):
     """API endpoint to update system settings"""
     import json
@@ -1186,6 +1150,7 @@ def municipality_history(request, municipality_id):
     return render(request, 'main/admin/municipality_history.html', {'municipality': municipality})
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_approve_property_ad(request, ad_id):
     """API to approve a property advertisement"""
@@ -1213,6 +1178,7 @@ def api_approve_property_ad(request, ad_id):
     return redirect('main:admin_dashboard')
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_reject_property_ad(request, ad_id):
     """API to reject a property advertisement"""
@@ -1238,6 +1204,7 @@ def api_reject_property_ad(request, ad_id):
     return redirect('main:admin_dashboard')
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_delete_property_ad(request, ad_id):
     """API to delete a property advertisement"""
@@ -1253,6 +1220,7 @@ def api_delete_property_ad(request, ad_id):
     return redirect('main:admin_dashboard')
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_get_property_ad_detail(request, ad_id):
     """API to get full details and images of an ad for admin modal"""
@@ -1307,6 +1275,7 @@ def api_get_property_ad_detail(request, ad_id):
     return JsonResponse({'success': True, 'data': data})
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_approve_ad_edit(request, edit_id):
     """API to approve a property ad edit request"""
@@ -1331,6 +1300,7 @@ def api_approve_ad_edit(request, edit_id):
     return JsonResponse({'success': False, 'message': 'خطا در اعمال تغییرات ویرایش.'}, status=400)
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_reject_ad_edit(request, edit_id):
     """API to reject a property ad edit request"""
@@ -1353,6 +1323,7 @@ def api_reject_ad_edit(request, edit_id):
     return JsonResponse({'success': True, 'message': 'درخواست ویرایش رد شد.'})
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 @require_http_methods(["POST"])
 def api_toggle_user_access(request, user_id):
@@ -1397,6 +1368,7 @@ def api_toggle_user_access(request, user_id):
         return JsonResponse({'success': False, 'message': f'خطا: {str(e)}'}, status=500)
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 def api_users_monitoring_stats(request):
     """API endpoint to fetch live user monitoring statistics and statuses"""
@@ -1410,7 +1382,7 @@ def api_users_monitoring_stats(request):
     blocked_count = 0
     users_status_list = []
 
-    profiles = UserProfile.objects.select_related('user').all()
+    profiles = UserProfile.objects.select_related('user').filter(deleted_at__isnull=True)
     for prof in profiles:
         u = prof.user
         last_seen = cache.get(f'user_last_seen_{u.id}')
@@ -1441,6 +1413,7 @@ def api_users_monitoring_stats(request):
     })
 
 
+@policy_required('admin.manage', api=True)
 @login_required
 @require_http_methods(["POST"])
 def api_delete_user(request, user_id):
@@ -1456,12 +1429,8 @@ def api_delete_user(request, user_id):
         if user_target.is_superuser:
             return JsonResponse({'success': False, 'message': 'امکان حذف کاربر با دسترسی مدیر ارشد (Superuser) وجود ندارد.'}, status=400)
 
-        from django.core.cache import cache
         user_name = user_target.get_full_name() or user_target.username
-        cache.delete(f'user_last_seen_{user_target.id}')
-
-        # Cascade deletes UserProfile, etc.
-        user_target.delete()
+        soft_delete_user(user_target)   # keeps the person's requests, payments and messages
 
         return JsonResponse({
             'success': True,

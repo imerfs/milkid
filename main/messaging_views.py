@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
@@ -16,8 +17,9 @@ import json
 
 from .models import (
     UserProfile, Conversation, Message, MessageRecipient, 
-    Notification, ServiceRequest, Announcement
+    Notification, ServiceRequest, Announcement, ConversationState
 )
+from django.http import HttpResponse
 
 def role_required(allowed_roles):
     """Decorator for role-based access control"""
@@ -37,6 +39,16 @@ def role_required(allowed_roles):
             return view_func(request, *args, **kwargs)
         return _wrapped_view
     return decorator
+
+
+def announcements_for(role):
+    """Active announcements addressed to ``role`` or to everyone.
+
+    Filtered in Python on purpose: JSONField ``contains`` is not supported by SQLite
+    (it raised NotSupportedError on every messaging page)."""
+    ids = [a.id for a in Announcement.objects.filter(is_active=True).only('id', 'target_roles')
+           if not a.target_roles or role in a.target_roles]
+    return Announcement.objects.filter(id__in=ids)
 
 @login_required
 def messaging_dashboard(request):
@@ -61,12 +73,7 @@ def messaging_dashboard(request):
     ).select_related('sender', 'conversation').order_by('-created_at')[:5]
     
     # اطلاعیه‌های عمومی
-    announcements = Announcement.objects.filter(
-        Q(target_roles__contains=[user_profile.role]) | 
-        Q(target_roles=[]) |
-        Q(target_roles__isnull=True),
-        is_active=True
-    ).order_by('-created_at')[:5]
+    announcements = announcements_for(user_profile.role).order_by('-created_at')[:5]
     
     # آمار پیام‌رسانی
     stats = {
@@ -99,6 +106,15 @@ def conversation_list(request):
                           filter=Q(messages__recipients__recipient=request.user, 
                                   messages__recipients__is_read=False))
     ).order_by('-updated_at')
+
+    show_archived = request.GET.get('archived') == '1'
+    archived_ids = ConversationState.objects.filter(
+        user=request.user, is_archived=True
+    ).values_list('conversation_id', flat=True)
+    if show_archived:
+        conversations = conversations.filter(id__in=archived_ids)
+    else:
+        conversations = conversations.exclude(id__in=archived_ids)
     
     # جستجو
     search_query = request.GET.get('search', '')
@@ -116,6 +132,7 @@ def conversation_list(request):
     context = {
         'conversations': conversations_page,
         'search_query': search_query,
+        'show_archived': show_archived,
     }
     
     return render(request, 'main/messaging/conversation_list.html', context)
@@ -151,6 +168,9 @@ def conversation_detail(request, conversation_id):
             )
             
             # ایجاد MessageRecipient برای سایر شرکت‌کنندگان
+            muted_ids = set(ConversationState.objects.filter(
+                conversation=conversation, is_muted=True
+            ).values_list('user_id', flat=True))
             for participant in conversation.participants.exclude(id=request.user.id):
                 MessageRecipient.objects.create(
                     message=new_message,
@@ -158,6 +178,8 @@ def conversation_detail(request, conversation_id):
                     is_read=False
                 )
                 
+                if participant.id in muted_ids:
+                    continue
                 # ایجاد نوتیفیکیشن
                 Notification.objects.create(
                     user=participant,
@@ -174,8 +196,10 @@ def conversation_detail(request, conversation_id):
             messages.success(request, 'پیام شما ارسال شد.')
             return redirect('main:conversation_detail', conversation_id=conversation.id)
     
+    state = ConversationState.objects.filter(conversation=conversation, user=request.user).first()
     context = {
         'conversation': conversation,
+        'is_muted': bool(state and state.is_muted),
         'messages': messages_list,
         'participants': conversation.participants.exclude(id=request.user.id),
     }
@@ -369,12 +393,7 @@ def announcement_list(request):
     user_profile = request.user.profile
     
     # اطلاعیه‌های مربوط به کاربر
-    announcements = Announcement.objects.filter(
-        Q(target_roles__contains=[user_profile.role]) | 
-        Q(target_roles=[]) |
-        Q(target_roles__isnull=True),
-        is_active=True
-    ).order_by('-created_at')
+    announcements = announcements_for(user_profile.role).order_by('-created_at')
     
     # فیلتر اولویت
     priority_filter = request.GET.get('priority')
@@ -405,11 +424,118 @@ def announcement_detail(request, announcement_id):
         messages.error(request, 'شما دسترسی لازم برای مشاهده این اطلاعیه را ندارید.')
         return redirect('main:announcement_list')
     
+    related = announcements_for(user_profile.role).exclude(id=announcement.id)
+    related = related.order_by('-created_at')[:5]
+
     context = {
         'announcement': announcement,
+        'related_announcements': related,
+        'can_manage': _can_manage_announcement(request.user, announcement),
     }
     
     return render(request, 'main/messaging/announcement_detail.html', context)
+
+def _can_manage_announcement(user, announcement):
+    return announcement.created_by_id == user.id or user.profile.role == 'admin'
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def announcement_edit(request, announcement_id):
+    """ویرایش اطلاعیه (سازنده یا مدیر)"""
+    announcement = get_object_or_404(Announcement, id=announcement_id, is_active=True)
+    if not _can_manage_announcement(request.user, announcement):
+        messages.error(request, 'شما اجازه ویرایش این اطلاعیه را ندارید.')
+        return redirect('main:announcement_detail', announcement_id=announcement.id)
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        content = request.POST.get('content', '').strip()
+        priority = request.POST.get('priority', announcement.priority)
+        if not title or not content:
+            messages.error(request, 'لطفاً عنوان و متن اطلاعیه را وارد کنید.')
+        elif priority not in dict(Announcement.PRIORITY_CHOICES):
+            messages.error(request, 'اولویت نامعتبر است.')
+        else:
+            announcement.title = title
+            announcement.content = content
+            announcement.priority = priority
+            announcement.target_roles = request.POST.getlist('target_roles')
+            announcement.expires_at = request.POST.get('expires_at') or None
+            announcement.save()
+            messages.success(request, 'اطلاعیه ویرایش شد.')
+            return redirect('main:announcement_detail', announcement_id=announcement.id)
+
+    return render(request, 'main/messaging/edit_announcement.html', {
+        'announcement': announcement,
+        'role_choices': UserProfile.USER_ROLES,
+        'expires_value': announcement.expires_at.strftime('%Y-%m-%dT%H:%M') if announcement.expires_at else '',
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def announcement_delete(request, announcement_id):
+    """حذف اطلاعیه (غیرفعال‌سازی؛ سازنده یا مدیر)"""
+    announcement = get_object_or_404(Announcement, id=announcement_id, is_active=True)
+    if not _can_manage_announcement(request.user, announcement):
+        return JsonResponse({'success': False, 'error': 'دسترسی ندارید'}, status=403)
+    announcement.is_active = False
+    announcement.save(update_fields=['is_active'])
+    return JsonResponse({'success': True, 'redirect': reverse('main:announcement_list')})
+
+
+def _own_conversation(request, conversation_id):
+    return get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+
+
+def _toggle_state(request, conversation_id, field):
+    conversation = _own_conversation(request, conversation_id)
+    state, _ = ConversationState.objects.get_or_create(conversation=conversation, user=request.user)
+    setattr(state, field, not getattr(state, field))
+    state.save(update_fields=[field])
+    return JsonResponse({'success': True, field: getattr(state, field)})
+
+
+@login_required
+@require_http_methods(["POST"])
+def conversation_mute(request, conversation_id):
+    """بی‌صدا/فعال کردن اعلان‌های مکالمه"""
+    return _toggle_state(request, conversation_id, 'is_muted')
+
+
+@login_required
+@require_http_methods(["POST"])
+def conversation_archive(request, conversation_id):
+    """بایگانی/خروج از بایگانی مکالمه"""
+    return _toggle_state(request, conversation_id, 'is_archived')
+
+
+@login_required
+@require_http_methods(["POST"])
+def conversation_leave(request, conversation_id):
+    """ترک مکالمه"""
+    conversation = _own_conversation(request, conversation_id)
+    conversation.participants.remove(request.user)
+    ConversationState.objects.filter(conversation=conversation, user=request.user).delete()
+    return JsonResponse({'success': True, 'redirect': reverse('main:conversation_list')})
+
+
+@login_required
+@require_http_methods(["GET"])
+def conversation_export(request, conversation_id):
+    """دانلود مکالمه به صورت فایل متنی"""
+    conversation = _own_conversation(request, conversation_id)
+    lines = [f'موضوع: {conversation.subject}', '=' * 40]
+    for m in conversation.messages.select_related('sender').order_by('created_at'):
+        stamp = timezone.localtime(m.created_at).strftime('%Y-%m-%d %H:%M')
+        lines.append(f'[{stamp}] {m.sender.get_full_name() or m.sender.username}:')
+        lines.append(m.body)
+        lines.append('')
+    response = HttpResponse('\n'.join(lines), content_type='text/plain; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="conversation-{conversation.id}.txt"'
+    return response
+
 
 # API Endpoints برای AJAX
 

@@ -123,38 +123,6 @@
     });
 
     // ============================================
-    // Back to Top Button
-    // ============================================
-    const BackToTop = {
-        button: null,
-
-        init: function() {
-            this.button = document.createElement('button');
-            this.button.id = 'backToTop';
-            this.button.innerHTML = '<i class="fas fa-arrow-up"></i>';
-            this.button.setAttribute('aria-label', 'بازگشت به بالا');
-            document.body.appendChild(this.button);
-
-            this.button.addEventListener('click', () => {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            });
-
-            window.addEventListener('scroll', () => this.toggle());
-        },
-
-        toggle: function() {
-            if (window.pageYOffset > 300) {
-                this.button.classList.add('show');
-            } else {
-                this.button.classList.remove('show');
-            }
-        }
-    };
-
-    // ============================================
     // Confirmation Dialogs
     // ============================================
     document.addEventListener('click', function(e) {
@@ -284,6 +252,7 @@
                     if (!preview) {
                         preview = document.createElement('img');
                         preview.id = `preview-${input.id}`;
+                        preview.alt = 'پیش‌نمایش فایل انتخاب‌شده';
                         preview.className = 'img-thumbnail mt-2';
                         preview.style.maxHeight = '200px';
                         input.parentNode.appendChild(preview);
@@ -325,7 +294,6 @@
     // Initialize All
     // ============================================
     document.addEventListener('DOMContentLoaded', function() {
-        BackToTop.init();
         AjaxForm.init();
     });
 

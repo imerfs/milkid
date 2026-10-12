@@ -9,9 +9,15 @@ from .property_views import *
 from .request_views import *
 from .misc_views import *
 from .dehyari_expert_views import *
+from .office_views import *
+from .letter_views import *
+from .appointment_views import *
+from .monitoring_views import *
 
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
     start_conversation, create_announcement, announcement_list, 
-    announcement_detail, api_unread_count, api_send_quick_message
+    announcement_detail, api_unread_count, api_send_quick_message,
+    announcement_edit, announcement_delete, conversation_mute,
+    conversation_archive, conversation_leave, conversation_export
 )

@@ -6,7 +6,7 @@
 {% block extra_css %}
 <style>
     .announcement-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
         color: white;
         border-radius: 15px 15px 0 0;
     }
@@ -21,7 +21,7 @@
     .meta-info {
         background: #f8f9fa;
         border-radius: 10px;
-        border-right: 4px solid #667eea;
+        border-right: 4px solid #1e40af;
     }
     .share-buttons .btn {
         margin: 2px;
@@ -139,7 +139,7 @@
                         </div>
                         
                         <div>
-                            {% if announcement.created_by == user %}
+                            {% if can_manage %}
                             <button class="btn btn-warning btn-sm me-2" onclick="editAnnouncement()">
                                 <i class="fas fa-edit me-1"></i>
                                 ویرایش
@@ -197,11 +197,17 @@
                     </h6>
                 </div>
                 <div class="card-body p-0">
-                    <!-- TODO: نمایش اطلاعیه‌های مرتبط -->
+                    {% for item in related_announcements %}
+                    <a href="{% url 'main:announcement_detail' item.id %}" class="d-block p-3 border-bottom text-decoration-none">
+                        <div class="fw-bold text-dark">{{ item.title }}</div>
+                        <div class="small text-muted">{{ item.created_at|date:"Y/m/d" }} · {{ item.get_priority_display }}</div>
+                    </a>
+                    {% empty %}
                     <div class="p-3 text-center text-muted">
                         <i class="fas fa-bullhorn fa-2x mb-2"></i>
-                        <p class="small">اطلاعیه‌های مرتبط در نسخه بعدی نمایش داده خواهد شد</p>
+                        <p class="small">اطلاعیه دیگری وجود ندارد</p>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
             
@@ -283,8 +289,7 @@ function copyLink() {
 
 // ویرایش اطلاعیه
 function editAnnouncement() {
-    // TODO: پیاده‌سازی ویرایش
-    alert('ویرایش اطلاعیه در نسخه بعدی پیاده‌سازی خواهد شد');
+    window.location.href = '{% url "main:announcement_edit" announcement.id %}';
 }
 
 // حذف اطلاعیه
@@ -293,8 +298,15 @@ function deleteAnnouncement() {
 }
 
 function confirmDelete() {
-    // TODO: ارسال درخواست حذف
-    alert('حذف اطلاعیه در نسخه بعدی پیاده‌سازی خواهد شد');
+    fetch('{% url "main:announcement_delete" announcement.id %}', {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { window.location.href = data.redirect; } else { alert('خطا در حذف اطلاعیه'); }
+    })
+    .catch(() => alert('خطا در ارتباط با سرور'));
 }
 
 // شروع گفتگو

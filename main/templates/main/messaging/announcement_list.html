@@ -22,7 +22,7 @@
         background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
     }
     .priority-medium {
-        border-right-color: #10b981;
+        border-right-color: #16a34a;
         background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
     }
     .priority-low {
@@ -30,7 +30,7 @@
         background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
     }
     .filter-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
         color: white;
     }
 </style>
@@ -290,8 +290,7 @@
 let deleteAnnouncementId = null;
 
 function editAnnouncement(id) {
-    // TODO: پیاده‌سازی ویرایش اطلاعیه
-    alert('ویرایش اطلاعیه در نسخه بعدی پیاده‌سازی خواهد شد');
+    window.location.href = `/messaging/announcements/${id}/edit/`;
 }
 
 function deleteAnnouncement(id) {
@@ -301,13 +300,9 @@ function deleteAnnouncement(id) {
 
 document.getElementById('confirmDelete').addEventListener('click', function() {
     if (deleteAnnouncementId) {
-        // TODO: ارسال درخواست حذف به سرور
-        fetch(`/api/announcements/${deleteAnnouncementId}/delete/`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            }
+        fetch(`/messaging/announcements/${deleteAnnouncementId}/delete/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
         })
         .then(response => response.json())
         .then(data => {

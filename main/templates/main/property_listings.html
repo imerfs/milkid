@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -6,18 +7,17 @@
     <title>نمایش آگهی‌های ملک - ملک آیدی</title>
     
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Persian Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+    
+    
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
     
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
     
     <style>
         * {
@@ -310,7 +310,7 @@
             top: 10px;
             left: -30px;
             transform: rotate(-45deg);
-            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            background: linear-gradient(45deg, #3b82f6, #a855f7);
             color: white;
             padding: 5px 40px;
             font-size: 0.7rem;
@@ -858,8 +858,13 @@
             font-size: 0.875rem;
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <script src="{% static 'vendor/htmx/htmx.min.js' %}" defer></script>
+    <style>#ads-results.htmx-request { opacity: .55; transition: opacity .15s; }</style>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-slate-100 min-h-screen mk-tw">
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -874,7 +879,7 @@
                 </div>
                 
                 <div class="hidden md:flex items-center flex-1 max-w-2xl mx-8">
-                    <form method="get" class="relative w-full autocomplete-container">
+                    <form method="get" class="relative w-full autocomplete-container" hx-boost="true" hx-target="#ads-results" hx-select="#ads-results" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#ads-results">
                         <input 
                             type="text" 
                             name="query"
@@ -916,7 +921,7 @@
         
         <!-- Mobile Search Bar -->
         <div class="md:hidden bg-gray-50 border-t border-gray-200 px-4 py-3 hidden" id="mobile-search">
-            <form method="get" class="relative">
+            <form method="get" class="relative" hx-boost="true" hx-target="#ads-results" hx-select="#ads-results" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#ads-results">
                 <input 
                     type="text" 
                     name="query"
@@ -930,6 +935,8 @@
             </form>
         </div>
     </header>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">{% include 'partials/breadcrumbs.html' %}</div>
+
     
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -959,7 +966,7 @@
                     </div>
                     {% endif %}
                     
-                    <form method="get" class="space-y-6">
+                    <form method="get" class="space-y-6" hx-boost="true" hx-target="#ads-results" hx-select="#ads-results" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#ads-results">
                         
                         <!-- Location Hierarchy -->
                         <div class="location-hierarchy">
@@ -1206,7 +1213,7 @@
             </aside>
             
             <!-- Main Content Area -->
-            <div class="lg:w-3/4">
+            <div class="lg:w-3/4" id="ads-results" hx-boost="true" hx-target="#ads-results" hx-select="#ads-results" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#ads-results">
                 <!-- Results Header -->
                 <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

@@ -1,0 +1,71 @@
+# MelkID: web (gunicorn) + PostgreSQL + nginx.
+#   cp .env.docker.example .env && edit it
+#   docker compose up -d --build
+# Optional uptime monitor on 127.0.0.1:3001:  docker compose --profile monitoring up -d
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-melkid}
+      POSTGRES_USER: ${PGUSER:-melkid}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?set PGPASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      USE_POSTGRES: "True"
+      PGHOST: db
+      PGPORT: "5432"
+      PGSSLMODE: disable          # private Docker network; the database is not exposed
+      LOG_FORMAT: json
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - static:/app/staticfiles
+      - media:/app/media
+      - ./backups:/app/backups
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-H", "Host: localhost", "http://127.0.0.1:8000/healthz/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static:/srv/static:ro
+      - media:/srv/media:ro
+
+  uptime:
+    image: louislam/uptime-kuma:1
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"     # reach it through an SSH tunnel, never the open internet
+    volumes:
+      - kuma:/app/data
+
+volumes:
+  pgdata:
+  static:
+  media:
+  kuma:

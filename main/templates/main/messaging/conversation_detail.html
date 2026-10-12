@@ -6,7 +6,7 @@
 {% block extra_css %}
 <style>
     .conversation-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
         color: white;
         border-radius: 15px 15px 0 0;
     }
@@ -19,7 +19,7 @@
         margin-left: auto;
     }
     .message-bubble.own .message-content {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
         color: white;
     }
     .message-bubble.other .message-content {
@@ -299,7 +299,7 @@
                         <hr>
                         <button class="btn btn-outline-warning btn-sm" onclick="muteConversation()">
                             <i class="fas fa-bell-slash me-1"></i>
-                            بی‌صدا کردن
+                            {% if is_muted %}فعال کردن اعلان{% else %}بی‌صدا کردن{% endif %}
                         </button>
                         <button class="btn btn-outline-danger btn-sm" onclick="leaveConversation()">
                             <i class="fas fa-sign-out-alt me-1"></i>
@@ -376,9 +376,17 @@ document.getElementById('replyForm').addEventListener('submit', function(e) {
 });
 
 // عملیات سریع
+function postAction(url, onDone) {
+    fetch(url, {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { onDone(data); } else { alert('خطا: ' + (data.error || '')); }
+        })
+        .catch(() => alert('خطا در ارتباط با سرور'));
+}
+
 function exportConversation() {
-    // TODO: پیاده‌سازی دانلود مکالمه
-    alert('دانلود مکالمه در نسخه بعدی پیاده‌سازی خواهد شد');
+    window.location.href = '{% url "main:conversation_export" conversation.id %}';
 }
 
 function printConversation() {
@@ -399,14 +407,14 @@ function shareConversation() {
 }
 
 function muteConversation() {
-    // TODO: پیاده‌سازی بی‌صدا کردن
-    alert('بی‌صدا کردن مکالمه در نسخه بعدی پیاده‌سازی خواهد شد');
+    postAction('{% url "main:conversation_mute" conversation.id %}', () => location.reload());
 }
 
 function leaveConversation() {
     if (confirm('آیا مطمئن هستید که می‌خواهید این مکالمه را ترک کنید؟')) {
-        // TODO: پیاده‌سازی ترک مکالمه
-        alert('ترک مکالمه در نسخه بعدی پیاده‌سازی خواهد شد');
+        postAction('{% url "main:conversation_leave" conversation.id %}', data => {
+            window.location.href = data.redirect;
+        });
     }
 }
 

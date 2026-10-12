@@ -27,12 +27,13 @@ from main.forms import (ContactForm, CustomUserCreationForm, CitizenRegistration
                    ServiceRequestForm, ProfileUpdateForm, DocumentUploadForm, ServiceWizardStepForm,
                    MunicipalityRegistrationForm, PropertyRegistrationForm, PropertySearchForm, ConstructionPermitForm,
                    PropertyAdvertisementForm)
-from main.models import (UserProfile, ServiceRequest, Notification, RequestDocument, Service, ServiceStep, Property, Municipality,
+from main.models import (PropertyImage, UserProfile, ServiceRequest, Notification, RequestDocument, Service, ServiceStep, Property, Municipality,
                    PropertyAdvertisement, AutoCADFile, PropertyData, Payment, Conversation, Message, MessageRecipient,
                    ViolationReport, Inspection, InspectionDocument, TechnicalReport, Province, County, District, CityVillage,
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
 
 
+@login_required
 def owner_dashboard(request):
     """Dashboard for property owners and residents"""
     user_profile = request.user.profile
@@ -102,7 +103,7 @@ def property_listings(request):
             ads = PropertyAdvertisement.objects.filter(status=status_filter).order_by('-created_at')
 
     # Search query
-    search_query = request.GET.get('search') or request.GET.get('q', '')
+    search_query = request.GET.get('search') or request.GET.get('q') or request.GET.get('query', '')
     if search_query:
         search_query = search_query.strip()
         ads = ads.filter(
@@ -227,10 +228,22 @@ def property_listings(request):
     return render(request, 'main/property_listings.html', context)
 
 
+def _may_see_unapproved(user, ad):
+    """Only the owner and administrators may read an advertisement that is not approved."""
+    if not user.is_authenticated:
+        return False
+    if user == ad.user or user.is_staff or user.is_superuser:
+        return True
+    profile = getattr(user, 'profile', None)
+    return bool(profile and profile.role == 'admin')
+
+
 def property_detail(request, property_id):
     """View property details (supports PropertyAdvertisement and legacy Property)"""
     ad = PropertyAdvertisement.objects.filter(id=property_id).first()
     if ad:
+        if ad.status != 'approved' and not _may_see_unapproved(request.user, ad):
+            raise Http404
         context = {
             'property': ad,
             'ad': ad,
@@ -245,6 +258,7 @@ def property_detail(request, property_id):
     return render(request, 'main/property_detail.html', context)
 
 
+@login_required
 def register_property(request):
     """Register new property"""
     if request.method == 'POST':
@@ -263,6 +277,7 @@ def register_property(request):
     return render(request, 'main/register_property.html', context)
 
 
+@login_required
 def property_advertisement_form(request):
     """Property advertisement submission"""
     if request.method == 'POST':
@@ -334,6 +349,7 @@ def property_advertisement_step2(request):
     return render(request, 'main/services/property-advertisement/step2.html')
 
 
+@login_required
 def my_property_ads(request):
     """User's property advertisements"""
     user_ads = PropertyAdvertisement.objects.filter(user=request.user).order_by('-created_at')
@@ -356,6 +372,7 @@ def my_property_ads(request):
     return render(request, 'main/my_property_ads.html', context)
 
 
+@login_required
 def edit_property_ad(request, ad_id):
     """Edit property advertisement"""
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id, user=request.user)
@@ -430,6 +447,11 @@ def edit_property_ad(request, ad_id):
 def view_property_ad(request, ad_id):
     """View property advertisement"""
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
+    # Only approved ads are public; owners and staff may preview their own/pending ones.
+    if ad.status != 'approved':
+        user = request.user
+        if not (user.is_authenticated and (ad.user_id == user.id or user.is_staff)):
+            raise Http404
 
     context = {
         'ad': ad,

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -6,54 +7,15 @@
     <title>پنل مدیریت شهردار - ملک آیدی</title>
     
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     
     <!-- Google Fonts: Vazirmatn -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <script>
-        // Customizing Tailwind theme
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'vazir': ['Vazirmatn', 'sans-serif']
-                    },
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
-                            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
-                            800: '#075985', 900: '#0c4a6e'
-                        },
-                        accent: {
-                            50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
-                            400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
-                            800: '#5b21b6', 900: '#4c1d95'
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(10px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+    
     <style>
         body {
             font-family: 'Vazirmatn', sans-serif;
@@ -314,12 +276,12 @@
         }
         
         .btn-success {
-            background-color: #10b981;
+            background-color: #16a34a;
             color: white;
         }
         
         .btn-success:hover {
-            background-color: #059669;
+            background-color: #15803d;
         }
         
         .btn-danger {
@@ -367,8 +329,8 @@
             border-radius: 50%;
             background: conic-gradient(
                 #0284c7 0% 30%,
-                #8b5cf6 30% 60%,
-                #10b981 60% 85%,
+                #3b82f6 30% 60%,
+                #16a34a 60% 85%,
                 #f59e0b 85% 100%
             );
             margin: 0 auto;
@@ -408,8 +370,11 @@
             margin-left: 5px;
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="font-vazir bg-slate-100 text-gray-800">
+<body class="font-vazir bg-slate-100 text-gray-800 mk-tw">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-white shadow-lg z-10">
@@ -440,13 +405,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="employees">
+                        <a href="{% url 'main:role_grants' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="employees" data-real-link>
                             <i class="fas fa-users ml-3 w-5"></i>
                             <span>کارمندان</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="requests">
+                        <a href="{% url 'main:mayor_requests_list' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="requests" data-real-link>
                             <i class="fas fa-file-alt ml-3 w-5"></i>
                             <span>درخواست‌ها</span>
                         </a>
@@ -476,13 +441,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="announcements">
+                        <a href="{% url 'main:announcement_list' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="announcements" data-real-link>
                             <i class="fas fa-bullhorn ml-3 w-5"></i>
                             <span>اطلاعیه‌ها</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="profile">
+                        <a href="{% url 'main:user_profile' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="profile" data-real-link>
                             <i class="fas fa-user ml-3 w-5"></i>
                             <span>پروفایل</span>
                         </a>
@@ -755,15 +720,15 @@
                                     <h3 class="text-xl font-semibold text-gray-800">اقدامات سریع</h3>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
-                                    <button class="bg-blue-100 hover:bg-blue-200 text-blue-700 p-4 rounded-xl flex flex-col items-center transition-colors">
+                                    <button class="bg-blue-100 hover:bg-blue-200 text-blue-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:role_grants' %}'">
                                         <i class="fas fa-user-plus text-2xl mb-2"></i>
                                         <span class="text-sm">اضافه کردن کارمند</span>
                                     </button>
-                                    <button class="bg-purple-100 hover:bg-purple-200 text-purple-700 p-4 rounded-xl flex flex-col items-center transition-colors">
+                                    <button class="bg-purple-100 hover:bg-purple-200 text-purple-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:create_request' %}'">
                                         <i class="fas fa-file-medical text-2xl mb-2"></i>
                                         <span class="text-sm">ایجاد درخواست</span>
                                     </button>
-                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-4 rounded-xl flex flex-col items-center transition-colors">
+                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:create_announcement' %}'">
                                         <i class="fas fa-bullhorn text-2xl mb-2"></i>
                                         <span class="text-sm">ارسال اطلاعیه</span>
                                     </button>
@@ -836,7 +801,7 @@
                                                 <p class="text-xs text-gray-500 mt-1">۴ ساعت پیش</p>
                                             </div>
                                         </div>
-                                        <button class="text-yellow-600 hover:text-yellow-800 text-sm font-medium">مشاهده پروفایل</button>
+                                        <button class="text-yellow-600 hover:text-yellow-800 text-sm font-medium" onclick="location.href='{% url 'main:user_profile' %}'">مشاهده پروفایل</button>
                                     </div>
                                 </div>
                             </div>
@@ -1091,11 +1056,11 @@
                                         <span>پروانه‌های صادر شده (30%)</span>
                                     </div>
                                     <div class="pie-legend-item">
-                                        <div class="pie-legend-color" style="background-color: #8b5cf6;"></div>
+                                        <div class="pie-legend-color" style="background-color: #3b82f6;"></div>
                                         <span>پایان کارها (30%)</span>
                                     </div>
                                     <div class="pie-legend-item">
-                                        <div class="pie-legend-color" style="background-color: #10b981;"></div>
+                                        <div class="pie-legend-color" style="background-color: #16a34a;"></div>
                                         <span>پایان کار کمیسیون‌ها (25%)</span>
                                     </div>
                                     <div class="pie-legend-item">
@@ -3171,6 +3136,7 @@
             
             sidebarItems.forEach(item => {
                 item.addEventListener('click', function(e) {
+                    if (this.hasAttribute('data-real-link')) return;   // goes to a real page, not an in-page tab
                     e.preventDefault();
                     
                     // Remove active class from all sidebar items
@@ -3371,5 +3337,6 @@
             });
         });
     </script>
+    {% include 'partials/office_dock.html' %}
 </body>
 </html>

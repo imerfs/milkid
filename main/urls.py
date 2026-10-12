@@ -1,10 +1,12 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from . import views, api_views
+from . import views, api_views, geo_cascade
 
 app_name = 'main'
 
 urlpatterns = [
+    # nginx auth_request target guarding /media/ (private uploads need a logged-in session)
+    path('_media-auth/', views.media_auth, name='media_auth'),
     # Main pages
     path('', views.home, name='home'),
     path('about/', views.about, name='about'),
@@ -29,6 +31,9 @@ urlpatterns = [
     path('dashboard/user/', views.user_dashboard, name='user_dashboard'),
     path('dashboard/staff/', views.staff_dashboard, name='staff_dashboard'),
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
+    path('dashboard/admin/monitoring/', views.admin_monitoring, name='admin_monitoring'),
+    path('dashboard/admin/monitoring/letters/<int:letter_id>/', views.admin_monitoring_letter, name='admin_monitoring_letter'),
+    path('dashboard/admin/monitoring/chats/<int:conversation_id>/', views.admin_monitoring_chat, name='admin_monitoring_chat'),
     path('dashboard/council/', views.council_dashboard, name='council_dashboard'),
     path('dashboard/dehyari/', views.dehyari_dashboard, name='dehyari_dashboard'),
     path('dashboard/dehyari-expert/', views.dehyari_expert_dashboard, name='dehyari_expert_dashboard'),
@@ -54,6 +59,24 @@ urlpatterns = [
     path('council/financial/', views.council_financial_reports, name='council_financial_reports'),
     
     # Mayor/Dehyari Dashboard Actions
+    path('letters/', views.letters_inbox, name='letters_inbox'),
+    path('letters/sent/', views.letters_sent, name='letters_sent'),
+    path('letters/drafts/', views.letters_drafts, name='letters_drafts'),
+    path('letters/archive/', views.letters_archive, name='letters_archive'),
+    path('letters/compose/', views.letter_compose, name='letter_compose'),
+    path('letters/attachments/<int:attachment_id>/', views.letter_attachment, name='letter_attachment'),
+    path('letters/<int:letter_id>/', views.letter_detail, name='letter_detail'),
+    path('letters/<int:letter_id>/reply/', views.letter_reply, name='letter_reply'),
+    path('letters/<int:letter_id>/send/', views.letter_send, name='letter_send'),
+    path('letters/<int:letter_id>/archive/', views.letter_archive, name='letter_archive'),
+    path('appointments/', views.appointments, name='appointments'),
+    path('appointments/providers/', views.appointment_providers, name='appointment_providers'),
+    path('appointments/providers/<int:provider_id>/', views.appointment_book, name='appointment_book'),
+    path('appointments/<int:appointment_id>/action/', views.appointment_action, name='appointment_action'),
+    path('appointments/hours/', views.availability, name='availability'),
+    path('mayor/roles/', views.role_grants, name='role_grants'),
+    path('mayor/roles/grant/', views.role_grant, name='role_grant'),
+    path('mayor/roles/<int:user_id>/revoke/', views.role_revoke, name='role_revoke'),
     path('mayor/staff/', views.mayor_staff_list, name='mayor_staff_list'),
     path('mayor/staff/add/', views.mayor_staff_add, name='mayor_staff_add'),
     path('mayor/staff/<int:staff_id>/edit/', views.mayor_staff_edit, name='mayor_staff_edit'),
@@ -176,6 +199,7 @@ urlpatterns = [
     path('municipality-history/', views.municipality_history, name='municipality_history'),
     
     # AJAX Geographic APIs
+    path('geo/options/', geo_cascade.geo_options, name='geo_options'),
     path('api/get-counties/', views.get_counties, name='get_counties'),
     path('api/get-districts/', views.get_districts, name='get_districts'),
     path('api/get-settlements/', views.get_settlements, name='get_settlements'),
@@ -184,9 +208,6 @@ urlpatterns = [
     path('api/districts/<int:county_id>/', views.api_get_districts, name='api_get_districts'),
     path('api/city-villages/<int:district_id>/', views.api_get_city_villages, name='api_get_city_villages'),
     
-    # Test Pages
-    path('test/jalali-dates/', views.test_jalali_dates, name='test_jalali_dates'),
-
     # Property Marketplace
     path('properties/', views.property_marketplace, name='property_marketplace'),
     path('property-listings/', views.property_listings, name='property_listings'),
@@ -237,7 +258,6 @@ urlpatterns = [
     path('api/geo/dehestans/', views.api_get_dehestans, name='api_geo_dehestans'),
     path('api/geo/cities-villages/', views.api_get_city_villages, name='api_geo_cities_villages'),
     path('api/geo/request-city-village/', views.api_request_city_village, name='api_geo_request_city_village'),
-    path('test-geographic/', views.test_geographic, name='test_geographic'),
     
     # Notification System API
     path('api/notifications/', views.api_notifications_list, name='api_notifications_list'),
@@ -253,6 +273,12 @@ urlpatterns = [
     path('messaging/announcements/', views.announcement_list, name='announcement_list'),
     path('messaging/announcements/<int:announcement_id>/', views.announcement_detail, name='announcement_detail'),
     path('messaging/announcements/create/', views.create_announcement, name='create_announcement'),
+    path('messaging/announcements/<int:announcement_id>/edit/', views.announcement_edit, name='announcement_edit'),
+    path('messaging/announcements/<int:announcement_id>/delete/', views.announcement_delete, name='announcement_delete'),
+    path('messaging/conversations/<int:conversation_id>/mute/', views.conversation_mute, name='conversation_mute'),
+    path('messaging/conversations/<int:conversation_id>/archive/', views.conversation_archive, name='conversation_archive'),
+    path('messaging/conversations/<int:conversation_id>/leave/', views.conversation_leave, name='conversation_leave'),
+    path('messaging/conversations/<int:conversation_id>/export/', views.conversation_export, name='conversation_export'),
     
     # Messaging System API
     path('api/messages/', views.api_messages_list, name='api_messages_list'),

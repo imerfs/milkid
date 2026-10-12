@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="fa" dir="rtl">
     <head>
@@ -5,21 +6,14 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>پنل مدیر سیستم - ملک آیدی</title>
 
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet"
-        />
+        <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+        
+        
+        <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
         <!-- Chart.js for interactive charts -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
         <!-- Sortable.js for drag and drop functionality -->
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+        <script src="{% static 'vendor/sortablejs/Sortable.min.js' %}"></script>
 
         <style>
             :root {
@@ -429,49 +423,6 @@
                 background: #94a3b8;
             }
 
-            /* Keyboard shortcuts modal */
-            .shortcuts-modal {
-                display: none;
-                position: fixed;
-                z-index: 1000;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.5);
-                align-items: center;
-                justify-content: center;
-            }
-
-            .shortcuts-modal-content {
-                background-color: white;
-                padding: 30px;
-                border-radius: 12px;
-                width: 80%;
-                max-width: 600px;
-                max-height: 80vh;
-                overflow-y: auto;
-            }
-
-            .dark-mode .shortcuts-modal-content {
-                background-color: var(--dark-card);
-                color: #e2e8f0;
-            }
-
-            .shortcut-key {
-                display: inline-block;
-                background-color: #f3f4f6;
-                padding: 3px 8px;
-                border-radius: 4px;
-                font-family: monospace;
-                font-size: 14px;
-                margin: 0 3px;
-            }
-
-            .dark-mode .shortcut-key {
-                background-color: #475569;
-            }
-
             /* Dashboard widget */
             .dashboard-widget {
                 background-color: white;
@@ -533,7 +484,7 @@
                 width: 10px;
                 height: 10px;
                 border-radius: 50%;
-                background: #10b981;
+                background: #16a34a;
                 position: relative;
             }
             .pulse-online::after {
@@ -544,7 +495,7 @@
                 width: 100%;
                 height: 100%;
                 border-radius: 50%;
-                background: #10b981;
+                background: #16a34a;
                 animation: pulse-ring 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
             }
             @keyframes pulse-ring {
@@ -553,8 +504,11 @@
                 100% { transform: scale(2.5); opacity: 0; }
             }
         </style>
-    </head>
-    <body class="text-gray-800">
+        {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+</head>
+    <body class="text-gray-800 mk-tw">
         <!-- Progress bar -->
         <div class="progress-bar">
             <div class="progress" id="progress-bar"></div>
@@ -663,6 +617,14 @@
                         >
                     </a>
                     <a
+                        href="{% url 'main:admin_monitoring' %}"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-eye ml-3"></i>نظارت بر مکاتبات و گفتگوها
+                        </div>
+                    </a>
+                    <a
                         href="#"
                         class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('reports', this)"
@@ -696,9 +658,6 @@
                                 <span class="slider"></span>
                             </label>
                         </div>
-                        <button onclick="showShortcutsModal()" class="text-gray-600 hover:text-gray-900">
-                            <i class="fas fa-keyboard"></i>
-                        </button>
                     </div>
                 </div>
             </aside>
@@ -2248,56 +2207,6 @@
             </button>
         </div>
 
-        <!-- Keyboard Shortcuts Modal -->
-        <div id="shortcuts-modal" class="shortcuts-modal">
-            <div class="shortcuts-modal-content">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">میانبرهای کیبورد</h3>
-                    <button onclick="closeShortcutsModal()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center py-2 border-b">
-                        <span>رفتن به داشبورد</span>
-                        <div>
-                            <span class="shortcut-key">Alt</span> + <span class="shortcut-key">D</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b">
-                        <span>رفتن به مدیریت کاربران</span>
-                        <div>
-                            <span class="shortcut-key">Alt</span> + <span class="shortcut-key">U</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b">
-                        <span>رفتن به گزارشات</span>
-                        <div>
-                            <span class="shortcut-key">Alt</span> + <span class="shortcut-key">R</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b">
-                        <span>رفتن به تنظیمات</span>
-                        <div>
-                            <span class="shortcut-key">Alt</span> + <span class="shortcut-key">S</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b">
-                        <span>جستجو</span>
-                        <div>
-                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">F</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b">
-                        <span>تغییر حالت تاریک</span>
-                        <div>
-                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">Shift</span> + <span class="shortcut-key">D</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <script>
             // Initialize variables
             let sessionTimer;
@@ -2337,12 +2246,20 @@
                 });
             }
 
+            // A canvas can hold one chart: the report chart is drawn both on load and when its data arrives,
+            // whichever comes second used to throw "Canvas is already in use"
+            function freshChart(canvas, config) {
+                const existing = Chart.getChart(canvas);
+                if (existing) existing.destroy();
+                return new Chart(canvas, config);
+            }
+
             // Initialize charts
             function initializeCharts() {
                 // Monthly Chart
                 const monthlyCtx = document.getElementById('monthlyChart');
                 if (monthlyCtx) {
-                    new Chart(monthlyCtx, {
+                    freshChart(monthlyCtx, {
                         type: 'line',
                         data: {
                             labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
@@ -2397,7 +2314,7 @@
                 // Reports Chart
                 const reportsCtx = document.getElementById('reportsChart');
                 if (reportsCtx) {
-                    new Chart(reportsCtx, {
+                    freshChart(reportsCtx, {
                         type: 'bar',
                         data: {
                             labels: ['فشم', 'لواسان', 'رودهن', 'دیزین', 'میگون'],
@@ -2875,7 +2792,7 @@
                 const ctx = document.getElementById('reportsChart');
                 if (!ctx) return;
                 
-                new Chart(ctx, {
+                freshChart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
@@ -3063,23 +2980,6 @@
                         }, 500);
                     }
                 }, 200);
-            }
-
-            // Shortcuts modal functions
-            function showShortcutsModal() {
-                document.getElementById('shortcuts-modal').style.display = 'flex';
-            }
-
-            function closeShortcutsModal() {
-                document.getElementById('shortcuts-modal').style.display = 'none';
-            }
-
-            // Close modal when clicking outside
-            window.onclick = function(event) {
-                const modal = document.getElementById('shortcuts-modal');
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
             }
 
             // Search functionality
@@ -3359,7 +3259,7 @@
                         let imagesHtml = '';
                         if (ad.images && ad.images.length > 0) {
                             imagesHtml = '<div class="grid grid-cols-3 gap-2 my-3">' + 
-                                ad.images.map(img => `<img src="${img.url}" class="h-24 w-full object-cover rounded-lg border">`).join('') +
+                                ad.images.map(img => `<img src="${img.url}" alt="تصویر آگهی" class="h-24 w-full object-cover rounded-lg border">`).join('') +
                                 '</div>';
                         } else {
                             imagesHtml = '<div class="p-3 bg-gray-50 rounded-lg text-center text-xs text-gray-400">تصویری بارگذاری نشده است</div>';
@@ -3931,5 +3831,6 @@
 
     </script>
 
+    {% include 'partials/office_dock.html' %}
 </body>
 </html>

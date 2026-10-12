@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
@@ -5,17 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>مدیریت آگهی‌های املاک - ملک آیدی</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    />
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+    
+    
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
 
     <style>
         body {
@@ -45,8 +39,11 @@
             display: block;
         }
     </style>
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-<body class="text-gray-800">
+<body class="text-gray-800 mk-tw">
     <div class="min-h-screen p-4">
         <!-- Header -->
         <div class="bg-white p-6 rounded-xl shadow mb-6 flex justify-between items-center">

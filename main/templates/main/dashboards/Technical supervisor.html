@@ -1,27 +1,21 @@
+{% load static %}
 <!doctype html>
 <html lang="fa" dir="rtl">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>پنل پیشرفته ناظر فنی - ملک آیدی</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet"
-        />
+        <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+        
+        
+        <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
         <style>
             body {
                 font-family: "Vazirmatn", sans-serif;
                 background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             }
             .sidebar-link.active {
-                background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+                background: linear-gradient(135deg, #2563eb 0%, #a855f7 100%);
                 color: white;
                 font-weight: bold;
                 box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
@@ -88,8 +82,11 @@
                 height: 300px;
             }
         </style>
-    </head>
-    <body class="text-gray-800">
+        {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+</head>
+    <body class="text-gray-800 mk-tw">
         <!-- Mobile Menu Overlay -->
         <div
             id="mobile-overlay"
@@ -308,7 +305,7 @@
                                     </div>
                                 </div>
                                 <div class="px-4 py-2 border-t text-center">
-                                    <a href="#" class="text-sm text-blue-600 hover:text-blue-800">مشاهده همه پیام‌ها</a>
+                                    <a href="{% url 'main:letters_inbox' %}" class="text-sm text-blue-600 hover:text-blue-800">مشاهده همه پیام‌ها</a>
                                 </div>
                             </div>
                         </div>
@@ -1903,5 +1900,6 @@
                 });
             }
         </script>
-    </body>
+        {% include 'partials/office_dock.html' %}
+</body>
 </html>

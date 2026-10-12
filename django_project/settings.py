@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 
+from django.contrib.messages import constants as message_levels
+
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -39,14 +41,18 @@ if not SECRET_KEY:
 
 # Host configuration for both Replit and local development
 REPLIT_DOMAINS = os.environ.get("REPLIT_DOMAINS", "localhost,127.0.0.1")
-ALLOWED_HOSTS = REPLIT_DOMAINS.split(',') + ['127.0.0.1', 'localhost', '0.0.0.0', 'testserver']
-CSRF_TRUSTED_ORIGINS = [
-    *[f"https://{domain}" for domain in REPLIT_DOMAINS.split(',')],
-    *[f"http://{domain}" for domain in REPLIT_DOMAINS.split(',')],
-    "http://localhost:8000", "http://127.0.0.1:8000", "http://0.0.0.0:8000",
-    "http://localhost:5000", "http://127.0.0.1:5000", "http://0.0.0.0:5000",
-    "https://localhost:5000", "https://127.0.0.1:5000"
-]
+_DEV_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
+ALLOWED_HOSTS = [d.strip() for d in REPLIT_DOMAINS.split(',') if d.strip()] + _DEV_HOSTS
+CSRF_TRUSTED_ORIGINS = [f"https://{d.strip()}" for d in REPLIT_DOMAINS.split(',') if d.strip()]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += [f"http://{d.strip()}" for d in REPLIT_DOMAINS.split(',') if d.strip()] + [
+        "http://localhost:8000", "http://127.0.0.1:8000",
+        "http://localhost:5000", "http://127.0.0.1:5000",
+    ]
+
+# nginx terminates TLS and forwards X-Forwarded-Proto; without this Django would
+# think every request is plain HTTP (redirect loops, insecure cookies, wrong https:// URLs).
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
@@ -57,6 +63,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'main',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -64,14 +71,17 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'main.ratelimit.AuthThrottleMiddleware',  # brute-force / spam throttling
     'main.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'main.upload_guard.UploadValidationMiddleware',  # extension/size/content checks on every upload
     'main.middleware.ActiveUserMiddleware',  # Online user tracking & access control
     'main.middleware.PerformanceMonitoringMiddleware',  # Performance monitoring
     'main.middleware.RequestLoggingMiddleware',  # Security logging
@@ -81,8 +91,8 @@ MIDDLEWARE = [
 
 # Only use clickjacking protection in deployments because the Development Web View uses
 # iframes and needs to be a cross origin.
-# if ("REPLIT_DEPLOYMENT" in os.environ):
-#     MIDDLEWARE.append('django.middleware.clickjacking.XFrameOptionsMiddleware')
+if not DEBUG:
+    MIDDLEWARE.append('django.middleware.clickjacking.XFrameOptionsMiddleware')
 
 ROOT_URLCONF = 'django_project.urls'
 
@@ -97,6 +107,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'main.context_processors.seo',
+                'main.context_processors.office',
             ],
         },
     },
@@ -118,7 +130,7 @@ if os.environ.get('USE_POSTGRES', 'False').lower() == 'true':
             'HOST': os.environ['PGHOST'],
             'PORT': os.environ['PGPORT'],
             'OPTIONS': {
-                'sslmode': 'require',
+                'sslmode': os.environ.get('PGSSLMODE', 'require'),   # 'disable' inside a private Docker network
             },
         }
     }
@@ -168,6 +180,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
@@ -190,7 +203,12 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20
+    'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {'anon': '60/min', 'user': '240/min'},
 }
 
 # JWT Configuration
@@ -203,17 +221,14 @@ SIMPLE_JWT = {
 
 # CORS Configuration (for development)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://localhost:5000",
-    "http://127.0.0.1:5000",
-] + [
-    "https://" + domain for domain in REPLIT_DOMAINS.split(',')
-] + [
-    "http://" + domain for domain in REPLIT_DOMAINS.split(',')
+    "https://" + d.strip() for d in REPLIT_DOMAINS.split(',') if d.strip()
 ]
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000", "http://127.0.0.1:3000",
+        "http://localhost:8000", "http://127.0.0.1:8000",
+        "http://localhost:5000", "http://127.0.0.1:5000",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -250,6 +265,9 @@ else:
         }
     }
 
+# Where `manage.py backup_db` writes its copies
+BACKUP_DIR = Path(os.environ.get('BACKUP_DIR', BASE_DIR / 'backups'))
+
 # Session caching
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
@@ -267,6 +285,9 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
+        'json': {
+            '()': 'django_project.observability.JsonFormatter',
+        },
     },
     'filters': {
         'require_debug_true': {
@@ -280,7 +301,7 @@ LOGGING = {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+            'formatter': 'json' if os.environ.get('LOG_FORMAT') == 'json' else 'simple',
         },
         'file': {
             'level': 'INFO',
@@ -356,16 +377,19 @@ if DEBUG:
     CSRF_COOKIE_HTTPONLY = False
 else:
     # Production security settings
-    CSRF_COOKIE_SAMESITE = 'None'
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = 'None'
-    SESSION_COOKIE_SECURE = True
+    # COOKIE_SECURE=False allows serving over plain HTTP (e.g. IP-only deploy without TLS).
+    _cookie_secure = os.environ.get('COOKIE_SECURE', 'True') == 'True'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SECURE = _cookie_secure
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = _cookie_secure
     X_FRAME_OPTIONS = 'SAMEORIGIN'
     CSRF_COOKIE_HTTPONLY = True
     
     # Additional production security
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
-    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000' if _cookie_secure else '0'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False') == 'True'
     SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'False') == 'True'
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -376,6 +400,7 @@ MAX_FILE_SIZE = int(os.environ.get('MAX_FILE_SIZE', '10485760'))  # 10MB default
 ALLOWED_FILE_EXTENSIONS = os.environ.get('ALLOWED_FILE_EXTENSIONS', 'pdf,jpg,jpeg,png,doc,docx,dwg,dxf').split(',')
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_SIZE
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_SIZE
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 
 # Password validation - Stronger policies
 AUTH_PASSWORD_VALIDATORS = [
@@ -395,3 +420,32 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# Public identity used by SEO metadata (canonical URLs, structured data, llms.txt).
+# SITE_URL empty = derive from the request host. Phone/email/address are only
+# published in structured data when set.
+SITE_NAME = os.environ.get('SITE_NAME', 'ملک آیدی')
+SITE_DESCRIPTION = os.environ.get(
+    'SITE_DESCRIPTION',
+    'سامانه دیجیتال خدمات دهیاری و املاک روستایی: ثبت و پیگیری آنلاین درخواست‌ها، صدور پروانه، تأیید سکونت و آگهی املاک.')
+SITE_URL = os.environ.get('SITE_URL', '')
+SITE_EMAIL = os.environ.get('SITE_EMAIL', '')
+SITE_PHONE = os.environ.get('SITE_PHONE', '')
+SITE_ADDRESS_LOCALITY = os.environ.get('SITE_ADDRESS_LOCALITY', '')
+SITE_ADDRESS_STREET = os.environ.get('SITE_ADDRESS_STREET', '')
+
+# Bootstrap calls the error alert 'danger'
+MESSAGE_TAGS = {message_levels.ERROR: 'danger'}
+
+# Tests create many users; the production hasher is deliberately slow
+import sys
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
+# The health check must answer over plain HTTP even when the site redirects everything else to HTTPS
+# (uptime monitors and the Docker probe call it directly).
+SECURE_REDIRECT_EXEMPT = [r'^healthz/$']
+
+# Error reporting: set SENTRY_DSN to turn it on (no personal data is sent)
+from django_project.observability import init_sentry  # noqa: E402
+init_sentry(os.environ.get('SENTRY_DSN', ''))
