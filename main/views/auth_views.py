@@ -7,6 +7,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
+from django.urls import reverse
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
@@ -123,6 +124,8 @@ def register_municipality(request):
                 create_pending_manager(municipality, form.cleaned_data)
 
             messages.success(request, 'درخواست ثبت شهرداری/دهیاری شما ثبت شد. پس از تایید مدیر سیستم می‌توانید با نام کاربری و رمز عبور تعیین‌شده وارد شوید.')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':   # the form posts via XHR (upload progress bar)
+                return JsonResponse({'redirect': reverse('main:home')})
             return redirect('main:home')
     else:
         form = MunicipalityRegistrationForm()

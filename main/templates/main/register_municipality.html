@@ -224,6 +224,13 @@
                             </div>
                         </div>
                         
+                        <div id="upload-status" class="mt-4" hidden>
+                            <div class="progress" style="height: 1.5rem;">
+                                <div id="upload-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                     aria-label="پیشرفت آپلود" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%">0٪</div>
+                            </div>
+                            <p id="upload-text" class="mt-2 mb-0 text-center" role="status" aria-live="polite"></p>
+                        </div>
                         <div class="mt-4">
                             <button type="submit" class="btn btn-success btn-lg w-100" id="submit-btn">
                                 <i class="fas fa-check me-2"></i>ثبت درخواست
@@ -236,5 +243,64 @@
     </div>
 </div>
 
+<script>
+// Post the form with XHR so the upload shows a real progress bar, then confirm "upload finished".
+(function () {
+    const form = document.getElementById('municipality-form');
+    const status = document.getElementById('upload-status');
+    const bar = document.getElementById('upload-bar');
+    const text = document.getElementById('upload-text');
+    const button = document.getElementById('submit-btn');
+    const digits = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    if (!window.XMLHttpRequest || !window.FormData) return;
 
+    function fail(message) {
+        status.hidden = false;
+        bar.classList.remove('progress-bar-animated');
+        bar.classList.add('bg-danger');
+        text.textContent = message;
+        button.disabled = false;
+    }
+
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) return;          // let the browser show its own required-field hints
+        e.preventDefault();
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action || window.location.href);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        button.disabled = true;
+        status.hidden = false;
+        bar.className = 'progress-bar progress-bar-striped progress-bar-animated';
+        text.textContent = 'در حال آپلود…';
+        xhr.upload.onprogress = function (ev) {
+            if (!ev.lengthComputable) return;
+            const pct = Math.round(ev.loaded / ev.total * 100);
+            bar.style.width = pct + '%';
+            bar.setAttribute('aria-valuenow', pct);
+            bar.textContent = digits(pct) + '٪';
+        };
+        xhr.onload = function () {
+            const type = xhr.getResponseHeader('Content-Type') || '';
+            if (xhr.status === 200 && type.indexOf('application/json') === 0) {
+                bar.style.width = '100%';
+                bar.setAttribute('aria-valuenow', 100);
+                bar.textContent = '۱۰۰٪';
+                bar.classList.remove('progress-bar-animated');
+                bar.classList.add('bg-success');
+                text.textContent = 'آپلود تمام شد ✓';
+                const target = JSON.parse(xhr.responseText).redirect;
+                setTimeout(function () { window.location.href = target; }, 1200);
+            } else if (type.indexOf('text/html') === 0) {   // validation errors: show the form again with its error list
+                document.open(); document.write(xhr.responseText); document.close();
+            } else {
+                let message = 'آپلود انجام نشد. فایل را بررسی و دوباره تلاش کنید.';
+                try { message = JSON.parse(xhr.responseText).message || message; } catch (err) {}
+                fail(message);
+            }
+        };
+        xhr.onerror = function () { fail('اتصال برقرار نشد. اینترنت را بررسی و دوباره تلاش کنید.'); };
+        xhr.send(new FormData(form));
+    });
+})();
+</script>
 {% endblock %}

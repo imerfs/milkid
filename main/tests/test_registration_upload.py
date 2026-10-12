@@ -100,3 +100,34 @@ class SinglePageForm(TestCase):
         self.assertIn('type="submit"', html)
         for gone in ('next-btn', 'prev-btn', 'step-indicator'):
             self.assertNotIn(gone, html)
+
+
+class AjaxSubmit(TestCase):
+    """The form posts with XHR (for the upload progress bar); success answers with the redirect target."""
+
+    def setUp(self):
+        cache.clear()
+        root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, root, True)
+        override = override_settings(PRIVATE_MEDIA_ROOT=root)
+        override.enable()
+        self.addCleanup(override.disable)
+        self.p, self.c, self.d = place()
+
+    def test_success_returns_json_redirect(self):
+        response = self.client.post(reverse('main:register_municipality'),
+                                    registration_data(self.p, self.c, self.d),
+                                    headers={'X-Requested-With': 'XMLHttpRequest'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'redirect': reverse('main:home')})
+        self.assertEqual(Municipality.objects.count(), 1)
+
+    def test_errors_still_render_the_form(self):
+        response = self.client.post(reverse('main:register_municipality'), {},
+                                    headers={'X-Requested-With': 'XMLHttpRequest'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('text/html', response['Content-Type'])
+
+    def test_page_has_the_progress_bar(self):
+        html = self.client.get(reverse('main:register_municipality')).content.decode()
+        self.assertIn('role="progressbar"', html)
