@@ -1587,3 +1587,26 @@ class TwoFactorDevice(models.Model):
     confirmed = models.BooleanField(default=False)
     last_step = models.BigIntegerField(null=True, blank=True)   # last accepted time step, against replay
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class SiteRedirect(models.Model):
+    """301/302 redirect managed from the admin server panel (main.siteextras.RedirectMiddleware)."""
+    old_path = models.CharField(max_length=300, unique=True, verbose_name='نشانی قدیم')
+    new_path = models.CharField(max_length=500, verbose_name='نشانی جدید')
+    permanent = models.BooleanField(default=True, verbose_name='دائمی (۳۰۱)')
+    hits = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['old_path']
+
+
+class DailyPageView(models.Model):
+    """Page views per day and path (main.siteextras.PageViewMiddleware), for the admin stats tab."""
+    day = models.DateField()
+    path = models.CharField(max_length=200)
+    views = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['day', 'path'], name='uniq_daily_page_view')]
+        indexes = [models.Index(fields=['day'])]

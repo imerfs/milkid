@@ -11,10 +11,12 @@
 
   <ul class="nav nav-tabs mb-3">
     <li class="nav-item"><a class="nav-link {% if tab == 'resources' %}active{% endif %}" href="?tab=resources">منابع</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'stats' %}active{% endif %}" href="?tab=stats">آمار بازدید</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'database' %}active{% endif %}" href="?tab=database">پایگاه داده</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'backups' %}active{% endif %}" href="?tab=backups">پشتیبان‌گیری</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'logs' %}active{% endif %}" href="?tab=logs">گزارش خطاها</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'ips' %}active{% endif %}" href="?tab=ips">مسدودسازی IP</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'redirects' %}active{% endif %}" href="?tab=redirects">تغییر مسیرها</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'cache' %}active{% endif %}" href="?tab=cache">حافظهٔ نهان</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'security' %}active{% endif %}" href="?tab=security">ورود دو مرحله‌ای</a></li>
     <li class="nav-item"><a class="nav-link" href="{% url 'main:admin_server_files' %}">فایل‌ها</a></li>
@@ -33,11 +35,40 @@
     {% if last_backup is None %}<div class="alert alert-warning">هنوز هیچ نسخه پشتیبانی از پایگاه داده وجود ندارد.</div>
     {% elif last_backup > 48 %}<div class="alert alert-warning">آخرین پشتیبان {{ last_backup }} ساعت پیش ساخته شده؛ زمان‌بندی خودکار (milkid-backup.timer) را بررسی کنید.</div>{% endif %}
     {% if res.net_rx is not None %}<p class="small text-muted">ترافیک شبکه از زمان روشن شدن: دریافت {{ res.net_rx|filesizeformat }}، ارسال {{ res.net_tx|filesizeformat }}</p>{% endif %}
+    {% if version %}<p class="small text-muted">نسخهٔ کد: <span dir="ltr">{{ version.branch|default:'' }} {{ version.commit|default:'?' }}</span></p>{% endif %}
     {% if res.uptime_days is not None %}<p class="small text-muted">زمان روشن بودن سرور: {{ res.uptime_days }} روز</p>{% endif %}
     <h2 class="h6">مصرف فضا به تفکیک پوشه</h2>
     <table class="table table-sm w-auto">
       {% for label, size in folders %}<tr><td>{{ label }}</td><td>{{ size|filesizeformat }}</td></tr>{% endfor %}
       {% if db_size is not None %}<tr><td>پایگاه داده (SQLite)</td><td>{{ db_size|filesizeformat }}</td></tr>{% endif %}
+    </table>
+
+  {% elif tab == 'stats' %}
+    <p>بازدید صفحه‌ها در ۳۰ روز اخیر: <strong>{{ month_total }}</strong> <span class="small text-muted">(فقط صفحه‌های عمومی و داشبوردها؛ بدون بخش مدیریت، API و فایل‌ها)</span></p>
+    <div class="row g-4">
+      <div class="col-md-5"><h2 class="h6">بازدید روزانه</h2>
+        <table class="table table-sm"><thead><tr><th>روز</th><th>بازدید</th></tr></thead>
+        {% for d in days %}<tr><td>{{ d.day|jalali_date }}</td><td>{{ d.total }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">هنوز آماری ثبت نشده است.</td></tr>{% endfor %}</table></div>
+      <div class="col-md-7"><h2 class="h6">صفحه‌های پربازدید</h2>
+        <table class="table table-sm"><thead><tr><th>صفحه</th><th>بازدید</th></tr></thead>
+        {% for p in top_pages %}<tr><td dir="ltr" class="text-end">{{ p.path }}</td><td>{{ p.total }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">—</td></tr>{% endfor %}</table></div>
+    </div>
+
+  {% elif tab == 'redirects' %}
+    <form method="post" action="{% url 'main:admin_server_redirect_add' %}" class="row g-2 mb-3">
+      {% csrf_token %}
+      <div class="col-md-4"><input name="old_path" class="form-control" dir="ltr" placeholder="/old-page/" required></div>
+      <div class="col-md-4"><input name="new_path" class="form-control" dir="ltr" placeholder="/new-page/ یا https://..." required></div>
+      <div class="col-md-2"><select name="permanent" class="form-select"><option value="1">۳۰۱ دائمی</option><option value="0">۳۰۲ موقت</option></select></div>
+      <div class="col-md-2"><button class="btn btn-primary w-100">ذخیره</button></div>
+    </form>
+    <p class="small text-muted">بخش مدیریت، API و فایل‌ها قابل تغییر مسیر نیستند تا دسترسی شما قطع نشود. اعمال تغییر تا یک دقیقه طول می‌کشد.</p>
+    <table class="table align-middle">
+      <thead><tr><th>نشانی قدیم</th><th>نشانی جدید</th><th>نوع</th><th>دفعات</th><th></th></tr></thead>
+      {% for r in redirects %}
+      <tr><td dir="ltr" class="text-end">{{ r.old_path }}</td><td dir="ltr" class="text-end">{{ r.new_path }}</td><td>{% if r.permanent %}۳۰۱{% else %}۳۰۲{% endif %}</td><td>{{ r.hits }}</td>
+        <td><form method="post" action="{% url 'main:admin_server_redirect_delete' r.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td></tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted">تغییر مسیری تعریف نشده است.</td></tr>{% endfor %}
     </table>
 
   {% elif tab == 'database' %}

@@ -4,6 +4,7 @@ Admin-only (policy ``admin.manage``). Every mutation is a POST and is written to
 security log with the acting admin.
 """
 import ipaddress
+from datetime import timedelta
 import logging
 from io import StringIO
 from urllib.parse import urlencode
@@ -12,19 +13,21 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db.models import Sum
 from django.http import FileResponse, Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.views.decorators.http import require_POST
 
-from main import ipblock, serverops, twofactor
+from main import ipblock, serverops, siteextras, twofactor
 from main.access import policy_required
-from main.models import BlockedIP, TwoFactorDevice
+from main.models import BlockedIP, DailyPageView, SiteRedirect, TwoFactorDevice
 from main.ratelimit import client_ip
 
 audit = logging.getLogger('django.security.serverpanel')
-TABS = ('resources', 'database', 'backups', 'logs', 'ips', 'cache', 'security')
+TABS = ('resources', 'stats', 'database', 'backups', 'logs', 'ips', 'redirects', 'cache', 'security')
 
 
 def _back(tab, **query):
@@ -42,7 +45,15 @@ def admin_server(request):
     ctx = {'tab': tab, 'tabs': TABS}
     if tab == 'resources':
         ctx.update(res=serverops.resources(), folders=serverops.folder_usage(), db_size=serverops.database_size(),
-                   last_backup=serverops.last_backup_age_hours())
+                   last_backup=serverops.last_backup_age_hours(), version=serverops.code_version())
+    elif tab == 'stats':
+        since = timezone.localdate() - timedelta(days=29)
+        views = DailyPageView.objects.filter(day__gte=since)
+        ctx.update(days=views.values('day').annotate(total=Sum('views')).order_by('-day'),
+                   top_pages=views.values('path').annotate(total=Sum('views')).order_by('-total')[:20],
+                   month_total=views.aggregate(total=Sum('views'))['total'] or 0)
+    elif tab == 'redirects':
+        ctx['redirects'] = SiteRedirect.objects.all()
     elif tab == 'database':
         ctx.update(db=serverops.database_overview())
     elif tab == 'backups':
@@ -212,3 +223,86 @@ def admin_server_file_delete(request):
     audit.warning('server panel: %s deleted %s', request.user.username, target)
     messages.success(request, 'فایل حذف شد.')
     return redirect(f'{reverse("main:admin_server_files")}?{urlencode({"root": root_key, "path": parent})}')
+
+
+def _files_url(root_key, rel):
+    return f'{reverse("main:admin_server_files")}?{urlencode({"root": root_key, "path": rel})}'
+
+
+@policy_required('admin.manage')
+@require_POST
+def admin_server_file_action(request):
+    """mkdir / move (rename) / copy / rmdir / zip / unzip inside one media root."""
+    op, root_key = request.POST.get('op'), request.POST.get('root', '')
+    rel = request.POST.get('path', '')
+    root, target = serverops.resolve_media(root_key, rel)
+    if target is None or not target.exists() or target.is_symlink():
+        raise Http404
+    back = _rel(root, target) if op == 'mkdir' or target == root else _rel(root, target.parent)
+    try:
+        if op == 'mkdir' and target.is_dir():
+            serverops.make_folder(target, request.POST.get('name', ''))
+            done = 'پوشه ساخته شد.'
+        elif op in ('move', 'copy'):
+            _, dest = serverops.resolve_media(root_key, request.POST.get('dest', '').strip().strip('/'))
+            if dest is None or dest == root:
+                raise serverops.FileOpError('مسیر مقصد باید داخل همین پوشهٔ اصلی باشد.')
+            if op == 'move':
+                serverops.move(root, target, dest)
+                done = 'جابه‌جا شد.'
+            else:
+                serverops.copy(target, dest)
+                done = 'کپی شد.'
+        elif op == 'rmdir' and target.is_dir():
+            serverops.remove_folder(root, target)
+            done = 'پوشه حذف شد.'
+        elif op == 'zip' and target != root:
+            serverops.compress(target)
+            done = 'فایل فشرده ساخته شد.'
+        elif op == 'unzip' and target.is_file():
+            _, extracted, skipped = serverops.extract(target)
+            done = f'{extracted} فایل استخراج شد.' + (f' {skipped} فایل با پسوند غیرمجاز یا مسیر ناامن نادیده گرفته شد.' if skipped else '')
+        else:
+            raise Http404
+    except serverops.FileOpError as error:
+        messages.error(request, str(error))
+    else:
+        audit.warning('server panel: %s did %s on %s', request.user.username, op, target)
+        messages.success(request, done)
+    return redirect(_files_url(root_key, back))
+
+
+def _clean_redirect(old, new):
+    if not old.startswith('/') or old.startswith(siteextras.SKIP_PREFIXES) or old == '/' or '//' in old:
+        raise ValueError('نشانی قدیم باید با / شروع شود و نمی‌تواند صفحهٔ اصلی یا بخش مدیریت باشد.')
+    if not (new.startswith('/') and not new.startswith('//')) and not new.startswith('https://'):
+        raise ValueError('نشانی جدید باید با / یا https:// شروع شود.')
+    if old == new:
+        raise ValueError('نشانی قدیم و جدید یکسان است.')
+
+
+@policy_required('admin.manage')
+@require_POST
+def admin_server_redirect_add(request):
+    old, new = request.POST.get('old_path', '').strip(), request.POST.get('new_path', '').strip()
+    try:
+        _clean_redirect(old, new)
+    except ValueError as error:
+        messages.error(request, str(error))
+        return _back('redirects')
+    _, created = SiteRedirect.objects.update_or_create(
+        old_path=old[:300], defaults={'new_path': new[:500], 'permanent': request.POST.get('permanent') == '1'})
+    siteextras.invalidate()
+    audit.warning('server panel: %s set redirect %s -> %s', request.user.username, old, new)
+    messages.success(request, 'تغییر مسیر ذخیره شد.' if created else 'تغییر مسیر به‌روز شد.')
+    return _back('redirects')
+
+
+@policy_required('admin.manage')
+@require_POST
+def admin_server_redirect_delete(request, redirect_id):
+    SiteRedirect.objects.filter(id=redirect_id).delete()
+    siteextras.invalidate()
+    audit.warning('server panel: %s deleted redirect %s', request.user.username, redirect_id)
+    messages.success(request, 'تغییر مسیر حذف شد.')
+    return _back('redirects')
