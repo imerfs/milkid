@@ -17,6 +17,10 @@ from .server_views import *
 from .twofactor_views import *
 from .accounting_views import *
 from .accounting_panel import *
+from .accounting_finance import *
+from .accounting_income import *
+from .accounting_reports import *
+from .accounting_settings import *
 
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 

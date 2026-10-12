@@ -1,0 +1,30 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit, change from:select" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="reports">
+        <label class="ac-select"><span class="ac-sr">نوع گزارش</span><select name="report">{% for k, label in report_list %}<option value="{{ k }}" {% if k == report_key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        {% if f_party %}<label class="ac-select"><span class="ac-sr">طرف حساب</span><select name="party"><option value="">طرف حساب...</option>{% for p in party_choices %}<option value="{{ p.id }}" {% if g.party == p.id|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>{% endif %}
+        {% if f_center %}<label class="ac-select"><span class="ac-sr">مرکز هزینه</span><select name="cost_center"><option value="">مرکز هزینه...</option>{% for c in center_choices %}<option value="{{ c.id }}" {% if g.cost_center == c.id|stringformat:'s' %}selected{% endif %}>{{ c.title }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>{% endif %}
+        {% if f_status %}<label class="ac-select"><span class="ac-sr">وضعیت</span><select name="status"><option value="">همه وضعیت‌ها</option>{% for k, label in f_status %}<option value="{{ k }}" {% if g.status == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>{% endif %}
+        {% if f_kind %}<label class="ac-select"><span class="ac-sr">نوع سند</span><select name="kind"><option value="">همه انواع</option>{% for k, label in kinds %}<option value="{{ k }}" {% if g.kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>{% endif %}
+        {% if f_date %}<label class="ac-field" style="margin:0"><span class="ac-sr">از تاریخ</span><input class="ac-in" name="date_from" dir="ltr" placeholder="از ۱۴۰۴/۰۱/۰۱" value="{{ g.date_from }}" style="width:130px"></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="date_to" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ g.date_to }}" style="width:130px"></label>{% endif %}
+        {% if f_number %}<input class="ac-in" name="number_from" inputmode="numeric" dir="ltr" placeholder="از شماره" value="{{ g.number_from }}" style="width:90px" aria-label="از شماره"><input class="ac-in" name="number_to" inputmode="numeric" dir="ltr" placeholder="تا شماره" value="{{ g.number_to }}" style="width:90px" aria-label="تا شماره">{% endif %}
+        {% if f_q %}<label class="ac-searchbox"><span class="ac-sr">جستجو</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="شرح یا نام..."></label>{% endif %}
+        {% if f_final %}<label class="muted" style="font-size:12px"><input type="checkbox" name="final" value="1" {% if g.final == '1' %}checked{% endif %}> فقط اسناد قطعی</label>{% endif %}
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>اعمال</button>
+        <a class="ac-btn ac-spaced" href="{% url 'main:acc_p_report_export' year.id report_key %}?{{ export_query }}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
+    </form>
+    {% if report_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ report_error }}</div>
+    {% elif report %}
+    <div class="ac-table-wrap"><table>
+        <thead><tr>{% for h in report.columns %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for row in report.rows %}<tr>{% for c in row %}<td{% if c.money %} class="num-cell"{% endif %}>{% if c.money %}{{ c.v|rial }}{% else %}{{ c.v|fa }}{% endif %}</td>{% endfor %}</tr>
+        {% empty %}<tr><td colspan="{{ report.columns|length }}"><div class="ac-empty"><span class="eic"><i class="fas fa-table" aria-hidden="true"></i></span><h4>موردی با این فیلتر پیدا نشد</h4></div></td></tr>{% endfor %}
+        </tbody>
+        {% if report.totals %}<tfoot><tr>{% for c in report.totals %}<td{% if c.money %} class="num-cell"{% endif %}><b>{% if c.money %}{{ c.v|rial }}{% else %}{{ c.v|fa }}{% endif %}</b></td>{% endfor %}</tr></tfoot>{% endif %}
+    </table></div>
+    {% if report.truncated %}<p class="muted" style="padding:10px 16px;font-size:12px">فقط {{ report.rows|length|fa }} ردیف اول نمایش داده شد؛ فیلتر را محدودتر کنید.</p>{% endif %}
+    {% endif %}
+</div>

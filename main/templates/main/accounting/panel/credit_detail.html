@@ -1,0 +1,21 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='تامین اعتبار' %}
+<div class="ac-mb">
+    <dl class="ac-dl">
+        <div><dt>شماره</dt><dd>{{ prov.number|fa }}</dd></div>
+        <div><dt>تاریخ</dt><dd>{{ prov.date|jalali_date|fa }}</dd></div>
+        <div><dt>وضعیت</dt><dd>{% if prov.canceled_at %}<span class="ac-st bad">باطل</span>{% else %}<span class="ac-st ok">فعال</span>{% endif %}</dd></div>
+        <div><dt>شماره تخصیص</dt><dd>{{ prov.allocation_no|default:'—'|fa }}</dd></div>
+        <div><dt>تاریخ تخصیص</dt><dd>{% if prov.allocation_date %}{{ prov.allocation_date|jalali_date|fa }}{% else %}—{% endif %}</dd></div>
+        <div><dt>تاریخ انقضا</dt><dd>{% if prov.expires_on %}{{ prov.expires_on|jalali_date|fa }}{% else %}—{% endif %}</dd></div>
+        <div class="wide"><dt>توضیحات</dt><dd style="font-weight:400">{{ prov.description|default:'—' }}</dd></div>
+    </dl>
+    <div class="ac-lines" style="margin:14px 0"><table>
+        <thead><tr><th>ردیف</th><th>حساب مصرف</th><th>حساب منبع</th><th>پروژه / خدمت</th><th>مبلغ (ریال)</th></tr></thead>
+        <tbody>{% for l in lines %}<tr><td>{{ l.row|fa }}</td><td>{{ l.use_account.code|fa }} - {{ l.use_account.title }}</td><td>{{ l.source_account.code|fa }} - {{ l.source_account.title }}</td><td>{{ l.project|default:'—' }}</td><td class="num-cell">{{ l.amount|rial }}</td></tr>{% endfor %}</tbody>
+        <tfoot><tr><td colspan="4"><b>جمع</b></td><td class="num-cell"><b>{{ total|rial }}</b></td></tr></tfoot>
+    </table></div>
+    {% if not prov.canceled_at and not prov.fiscal_year.is_closed %}
+    <div class="ac-foot"><button type="button" class="ac-btn ac-btn-bad" hx-post="{% url 'main:acc_p_credit_cancel' prov.id %}" hx-swap="none" hx-confirm="این تامین اعتبار باطل شود؟ مبلغ آن آزاد می‌شود.">ابطال تامین اعتبار</button></div>
+    {% endif %}
+</div>

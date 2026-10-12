@@ -214,7 +214,8 @@ class Bill(models.Model):
 
 
 class BillPayment(models.Model):
-    METHODS = [('cash', 'نقد'), ('card', 'کارتخوان'), ('transfer', 'حواله بانکی'), ('cheque', 'چک')]
+    METHODS = [('cash', 'نقد'), ('card', 'کارتخوان'), ('transfer', 'حواله بانکی'), ('cheque', 'چک'),
+               ('promissory', 'سفته'), ('offset', 'تهاتر'), ('online', 'الکترونیکی')]
 
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='payments')
     date = models.DateField(verbose_name='تاریخ پرداخت')

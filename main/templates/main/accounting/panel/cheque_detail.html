@@ -1,0 +1,16 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='سابقه چک / سفته' %}
+<div class="ac-mb">
+    <dl class="ac-dl">
+        <div><dt>نوع</dt><dd>{{ i.get_method_display }}</dd></div>
+        <div><dt>سری / سریال</dt><dd>{{ i.series|default:'—'|fa }} / {{ i.serial|fa }}</dd></div>
+        <div><dt>مبلغ</dt><dd>{{ i.amount|rial }} ریال</dd></div>
+        <div><dt>صاحب حساب</dt><dd>{{ i.owner_name|default:'—' }} {{ i.owner_national_id|fa }}</dd></div>
+        <div><dt>بانک / حساب</dt><dd>{{ i.bank|default:'—' }} {{ i.account_no|fa }}</dd></div>
+        <div><dt>تاریخ چک</dt><dd>{% if i.cheque_date %}{{ i.cheque_date|jalali_date|fa }}{% else %}—{% endif %}</dd></div>
+    </dl>
+    <div class="ac-lines"><table>
+        <thead><tr><th>تاریخ</th><th>موقعیت</th><th>توضیح</th><th>کاربر</th></tr></thead>
+        <tbody>{% for e in events %}<tr><td class="nw">{{ e.date|jalali_date|fa }}</td><td>{{ e.get_position_display }}</td><td>{{ e.note|default:'—' }}</td><td>{{ e.user.get_full_name|default:e.user.username }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>

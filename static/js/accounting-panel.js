@@ -32,8 +32,13 @@
     function syncMenu() {
         var v = view();
         if (!v) return;
+        var url = panel.dataset.url || '';
+        var queried = false;   // a menu entry that shares its page with another one (e.g. drafts) wins when its filter is on
+        document.querySelectorAll('#ac-side [data-acc-query]').forEach(function (a) {
+            if (a.dataset.accTab === v.dataset.tab && url.indexOf(a.dataset.accQuery) !== -1) queried = true;
+        });
         document.querySelectorAll('[data-acc-tab]').forEach(function (a) {
-            var on = a.dataset.accTab === v.dataset.tab;
+            var on = a.dataset.accTab === v.dataset.tab && (a.dataset.accQuery ? url.indexOf(a.dataset.accQuery) !== -1 : !queried);
             a.classList.toggle('active', on);
             if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
         });
@@ -72,7 +77,12 @@
         // closes on the X / cancel buttons and on a click on the backdrop
         if (e.target.closest('[data-acc-close]') || e.target === dialog) dialog.close();
     });
-    dialog.addEventListener('close', function () { body.innerHTML = ''; });
+    dialog.addEventListener('close', function () {
+        // a detail window that changed something while it stayed open (e.g. a paid instalment) refreshes the page behind it
+        var dirty = body.querySelector('[data-acc-dirty]');
+        body.innerHTML = '';
+        if (dirty) reload();
+    });
 
     // Menu links open a page of the workspace (optionally filtered) instead of leaving the page.
     document.querySelectorAll('[data-acc-tab]').forEach(function (link) {

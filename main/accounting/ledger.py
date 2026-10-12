@@ -273,3 +273,32 @@ def account_ledger(actor, year, account, include_temporary=True):
         rows.append({'voucher': ln.voucher, 'row': ln.row, 'description': ln.description or ln.voucher.description,
                      'debit': ln.debit, 'credit': ln.credit, 'balance': balance})
     return rows
+
+
+def change_status_range(actor, year, number_from, number_to, target):
+    """Bulk status change (تغییر وضعیت اسناد) for vouchers numbered number_from..number_to of the year.
+
+    Each voucher goes through finalize / revert_to_temporary, so every single-voucher rule applies (balance,
+    closed year, only the mayor may revert). Returns ``(changed, skipped)``; skipped is ``[(number, reason)]``.
+    """
+    muni = municipality_of(actor)
+    _own(muni, year)
+    if target not in ('final', 'temporary'):
+        raise Invalid('وضعیت مقصد نامعتبر است.')
+    if number_from is None or number_to is None or number_from < 1 or number_to < number_from:
+        raise Invalid('بازه شماره سند نامعتبر است.')
+    if number_to - number_from > 5000:
+        raise Invalid('بازه انتخابی بیش از حد بزرگ است.')
+    wanted, other = ('temporary', 'final') if target == 'final' else ('final', 'temporary')
+    vouchers = Voucher.objects.filter(fiscal_year=year, municipality=muni, deleted_at__isnull=True,
+                                      number__gte=number_from, number__lte=number_to, status=wanted).order_by('number')
+    changed, skipped = 0, []
+    for voucher in vouchers:
+        try:
+            (finalize if target == 'final' else revert_to_temporary)(actor, voucher)
+            changed += 1
+        except (Conflict, Forbidden) as exc:
+            if isinstance(exc, Forbidden):
+                raise
+            skipped.append((voucher.number, str(exc)))
+    return changed, skipped
