@@ -180,3 +180,4 @@ node_modules/
 
 # database backups
 backups/
+private_media/

@@ -57,6 +57,8 @@ class Command(BaseCommand):
             archive = target / f'media-{stamp}.tar.gz'
             with tarfile.open(archive, 'w:gz') as tar:
                 tar.add(settings.MEDIA_ROOT, arcname='media')
+                if os.path.isdir(settings.PRIVATE_MEDIA_ROOT):
+                    tar.add(settings.PRIVATE_MEDIA_ROOT, arcname='private_media')
             prune(target, 'media-*.tar.gz', options['keep'])
             self.stdout.write(self.style.SUCCESS(f'Media: {archive} ({archive.stat().st_size} bytes)'))
 

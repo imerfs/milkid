@@ -1,0 +1,8 @@
+<div class="d-flex gap-2" dir="rtl">
+  {% for part, label, options, selected in widget.parts %}
+  <select name="{{ widget.name }}_{{ part }}" id="{{ widget.attrs.id }}_{{ part }}" class="form-control" aria-label="{{ label }}"{% if widget.attrs.required %} required{% endif %}>
+    <option value="">{{ label }}</option>
+    {% for value, text in options %}<option value="{{ value }}"{% if value == selected %} selected{% endif %}>{{ text }}</option>{% endfor %}
+  </select>
+  {% endfor %}
+</div>

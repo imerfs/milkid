@@ -7,6 +7,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
+from django.urls import reverse
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
@@ -747,6 +748,18 @@ def admin_api_user_toggle_active(request, user_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@policy_required('admin.manage')
+def municipality_decree(request, municipality_id):
+    """Download a municipality's governor decree (admins only; the file is not under /media/)."""
+    town = get_object_or_404(Municipality, pk=municipality_id)
+    if not town.governor_decree:
+        raise Http404
+    response = FileResponse(town.governor_decree.open('rb'), as_attachment=True,
+                            filename=os.path.basename(town.governor_decree.name))
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
 @policy_required('admin.manage', api=True)
 def admin_api_municipalities_list(request):
     """API endpoint to get municipalities list"""
@@ -774,7 +787,7 @@ def admin_api_municipalities_list(request):
             'status_display': mun.get_status_display(),
             'created_at': mun.created_at.strftime('%Y/%m/%d') if mun.created_at else '',
             'has_decree': bool(mun.governor_decree),
-            'decree_url': mun.governor_decree.url if mun.governor_decree else '',
+            'decree_url': reverse('main:municipality_decree', args=[mun.id]) if mun.governor_decree else '',
         } for mun in municipalities]
 
         return JsonResponse({

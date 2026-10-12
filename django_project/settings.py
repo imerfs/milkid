@@ -235,6 +235,8 @@ CORS_ALLOW_CREDENTIALS = True
 # Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Admin-only uploads (governor decrees): outside MEDIA_ROOT, so nginx never serves them directly
+PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, 'private_media')
 
 # Static files optimization
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'

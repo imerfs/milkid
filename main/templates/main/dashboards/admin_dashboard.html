@@ -1980,7 +1980,7 @@
                                             <td class="py-3.5 px-4">
                                                 <div class="text-gray-500 font-mono text-[11px]">{{ mun.created_at|date:"Y/m/d" }}</div>
                                                 {% if mun.governor_decree %}
-                                                <a href="{{ mun.governor_decree.url }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-bold mt-1">
+                                                <a href="{% url 'main:municipality_decree' mun.id %}" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-bold mt-1">
                                                     <i class="fas fa-file-pdf"></i>
                                                     <span>مشاهده حکم</span>
                                                 </a>

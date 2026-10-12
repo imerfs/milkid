@@ -4,8 +4,9 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from . import geo_cascade
+from .validators import validate_file_size, validate_file_extension, validate_file_content
 from .models import UserProfile, ServiceRequest, RequestDocument, Service, ServiceStep, Municipality, Property, PropertyAdvertisement, PropertyImage, Province, County, District, CityVillage
-from .widgets import JalaliDateInput, JalaliDateTimeInput, JalaliDateField, JalaliDateTimeField
+from .widgets import JalaliSelectDateWidget, JalaliDateInput, JalaliDateTimeInput, JalaliDateField, JalaliDateTimeField
 
 class ContactForm(forms.Form):
     name = forms.CharField(
@@ -1204,7 +1205,8 @@ class MunicipalityRegistrationForm(forms.ModelForm):
             'accept': '.pdf,.jpg,.jpeg,.png,.doc,.docx'
         }),
         help_text='فایل حکم انتصاب از فرماندار استان (فرمت‌های مجاز: PDF, JPG, PNG, DOC, DOCX)',
-        required=True
+        required=True,
+        validators=[validate_file_size, validate_file_extension, validate_file_content],
     )
 
     class Meta:
@@ -1227,7 +1229,7 @@ class MunicipalityRegistrationForm(forms.ModelForm):
             'official_email': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ایمیل رسمی'}),
             'postal_code': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'dir': 'rtl'}),
-            'establishment_date': JalaliDateInput(attrs={'class': 'form-control'}),
+            'establishment_date': JalaliSelectDateWidget(),
             'population': forms.NumberInput(attrs={'class': 'form-control'}),
             'area_hectares': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'manager_name': forms.TextInput(attrs={'class': 'form-control', 'dir': 'rtl'}),
@@ -1327,7 +1329,8 @@ class MunicipalityRegistrationForm(forms.ModelForm):
     
     def save(self, commit=True):
         instance = super().save(commit=False)
-        
+        instance.governor_decree = self.cleaned_data['governor_decree']
+
         # Set geographic text fields from selected objects
         if self.cleaned_data.get('province'):
             instance.province = self.cleaned_data['province'].name

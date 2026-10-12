@@ -69,6 +69,48 @@ class JalaliDateInput(DateInput):
             return value
 
 
+class JalaliSelectDateWidget(forms.Widget):
+    """Year / month / day selects in the Jalali calendar; submits as a Gregorian ISO date."""
+    template_name = 'main/widgets/jalali_select_date.html'
+    MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+              'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند']
+    FIRST_YEAR = 1300
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        year = month = day = None
+        if isinstance(value, str) and value:
+            try:
+                value = datetime.strptime(value, '%Y-%m-%d').date()
+            except ValueError:
+                value = None
+        if isinstance(value, (date, datetime)):
+            j = jdatetime.date.fromgregorian(date=value if isinstance(value, date) else value.date())
+            year, month, day = j.year, j.month, j.day
+        this_year = jdatetime.date.today().year
+        context['widget'].update({
+            'parts': [
+                ('year', 'سال', [(y, y) for y in range(this_year, self.FIRST_YEAR - 1, -1)], year),
+                ('month', 'ماه', list(enumerate(self.MONTHS, 1)), month),
+                ('day', 'روز', [(d, d) for d in range(1, 32)], day),
+            ],
+        })
+        return context
+
+    def value_from_datadict(self, data, files, name):
+        parts = [data.get(f'{name}_{p}') for p in ('year', 'month', 'day')]
+        if not any(parts):
+            return data.get(name) or None      # a plain ISO value (API / tests)
+        try:
+            year, month, day = map(int, parts)
+            return jdatetime.date(year, month, day).togregorian().strftime('%Y-%m-%d')
+        except (ValueError, TypeError):
+            return 'invalid'                    # DateField turns this into a validation error
+
+    def id_for_label(self, id_):
+        return f'{id_}_year' if id_ else id_
+
+
 class JalaliDateTimeInput(DateTimeInput):
     """
     Persian/Jalali DateTime Input Widget

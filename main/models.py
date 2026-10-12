@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from decimal import Decimal
 
+from .storage import PrivateStorage
+
 # تقسیمات کشوری ایران
 class Province(models.Model):
     """
@@ -960,7 +962,7 @@ class Municipality(GeographyLink):
     verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_municipalities', verbose_name='تایید شده توسط')
     
     # Documents
-    governor_decree = models.FileField(upload_to='governor_decrees/', null=True, blank=True, verbose_name='حکم فرماندار')
+    governor_decree = models.FileField(upload_to='governor_decrees/', storage=PrivateStorage(), null=True, blank=True, verbose_name='حکم فرماندار')
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
