@@ -1567,3 +1567,14 @@ class CityVillageRequest(models.Model):
 from .models_office import *  # noqa: E402,F401,F403
 
 from .models_accounting import *  # noqa: E402,F401,F403
+
+
+class BlockedIP(models.Model):
+    """Client address refused by main.ipblock.BlockedIPMiddleware; managed by admins only."""
+    ip = models.GenericIPAddressField(unique=True, verbose_name='نشانی IP')
+    reason = models.CharField(max_length=200, blank=True, verbose_name='دلیل')
+    created_by = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']

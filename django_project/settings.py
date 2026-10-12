@@ -74,6 +74,7 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'main.ipblock.BlockedIPMiddleware',  # admin-managed IP block list
     'main.ratelimit.AuthThrottleMiddleware',  # brute-force / spam throttling
     'main.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
