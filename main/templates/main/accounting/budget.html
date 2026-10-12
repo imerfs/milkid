@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load accounting_tags %}
+
+{% block title %}بودجه {{ year.year|fa }} - ملک آیدی{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px">
+    <h1 class="h3 mb-3"><i class="fas fa-chart-pie ms-2"></i>بودجه و عملکرد سال {{ year.year|fa }}</h1>
+    {% include 'main/accounting/_nav.html' with tab='budget' %}
+    {% if error %}<div class="alert alert-danger" role="alert"><i class="fas fa-triangle-exclamation ms-1"></i>{{ error }}</div>{% endif %}
+    {% if not year.is_closed %}
+    <form method="post" class="card card-body mb-3 row g-2 flex-row align-items-end" data-once>
+        {% csrf_token %}
+        <div class="col-12 col-md-6"><label class="form-label" for="b-account">حساب</label>
+            <select class="form-select" id="b-account" name="account" required>
+                <option value="">انتخاب کنید</option>
+                {% for a in choices %}<option value="{{ a.id }}" {% if p.account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}
+            </select></div>
+        <div class="col-8 col-md-4"><label class="form-label" for="b-amount">بودجه مصوب (ریال)</label>
+            <input class="form-control" id="b-amount" name="amount" inputmode="numeric" value="{{ p.amount }}" required></div>
+        <div class="col-4 col-md-2"><button class="btn btn-primary w-100" type="submit">ذخیره</button></div>
+    </form>
+    {% endif %}
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <a class="btn btn-sm {% if not final_only %}btn-dark{% else %}btn-outline-secondary{% endif %}" href="?">همه اسناد</a>
+        <a class="btn btn-sm {% if final_only %}btn-dark{% else %}btn-outline-secondary{% endif %}" href="?final=1">فقط قطعی</a>
+        <a class="btn btn-sm btn-outline-success me-auto" href="{% url 'main:acc_budget_export' year.id %}{% if final_only %}?final=1{% endif %}"><i class="fas fa-file-excel ms-1"></i>خروجی اکسل</a>
+    </div>
+    <div class="table-responsive card">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>کد</th><th>شرح حساب</th><th class="text-end">بودجه مصوب</th><th class="text-end">عملکرد</th><th class="text-end">باقی‌مانده</th><th class="text-end">درصد</th></tr></thead>
+            <tbody>
+            {% for r in rows %}
+            <tr {% if r.over %}class="table-warning"{% endif %}>
+                <td dir="ltr" class="text-end">{{ r.code }}</td>
+                <td><a href="{% url 'main:acc_ledger' year.id r.account_id %}">{{ r.title }}</a> <small class="text-muted">{% if r.kind == 'resource' %}منبع{% else %}مصرف{% endif %}</small></td>
+                <td class="text-end">{{ r.budget|rial }}</td><td class="text-end">{{ r.actual|rial }}</td>
+                <td class="text-end">{{ r.remaining|rial }}</td>
+                <td class="text-end">{% if r.percent is None %}—{% else %}{{ r.percent|fa }}٪{% endif %}{% if r.over %} <i class="fas fa-triangle-exclamation text-warning" title="بیش از بودجه"></i>{% endif %}</td>
+            </tr>
+            {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">هنوز بودجه یا گردشی ثبت نشده است.</td></tr>{% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold"><td colspan="2">جمع منابع</td><td class="text-end">{{ totals.resource.budget|rial }}</td><td class="text-end">{{ totals.resource.actual|rial }}</td><td colspan="2"></td></tr>
+                <tr class="fw-bold"><td colspan="2">جمع مصارف</td><td class="text-end">{{ totals.use.budget|rial }}</td><td class="text-end">{{ totals.use.actual|rial }}</td><td colspan="2"></td></tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}
