@@ -22,8 +22,8 @@ from main.views.accounting_views import (
     new_party)
 
 YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'credit', 'contracts', 'payables', 'images',
-             'statuschange', 'plans', 'received', 'transport', 'planimages')
-TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup')
+             'statuschange', 'plans', 'received', 'transport', 'planimages', 'reports')
+TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings')
 # Tabs drawn by the generic register template (see main/views/accounting_finance.py)
 REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages')
 PANEL = 'main/accounting/panel/'
@@ -43,6 +43,8 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('received', 'خزانه اسناد دریافتی', 'money-check', True, 'چک و سفته‌های دریافتی: ارسال به خزانه، وصول یا برگشت.'),
             ('transport', 'درآمد حمل و نقل', 'truck', True, 'عوارض و بهای خدمات حمل و نقل.'),
             ('planimages', 'تصاویر پرونده تقسیط', 'images', True, 'مدارک و نامه‌های پرونده‌های تقسیط.'),
+            ('reports', 'گزارش‌گیری', 'file-lines', True, 'گزارش اسناد، دفاتر، فیش‌ها، تقسیط، ضمانت‌نامه‌ها و ... با خروجی اکسل.'),
+            ('settings', 'تنظیمات مالی', 'sliders', False, 'مراکز هزینه، شرح‌های استاندارد و امضاکنندگان.'),
             ('parties', 'طرف‌حساب‌ها', 'address-book', False, 'اشخاص و سازمان‌هایی که با دهیاری حساب دارند.'),
             ('accounts', 'سرفصل حساب‌ها', 'sitemap', False, 'درخت حساب‌های دهیاری.'),
             ('online', 'پرداخت‌های آنلاین', 'credit-card', False, 'پرداخت‌های شهروندان: تایید، رد و سابقه.'),
@@ -221,8 +223,9 @@ def render_panel(request, year, status=200):
     if tab in TAB_BUILDERS:
         TAB_BUILDERS[tab](request, year, ctx)
     else:
-        from main.views import accounting_finance, accounting_income   # imported late: they import this module
-        {**accounting_finance.BUILDERS, **accounting_income.BUILDERS}[tab](request, year, ctx)
+        from main.views import accounting_finance, accounting_income, accounting_reports, accounting_settings   # late: they import this module
+        {**accounting_finance.BUILDERS, **accounting_income.BUILDERS, **accounting_reports.BUILDERS,
+         **accounting_settings.BUILDERS}[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 

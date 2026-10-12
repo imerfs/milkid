@@ -213,3 +213,32 @@ class DocumentImage(models.Model):
         constraints = [models.CheckConstraint(
             condition=Q(voucher__isnull=False, plan__isnull=True) | Q(voucher__isnull=True, plan__isnull=False),
             name='image_of_voucher_or_plan')]
+
+
+class StandardDescription(models.Model):
+    """شرح استاندارد: ready-made text for voucher or account descriptions, picked by code while entering data."""
+    KINDS = [('voucher', 'شرح سند'), ('account', 'شرح حساب')]
+
+    municipality = models.ForeignKey('main.Municipality', on_delete=models.CASCADE, related_name='standard_descriptions')
+    kind = models.CharField(max_length=10, choices=KINDS, verbose_name='نوع')
+    code = models.CharField(max_length=10, verbose_name='کد')
+    text = models.CharField(max_length=300, verbose_name='شرح')
+
+    class Meta:
+        verbose_name = 'شرح استاندارد'
+        verbose_name_plural = 'شرح‌های استاندارد'
+        ordering = ['kind', 'code']
+        constraints = [models.UniqueConstraint(fields=['municipality', 'kind', 'code'], name='uniq_standard_description')]
+
+
+class Signatory(models.Model):
+    """امضاکننده: person and position printed under reports and vouchers."""
+    municipality = models.ForeignKey('main.Municipality', on_delete=models.CASCADE, related_name='signatories')
+    name = models.CharField(max_length=150, verbose_name='نام')
+    position = models.CharField(max_length=100, verbose_name='سمت')
+
+    class Meta:
+        verbose_name = 'امضاکننده'
+        verbose_name_plural = 'امضاکنندگان'
+        ordering = ['id']
+        constraints = [models.UniqueConstraint(fields=['municipality', 'name', 'position'], name='uniq_signatory')]

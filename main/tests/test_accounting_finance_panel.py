@@ -18,11 +18,11 @@ class FinancePanelBase(PanelBase):
         super().setUp()
         self.salary = Account.objects.get(municipality=self.muni, code='6010101001')
 
-    def post(self, name, *args, client=None, **data):
-        return (client or self.client).post(reverse(f'main:{name}', args=args), data)
+    def post(self, url_name, *args, client=None, **data):
+        return (client or self.client).post(reverse(f'main:{url_name}', args=args), data)
 
-    def get(self, name, *args, client=None, **params):
-        return (client or self.client).get(reverse(f'main:{name}', args=args), params)
+    def get(self, url_name, *args, client=None, **params):
+        return (client or self.client).get(reverse(f'main:{url_name}', args=args), params)
 
 
 class TabTests(FinancePanelBase):
