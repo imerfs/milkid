@@ -182,9 +182,7 @@ def inspector_dashboard(request):
 
 
 # Menu entries of the accountant page that are not built yet; shown disabled.
-ACCOUNTANT_SOON = [
-    'حقوق: اصلی، مزایا، بدهی', 'حقوق: کارکرد', 'حقوق: ماموریت', 'حقوق: مزایا و بدهی مخصوص',
-    'حقوق: پرداخت‌های متفرقه', 'حقوق: کارگران روزمزد', 'حقوق: اطلاعات عیدی', 'حقوق: محاسبات فردی']
+ACCOUNTANT_SOON = []
 
 
 @policy_required('staff.accountant')

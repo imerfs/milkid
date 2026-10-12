@@ -31,6 +31,8 @@ DEFAULT_TITLES = ['حقوق و دستمزد روزانه', 'حق مسکن', 'ح�
                   'فوق‌العاده مدیریت', 'فوق‌العاده بدی آب و هوا', 'فوق‌العاده سختی کار', 'فوق‌العاده ایثارگری',
                   'فوق‌العاده تحصیلی', 'فوق‌العاده جذب']
 GROUPS = dict(CALC_GROUPS)
+INT_FIELDS = ('children', 'ins_main', 'ins_dep1', 'ins_dep2', 'ins_dep3', 'supp_normal', 'supp_special1',
+              'supp_special2', 'supp_special3')
 
 
 def _round(value):
@@ -136,6 +138,9 @@ def _employee_values(muni, v):
         v[name] = _text(v.get(name), label)[:100]
     if v.get('calc_group') not in GROUPS:
         raise Invalid('گروه محاسباتی نامعتبر است.')
+    for name in INT_FIELDS:
+        if name in v:
+            v[name] = int(_num(v[name], name, maximum=20))
     if v.get('start_date') is None:
         raise Invalid('تاریخ شروع خدمت را وارد کنید.')
     if v.get('end_date') and v['end_date'] < v['start_date']:
@@ -638,9 +643,9 @@ def eidi_records(actor, year):
     return EidiRecord.objects.filter(employee__municipality=municipality_of(actor), year=year).select_related('employee')
 
 
-def compute_eidi(actor, year, worked=None):
+def compute_eidi(actor, year, worked=None, only=None):
     """Eidi of every active employee whose group has a setting for the year. `worked` = {employee_id: (worked, absent, sick)}
-    overrides the default of a full year. amount = min(cap, fixed x (worked - absent) / annual days) - advance, never below 0."""
+    overrides the default of a full year; `only` limits it to one employee. amount = min(cap, fixed x (worked - absent) / annual days) - advance, never below 0."""
     muni = municipality_of(actor)
     year, _ = _period(year, 1)
     worked = worked or {}
@@ -650,7 +655,8 @@ def compute_eidi(actor, year, worked=None):
     count = 0
     with transaction.atomic():
         _locked(Municipality, muni.id)
-        for emp in Employee.objects.filter(municipality=muni, active=True, calc_group__in=settings):
+        staff = Employee.objects.filter(municipality=muni, active=True, calc_group__in=settings)
+        for emp in staff.filter(pk=only) if only else staff:
             s = settings[emp.calc_group]
             w, a, sick = (_num(x, 'کارکرد') for x in worked.get(emp.id, (s.annual_days, 0, 0)))
             if w > s.annual_days or a > w:
