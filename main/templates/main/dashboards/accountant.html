@@ -11,8 +11,6 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     
-    <!-- Chart.js for data visualization -->
-    <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
     
     <!-- Flatpickr for date picker -->
 
@@ -399,12 +397,10 @@
             </div>
             
             <nav class="mt-2">
-                <a href="{% url 'main:accountant_dashboard' %}" class="flex items-center py-3 px-6 text-white bg-primary-600" aria-current="page">
+                <a href="#acc-workspace" data-acc-tab="vouchers" class="flex items-center py-3 px-6 text-white bg-primary-600" aria-current="page">
                     <i class="fas fa-tachometer-alt w-5 h-5" aria-hidden="true"></i>
                     <span class="mr-3 font-semibold">داشبورد</span>
                 </a>
-                
-                <!-- Accounting Section -->
                 <details class="group">
                     <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
                         <div class="flex items-center">
@@ -414,21 +410,19 @@
                         <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
                     </summary>
                     <div class="submenu bg-gray-700/50">
-                        <a href="{% url 'main:acc_home' %}" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">عملیات ابتدای سال مالی</a>
+                        <a href="#acc-workspace" data-acc-tab="setup" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">عملیات ابتدای سال مالی</a>
                         <a href="#acc-workspace" data-acc-tab="vouchers" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ثبت اسناد</a>
-                        <a href="{% url 'main:acc_home' %}" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تغییر وضعیت اسناد</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پیش نویس سند</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تصاویر اسناد</a>
-                        <a href="{% url 'main:acc_parties' %}" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">طرف حسابها</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تامین اعتبار</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">خزانه اسناد پرداختی</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">قرار داد ها</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ضمانت نامه ها</a>
+                        <a href="#acc-workspace" data-acc-tab="vouchers" data-acc-query="status=temporary" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پیش نویس سند</a>
+                        <a href="#acc-workspace" data-acc-tab="vouchers" data-acc-query="status=final" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تغییر وضعیت اسناد</a>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تصاویر اسناد<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <a href="#acc-workspace" data-acc-tab="parties" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">طرف حسابها</a>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تامین اعتبار<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">خزانه اسناد پرداختی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">قرار داد ها<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">ضمانت نامه ها<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
                     </div>
                 </details>
-
-                 <!-- Payroll Section -->
-                 <details class="group">
+                <details class="group">
                     <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
                         <div class="flex items-center">
                             <i class="fas fa-money-check-alt w-5 h-5" aria-hidden="true"></i>
@@ -437,20 +431,18 @@
                         <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
                     </summary>
                     <div class="submenu bg-gray-700/50">
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">اصلی مزایا بدهی</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">کاردکرد</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ماموریت</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">مزایا مخصوص</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">بدهی مخصوص</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پرداخت های متفرقه</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">کارگران روزمزد</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">اطلاعات عیدی</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">نحوه محاسبات فردی</a>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">اصلی مزایا بدهی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">کارکرد<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">ماموریت<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">مزایا مخصوص<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">بدهی مخصوص<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">پرداخت های متفرقه<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">کارگران روزمزد<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">اطلاعات عیدی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">نحوه محاسبات فردی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
                     </div>
                 </details>
-                
-                <!-- Income Section -->
-                 <details class="group">
+                <details class="group">
                     <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
                         <div class="flex items-center">
                             <i class="fas fa-chart-line w-5 h-5" aria-hidden="true"></i>
@@ -460,23 +452,40 @@
                     </summary>
                     <div class="submenu bg-gray-700/50">
                         <a href="#acc-workspace" data-acc-tab="bills" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">فیش های نقدی</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پرداختی ها</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">درآمد حمل و نقل</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تقسیط</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تغییر وضعیت</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">خزانه</a>
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تصاویر پرونده تقسیط</a>
+                        <a href="#acc-workspace" data-acc-tab="online" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پرداختی ها (آنلاین)</a>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">درآمد حمل و نقل<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تقسیط<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تغییر وضعیت<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">خزانه<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
+                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تصاویر پرونده تقسیط<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
                     </div>
                 </details>
-
-                <a href="#" class="flex items-center py-3 px-6 text-gray-300 hover:bg-gray-700 hover:text-white">
-                    <i class="fas fa-chart-pie w-5 h-5" aria-hidden="true"></i>
-                    <span class="mr-3">گزارش‌گیری</span>
-                </a>
-                 <a href="#" class="flex items-center py-3 px-6 text-gray-300 hover:bg-gray-700 hover:text-white">
-                    <i class="fas fa-cogs w-5 h-5" aria-hidden="true"></i>
-                    <span class="mr-3">تنظیمات مالی</span>
-                </a>
+                <details class="group">
+                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-pie w-5 h-5" aria-hidden="true"></i>
+                            <span class="mr-3">گزارش‌گیری</span>
+                        </div>
+                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
+                    </summary>
+                    <div class="submenu bg-gray-700/50">
+                        <a href="#acc-workspace" data-acc-tab="trial" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تراز آزمایشی</a>
+                        <a href="#acc-workspace" data-acc-tab="budget" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">بودجه و عملکرد</a>
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
+                        <div class="flex items-center">
+                            <i class="fas fa-cogs w-5 h-5" aria-hidden="true"></i>
+                            <span class="mr-3">تنظیمات مالی</span>
+                        </div>
+                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
+                    </summary>
+                    <div class="submenu bg-gray-700/50">
+                        <a href="#acc-workspace" data-acc-tab="setup" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">سال مالی و سرفصل‌ها</a>
+                        <a href="#acc-workspace" data-acc-tab="accounts" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">سرفصل حساب‌ها</a>
+                    </div>
+                </details>
             </nav>
         </aside>
 
@@ -529,197 +538,20 @@
             <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 dark:bg-gray-900 p-4 md:p-8">
                 <div class="container mx-auto">
                     {% csrf_token %}
-
-                    <!-- Accounting workspace: vouchers, cash bills and budget in one place (HTMX fragments + dialog) -->
-                    <section id="acc-workspace" class="mb-12" aria-labelledby="acc-workspace-h">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 id="acc-workspace-h" class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-primary-500 pr-4">حسابداری {{ acc_muni_name }}</h2>
-                            <a href="{% url 'main:acc_home' %}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600"><i class="fas fa-gear ml-1" aria-hidden="true"></i>سرفصل‌ها و سال‌های مالی</a>
-                        </div>
+                    <!-- Accounting workspace: every operation opens in a dialog on this page (HTMX fragments) -->
+                    <section id="acc-workspace" aria-labelledby="acc-workspace-h">
+                        <h2 id="acc-workspace-h" class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-primary-500 pr-4">حسابداری {{ acc_muni_name }}</h2>
                         {% if acc_ready %}
-                        <div id="acc-panel" hx-get="{% url 'main:acc_panel' %}" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+                        <div id="acc-panel" hx-get="{% url 'main:acc_panel' %}" hx-trigger="load" hx-swap="innerHTML" data-base="{% url 'main:acc_panel' %}" aria-live="polite">
                             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-spinner fa-spin ml-1" aria-hidden="true"></i>در حال بارگذاری حسابداری...</div>
                         </div>
                         {% else %}
                         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center text-gray-600 dark:text-gray-300" role="status">
                             <i class="fas fa-circle-info text-3xl text-warning-500 mb-2" aria-hidden="true"></i>
-                            <p>حسابداری برای حساب شما فعال نیست: دهیاری‌ای به این کاربر متصل نشده است.</p>
+                            <p>حسابداری برای حساب شما فعال نیست: این کاربر به دهیاری‌ای متصل نشده است. از دهیار بخواهید روستای کاربر را تنظیم کند.</p>
                         </div>
                         {% endif %}
                     </section>
-
-                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-accent-500 pr-4">پرداخت‌های آنلاین شهروندان</h2>
-
-                    <!-- Date filter and search (GET form: the view applies the filters) -->
-                    <form method="get" class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <div class="flex flex-wrap gap-3 items-center">
-                            <label class="text-sm text-gray-600 dark:text-gray-300">از
-                                <input type="date" name="date_from" value="{{ filters.date_from }}" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            </label>
-                            <label class="text-sm text-gray-600 dark:text-gray-300">تا
-                                <input type="date" name="date_to" value="{{ filters.date_to }}" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            </label>
-                            <select name="section" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="فیلتر بر اساس بخش">
-                                <option value="all" {% if filters.section == 'all' %}selected{% endif %}>همه بخش‌ها</option>
-                                <option value="income" {% if filters.section == 'income' %}selected{% endif %}>درآمد</option>
-                                <option value="expense" {% if filters.section == 'expense' %}selected{% endif %}>هزینه</option>
-                                <option value="salary" {% if filters.section == 'salary' %}selected{% endif %}>حقوق</option>
-                            </select>
-                            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm">
-                                <i class="fas fa-filter ml-1" aria-hidden="true"></i> فیلتر
-                            </button>
-                            <a href="{% url 'main:accountant_dashboard' %}" class="text-sm text-gray-500 dark:text-gray-300 hover:underline">پاک کردن</a>
-                        </div>
-                        <div class="relative w-full md:w-64">
-                            <input type="text" name="search" value="{{ filters.search }}" placeholder="جستجو در تراکنش‌ها..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="جستجو در تراکنش‌ها">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i>
-                        </div>
-                    </form>
-
-                    <!-- Statistics Cards -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">موجودی خالص</p>
-                                <p class="text-2xl font-bold text-primary-600 dark:text-primary-400">{{ stats.net_profit|floatformat:"0g" }} تومان</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">درآمد منهای هزینه (تکمیل‌شده)</p>
-                            </div>
-                            <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-full"><i class="fas fa-wallet w-6 h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i></div>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">کل درآمد</p>
-                                <p class="text-2xl font-bold text-success-600">{{ stats.total_income|floatformat:"0g" }} تومان</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">مالیات و عوارض پروانه</p>
-                            </div>
-                            <div class="bg-success-100 dark:bg-success-900/30 p-3 rounded-full"><i class="fas fa-arrow-down w-6 h-6 text-success-600" aria-hidden="true"></i></div>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">کل هزینه</p>
-                                <p class="text-2xl font-bold text-error-500">{{ stats.total_expense|floatformat:"0g" }} تومان</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">جریمه، خدمات و سایر</p>
-                            </div>
-                            <div class="bg-error-100 dark:bg-error-900/30 p-3 rounded-full"><i class="fas fa-arrow-up w-6 h-6 text-error-500" aria-hidden="true"></i></div>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center justify-between card-hover">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">در انتظار تایید</p>
-                                <p class="text-2xl font-bold text-warning-500">{{ stats.pending_count }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">مجموع {{ stats.pending_payments|floatformat:"0g" }} تومان</p>
-                            </div>
-                            <div class="bg-warning-100 dark:bg-warning-900/30 p-3 rounded-full"><i class="fas fa-hourglass-half w-6 h-6 text-warning-500" aria-hidden="true"></i></div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg lg:col-span-2 p-6">
-                            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-primary-500 pr-4">روند درآمد (۶ ماه اخیر)</h2>
-                            <div class="chart-container"><canvas id="financial-chart" aria-label="نمودار روند درآمد"></canvas></div>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-warning-500 pr-4">تراکنش‌ها بر اساس نوع</h2>
-                            <div class="chart-container"><canvas id="expense-distribution-chart" aria-label="نمودار توزیع تراکنش‌ها"></canvas></div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                        <!-- Pending Payments -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-warning-500 pr-4">پرداخت‌های در انتظار تایید</h2>
-                                <span class="bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-200 text-xs font-medium px-2 py-1 rounded-full">{{ stats.pending_count }} مورد</span>
-                            </div>
-                            <div class="space-y-4" id="pending-list">
-                                {% for p in pending_for_approval %}
-                                <div class="bg-warning-50 dark:bg-gray-700 p-3 rounded-lg flex justify-between items-center" data-payment-card>
-                                    <div>
-                                        <p class="font-semibold">{{ p.description }}</p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ p.amount|floatformat:"0g" }} تومان · {{ p.user.get_full_name|default:p.user.username }}</p>
-                                        <p class="text-xs text-gray-500">{{ p.created_at|jalali_date }} · رسید {{ p.receipt_number }}</p>
-                                    </div>
-                                    <div class="flex flex-col space-y-1">
-                                        <button type="button" class="bg-success-600 hover:bg-success-700 text-white px-3 py-1 rounded-md text-xs" data-review-url="{% url 'main:api_approve_payment' p.id %}">تایید</button>
-                                        <button type="button" class="bg-error-500 hover:bg-error-600 text-white px-3 py-1 rounded-md text-xs" data-review-url="{% url 'main:api_reject_payment' p.id %}">رد</button>
-                                    </div>
-                                </div>
-                                {% empty %}
-                                <div class="empty-state text-gray-500 dark:text-gray-400"><i class="fas fa-check-circle text-3xl mb-2 text-success-500" aria-hidden="true"></i>پرداختی در انتظار تایید نیست.</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <!-- Recent Notifications -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 lg:col-span-2">
-                            <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-accent-500 pr-4">اعلان‌های اخیر</h2>
-                                <span class="bg-accent-100 dark:bg-accent-900/30 text-accent-800 dark:text-accent-200 text-xs font-medium px-2 py-1 rounded-full">{{ notifications|length }} جدید</span>
-                            </div>
-                            <div class="space-y-4">
-                                {% for n in notifications %}
-                                <div class="flex items-start p-3 bg-primary-50 dark:bg-gray-700 rounded-lg">
-                                    <div class="bg-primary-100 dark:bg-primary-900/30 p-2 rounded-full ml-3"><i class="fas fa-info-circle text-primary-600 dark:text-primary-400" aria-hidden="true"></i></div>
-                                    <div class="flex-1">
-                                        <p class="font-medium">{{ n.title }}</p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ n.message }}</p>
-                                        <p class="text-xs text-gray-500 mt-1">{{ n.created_at|time_since_jalali }}</p>
-                                    </div>
-                                </div>
-                                {% empty %}
-                                <div class="empty-state text-gray-500 dark:text-gray-400"><i class="fas fa-bell-slash text-3xl mb-2" aria-hidden="true"></i>اعلان جدیدی ندارید.</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transactions -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-accent-500 pr-4">تراکنش‌ها</h2>
-                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ transactions.paginator.count }} مورد</span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-right">
-                                <thead class="border-b-2">
-                                    <tr>
-                                        <th class="py-3 px-2 font-semibold text-sm">شماره رسید</th>
-                                        <th class="py-3 px-2 font-semibold text-sm">شرح</th>
-                                        <th class="py-3 px-2 font-semibold text-sm">کاربر</th>
-                                        <th class="py-3 px-2 font-semibold text-sm">مبلغ</th>
-                                        <th class="py-3 px-2 font-semibold text-sm">تاریخ</th>
-                                        <th class="py-3 px-2 font-semibold text-sm">وضعیت</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for t in transactions %}
-                                    <tr class="border-b table-row-hover">
-                                        <td class="py-4 px-2">{{ t.receipt_number }}</td>
-                                        <td class="py-4 px-2">{{ t.description }}</td>
-                                        <td class="py-4 px-2">{{ t.user.get_full_name|default:t.user.username }}</td>
-                                        {% if t.payment_type == 'property_tax' or t.payment_type == 'permit_fee' %}
-                                        <td class="py-4 px-2 font-semibold text-success-600">+{{ t.amount|floatformat:"0g" }} تومان</td>
-                                        {% else %}
-                                        <td class="py-4 px-2 font-semibold text-error-500">-{{ t.amount|floatformat:"0g" }} تومان</td>
-                                        {% endif %}
-                                        <td class="py-4 px-2 text-gray-600 dark:text-gray-400">{{ t.created_at|jalali_date }}</td>
-                                        <td class="py-4 px-2"><span class="text-xs font-medium px-3 py-1 rounded-full {% if t.status == 'completed' %}bg-success-100 text-success-800{% elif t.status == 'rejected' %}bg-error-100 text-error-800{% else %}bg-warning-100 text-warning-800{% endif %}">{{ t.get_status_display }}</span></td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="6" class="py-8 text-center text-gray-500 dark:text-gray-400">تراکنشی یافت نشد.</td></tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% if transactions.paginator.num_pages > 1 %}
-                        <div class="flex justify-between items-center mt-4 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">صفحه {{ transactions.number }} از {{ transactions.paginator.num_pages }}</span>
-                            <div class="flex space-x-2 space-x-reverse">
-                                {% if transactions.has_previous %}<a class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md" href="?page={{ transactions.previous_page_number }}&date_from={{ filters.date_from|urlencode }}&date_to={{ filters.date_to|urlencode }}&section={{ filters.section|urlencode }}&search={{ filters.search|urlencode }}">قبلی</a>{% endif %}
-                                {% if transactions.has_next %}<a class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md" href="?page={{ transactions.next_page_number }}&date_from={{ filters.date_from|urlencode }}&date_to={{ filters.date_to|urlencode }}&section={{ filters.section|urlencode }}&search={{ filters.search|urlencode }}">بعدی</a>{% endif %}
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
                 </div>
             </main>
         </div>
@@ -751,13 +583,9 @@
 
             // --- Dark mode ---
             const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const tone = () => document.body.classList.contains('dark')
-                ? { text: '#e2e8f0', grid: 'rgba(255,255,255,0.1)' }
-                : { text: '#4b5563', grid: 'rgba(0,0,0,0.1)' };
             darkModeToggle.addEventListener('change', () => {
                 document.body.classList.toggle('dark');
                 try { localStorage.setItem('darkMode', document.body.classList.contains('dark')); } catch (e) {}
-                applyChartTone();
             });
             try {
                 if (localStorage.getItem('darkMode') === 'true') {
@@ -766,65 +594,11 @@
                 }
             } catch (e) {}
 
-            // --- Charts (data comes from the view) ---
-            const incomeLabels = {{ stats.monthly_income_labels|safe }};
-            const incomeData = {{ stats.monthly_income_data|safe }};
-            const typeLabels = {{ stats.payment_type_labels|safe }};
-            const typeData = {{ stats.payment_type_data|safe }};
-            const font = { family: 'Vazirmatn' };
-
-            const financialChart = new Chart(document.getElementById('financial-chart'), {
-                type: 'bar',
-                data: { labels: incomeLabels, datasets: [{
-                    label: 'درآمد (تومان)', data: incomeData,
-                    backgroundColor: 'rgba(14,132,199,0.6)', borderColor: 'rgba(14,132,199,1)',
-                    borderWidth: 1, borderRadius: 5 }] },
-                options: { responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, ticks: { font } }, x: { ticks: { font } } },
-                    plugins: { legend: { labels: { font } } } }
-            });
-            const typeChart = new Chart(document.getElementById('expense-distribution-chart'), {
-                type: 'doughnut',
-                data: { labels: typeLabels, datasets: [{ data: typeData,
-                    backgroundColor: ['rgba(14,132,199,0.8)', 'rgba(220,38,38,0.8)', 'rgba(217,119,6,0.8)',
-                                      'rgba(22,163,74,0.8)', 'rgba(168,85,247,0.8)', 'rgba(100,116,139,0.8)'] }] },
-                options: { responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { font } } } }
-            });
-            function applyChartTone() {
-                const t = tone();
-                for (const c of [financialChart, typeChart]) {
-                    if (c.options.scales && c.options.scales.x) {
-                        c.options.scales.x.ticks.color = t.text; c.options.scales.y.ticks.color = t.text;
-                        c.options.scales.x.grid = { color: t.grid }; c.options.scales.y.grid = { color: t.grid };
-                    }
-                    c.options.plugins.legend.labels.color = t.text;
-                    c.update();
-                }
-            }
-            applyChartTone();
-
-            // --- Approve / reject pending payments (policy-protected POST endpoints) ---
-            const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            document.querySelectorAll('[data-review-url]').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    btn.disabled = true;
-                    try {
-                        const r = await fetch(btn.dataset.reviewUrl, { method: 'POST', headers: { 'X-CSRFToken': csrf } });
-                        if (!r.ok) throw new Error(r.status);
-                        btn.closest('[data-payment-card]').remove();
-                    } catch (e) {
-                        btn.disabled = false;
-                        alert('انجام عملیات ممکن نبود. دسترسی یا اتصال را بررسی کنید.');
-                    }
-                });
-            });
-
             // --- Menu search ---
             document.getElementById('menu-search').addEventListener('input', function () {
                 const q = this.value.toLowerCase();
-                document.querySelectorAll('#sidebar nav a').forEach(a => {
-                    a.style.display = a.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+                document.querySelectorAll('#sidebar nav a, #sidebar nav [aria-disabled]').forEach(a => {
+                    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
             });
         });

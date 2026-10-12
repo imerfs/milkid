@@ -1,0 +1,53 @@
+{% load accounting_tags jalali_tags %}
+<section aria-labelledby="online-pending" class="mb-8">
+    <div class="flex justify-between items-center mb-3">
+        <h3 id="online-pending" class="font-bold text-gray-800 dark:text-gray-100 border-r-4 border-warning-500 pr-3">در انتظار تایید</h3>
+        <span class="bg-warning-100 text-warning-800 text-xs font-medium px-2 py-1 rounded-full">{{ pending_count|rial }} مورد</span>
+    </div>
+    <div class="space-y-3">
+        {% for p in pending %}
+        <div class="bg-warning-50 dark:bg-gray-700 p-3 rounded-lg flex flex-wrap justify-between items-center gap-2" data-payment-card>
+            <div>
+                <p class="font-semibold">{{ p.description }}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ p.amount|floatformat:"0g" }} تومان · {{ p.user.get_full_name|default:p.user.username }}</p>
+                <p class="text-xs text-gray-500">{{ p.created_at|jalali_date }} · رسید {{ p.receipt_number }}</p>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" class="bg-success-600 hover:bg-success-700 text-white px-3 py-1 rounded-md text-xs" data-review-url="{% url 'main:api_approve_payment' p.id %}">تایید</button>
+                <button type="button" class="bg-error-500 hover:bg-error-600 text-white px-3 py-1 rounded-md text-xs" data-review-url="{% url 'main:api_reject_payment' p.id %}">رد</button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="py-6 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-check-circle text-3xl mb-2 text-success-500" aria-hidden="true"></i><p>پرداختی در انتظار تایید نیست.</p></div>
+        {% endfor %}
+    </div>
+</section>
+
+<h3 class="font-bold text-gray-800 dark:text-gray-100 mb-3 border-r-4 border-accent-500 pr-3">تراکنش‌ها</h3>
+<form hx-get="{{ panel_url }}" hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name=q]" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" role="search" aria-label="فیلتر تراکنش‌ها">
+    <input type="hidden" name="tab" value="online">
+    <label class="col-span-2 relative"><span class="sr-only">جستجو در تراکنش‌ها</span>
+        <input type="search" name="q" value="{{ g.q }}" placeholder="شماره رسید، شرح یا نام کاربر..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+        <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i></label>
+    <label class="col-span-2 md:col-span-1"><span class="sr-only">وضعیت</span>
+        <select name="pay_status" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"><option value="">همه وضعیت‌ها</option><option value="pending" {% if g.pay_status == 'pending' %}selected{% endif %}>در انتظار</option><option value="completed" {% if g.pay_status == 'completed' %}selected{% endif %}>تکمیل‌شده</option><option value="rejected" {% if g.pay_status == 'rejected' %}selected{% endif %}>ردشده</option></select></label>
+</form>
+<div class="overflow-x-auto">
+    <table class="w-full text-right">
+        <thead class="border-b-2 border-gray-200 dark:border-gray-700"><tr><th class="py-3 px-2 font-semibold text-sm">رسید</th><th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">شرح</th><th class="py-3 px-2 font-semibold text-sm hidden sm:table-cell">کاربر</th><th class="py-3 px-2 font-semibold text-sm">مبلغ (تومان)</th><th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">تاریخ</th><th class="py-3 px-2 font-semibold text-sm">وضعیت</th></tr></thead>
+        <tbody>
+        {% for t in page %}
+            <tr class="border-b border-gray-100 dark:border-gray-700">
+                <td class="py-3 px-2">{{ t.receipt_number }}</td><td class="py-3 px-2 hidden md:table-cell">{{ t.description|truncatechars:50 }}</td>
+                <td class="py-3 px-2 hidden sm:table-cell">{{ t.user.get_full_name|default:t.user.username }}</td>
+                <td class="py-3 px-2 whitespace-nowrap font-semibold {% if t.payment_type == 'property_tax' or t.payment_type == 'permit_fee' %}text-success-600">+{% else %}text-error-500">-{% endif %}{{ t.amount|floatformat:"0g" }}</td>
+                <td class="py-3 px-2 hidden md:table-cell text-gray-600 dark:text-gray-400">{{ t.created_at|jalali_date }}</td>
+                <td class="py-3 px-2"><span class="text-xs font-medium px-3 py-1 rounded-full {% if t.status == 'completed' %}bg-success-100 text-success-800{% elif t.status == 'rejected' %}bg-error-100 text-error-800{% else %}bg-warning-100 text-warning-800{% endif %}">{{ t.get_status_display }}</span></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="py-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-credit-card text-3xl mb-2" aria-hidden="true"></i><p>تراکنشی یافت نشد.</p></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include 'main/accounting/panel/_pager.html' %}

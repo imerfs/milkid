@@ -48,13 +48,31 @@
     });
     dialog.addEventListener('close', function () { body.innerHTML = ''; });
 
-    // Sidebar shortcuts open a tab of the workspace instead of leaving the page.
+    // Sidebar shortcuts open a tab of the workspace (optionally with a filter) instead of leaving the page.
     document.querySelectorAll('[data-acc-tab]').forEach(function (link) {
         link.addEventListener('click', function () {
             var holder = panel.querySelector('[data-year]');
-            if (!holder) return;
-            htmx.ajax('GET', holder.dataset.panelUrl + '?year=' + holder.dataset.year + '&tab=' + link.dataset.accTab,
+            var year = holder && holder.dataset.year ? 'year=' + holder.dataset.year + '&' : '';
+            var extra = link.dataset.accQuery ? '&' + link.dataset.accQuery : '';
+            htmx.ajax('GET', panel.dataset.base + '?' + year + 'tab=' + link.dataset.accTab + extra,
                       { target: '#acc-panel', swap: 'innerHTML' });
         });
+    });
+
+    // Approve / reject an online payment (policy-protected POST endpoints), then refresh the panel.
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-review-url]');
+        if (!btn) return;
+        btn.disabled = true;
+        fetch(btn.dataset.reviewUrl, { method: 'POST', headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value } })
+            .then(function (r) {
+                if (!r.ok) throw new Error(r.status);
+                say('انجام شد.');
+                reload();
+            })
+            .catch(function () {
+                btn.disabled = false;
+                say('انجام عملیات ممکن نبود. دسترسی یا اتصال را بررسی کنید.', true);
+            });
     });
 })();

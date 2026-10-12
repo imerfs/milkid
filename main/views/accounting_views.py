@@ -224,27 +224,47 @@ def acc_voucher_delete(request, voucher_id):
 
 # ---------- chart of accounts and parties ----------
 
+def new_account(muni, post):
+    """Validate and create a chart-of-accounts row from form data; raises Invalid/Conflict."""
+    code, title = post.get('code', '').strip(), post.get('title', '').strip()
+    if not code.isascii() or not code.isalnum() or len(code) > 20 or not title or len(title) > 200:
+        raise Invalid('کد (حروف و رقم انگلیسی، حداکثر ۲۰) و شرح حساب را درست وارد کنید.')
+    kind, nature = post.get('kind'), post.get('nature')
+    if kind not in dict(Account.KINDS) or nature not in dict(Account.NATURES):
+        raise Invalid('نوع یا ماهیت حساب نامعتبر است.')
+    parent = Account.objects.filter(municipality=muni, pk=parse_int_or_none(post.get('parent'))).first()
+    try:
+        with transaction.atomic():
+            return Account.objects.create(
+                municipality=muni, code=code, title=title, kind=kind, nature=nature, parent=parent,
+                is_postable=bool(post.get('is_postable')), requires_party=bool(post.get('requires_party')))
+    except IntegrityError:
+        raise Conflict('این کد حساب قبلاً ثبت شده است.')
+
+
+def new_party(muni, post):
+    """Validate and create a party from form data; raises Invalid."""
+    from main.accounting.parse import digits
+    party = Party(municipality=muni, kind=post.get('kind', 'real'), name=post.get('name', '').strip(),
+                  national_id=digits(post.get('national_id')), phone=digits(post.get('phone')),
+                  mobile=digits(post.get('mobile')), address=post.get('address', '').strip())
+    try:
+        if party.kind not in dict(Party.KINDS) or not party.name:
+            raise ValidationError('نوع و نام طرف حساب را درست وارد کنید.')
+        party.full_clean()
+        party.save()
+    except ValidationError as exc:
+        raise Invalid(' '.join(exc.messages))
+    return party
+
+
 @_guard()
 def acc_accounts(request):
     muni = ledger.municipality_of(request.user)
     error, status, posted = None, 200, request.POST
     if request.method == 'POST':
         try:
-            code, title = request.POST.get('code', '').strip(), request.POST.get('title', '').strip()
-            if not code.isascii() or not code.isalnum() or len(code) > 20 or not title or len(title) > 200:
-                raise Invalid('کد (حروف و رقم انگلیسی، حداکثر ۲۰) و شرح حساب را درست وارد کنید.')
-            kind, nature = request.POST.get('kind'), request.POST.get('nature')
-            if kind not in dict(Account.KINDS) or nature not in dict(Account.NATURES):
-                raise Invalid('نوع یا ماهیت حساب نامعتبر است.')
-            parent = Account.objects.filter(municipality=muni, pk=parse_int_or_none(request.POST.get('parent'))).first()
-            try:
-                with transaction.atomic():
-                    Account.objects.create(
-                        municipality=muni, code=code, title=title, kind=kind, nature=nature, parent=parent,
-                        is_postable=bool(request.POST.get('is_postable')),
-                        requires_party=bool(request.POST.get('requires_party')))
-            except IntegrityError:
-                raise Conflict('این کد حساب قبلاً ثبت شده است.')
+            new_account(muni, request.POST)
             messages.success(request, 'حساب افزوده شد.')
             return redirect('main:acc_accounts')
         except OfficeError as exc:
@@ -259,20 +279,12 @@ def acc_parties(request):
     muni = ledger.municipality_of(request.user)
     error, status = None, 200
     if request.method == 'POST':
-        from main.accounting.parse import digits
-        party = Party(municipality=muni, kind=request.POST.get('kind', 'real'),
-                      name=request.POST.get('name', '').strip(), national_id=digits(request.POST.get('national_id')),
-                      phone=digits(request.POST.get('phone')), mobile=digits(request.POST.get('mobile')),
-                      address=request.POST.get('address', '').strip())
         try:
-            if party.kind not in dict(Party.KINDS) or not party.name:
-                raise ValidationError('نوع و نام طرف حساب را درست وارد کنید.')
-            party.full_clean()
-            party.save()
+            new_party(muni, request.POST)
             messages.success(request, 'طرف حساب افزوده شد.')
             return redirect('main:acc_parties')
-        except ValidationError as exc:
-            error, status = ' '.join(exc.messages), 400
+        except OfficeError as exc:
+            error, status = str(exc), exc.status
     q = request.GET.get('q', '').strip()
     parties = Party.objects.filter(municipality=muni)
     if q:

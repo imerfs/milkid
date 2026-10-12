@@ -1,0 +1,32 @@
+{% load accounting_tags %}
+{% if g.year and not year %}<div class="mb-4 p-3 rounded-lg bg-warning-50 text-warning-800 text-sm" role="alert">سال مالی انتخاب‌شده پیدا نشد.</div>{% endif %}
+{% if not years_counted %}<div class="mb-4 p-3 rounded-lg bg-primary-50 text-primary-800 text-sm" role="status"><i class="fas fa-circle-info ml-1" aria-hidden="true"></i>برای شروع، سرفصل حساب‌ها را بسازید و سال مالی جاری را باز کنید؛ بعد اسناد، فیش‌ها و بودجه اینجا کار می‌کنند.</div>{% endif %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <section aria-labelledby="setup-years">
+        <h3 id="setup-years" class="font-bold text-gray-800 dark:text-gray-100 mb-3 border-r-4 border-primary-500 pr-3">سال‌های مالی</h3>
+        <ul class="divide-y divide-gray-100 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+            {% for y in years_counted %}
+            <li class="flex items-center justify-between px-4 py-3"><button type="button" class="font-bold text-primary-600 hover:underline" hx-get="{{ panel_url }}?year={{ y.id }}&tab=vouchers">سال {{ y.year|fa }}</button>
+                <span class="text-sm text-gray-500">{{ y.count|rial }} سند{% if y.is_closed %} · <span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">بسته</span>{% endif %}</span></li>
+            {% empty %}
+            <li class="px-4 py-6 text-center text-gray-500">سال مالی‌ای باز نشده است.</li>
+            {% endfor %}
+        </ul>
+        <form hx-post="{% url 'main:acc_p_year_open' %}" hx-swap="none" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+            {% csrf_token %}
+            <label class="acc-label" for="s-year">باز کردن سال مالی جدید (سال شمسی)</label>
+            <div class="flex gap-2"><input class="acc-input" id="s-year" name="year" inputmode="numeric" dir="ltr" maxlength="4" value="{{ this_year|fa }}" required><button type="submit" class="acc-btn-primary whitespace-nowrap">باز کردن</button></div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">سال از اول فروردین تا آخر اسفند است؛ سند افتتاحیه را خودتان با نوع «افتتاحیه» ثبت کنید.</p>
+        </form>
+    </section>
+    <section aria-labelledby="setup-chart">
+        <h3 id="setup-chart" class="font-bold text-gray-800 dark:text-gray-100 mb-3 border-r-4 border-accent-500 pr-3">سرفصل حساب‌ها</h3>
+        {% if has_accounts %}
+        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3"><i class="fas fa-circle-check text-success-600 ml-1" aria-hidden="true"></i>سرفصل‌ها ثبت شده‌اند. حساب تازه را از تب «سرفصل حساب‌ها» اضافه کنید.</p>
+        <button type="button" class="acc-btn" hx-get="{{ panel_url }}?tab=accounts">مشاهده سرفصل حساب‌ها</button>
+        {% else %}
+        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">سرفصل پیش‌فرض دهیاری (بانک‌ها، بدهکاران، بستانکاران، منابع و مصارف بودجه) را بسازید و بعد حساب‌های خود را اضافه کنید.</p>
+        <form hx-post="{% url 'main:acc_p_seed' %}" hx-swap="none">{% csrf_token %}<button type="submit" class="acc-btn-primary"><i class="fas fa-wand-magic-sparkles ml-1" aria-hidden="true"></i>ساخت سرفصل پیش‌فرض</button></form>
+        {% endif %}
+    </section>
+</div>

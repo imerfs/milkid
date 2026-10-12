@@ -1,0 +1,26 @@
+{% load accounting_tags %}
+<div class="flex flex-col sm:flex-row gap-3 mb-4 justify-between">
+    <form hx-get="{{ panel_url }}" hx-trigger="submit, keyup changed delay:400ms from:input[name=q]" role="search" class="sm:w-80">
+        <input type="hidden" name="tab" value="accounts">
+        <label class="relative block"><span class="sr-only">جستجوی کد یا شرح حساب</span>
+            <input type="search" name="q" value="{{ g.q }}" placeholder="جستجوی کد یا شرح حساب..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i></label>
+    </form>
+    <button type="button" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm" hx-get="{% url 'main:acc_p_account_new' %}" hx-target="#acc-modal-body"><i class="fas fa-plus ml-1" aria-hidden="true"></i>حساب جدید</button>
+</div>
+<div class="overflow-x-auto">
+    <table class="w-full text-right">
+        <thead class="border-b-2 border-gray-200 dark:border-gray-700"><tr><th class="py-3 px-2 font-semibold text-sm">کد</th><th class="py-3 px-2 font-semibold text-sm">شرح</th><th class="py-3 px-2 font-semibold text-sm hidden sm:table-cell">نوع</th><th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">ماهیت</th><th class="py-3 px-2 font-semibold text-sm">ثبت سند</th></tr></thead>
+        <tbody>
+        {% for a in page %}
+            <tr class="border-b border-gray-100 dark:border-gray-700"><td class="py-3 px-2 text-gray-500" dir="ltr">{{ a.code }}</td>
+                <td class="py-3 px-2">{{ a.title }}{% if a.requires_party %} <span class="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-800">طرف حساب</span>{% endif %}</td>
+                <td class="py-3 px-2 hidden sm:table-cell">{{ a.get_kind_display }}</td><td class="py-3 px-2 hidden md:table-cell">{{ a.get_nature_display }}</td>
+                <td class="py-3 px-2">{% if a.is_postable %}<i class="fas fa-check text-success-600" aria-label="بله"></i>{% else %}<span class="text-gray-400">سرفصل</span>{% endif %}</td></tr>
+        {% empty %}
+            <tr><td colspan="5" class="py-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-sitemap text-3xl mb-2" aria-hidden="true"></i><p>{% if filtered %}موردی پیدا نشد.{% else %}حسابی ثبت نشده است؛ از بخش «سال مالی» سرفصل پیش‌فرض را بسازید.{% endif %}</p></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include 'main/accounting/panel/_pager.html' %}
