@@ -727,15 +727,6 @@ class ModernUI {
                 }, 5000);
             }
         });
-
-        // Add loading state to navigation links
-        document.querySelectorAll('a[href]:not([href^="#"]):not([href^="javascript:"])').forEach(link => {
-            link.addEventListener('click', (e) => {
-                if (!e.ctrlKey && !e.metaKey) {
-                    this.showPageLoading();
-                }
-            });
-        });
     }
 
     setButtonLoading(button, isLoading) {
@@ -750,40 +741,6 @@ class ModernUI {
             button.disabled = false;
             button.textContent = button.dataset.originalText || 'ارسال';
         }
-    }
-
-    showPageLoading() {
-        const loader = document.createElement('div');
-        loader.id = 'page-loader';
-        loader.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255, 255, 255, 0.9);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                backdrop-filter: blur(5px);
-            ">
-                <div style="text-align: center;">
-                    <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto 1rem;"></div>
-                    <p style="color: #64748b; font-weight: 500;">در حال بارگذاری...</p>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(loader);
-
-        // Remove loader when page loads
-        window.addEventListener('load', () => {
-            const existingLoader = document.getElementById('page-loader');
-            if (existingLoader) {
-                existingLoader.remove();
-            }
-        });
     }
 
     // ========== Form Enhancements ==========

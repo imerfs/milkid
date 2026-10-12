@@ -49,3 +49,11 @@ class TailwindIsPrebuilt(TestCase):
         page = self.client.get(reverse('main:home')).content.decode()
         self.assertIn('css/tailwind.css', page)
         self.assertLess(page.index('css/melkid-design.css'), page.index('css/tailwind.css'))
+
+
+class NoFullPageLoader(TestCase):
+    def test_navigation_does_not_show_a_blocking_page_loader(self):
+        from pathlib import Path
+        js = Path('static/js/modern-interactions.js').read_text(encoding='utf-8')
+        self.assertNotIn('page-loader', js)
+        self.assertNotIn('showPageLoading', js)
