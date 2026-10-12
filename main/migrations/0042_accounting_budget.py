@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("main", "0040_userprofile_must_change_password"),
+        ("main", "0041_release_deleted_user_values"),
     ]
 
     operations = [
