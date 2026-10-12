@@ -415,7 +415,7 @@
                     </summary>
                     <div class="submenu bg-gray-700/50">
                         <a href="{% url 'main:acc_home' %}" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">عملیات ابتدای سال مالی</a>
-                        <a href="{% url 'main:acc_home' %}" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ثبت اسناد</a>
+                        <a href="#acc-workspace" data-acc-tab="vouchers" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ثبت اسناد</a>
                         <a href="{% url 'main:acc_home' %}" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تغییر وضعیت اسناد</a>
                         <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پیش نویس سند</a>
                         <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تصاویر اسناد</a>
@@ -459,7 +459,7 @@
                         <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
                     </summary>
                     <div class="submenu bg-gray-700/50">
-                        <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">فیش های نقدی</a>
+                        <a href="#acc-workspace" data-acc-tab="bills" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">فیش های نقدی</a>
                         <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پرداختی ها</a>
                         <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">درآمد حمل و نقل</a>
                         <a href="#" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تقسیط</a>
@@ -529,6 +529,26 @@
             <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 dark:bg-gray-900 p-4 md:p-8">
                 <div class="container mx-auto">
                     {% csrf_token %}
+
+                    <!-- Accounting workspace: vouchers, cash bills and budget in one place (HTMX fragments + dialog) -->
+                    <section id="acc-workspace" class="mb-12" aria-labelledby="acc-workspace-h">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 id="acc-workspace-h" class="text-xl font-bold text-gray-800 dark:text-gray-200 border-r-4 border-primary-500 pr-4">حسابداری {{ acc_muni_name }}</h2>
+                            <a href="{% url 'main:acc_home' %}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600"><i class="fas fa-gear ml-1" aria-hidden="true"></i>سرفصل‌ها و سال‌های مالی</a>
+                        </div>
+                        {% if acc_ready %}
+                        <div id="acc-panel" hx-get="{% url 'main:acc_panel' %}" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-spinner fa-spin ml-1" aria-hidden="true"></i>در حال بارگذاری حسابداری...</div>
+                        </div>
+                        {% else %}
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center text-gray-600 dark:text-gray-300" role="status">
+                            <i class="fas fa-circle-info text-3xl text-warning-500 mb-2" aria-hidden="true"></i>
+                            <p>حسابداری برای حساب شما فعال نیست: دهیاری‌ای به این کاربر متصل نشده است.</p>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-accent-500 pr-4">پرداخت‌های آنلاین شهروندان</h2>
 
                     <!-- Date filter and search (GET form: the view applies the filters) -->
                     <form method="get" class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -705,6 +725,13 @@
         </div>
     </div>
     
+<dialog id="acc-modal" class="p-0 rounded-2xl shadow-2xl w-[calc(100%-1.5rem)] max-w-5xl max-h-[92vh] overflow-y-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 backdrop:bg-black/50" aria-labelledby="acc-modal-title">
+        <div id="acc-modal-body"></div>
+    </dialog>
+    <div id="acc-toast" class="hidden" role="status" aria-live="polite"></div>
+    <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
+    <script src="{% static 'js/accounting.js' %}"></script>
+    <script src="{% static 'js/accounting-panel.js' %}"></script>
 <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- Sidebar toggle (mobile) ---

@@ -1,0 +1,45 @@
+{% load accounting_tags jalali_tags %}
+<form hx-get="{{ panel_url }}" hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name=q]" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" role="search" aria-label="فیلتر فیش‌ها">
+    <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="bills">
+    <label class="col-span-2 relative"><span class="sr-only">جستجو در پرداخت‌کننده یا شرح</span>
+        <input type="search" name="q" value="{{ g.q }}" placeholder="جستجو در پرداخت‌کننده یا شرح..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+        <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i></label>
+    <label class="col-span-2 md:col-span-1"><span class="sr-only">وضعیت فیش</span>
+        <select name="bill_status" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"><option value="">همه فیش‌ها</option><option value="open" {% if g.bill_status == 'open' %}selected{% endif %}>باز (پرداخت‌نشده یا قسمتی)</option><option value="paid" {% if g.bill_status == 'paid' %}selected{% endif %}>پرداخت‌شده</option><option value="canceled" {% if g.bill_status == 'canceled' %}selected{% endif %}>ابطال‌شده</option></select></label>
+</form>
+
+<div class="overflow-x-auto">
+    <table class="w-full text-right">
+        <thead class="border-b-2 border-gray-200 dark:border-gray-700">
+            <tr>
+                <th class="py-3 px-2 font-semibold text-sm">شماره</th>
+                <th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">تاریخ</th>
+                <th class="py-3 px-2 font-semibold text-sm">پرداخت‌کننده</th>
+                <th class="py-3 px-2 font-semibold text-sm hidden lg:table-cell">شرح</th>
+                <th class="py-3 px-2 font-semibold text-sm">مبلغ (ریال)</th>
+                <th class="py-3 px-2 font-semibold text-sm hidden sm:table-cell">پرداخت‌شده</th>
+                <th class="py-3 px-2 font-semibold text-sm">وضعیت</th>
+                <th class="py-3 px-2 font-semibold text-sm"><span class="sr-only">عملیات</span></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for b in page %}
+            <tr class="border-b border-gray-100 dark:border-gray-700 table-row-hover">
+                <td class="py-3 px-2 font-bold">{{ b.number|fa }}</td>
+                <td class="py-3 px-2 hidden md:table-cell text-gray-600 dark:text-gray-400">{{ b.date|jalali_date|fa }}</td>
+                <td class="py-3 px-2">{{ b.party.name }}</td>
+                <td class="py-3 px-2 hidden lg:table-cell">{{ b.description|truncatechars:45 }}</td>
+                <td class="py-3 px-2 whitespace-nowrap">{{ b.amount|rial }}</td>
+                <td class="py-3 px-2 hidden sm:table-cell whitespace-nowrap">{{ b.paid|rial }}</td>
+                <td class="py-3 px-2">{% if b.state == 'canceled' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-gray-200 text-gray-700">ابطال</span>{% elif b.state == 'paid' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-success-100 text-success-800">پرداخت‌شده</span>{% elif b.state == 'partial' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-warning-100 text-warning-800">قسمتی</span>{% else %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-primary-100 text-primary-800">پرداخت‌نشده</span>{% endif %}</td>
+                <td class="py-3 px-2 whitespace-nowrap text-left">
+                    <button type="button" class="text-primary-600 hover:underline text-sm" hx-get="{% url 'main:acc_p_bill_detail' b.id %}" hx-target="#acc-modal-body" aria-label="{% if b.state != 'paid' and b.state != 'canceled' and not year.is_closed %}ثبت پرداخت فیش{% else %}مشاهده فیش{% endif %} {{ b.number|fa }}">{% if b.state != 'paid' and b.state != 'canceled' and not year.is_closed %}<i class="fas fa-money-bill-wave" aria-hidden="true"></i><span class="hidden sm:inline mr-1">ثبت پرداخت</span>{% else %}<i class="fas fa-eye" aria-hidden="true"></i><span class="hidden sm:inline mr-1">مشاهده</span>{% endif %}</button>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="8" class="py-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-receipt text-3xl mb-2" aria-hidden="true"></i><p>{% if filtered %}فیشی با این فیلتر پیدا نشد.{% else %}فیشی صادر نشده است.{% endif %}</p></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include 'main/accounting/panel/_pager.html' %}

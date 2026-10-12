@@ -1,0 +1,33 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='جزئیات سند' %}
+<div class="p-5">
+    <h3 class="sr-only">مشخصات سند</h3>
+    <dl class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-4">
+        <div><dt class="text-gray-500">شماره سند</dt><dd class="font-bold">{{ voucher.number|fa }} <span class="text-xs font-normal text-gray-500">(شناسه {{ voucher.ref|fa }})</span></dd></div>
+        <div><dt class="text-gray-500">تاریخ</dt><dd>{{ voucher.date|jalali_date|fa }}</dd></div>
+        <div><dt class="text-gray-500">نوع</dt><dd>{{ voucher.get_kind_display }}</dd></div>
+        <div><dt class="text-gray-500">وضعیت</dt><dd>{% if not balanced %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-error-100 text-error-800">بی‌حساب</span> {% endif %}{% if voucher.status == 'final' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-success-100 text-success-800">قطعی</span>{% else %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-warning-100 text-warning-800">موقت</span>{% endif %}</dd></div>
+        <div class="col-span-2 md:col-span-3"><dt class="text-gray-500">شرح</dt><dd>{{ voucher.description }}</dd></div>
+        <div><dt class="text-gray-500">ثبت‌کننده</dt><dd>{{ voucher.created_by.get_full_name|default:voucher.created_by.username }}</dd></div>
+    </dl>
+    <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+        <table class="w-full text-right text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700"><tr><th class="py-2 px-2">ردیف</th><th class="px-2">حساب</th><th class="px-2 hidden md:table-cell">طرف حساب</th><th class="px-2 hidden md:table-cell">شرح</th><th class="px-2">بدهکار</th><th class="px-2">بستانکار</th></tr></thead>
+            <tbody>{% for l in lines %}
+                <tr class="border-t border-gray-100 dark:border-gray-700"><td class="py-2 px-2">{{ l.row|fa }}</td><td class="px-2"><span class="text-gray-500" dir="ltr">{{ l.account.code }}</span> {{ l.account.title }}</td><td class="px-2 hidden md:table-cell">{{ l.party.name|default:'' }}</td><td class="px-2 hidden md:table-cell">{{ l.description }}</td><td class="px-2 whitespace-nowrap">{{ l.debit|rial }}</td><td class="px-2 whitespace-nowrap">{{ l.credit|rial }}</td></tr>{% endfor %}
+            </tbody>
+            <tfoot class="font-bold border-t-2 border-gray-200 dark:border-gray-700"><tr><td colspan="2" class="py-2 px-2 md:hidden">جمع</td><td colspan="4" class="py-2 px-2 hidden md:table-cell">جمع</td><td class="px-2 whitespace-nowrap">{{ debit|rial }}</td><td class="px-2 whitespace-nowrap">{{ credit|rial }}</td></tr></tfoot>
+        </table>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        {% if voucher.status == 'temporary' and not year.is_closed %}
+        <button type="button" class="acc-btn" hx-get="{% url 'main:acc_p_voucher_edit' voucher.id %}" hx-target="#acc-modal-body"><i class="fas fa-pen ml-1" aria-hidden="true"></i>ویرایش</button>
+        <form hx-post="{% url 'main:acc_p_voucher_action' voucher.id 'finalize' %}" hx-swap="none" hx-confirm="سند قطعی شود؟ بعد از قطعی شدن قابل ویرایش نیست.">{% csrf_token %}<button class="acc-btn-success" type="submit"><i class="fas fa-lock ml-1" aria-hidden="true"></i>قطعی کردن</button></form>
+        <form hx-post="{% url 'main:acc_p_voucher_action' voucher.id 'delete' %}" hx-swap="none" hx-confirm="این سند حذف شود؟">{% csrf_token %}<button class="acc-btn-danger" type="submit"><i class="fas fa-trash ml-1" aria-hidden="true"></i>حذف</button></form>
+        {% elif voucher.status == 'final' and not year.is_closed %}
+        <form hx-post="{% url 'main:acc_p_voucher_action' voucher.id 'revert' %}" hx-swap="none" hx-confirm="سند به حالت موقت برگردد؟ فقط دهیار اجازه دارد.">{% csrf_token %}<button class="acc-btn" type="submit"><i class="fas fa-lock-open ml-1" aria-hidden="true"></i>برگرداندن به موقت</button></form>
+        {% endif %}
+        <span class="flex-1"></span>
+        <a class="acc-btn" href="{% url 'main:acc_voucher_detail' voucher.id %}"><i class="fas fa-up-right-from-square ml-1" aria-hidden="true"></i>صفحه کامل</a>
+    </div>
+</div>

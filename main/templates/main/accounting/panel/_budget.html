@@ -1,0 +1,42 @@
+{% load accounting_tags %}
+<div class="flex flex-wrap items-center gap-2 mb-4">
+    <button type="button" class="px-3 py-1 rounded-md text-sm {% if not final_only %}bg-gray-800 text-white{% else %}bg-gray-100 dark:bg-gray-700{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=budget">همه اسناد</button>
+    <button type="button" class="px-3 py-1 rounded-md text-sm {% if final_only %}bg-gray-800 text-white{% else %}bg-gray-100 dark:bg-gray-700{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=budget&final=1">فقط قطعی</button>
+    <a class="mr-auto text-sm text-success-700 dark:text-success-400 hover:underline" href="{% url 'main:acc_budget_export' year.id %}{% if final_only %}?final=1{% endif %}"><i class="fas fa-file-excel ml-1" aria-hidden="true"></i>خروجی اکسل</a>
+</div>
+<div class="overflow-x-auto">
+    <table class="w-full text-right">
+        <thead class="border-b-2 border-gray-200 dark:border-gray-700">
+            <tr>
+                <th class="py-3 px-2 font-semibold text-sm hidden sm:table-cell">کد</th>
+                <th class="py-3 px-2 font-semibold text-sm">شرح حساب</th>
+                <th class="py-3 px-2 font-semibold text-sm">بودجه مصوب</th>
+                <th class="py-3 px-2 font-semibold text-sm">عملکرد</th>
+                <th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">باقی‌مانده</th>
+                <th class="py-3 px-2 font-semibold text-sm min-w-[7rem]">درصد</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+            <tr class="border-b border-gray-100 dark:border-gray-700 {% if r.over %}bg-warning-50 dark:bg-gray-700{% endif %}">
+                <td class="py-3 px-2 hidden sm:table-cell text-gray-500" dir="ltr">{{ r.code }}</td>
+                <td class="py-3 px-2"><a class="text-primary-600 hover:underline" href="{% url 'main:acc_ledger' year.id r.account_id %}">{{ r.title }}</a> <span class="text-xs text-gray-500">{% if r.kind == 'resource' %}منبع{% else %}مصرف{% endif %}</span></td>
+                <td class="py-3 px-2 whitespace-nowrap">{{ r.budget|rial }}</td>
+                <td class="py-3 px-2 whitespace-nowrap">{{ r.actual|rial }}</td>
+                <td class="py-3 px-2 hidden md:table-cell whitespace-nowrap">{{ r.remaining|rial }}</td>
+                <td class="py-3 px-2">
+                    {% if r.percent is None %}<span class="text-gray-400">—</span>{% else %}
+                    <div class="flex items-center gap-2"><div class="h-2 flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"><div class="h-2 rounded-full {% if r.over %}bg-error-500{% else %}bg-primary-500{% endif %}" style="width: {% if r.percent > 100 %}100{% else %}{{ r.percent }}{% endif %}%"></div></div><span class="text-xs whitespace-nowrap">{{ r.percent|fa }}٪</span></div>{% endif %}
+                    {% if r.over %}<span class="text-xs text-error-500"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> بیش از بودجه</span>{% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="py-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-chart-pie text-3xl mb-2" aria-hidden="true"></i><p>هنوز بودجه یا گردشی ثبت نشده است.</p></td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot class="font-bold border-t-2 border-gray-200 dark:border-gray-700">
+            <tr><td class="py-3 px-2 hidden sm:table-cell"></td><td class="py-3 px-2">جمع منابع</td><td class="py-3 px-2">{{ totals.resource.budget|rial }}</td><td class="py-3 px-2">{{ totals.resource.actual|rial }}</td><td colspan="2" class="hidden md:table-cell"></td></tr>
+            <tr><td class="py-3 px-2 hidden sm:table-cell"></td><td class="py-3 px-2">جمع مصارف</td><td class="py-3 px-2">{{ totals.use.budget|rial }}</td><td class="py-3 px-2">{{ totals.use.actual|rial }}</td><td colspan="2" class="hidden md:table-cell"></td></tr>
+        </tfoot>
+    </table>
+</div>
