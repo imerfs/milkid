@@ -1,0 +1,103 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-kpis">
+    <div class="ac-kpi bad">
+        <div class="lab"><i class="fas fa-arrow-up" aria-hidden="true"></i>مصارف: عملکرد از بودجه</div>
+        <div class="num">{{ summary.use_pct|fa }}٪</div>
+        <div class="track ac-track" role="progressbar" aria-valuenow="{{ summary.use_pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="درصد مصرف بودجه"><span class="ac-fill{% if summary.use.actual > summary.use.budget %} over{% endif %}" style="width: {{ summary.use_pct }}%"></span></div>
+        <div class="foot">{{ summary.use.actual|rial }} از {{ summary.use.budget|rial }} ریال</div>
+    </div>
+    <div class="ac-kpi ok">
+        <div class="lab"><i class="fas fa-arrow-down" aria-hidden="true"></i>منابع: تحقق از بودجه</div>
+        <div class="num">{{ summary.resource_pct|fa }}٪</div>
+        <div class="ac-track" role="progressbar" aria-valuenow="{{ summary.resource_pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="درصد تحقق منابع"><span class="ac-fill ok" style="width: {{ summary.resource_pct }}%"></span></div>
+        <div class="foot">{{ summary.resource.actual|rial }} از {{ summary.resource.budget|rial }} ریال</div>
+    </div>
+    <div class="ac-kpi warn">
+        <div class="lab"><i class="fas fa-file-pen" aria-hidden="true"></i>اسناد موقت</div>
+        <div class="num">{{ summary.temporary_count|rial }}</div>
+        <div class="foot">{{ summary.final_count|rial }} سند قطعی{% if summary.unbalanced_count %} · <span class="ac-bad-text">{{ summary.unbalanced_count|rial }} بی‌حساب</span>{% endif %}</div>
+    </div>
+    <div class="ac-kpi brand">
+        <div class="lab"><i class="fas fa-receipt" aria-hidden="true"></i>فیش‌های باز</div>
+        <div class="num">{{ summary.open_bill_count|rial }}</div>
+        <div class="foot">مانده وصول‌نشده: {{ summary.open_bill_remaining|rial }} ریال</div>
+    </div>
+</div>
+
+<div class="ac-grid">
+    <div class="ac-col">
+        <section class="ac-card" aria-labelledby="ov-budget">
+            <div class="ac-card-head"><div><h2 class="ac-card-title" id="ov-budget">بودجه در برابر عملکرد</h2><span class="ac-card-sub">سال {{ year.year|fa }} · همه اسناد</span></div>
+                <button type="button" class="ac-link" hx-get="{{ panel_url }}?year={{ year.id }}&tab=budget">گزارش کامل <i class="fas fa-arrow-left" aria-hidden="true"></i></button></div>
+            <div class="ac-donut">
+                <div class="ac-donut-box" role="img" aria-label="{{ summary.use_pct|fa }} درصد از بودجه مصارف مصرف شده است">
+                    <svg viewBox="0 0 128 128"><circle class="trk" cx="64" cy="64" r="54" fill="none" stroke-width="12"/>{% if donut_use %}<circle class="arc{% if summary.use.actual > summary.use.budget %} over{% endif %}" cx="64" cy="64" r="54" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="{{ donut_use }} {{ donut_len }}"/>{% endif %}</svg>
+                    <div class="ac-dc"><div><b>{{ summary.use_pct|fa }}٪</b><span>مصرف بودجه</span></div></div>
+                </div>
+                <div class="ac-dsum">
+                    <div class="v">{{ summary.use.actual|rial }} <small>از {{ summary.use.budget|rial }} ریال مصارف</small></div>
+                    <p>{{ summary.resource.actual|rial }} ریال از {{ summary.resource.budget|rial }} ریال منابع محقق شده است.</p>
+                    <div class="ac-track" aria-hidden="true"><span class="ac-fill ok" style="width: {{ summary.resource_pct }}%"></span></div>
+                </div>
+            </div>
+            {% if top_rows %}
+            <div style="margin-top:14px">
+                {% for r in top_rows %}
+                <div class="ac-bar-row">
+                    <span class="name">{{ r.title }}</span>
+                    <span class="ac-track"><span class="ac-fill{% if r.over %} over{% endif %}" style="width: {% if r.percent > 100 %}100{% else %}{{ r.percent }}{% endif %}%"></span></span>
+                    <span class="val">{{ r.percent|fa }}٪</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="ac-card" aria-labelledby="ov-vouchers">
+            <div class="ac-card-head"><h2 class="ac-card-title" id="ov-vouchers">آخرین اسناد</h2>
+                <button type="button" class="ac-link" hx-get="{{ panel_url }}?year={{ year.id }}&tab=vouchers">همه اسناد <i class="fas fa-arrow-left" aria-hidden="true"></i></button></div>
+            {% for v in recent_vouchers %}
+            <div class="ac-mini">
+                <span class="ac-chip-ic{% if v.status == 'final' %} mute{% endif %}"><i class="fas fa-{% if v.status == 'final' %}lock{% else %}file-pen{% endif %}" aria-hidden="true"></i></span>
+                <button type="button" class="tt" style="text-align:start" hx-get="{% url 'main:acc_p_voucher_detail' v.id %}" hx-target="#acc-modal-body"><b>سند {{ v.number|fa }} · {{ v.description|truncatechars:50 }}</b><span>{{ v.date|jalali_date|fa }} · {{ v.get_kind_display }}</span></button>
+                <span class="a">{{ v.total|rial }}</span>
+                {% if v.total != v.credit_total %}<span class="ac-st bad">بی‌حساب</span>{% elif v.status == 'final' %}<span class="ac-st ok">قطعی</span>{% else %}<span class="ac-st warn">موقت</span>{% endif %}
+            </div>
+            {% empty %}
+            <div class="ac-empty"><span class="eic"><i class="fas fa-file-circle-plus" aria-hidden="true"></i></span><h4>هنوز سندی ثبت نشده</h4><p>اولین سند سال {{ year.year|fa }} را با دکمهٔ «سند جدید» ثبت کنید.</p></div>
+            {% endfor %}
+        </section>
+    </div>
+
+    <div class="ac-col">
+        <section class="ac-insight" aria-labelledby="ov-attn">
+            <div class="kick"><span><i class="fas fa-lightbulb" aria-hidden="true"></i></span>نیاز به توجه</div>
+            {% if attention %}
+            <h3 id="ov-attn">چند کار باز دارید</h3>
+            <ul>
+                {% if summary.unbalanced_count %}<li><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>{{ summary.unbalanced_count|rial }} سند موقت بی‌حساب است و قطعی نمی‌شود.</li>{% endif %}
+                {% if summary.temporary_count %}<li><i class="fas fa-file-pen" aria-hidden="true"></i>{{ summary.temporary_count|rial }} سند منتظر قطعی‌شدن است.</li>{% endif %}
+                {% if over_count %}<li><i class="fas fa-chart-line" aria-hidden="true"></i>{{ over_count|rial }} حساب از بودجه مصوب بیشتر هزینه کرده است.</li>{% endif %}
+            </ul>
+            {% if summary.temporary_count %}<button type="button" class="ac-link" hx-get="{{ panel_url }}?year={{ year.id }}&tab=vouchers&status=temporary" style="margin-top:10px">دیدن اسناد موقت <i class="fas fa-arrow-left" aria-hidden="true"></i></button>{% endif %}
+            {% else %}
+            <h3 id="ov-attn">همه‌چیز مرتب است</h3>
+            <ul><li><i class="fas fa-circle-check" aria-hidden="true"></i>سند موقت یا بی‌حسابی نیست و بودجه‌ای از حد نگذشته است.</li></ul>
+            {% endif %}
+        </section>
+
+        <section class="ac-card" aria-labelledby="ov-bills">
+            <div class="ac-card-head"><h2 class="ac-card-title" id="ov-bills">فیش‌های باز</h2>
+                <button type="button" class="ac-link" hx-get="{{ panel_url }}?year={{ year.id }}&tab=bills&bill_status=open">همه <i class="fas fa-arrow-left" aria-hidden="true"></i></button></div>
+            {% for b in open_bills %}
+            <div class="ac-mini">
+                <span class="ac-chip-ic"><i class="fas fa-receipt" aria-hidden="true"></i></span>
+                <button type="button" class="tt" style="text-align:start" hx-get="{% url 'main:acc_p_bill_detail' b.id %}" hx-target="#acc-modal-body"><b>{{ b.party.name }}</b><span>فیش {{ b.number|fa }} · {{ b.date|jalali_date|fa }}</span></button>
+                <span class="a">{{ b.left|rial }}</span>
+            </div>
+            {% empty %}
+            <div class="ac-empty"><span class="eic"><i class="fas fa-circle-check" aria-hidden="true"></i></span><p>فیش بازی نیست.</p></div>
+            {% endfor %}
+        </section>
+    </div>
+</div>

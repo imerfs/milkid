@@ -43,7 +43,7 @@ class OnlinePaymentsTab(TestCase):
         table = self.tab(q='RCPT-DONE').content.decode().split('<tbody>')[-1]
         self.assertIn('RCPT-DONE-1', table)
         self.assertNotIn('RCPT-PENDING-1', table)
-        table = self.tab(pay_status='completed').content.decode().split('تراکنش‌ها</h3>')[-1]
+        table = self.tab(pay_status='completed').content.decode().split('id="online-all"')[-1]
         self.assertIn('RCPT-DONE-1', table)
         self.assertNotIn('RCPT-PENDING-1', table)
 

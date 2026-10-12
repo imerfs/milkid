@@ -1,608 +1,82 @@
 {% load static %}
-{% load jalali_tags %}<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>داشبورد مسئول مالی - ملک آیدی</title>
-    
-    <!-- Tailwind CSS -->
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-    
-    
-    <!-- Flatpickr for date picker -->
-
-    <!-- Google Fonts: Vazirmatn -->
-    
-    
     <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
-    
-    <style>
-        body {
-            font-family: 'Vazirmatn', sans-serif;
-        }
-        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; }
-        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
-        details[open] .submenu { max-height: 500px; }
-        details summary::-webkit-details-marker { display: none; }
-        
-        /* Custom animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .fade-in {
-            animation: fadeIn 0.5s ease forwards;
-        }
-        
-        /* Chart containers */
-        .chart-container {
-            position: relative;
-            height: 250px;
-        }
-        
-        /* Custom toggle switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-        
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .slider {
-            background-color: #0284c7;
-        }
-        
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-        
-        /* Sparkline chart style */
-        .sparkline {
-            width: 100%;
-            height: 40px;
-        }
-        
-        /* Notification badge */
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        
-        /* Loading spinner */
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 3px solid #0284c7;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Card hover effects */
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Table row hover */
-        .table-row-hover:hover {
-            background-color: rgba(14, 165, 233, 0.05);
-        }
-        
-        /* Dark mode styles */
-        .dark {
-            background-color: #1e293b;
-            color: #e2e8f0;
-        }
-        
-        .dark .bg-white {
-            background-color: #334155;
-        }
-        
-        .dark .text-gray-800 {
-            color: #e2e8f0;
-        }
-        
-        .dark .text-gray-500 {
-            color: #cbd5e1;
-        }
-        
-        .dark .text-gray-600 {
-            color: #94a3b8;
-        }
-        
-        .dark .text-gray-300 {
-            color: #cbd5e1;
-        }
-        
-        .dark .bg-slate-100 {
-            background-color: #1e293b;
-        }
-        
-        .dark .border-gray-200 {
-            border-color: #334155;
-        }
-        
-        .dark .border-gray-700 {
-            border-color: #475569;
-        }
-        
-        .dark .bg-gray-800 {
-            background-color: #0f172a;
-        }
-        
-        .dark .bg-gray-700 {
-            background-color: #1e293b;
-        }
-        
-        .dark .bg-gray-700\/50 {
-            background-color: rgba(30, 41, 59, 0.5);
-        }
-        
-        .dark .hover\:bg-gray-700:hover {
-            background-color: #1e293b;
-        }
-        
-        .dark .hover\:bg-gray-600:hover {
-            background-color: #334155;
-        }
-        
-        .dark .bg-yellow-50 {
-            background-color: #334155;
-        }
-        
-        .dark .border-b {
-            border-color: #334155;
-        }
-        
-        .dark .bg-primary-100 {
-            background-color: rgba(14, 132, 199, 0.2);
-        }
-        
-        .dark .bg-success-100 {
-            background-color: rgba(22, 163, 74, 0.2);
-        }
-        
-        .dark .bg-error-100 {
-            background-color: rgba(220, 38, 38, 0.2);
-        }
-        
-        .dark .bg-warning-100 {
-            background-color: rgba(217, 119, 6, 0.2);
-        }
-        
-        /* Tooltip styles */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 12px;
-        }
-        
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        /* Loading skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-        
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        
-        .dark .skeleton {
-            background: linear-gradient(90deg, #4b5563 25%, #6b7280 50%, #4b5563 75%);
-            background-size: 200% 100%;
-        }
-        
-        /* Empty state */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            text-align: center;
-        }
-        
-        /* Virtual scroll */
-        .virtual-scroll-container {
-            height: 400px;
-            overflow-y: auto;
-        }
-        
-        /* Focus styles for keyboard navigation */
-        *:focus {
-            outline: 2px solid #0284c7;
-            outline-offset: 2px;
-        }
-        
-        /* Skip to content link for accessibility */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 0;
-            background: #0284c7;
-            color: white;
-            padding: 8px;
-            z-index: 100;
-            transition: top 0.3s;
-        }
-        
-        .skip-link:focus {
-            top: 0;
-        }
-        
-        /* Stepper styles */
-        .stepper {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2rem;
-            position: relative;
-        }
-        
-        .stepper::before {
-            content: '';
-            position: absolute;
-            top: 20px;
-            right: 0;
-            left: 0;
-            height: 2px;
-            background-color: #e5e7eb;
-            z-index: -1;
-        }
-        
-        .stepper-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .stepper-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: white;
-            border: 2px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        
-        .stepper-step.active .stepper-circle {
-            background-color: #0284c7;
-            color: white;
-            border-color: #0284c7;
-        }
-        
-        .stepper-step.completed .stepper-circle {
-            background-color: #16a34a;
-            color: white;
-            border-color: #16a34a;
-        }
-        
-        .stepper-label {
-            font-size: 14px;
-            text-align: center;
-            max-width: 100px;
-        }
-    </style>
     {% include 'partials/seo_head.html' %}
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="stylesheet" href="{% static 'css/accounting-ui.css' %}">
 </head>
-<body class="bg-slate-100 dark:bg-gray-900 transition-colors duration-300 mk-tw">
-    <a href="#main-content" class="skip-link">رفتن به محتوای اصلی</a>
-    
-    <div class="flex h-screen">
-        <!-- ===== Sidebar ===== -->
-        <aside id="sidebar" class="fixed right-0 top-0 z-40 h-screen w-64 bg-gray-800 dark:bg-gray-900 text-white shadow-lg transition-transform translate-x-full md:translate-x-0 sidebar-scroll overflow-y-auto" role="navigation" aria-label="منوی اصلی">
-            <div class="flex items-center justify-between p-6 border-b border-gray-700">
-                <div class="flex items-center">
-                    <i class="fas fa-wallet text-2xl text-primary-400" aria-hidden="true"></i>
-                    <h1 class="text-xl font-bold text-white mr-3">پنل مالی</h1>
-                </div>
-                <button id="sidebar-close" class="md:hidden text-gray-400 hover:text-white" aria-label="بستن منو">
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </button>
+<body class="mk-tw">
+<script>try { if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark'); } catch (e) {}</script>
+<div class="ac" id="ac-root">
+    <a href="#acc-workspace" class="ac-sr">رفتن به محتوای اصلی</a>
+    <div class="ac-app">
+        <!-- ===== Sidebar: pages of the workspace ===== -->
+        <aside class="ac-side" id="ac-side" aria-label="منوی اصلی">
+            <div class="ac-logo">
+                <span class="ac-logo-mark"><i class="fas fa-wallet" aria-hidden="true"></i></span>
+                <span><b>پنل مالی</b><small>{{ acc_muni_name|default:"ملک آیدی" }}</small></span>
             </div>
-            
-            <!-- Search in menu -->
-            <div class="px-4 py-3">
-                <div class="relative">
-                    <input type="text" id="menu-search" placeholder="جستجو در منو..." class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="جستجو در منو">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i>
-                </div>
+            {% include 'main/accounting/panel/_nav.html' with soon=acc_soon %}
+            <div class="ac-side-foot">
+                <b>میان‌بر حرفه‌ای‌ها</b>
+                <span>هر کاری با یک فرمان: رفتن به بخش‌ها، ثبت سند، صدور فیش.</span>
+                <span><kbd>Ctrl K</kbd></span>
             </div>
-            
-            <nav class="mt-2">
-                <a href="#acc-workspace" data-acc-tab="vouchers" class="flex items-center py-3 px-6 text-white bg-primary-600" aria-current="page">
-                    <i class="fas fa-tachometer-alt w-5 h-5" aria-hidden="true"></i>
-                    <span class="mr-3 font-semibold">داشبورد</span>
-                </a>
-                <details class="group">
-                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
-                        <div class="flex items-center">
-                            <i class="fas fa-calculator w-5 h-5" aria-hidden="true"></i>
-                            <span class="mr-3">حسابداری</span>
-                        </div>
-                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
-                    </summary>
-                    <div class="submenu bg-gray-700/50">
-                        <a href="#acc-workspace" data-acc-tab="setup" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">عملیات ابتدای سال مالی</a>
-                        <a href="#acc-workspace" data-acc-tab="vouchers" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">ثبت اسناد</a>
-                        <a href="#acc-workspace" data-acc-tab="vouchers" data-acc-query="status=temporary" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پیش نویس سند</a>
-                        <a href="#acc-workspace" data-acc-tab="vouchers" data-acc-query="status=final" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تغییر وضعیت اسناد</a>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تصاویر اسناد<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <a href="#acc-workspace" data-acc-tab="parties" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">طرف حسابها</a>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تامین اعتبار<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">خزانه اسناد پرداختی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">قرار داد ها<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">ضمانت نامه ها<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                    </div>
-                </details>
-                <details class="group">
-                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
-                        <div class="flex items-center">
-                            <i class="fas fa-money-check-alt w-5 h-5" aria-hidden="true"></i>
-                            <span class="mr-3">حقوق دستمزد</span>
-                        </div>
-                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
-                    </summary>
-                    <div class="submenu bg-gray-700/50">
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">اصلی مزایا بدهی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">کارکرد<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">ماموریت<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">مزایا مخصوص<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">بدهی مخصوص<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">پرداخت های متفرقه<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">کارگران روزمزد<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">اطلاعات عیدی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">نحوه محاسبات فردی<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                    </div>
-                </details>
-                <details class="group">
-                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
-                        <div class="flex items-center">
-                            <i class="fas fa-chart-line w-5 h-5" aria-hidden="true"></i>
-                            <span class="mr-3">درآمد</span>
-                        </div>
-                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
-                    </summary>
-                    <div class="submenu bg-gray-700/50">
-                        <a href="#acc-workspace" data-acc-tab="bills" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">فیش های نقدی</a>
-                        <a href="#acc-workspace" data-acc-tab="online" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">پرداختی ها (آنلاین)</a>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">درآمد حمل و نقل<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تقسیط<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تغییر وضعیت<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">خزانه<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                        <span class="flex items-center justify-between py-2 pr-12 pl-6 text-gray-500 cursor-not-allowed" aria-disabled="true">تصاویر پرونده تقسیط<span class="text-xs bg-gray-600 text-gray-300 rounded px-2 py-0.5 ml-3">به‌زودی</span></span>
-                    </div>
-                </details>
-                <details class="group">
-                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
-                        <div class="flex items-center">
-                            <i class="fas fa-chart-pie w-5 h-5" aria-hidden="true"></i>
-                            <span class="mr-3">گزارش‌گیری</span>
-                        </div>
-                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
-                    </summary>
-                    <div class="submenu bg-gray-700/50">
-                        <a href="#acc-workspace" data-acc-tab="trial" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">تراز آزمایشی</a>
-                        <a href="#acc-workspace" data-acc-tab="budget" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">بودجه و عملکرد</a>
-                    </div>
-                </details>
-                <details class="group">
-                    <summary class="flex items-center justify-between py-3 px-6 cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white" aria-expanded="false">
-                        <div class="flex items-center">
-                            <i class="fas fa-cogs w-5 h-5" aria-hidden="true"></i>
-                            <span class="mr-3">تنظیمات مالی</span>
-                        </div>
-                        <i class="fas fa-chevron-down w-4 h-4 transform group-open:rotate-180 transition-transform" aria-hidden="true"></i>
-                    </summary>
-                    <div class="submenu bg-gray-700/50">
-                        <a href="#acc-workspace" data-acc-tab="setup" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">سال مالی و سرفصل‌ها</a>
-                        <a href="#acc-workspace" data-acc-tab="accounts" class="block py-2 pr-12 pl-6 text-gray-300 hover:bg-gray-600">سرفصل حساب‌ها</a>
-                    </div>
-                </details>
-            </nav>
         </aside>
 
-        <!-- ===== Main Content ===== -->
-        <div class="flex-1 flex flex-col overflow-hidden md:mr-64">
-            <!-- Top Bar -->
-            <header class="flex justify-between items-center p-4 bg-white dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 shadow-sm">
-                <div class="flex items-center">
-                    <button id="sidebar-toggle" class="text-gray-500 dark:text-gray-300 focus:outline-none md:hidden" aria-label="باز کردن منو">
-                        <i class="fas fa-bars w-6 h-6" aria-hidden="true"></i>
-                    </button>
-                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 ml-4 hidden sm:block">داشبورد مسئول مالی</h2>
-                </div>
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <!-- Dark mode toggle -->
-                    <div class="flex items-center">
-                        <span class="text-sm text-gray-600 dark:text-gray-300 ml-2">حالت تاریک</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="dark-mode-toggle" aria-label="تغییر حالت تاریک/روشن">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    
-                    <!-- Notifications -->
-                    <div class="relative">
-                        <button class="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 tooltip" aria-label="اعلان‌ها">
-                            <i class="fas fa-bell w-6 h-6" aria-hidden="true"></i>
-                            {% if notifications %}<span class="notification-badge" aria-hidden="true">{{ notifications|length }}</span>{% endif %}
-                            <span class="tooltiptext">اعلان‌های جدید</span>
-                        </button>
-                    </div>
-                    
-                    <!-- User profile -->
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold" aria-hidden="true">
-                            {{ request.user.username|slice:":1"|upper }}
-                        </div>
-                        <span class="mr-2 text-sm text-gray-700 dark:text-gray-300">{{ request.user.get_full_name|default:request.user.username }}</span>
-                    </div>
-                    
-                    <a href="{% url 'main:logout' %}" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm tooltip inline-block" aria-label="خروج از سیستم">
-                        <i class="fas fa-sign-out-alt ml-1" aria-hidden="true"></i>
-                        خروج
-                        <span class="tooltiptext">خروج از سیستم</span>
-                    </a>
-                </div>
+        <div class="ac-main">
+            <header class="ac-top">
+                <button type="button" class="ac-burger" id="ac-burger" aria-label="باز کردن منو"><i class="fas fa-bars" aria-hidden="true"></i></button>
+                <span class="ac-crumb">پنل مالی / <b id="ac-crumb">نمای کلی</b></span>
+                <span class="ac-spacer"></span>
+                <button type="button" class="ac-search" id="ac-pal-open"><i class="fas fa-search" aria-hidden="true"></i><span class="lbl">جست‌وجو یا فرمان…</span><kbd>Ctrl K</kbd></button>
+                <button type="button" class="ac-icon-btn" id="ac-theme" aria-label="تغییر حالت تاریک/روشن"><i class="fas fa-moon" aria-hidden="true"></i></button>
+                <span class="ac-icon-btn" role="img" aria-label="اعلان‌ها"><i class="fas fa-bell" aria-hidden="true"></i>{% if notifications %}<span class="ac-dot">{{ notifications|length }}</span>{% endif %}</span>
+                <span class="ac-vline"></span>
+                <span class="ac-avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
+                <span class="ac-who"><b>{{ request.user.get_full_name|default:request.user.username }}</b><span>مسئول مالی</span></span>
+                <a href="{% url 'main:logout' %}" class="ac-icon-btn" aria-label="خروج از سیستم" title="خروج"><i class="fas fa-right-from-bracket" aria-hidden="true"></i></a>
             </header>
+            <nav class="ac-mobnav" aria-label="بخش‌های حسابداری">{% include 'main/accounting/panel/_nav.html' with mobile=True %}</nav>
 
-            <!-- Main Panel -->
-            <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 dark:bg-gray-900 p-4 md:p-8">
-                <div class="container mx-auto">
-                    {% csrf_token %}
-                    <!-- Accounting workspace: every operation opens in a dialog on this page (HTMX fragments) -->
-                    <section id="acc-workspace" aria-labelledby="acc-workspace-h">
-                        <h2 id="acc-workspace-h" class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 border-r-4 border-primary-500 pr-4">حسابداری {{ acc_muni_name }}</h2>
-                        {% if acc_ready %}
-                        <div id="acc-panel" hx-get="{% url 'main:acc_panel' %}" hx-trigger="load" hx-swap="innerHTML" data-base="{% url 'main:acc_panel' %}" aria-live="polite">
-                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-spinner fa-spin ml-1" aria-hidden="true"></i>در حال بارگذاری حسابداری...</div>
-                        </div>
-                        {% else %}
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center text-gray-600 dark:text-gray-300" role="status">
-                            <i class="fas fa-circle-info text-3xl text-warning-500 mb-2" aria-hidden="true"></i>
-                            <p>حسابداری برای حساب شما فعال نیست: این کاربر به دهیاری‌ای متصل نشده است. از دهیار بخواهید روستای کاربر را تنظیم کند.</p>
-                        </div>
-                        {% endif %}
-                    </section>
-                </div>
+            <main class="ac-content" id="main-content">
+                {% csrf_token %}
+                <!-- Every operation of the accountant opens in a dialog or swaps a page of this workspace (HTMX fragments). -->
+                <section id="acc-workspace" aria-label="حسابداری {{ acc_muni_name }}">
+                    {% if acc_ready %}
+                    <div id="acc-panel" hx-get="{% url 'main:acc_panel' %}" hx-trigger="load" hx-swap="innerHTML" data-base="{% url 'main:acc_panel' %}" aria-live="polite">
+                        <div class="ac-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> در حال بارگذاری حسابداری...</div>
+                    </div>
+                    {% else %}
+                    <div class="ac-card ac-empty" role="status">
+                        <span class="eic"><i class="fas fa-circle-info" aria-hidden="true"></i></span>
+                        <h4>حسابداری فعال نیست</h4>
+                        <p>این کاربر به دهیاری متصل نشده است. از دهیار بخواهید روستای کاربر را تنظیم کند.</p>
+                    </div>
+                    {% endif %}
+                </section>
             </main>
         </div>
     </div>
-    
-<dialog id="acc-modal" class="p-0 rounded-2xl shadow-2xl w-[calc(100%-1.5rem)] max-w-5xl max-h-[92vh] overflow-y-auto bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 backdrop:bg-black/50" aria-labelledby="acc-modal-title">
-        <div id="acc-modal-body"></div>
+
+    <dialog id="acc-modal" class="ac-dialog" aria-labelledby="acc-modal-title"><div id="acc-modal-body"></div></dialog>
+
+    <dialog id="ac-pal" class="ac-dialog ac-pal" aria-label="جست‌وجو و فرمان‌ها">
+        <div class="ac-pal-head"><i class="fas fa-search" aria-hidden="true"></i><input id="ac-pal-q" placeholder="به کجا بروم یا چه کنم؟" autocomplete="off" aria-label="جست‌وجوی فرمان"><kbd>Esc</kbd></div>
+        <div class="ac-pal-list" id="ac-pal-list" role="listbox"></div>
     </dialog>
     <div id="acc-toast" class="hidden" role="status" aria-live="polite"></div>
-    <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
-    <script src="{% static 'js/accounting.js' %}"></script>
-    <script src="{% static 'js/accounting-panel.js' %}"></script>
-<script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // --- Sidebar toggle (mobile) ---
-            const sidebar = document.getElementById('sidebar');
-            document.getElementById('sidebar-toggle').addEventListener('click', () => {
-                sidebar.classList.toggle('translate-x-full');
-                sidebar.classList.toggle('translate-x-0');
-            });
-            const closeSidebar = () => {
-                sidebar.classList.add('translate-x-full');
-                sidebar.classList.remove('translate-x-0');
-            };
-            document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
-            // tapping a menu link or pressing Escape closes the drawer on phones
-            sidebar.addEventListener('click', (e) => { if (e.target.closest('a[href]')) closeSidebar(); });
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
-
-            // --- Dark mode ---
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            darkModeToggle.addEventListener('change', () => {
-                document.body.classList.toggle('dark');
-                try { localStorage.setItem('darkMode', document.body.classList.contains('dark')); } catch (e) {}
-            });
-            try {
-                if (localStorage.getItem('darkMode') === 'true') {
-                    document.body.classList.add('dark');
-                    darkModeToggle.checked = true;
-                }
-            } catch (e) {}
-
-            // --- Menu search ---
-            document.getElementById('menu-search').addEventListener('input', function () {
-                const q = this.value.toLowerCase();
-                document.querySelectorAll('#sidebar nav a, #sidebar nav [aria-disabled]').forEach(a => {
-                    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
-                });
-            });
-        });
-    </script>
-    {% include 'partials/office_dock.html' %}
+</div>
+<script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
+<script src="{% static 'js/accounting.js' %}"></script>
+<script src="{% static 'js/accounting-panel.js' %}"></script>
+{% include 'partials/office_dock.html' %}
 </body>
 </html>

@@ -1,21 +1,21 @@
 {% load accounting_tags jalali_tags %}
 {% include 'main/accounting/panel/_modal_head.html' with title='گردش حساب' %}
-<div class="p-5">
-    <p class="mb-3 font-bold"><span class="text-gray-500" dir="ltr">{{ account.code }}</span> {{ account.title }} <span class="text-sm font-normal text-gray-500">· سال {{ year.year|fa }}</span></p>
-    <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-        <table class="w-full text-right text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-700"><tr><th class="py-2 px-2">تاریخ</th><th class="px-2">سند</th><th class="px-2 hidden md:table-cell">شرح</th><th class="px-2">بدهکار</th><th class="px-2">بستانکار</th><th class="px-2">مانده</th></tr></thead>
+<div class="ac-mb">
+    <p style="margin:0 0 12px;font-weight:700"><span class="muted" dir="ltr">{{ account.code }}</span> {{ account.title }} <span class="muted" style="font-weight:400;font-size:12.5px">· سال {{ year.year|fa }}</span></p>
+    <div class="ac-lines">
+        <table>
+            <thead><tr><th>تاریخ</th><th>سند</th><th>شرح</th><th>بدهکار</th><th>بستانکار</th><th>مانده</th></tr></thead>
             <tbody>
             {% for r in rows %}
-                <tr class="border-t border-gray-100 dark:border-gray-700"><td class="py-2 px-2">{{ r.voucher.date|jalali_date|fa }}</td>
-                    <td class="px-2"><button type="button" class="text-primary-600 hover:underline" hx-get="{% url 'main:acc_p_voucher_detail' r.voucher.id %}" hx-target="#acc-modal-body">{{ r.voucher.number|fa }}</button></td>
-                    <td class="px-2 hidden md:table-cell">{{ r.description|truncatechars:60 }}</td>
-                    <td class="px-2 whitespace-nowrap">{{ r.debit|rial }}</td><td class="px-2 whitespace-nowrap">{{ r.credit|rial }}</td><td class="px-2 whitespace-nowrap">{{ r.balance|rial }}</td></tr>
+                <tr><td class="nw">{{ r.voucher.date|jalali_date|fa }}</td>
+                    <td><button type="button" class="ac-link" hx-get="{% url 'main:acc_p_voucher_detail' r.voucher.id %}" hx-target="#acc-modal-body">{{ r.voucher.number|fa }}</button></td>
+                    <td>{{ r.description|truncatechars:60 }}</td>
+                    <td class="num-cell">{{ r.debit|rial }}</td><td class="num-cell">{{ r.credit|rial }}</td><td class="num-cell">{{ r.balance|rial }}</td></tr>
             {% empty %}
-                <tr><td colspan="6" class="py-6 text-center text-gray-500">برای این حساب گردشی ثبت نشده است.</td></tr>
+                <tr><td colspan="6" class="muted" style="text-align:center;padding:20px">برای این حساب گردشی ثبت نشده است.</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-    <div class="flex justify-end mt-4"><button type="button" class="acc-btn" data-acc-close>بستن</button></div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>بستن</button></div>
 </div>

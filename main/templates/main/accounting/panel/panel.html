@@ -1,62 +1,29 @@
 {% load accounting_tags jalali_tags %}
 {% url 'main:acc_panel' as panel_url %}
-<div data-year="{{ year.id }}" data-panel-url="{{ panel_url }}" hx-target="#acc-panel" hx-swap="innerHTML">
-    <!-- Toolbar: fiscal year + the operations of the page -->
-    {% if year %}
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-        <div class="flex items-center gap-3">
-            <label for="acc-year" class="text-sm text-gray-600 dark:text-gray-300">سال مالی</label>
-            <select id="acc-year" name="year" hx-get="{{ panel_url }}" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                {% for y in years %}<option value="{{ y.id }}" {% if y.id == year.id %}selected{% endif %}>{{ y.year|fa }}{% if y.is_closed %} (بسته){% endif %}</option>{% endfor %}
-            </select>
-            {% if year.is_closed %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-gray-200 text-gray-700">سال بسته است</span>{% endif %}
+<div id="acc-view" data-tab="{{ tab }}" data-tab-label="{{ tab_meta.1 }}" data-year="{{ year.id }}" data-panel-url="{{ panel_url }}"
+     {% if year and not year.is_closed %}data-new-voucher="{% url 'main:acc_p_voucher_new' year.id %}" data-new-bill="{% url 'main:acc_p_bill_new' year.id %}" data-new-budget="{% url 'main:acc_p_budget' year.id %}"{% endif %}
+     data-new-party="{% url 'main:acc_p_party_new' %}" data-new-account="{% url 'main:acc_p_account_new' %}"
+     hx-target="#acc-panel" hx-swap="innerHTML">
+    <div class="ac-head">
+        <div>
+            <h1 class="ac-title">{{ tab_meta.1 }}</h1>
+            <p class="ac-sub">{{ tab_meta.4 }}</p>
         </div>
-        {% if not year.is_closed %}
-        <div class="flex flex-wrap gap-2">
-            <button type="button" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm" hx-get="{% url 'main:acc_p_voucher_new' year.id %}" hx-target="#acc-modal-body"><i class="fas fa-file-circle-plus ml-1" aria-hidden="true"></i>سند جدید</button>
-            <button type="button" class="bg-success-600 hover:bg-success-700 text-white px-4 py-2 rounded-md text-sm" hx-get="{% url 'main:acc_p_bill_new' year.id %}" hx-target="#acc-modal-body"><i class="fas fa-receipt ml-1" aria-hidden="true"></i>صدور فیش نقدی</button>
-            <button type="button" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-100 px-4 py-2 rounded-md text-sm" hx-get="{% url 'main:acc_p_budget' year.id %}" hx-target="#acc-modal-body"><i class="fas fa-chart-pie ml-1" aria-hidden="true"></i>ثبت بودجه</button>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Summary cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg">
-            <div class="flex items-center justify-between mb-2"><p class="text-sm text-gray-500 dark:text-gray-400">مصارف: عملکرد در برابر بودجه</p><i class="fas fa-arrow-up text-error-500" aria-hidden="true"></i></div>
-            <p class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ summary.use.actual|rial }} <span class="text-xs font-normal text-gray-500">از {{ summary.use.budget|rial }}</span></p>
-            <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-3 overflow-hidden" role="progressbar" aria-valuenow="{{ summary.use_pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="درصد مصرف بودجه"><div class="h-2 rounded-full {% if summary.use.actual > summary.use.budget %}bg-error-500{% else %}bg-primary-500{% endif %}" style="width: {{ summary.use_pct }}%"></div></div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ summary.use_pct|fa }}٪ مصرف شده (ریال)</p>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg">
-            <div class="flex items-center justify-between mb-2"><p class="text-sm text-gray-500 dark:text-gray-400">منابع: عملکرد در برابر بودجه</p><i class="fas fa-arrow-down text-success-600" aria-hidden="true"></i></div>
-            <p class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ summary.resource.actual|rial }} <span class="text-xs font-normal text-gray-500">از {{ summary.resource.budget|rial }}</span></p>
-            <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-3 overflow-hidden" role="progressbar" aria-valuenow="{{ summary.resource_pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="درصد تحقق منابع"><div class="h-2 rounded-full bg-success-500" style="width: {{ summary.resource_pct }}%"></div></div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ summary.resource_pct|fa }}٪ محقق شده (ریال)</p>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg">
-            <div class="flex items-center justify-between mb-2"><p class="text-sm text-gray-500 dark:text-gray-400">اسناد موقت</p><i class="fas fa-file-pen text-warning-500" aria-hidden="true"></i></div>
-            <p class="text-2xl font-bold text-warning-500">{{ summary.temporary_count|rial }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ summary.final_count|rial }} سند قطعی{% if summary.unbalanced_count %} · <span class="text-error-500 font-medium">{{ summary.unbalanced_count|rial }} بی‌حساب</span>{% endif %}</p>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg">
-            <div class="flex items-center justify-between mb-2"><p class="text-sm text-gray-500 dark:text-gray-400">فیش‌های باز</p><i class="fas fa-receipt text-primary-600" aria-hidden="true"></i></div>
-            <p class="text-2xl font-bold text-primary-600">{{ summary.open_bill_count|rial }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">مانده وصول‌نشده: {{ summary.open_bill_remaining|rial }} ریال</p>
+        <div class="ac-actions">
+            {% if year %}
+            <div class="ac-yearsel"><label for="acc-year" class="ac-sr">سال مالی</label>
+                <select id="acc-year" name="year" hx-get="{{ panel_url }}" hx-include="[name=tab]"><option value="" disabled>سال مالی</option>{% for y in years %}<option value="{{ y.id }}" {% if y.id == year.id %}selected{% endif %}>سال {{ y.year|fa }}{% if y.is_closed %} (بسته){% endif %}</option>{% endfor %}</select>
+                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                <input type="hidden" name="tab" value="{{ tab }}">
+            </div>
+            {% if year.is_closed %}<span class="ac-closed">سال بسته است</span>{% else %}
+            <button type="button" class="ac-btn" hx-get="{% url 'main:acc_p_budget' year.id %}" hx-target="#acc-modal-body" title="ثبت بودجه"><i class="fas fa-chart-pie" aria-hidden="true"></i><span class="lbl">ثبت بودجه</span></button>
+            <button type="button" class="ac-btn ac-btn-ok" hx-get="{% url 'main:acc_p_bill_new' year.id %}" hx-target="#acc-modal-body" title="صدور فیش نقدی"><i class="fas fa-receipt" aria-hidden="true"></i><span class="lbl">صدور فیش نقدی</span></button>
+            <button type="button" class="ac-btn ac-btn-brand" hx-get="{% url 'main:acc_p_voucher_new' year.id %}" hx-target="#acc-modal-body" title="سند جدید"><i class="fas fa-plus" aria-hidden="true"></i><span class="lbl">سند جدید</span></button>
+            {% endif %}
+            {% endif %}
         </div>
     </div>
-    {% endif %}
 
-    <!-- Tabs + table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-        <div class="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto" role="tablist" aria-label="بخش‌های حسابداری">
-            {% for key, label, icon, needs_year in tab_list %}{% if year or not needs_year %}
-            <button type="button" role="tab" aria-selected="{% if tab == key %}true{% else %}false{% endif %}" data-tab="{{ key }}" hx-get="{{ panel_url }}?{% if year %}year={{ year.id }}&{% endif %}tab={{ key }}" class="px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 {% if tab == key %}border-primary-600 text-primary-600{% else %}border-transparent text-gray-600 dark:text-gray-300 hover:text-primary-600{% endif %}"><i class="fas fa-{{ icon }} ml-1" aria-hidden="true"></i>{{ label }}</button>
-            {% endif %}{% endfor %}
-        </div>
-
-        <div class="p-4 md:p-6" role="tabpanel">
-            {% include tab_template %}
-        </div>
-    </div>
+    {% include tab_template %}
 </div>

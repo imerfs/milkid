@@ -1,47 +1,47 @@
 {% load accounting_tags jalali_tags %}
 {% include 'main/accounting/panel/_modal_head.html' with title='فیش نقدی' %}
-<div class="p-5">
-    <dl class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm mb-4">
-        <div><dt class="text-gray-500">شماره فیش</dt><dd class="font-bold">{{ bill.number|fa }}</dd></div>
-        <div><dt class="text-gray-500">تاریخ</dt><dd>{{ bill.date|jalali_date|fa }}</dd></div>
-        <div><dt class="text-gray-500">وضعیت</dt><dd>{% if s.status == 'canceled' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-gray-200 text-gray-700">ابطال</span>{% elif s.status == 'paid' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-success-100 text-success-800">تسویه</span>{% elif s.status == 'partial' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-warning-100 text-warning-800">قسمتی</span>{% else %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-primary-100 text-primary-800">پرداخت‌نشده</span>{% endif %}</dd></div>
-        <div><dt class="text-gray-500">پرداخت‌کننده</dt><dd>{{ bill.party.name }}</dd></div>
-        <div class="col-span-2"><dt class="text-gray-500">حساب درآمد</dt><dd>{{ bill.income_account.code|fa }} - {{ bill.income_account.title }}</dd></div>
-        <div class="col-span-2 md:col-span-3"><dt class="text-gray-500">شرح</dt><dd>{{ bill.description }}</dd></div>
-        <div><dt class="text-gray-500">مبلغ فیش</dt><dd class="font-bold">{{ bill.amount|rial }} ریال</dd></div>
-        <div><dt class="text-gray-500">پرداخت‌شده</dt><dd>{{ s.paid|rial }} ریال</dd></div>
-        <div><dt class="text-gray-500">باقی‌مانده</dt><dd>{{ s.remaining|rial }} ریال</dd></div>
+<div class="ac-mb">
+    <dl class="ac-dl">
+        <div><dt>شماره فیش</dt><dd>{{ bill.number|fa }}</dd></div>
+        <div><dt>تاریخ</dt><dd>{{ bill.date|jalali_date|fa }}</dd></div>
+        <div><dt>وضعیت</dt><dd>{% if s.status == 'canceled' %}<span class="ac-st">ابطال</span>{% elif s.status == 'paid' %}<span class="ac-st ok">تسویه</span>{% elif s.status == 'partial' %}<span class="ac-st warn">قسمتی</span>{% else %}<span class="ac-st brand">پرداخت‌نشده</span>{% endif %}</dd></div>
+        <div><dt>پرداخت‌کننده</dt><dd>{{ bill.party.name }}</dd></div>
+        <div><dt>حساب درآمد</dt><dd>{{ bill.income_account.code|fa }} - {{ bill.income_account.title }}</dd></div>
+        <div><dt>مبلغ فیش</dt><dd>{{ bill.amount|rial }} ریال</dd></div>
+        <div><dt>پرداخت‌شده</dt><dd>{{ s.paid|rial }} ریال</dd></div>
+        <div><dt>باقی‌مانده</dt><dd>{{ s.remaining|rial }} ریال</dd></div>
+        <div class="wide"><dt>شرح</dt><dd style="font-weight:400">{{ bill.description }}</dd></div>
     </dl>
 
-    <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-2 border-r-4 border-accent-500 pr-3">پرداخت‌ها</h3>
-    <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
-        <table class="w-full text-right text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-700"><tr><th class="py-2 px-2">تاریخ</th><th class="px-2 hidden sm:table-cell">روش</th><th class="px-2 hidden md:table-cell">حساب</th><th class="px-2">مبلغ</th><th class="px-2">سند</th><th class="px-2"><span class="sr-only">عملیات</span></th></tr></thead>
+    <h3 class="ac-sec-title">پرداخت‌ها</h3>
+    <div class="ac-lines" style="margin-bottom:16px">
+        <table>
+            <thead><tr><th>تاریخ</th><th>روش</th><th>حساب</th><th>مبلغ</th><th>سند</th><th><span class="ac-sr">عملیات</span></th></tr></thead>
             <tbody>
             {% for pay in payments %}
-                <tr class="border-t border-gray-100 dark:border-gray-700"><td class="py-2 px-2">{{ pay.date|jalali_date|fa }}</td><td class="px-2 hidden sm:table-cell">{{ pay.get_method_display }}{% if pay.reference %} <span class="text-xs text-gray-500">({{ pay.reference|fa }})</span>{% endif %}</td><td class="px-2 hidden md:table-cell">{{ pay.bank_account.title }}</td><td class="px-2 whitespace-nowrap">{{ pay.amount|rial }}</td><td class="px-2">{{ pay.voucher.number|fa }}</td>
-                    <td class="px-2 text-left">{% if not year.is_closed %}<form hx-post="{% url 'main:acc_p_payment_cancel' pay.id %}" hx-swap="none" hx-confirm="این پرداخت ابطال و سند آن حذف شود؟">{% csrf_token %}<button class="text-error-600 hover:underline" type="submit">ابطال پرداخت</button></form>{% endif %}</td></tr>
+                <tr><td class="nw">{{ pay.date|jalali_date|fa }}</td><td>{{ pay.get_method_display }}{% if pay.reference %} <span class="muted" style="font-size:11.5px">({{ pay.reference|fa }})</span>{% endif %}</td><td>{{ pay.bank_account.title }}</td><td class="num-cell">{{ pay.amount|rial }}</td><td>{{ pay.voucher.number|fa }}</td>
+                    <td>{% if not year.is_closed %}<form hx-post="{% url 'main:acc_p_payment_cancel' pay.id %}" hx-swap="none" hx-confirm="این پرداخت ابطال و سند آن حذف شود؟">{% csrf_token %}<button class="ac-link bad" type="submit">ابطال پرداخت</button></form>{% endif %}</td></tr>
             {% empty %}
-                <tr><td colspan="6" class="py-4 text-center text-gray-500">پرداختی ثبت نشده است.</td></tr>
+                <tr><td colspan="6" class="muted" style="text-align:center;padding:16px">پرداختی ثبت نشده است.</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 
     {% if s.status == 'unpaid' or s.status == 'partial' %}{% if not year.is_closed %}
-    <form method="post" hx-post="{% url 'main:acc_p_bill_pay' bill.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4" novalidate>
+    <form method="post" hx-post="{% url 'main:acc_p_bill_pay' bill.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-box" novalidate>
         {% csrf_token %}
-        <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-3">ثبت پرداخت</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div><label class="acc-label" for="p-date">تاریخ</label><input class="acc-input" id="p-date" name="date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ p.date }}" required></div>
-            <div><label class="acc-label" for="p-amount">مبلغ (ریال)</label><input class="acc-input" id="p-amount" name="amount" inputmode="numeric" dir="ltr" value="{{ p.amount }}" required></div>
-            <div><label class="acc-label" for="p-method">روش</label><select class="acc-input" id="p-method" name="method">{% for k, label in methods %}<option value="{{ k }}" {% if p.method == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-            <div><label class="acc-label" for="p-bank">بانک / صندوق</label><select class="acc-input" id="p-bank" name="bank_account" required>{% for a in banks %}<option value="{{ a.id }}" {% if p.bank_account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></div>
-            <div class="col-span-2 md:col-span-4"><label class="acc-label" for="p-ref">شماره پیگیری / چک</label><input class="acc-input" id="p-ref" name="reference" maxlength="100" value="{{ p.reference }}"></div>
+        <h3 class="ac-sec-title">ثبت پرداخت</h3>
+        <div class="ac-fgrid">
+            <div class="ac-field"><label for="p-date">تاریخ</label><input class="ac-in" id="p-date" name="date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ p.date }}" required></div>
+            <div class="ac-field"><label for="p-amount">مبلغ (ریال)</label><input class="ac-in" id="p-amount" name="amount" inputmode="numeric" dir="ltr" value="{{ p.amount }}" required></div>
+            <div class="ac-field"><label for="p-method">روش</label><select class="ac-in" id="p-method" name="method">{% for k, label in methods %}<option value="{{ k }}" {% if p.method == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <div class="ac-field"><label for="p-bank">بانک / صندوق</label><select class="ac-in" id="p-bank" name="bank_account" required>{% for a in banks %}<option value="{{ a.id }}" {% if p.bank_account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></div>
+            <div class="ac-field s4"><label for="p-ref">شماره پیگیری / چک</label><input class="ac-in" id="p-ref" name="reference" maxlength="100" value="{{ p.reference }}"></div>
         </div>
-        <div class="flex flex-wrap justify-between gap-2 mt-4">
-            {% if s.status == 'unpaid' %}<button type="button" class="acc-btn-danger" hx-post="{% url 'main:acc_p_bill_cancel' bill.id %}" hx-swap="none" hx-confirm="این فیش ابطال شود؟">ابطال فیش</button>{% else %}<span></span>{% endif %}
-            <button type="submit" class="acc-btn-primary"><i class="fas fa-money-bill-wave ml-1" aria-hidden="true"></i>ثبت پرداخت</button>
+        <div class="ac-foot" style="justify-content:space-between;margin-top:6px">
+            {% if s.status == 'unpaid' %}<button type="button" class="ac-btn ac-btn-bad" hx-post="{% url 'main:acc_p_bill_cancel' bill.id %}" hx-swap="none" hx-confirm="این فیش ابطال شود؟">ابطال فیش</button>{% else %}<span></span>{% endif %}
+            <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-money-bill-wave" aria-hidden="true"></i>ثبت پرداخت</button>
         </div>
     </form>
     {% endif %}{% endif %}

@@ -1,48 +1,38 @@
 {% load accounting_tags jalali_tags %}
-<form hx-get="{{ panel_url }}" hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name=q]" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" role="search" aria-label="فیلتر اسناد">
-    <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="vouchers">
-    <label class="col-span-2 relative"><span class="sr-only">جستجو در شرح سند</span>
-        <input type="search" name="q" value="{{ g.q }}" placeholder="جستجو در شرح سند..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-        <i class="fas fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i></label>
-    <label><span class="sr-only">وضعیت</span>
-        <select name="status" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"><option value="">همه وضعیت‌ها</option><option value="temporary" {% if g.status == 'temporary' %}selected{% endif %}>موقت</option><option value="final" {% if g.status == 'final' %}selected{% endif %}>قطعی</option></select></label>
-    <label><span class="sr-only">نوع سند</span>
-        <select name="kind" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"><option value="">همه نوع‌ها</option>{% for k, label in kinds %}<option value="{{ k }}" {% if g.kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-</form>
-
-<div class="overflow-x-auto">
-    <table class="w-full text-right">
-        <thead class="border-b-2 border-gray-200 dark:border-gray-700">
-            <tr>
-                <th class="py-3 px-2 font-semibold text-sm">شماره</th>
-                <th class="py-3 px-2 font-semibold text-sm hidden md:table-cell">تاریخ</th>
-                <th class="py-3 px-2 font-semibold text-sm hidden lg:table-cell">نوع</th>
-                <th class="py-3 px-2 font-semibold text-sm">شرح</th>
-                <th class="py-3 px-2 font-semibold text-sm">مبلغ (ریال)</th>
-                <th class="py-3 px-2 font-semibold text-sm">وضعیت</th>
-                <th class="py-3 px-2 font-semibold text-sm"><span class="sr-only">عملیات</span></th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for v in page %}
-            <tr class="border-b border-gray-100 dark:border-gray-700 table-row-hover">
-                <td class="py-3 px-2 font-bold">{{ v.number|fa }}</td>
-                <td class="py-3 px-2 hidden md:table-cell text-gray-600 dark:text-gray-400">{{ v.date|jalali_date|fa }}</td>
-                <td class="py-3 px-2 hidden lg:table-cell">{{ v.get_kind_display }}</td>
-                <td class="py-3 px-2">{{ v.description|truncatechars:60 }}</td>
-                <td class="py-3 px-2 whitespace-nowrap">{{ v.total|rial }}</td>
-                <td class="py-3 px-2">{% if v.total != v.credit_total %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-error-100 text-error-800">بی‌حساب</span>{% elif v.status == 'final' %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-success-100 text-success-800">قطعی</span>{% else %}<span class="text-xs font-medium px-3 py-1 rounded-full bg-warning-100 text-warning-800">موقت</span>{% endif %}</td>
-                <td class="py-3 px-2 whitespace-nowrap text-left">
-                    <button type="button" class="text-primary-600 hover:underline text-sm ml-3" hx-get="{% url 'main:acc_p_voucher_detail' v.id %}" hx-target="#acc-modal-body" aria-label="مشاهده سند {{ v.number|fa }}"><i class="fas fa-eye" aria-hidden="true"></i><span class="hidden sm:inline mr-1">مشاهده</span></button>
-                    {% if v.status == 'temporary' and v.total == v.credit_total and not year.is_closed %}
-                    <form class="inline" hx-post="{% url 'main:acc_p_voucher_action' v.id 'finalize' %}" hx-swap="none" hx-confirm="سند {{ v.number|fa }} قطعی شود؟ بعد از قطعی شدن قابل ویرایش نیست.">{% csrf_token %}<button type="submit" class="text-success-600 hover:underline text-sm" aria-label="قطعی کردن سند {{ v.number|fa }}"><i class="fas fa-lock" aria-hidden="true"></i><span class="hidden sm:inline mr-1">قطعی</span></button></form>
-                    {% endif %}
-                </td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="7" class="py-10 text-center text-gray-500 dark:text-gray-400"><i class="fas fa-file-circle-plus text-3xl mb-2" aria-hidden="true"></i><p>{% if filtered %}سندی با این فیلتر پیدا نشد.{% else %}هنوز سندی ثبت نشده است.{% endif %}</p></td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+<div class="ac-card">
+    <div class="ac-tools" role="search" aria-label="فیلتر اسناد">
+        <form hx-get="{{ panel_url }}" hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name=q]">
+            <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="vouchers">
+            <label class="ac-searchbox"><span class="ac-sr">جستجو در شرح سند</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="جستجو در شرح سند..."></label>
+            <label class="ac-select"><span class="ac-sr">وضعیت</span><select name="status"><option value="">همه وضعیت‌ها</option><option value="temporary" {% if g.status == 'temporary' %}selected{% endif %}>موقت</option><option value="final" {% if g.status == 'final' %}selected{% endif %}>قطعی</option></select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+            <label class="ac-select"><span class="ac-sr">نوع سند</span><select name="kind"><option value="">همه نوع‌ها</option>{% for k, label in kinds %}<option value="{{ k }}" {% if g.kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        </form>
+        <span class="ac-spaced muted" style="font-size:11.5px">{{ page.paginator.count|rial }} سند</span>
+    </div>
+    <div class="ac-table-wrap">
+        <table>
+            <thead><tr><th>شماره</th><th>تاریخ</th><th>نوع</th><th>شرح</th><th>مبلغ (ریال)</th><th>وضعیت</th><th><span class="ac-sr">عملیات</span></th></tr></thead>
+            <tbody>
+            {% for v in page %}
+                <tr>
+                    <td class="nw"><b>{{ v.number|fa }}</b></td>
+                    <td class="nw muted">{{ v.date|jalali_date|fa }}</td>
+                    <td class="nw">{{ v.get_kind_display }}</td>
+                    <td>{{ v.description|truncatechars:60 }}</td>
+                    <td class="num-cell">{{ v.total|rial }}</td>
+                    <td>{% if v.total != v.credit_total %}<span class="ac-st bad">بی‌حساب</span>{% elif v.status == 'final' %}<span class="ac-st ok">قطعی</span>{% else %}<span class="ac-st warn">موقت</span>{% endif %}</td>
+                    <td><div class="acts">
+                        <button type="button" class="ac-link" hx-get="{% url 'main:acc_p_voucher_detail' v.id %}" hx-target="#acc-modal-body" aria-label="مشاهده سند {{ v.number|fa }}"><i class="fas fa-eye" aria-hidden="true"></i>مشاهده</button>
+                        {% if v.status == 'temporary' and v.total == v.credit_total and not year.is_closed %}
+                        <form hx-post="{% url 'main:acc_p_voucher_action' v.id 'finalize' %}" hx-swap="none" hx-confirm="سند {{ v.number|fa }} قطعی شود؟ بعد از قطعی شدن قابل ویرایش نیست.">{% csrf_token %}<button type="submit" class="ac-link ok" aria-label="قطعی کردن سند {{ v.number|fa }}"><i class="fas fa-lock" aria-hidden="true"></i>قطعی</button></form>
+                        {% endif %}
+                    </div></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7"><div class="ac-empty"><span class="eic"><i class="fas fa-file-circle-plus" aria-hidden="true"></i></span><h4>{% if filtered %}سندی با این فیلتر پیدا نشد{% else %}هنوز سندی ثبت نشده است{% endif %}</h4>{% if not filtered and not year.is_closed %}<p>با دکمهٔ «سند جدید» بالای صفحه شروع کنید.</p>{% endif %}</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'main/accounting/panel/_pager.html' %}
 </div>
-{% include 'main/accounting/panel/_pager.html' %}

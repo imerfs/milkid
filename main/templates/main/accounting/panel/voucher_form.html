@@ -1,28 +1,28 @@
 {% load accounting_tags %}
 {% if voucher %}{% url 'main:acc_p_voucher_edit' voucher.id as action %}{% else %}{% url 'main:acc_p_voucher_new' year.id as action %}{% endif %}
-{% include 'main/accounting/panel/_modal_head.html' with title=voucher|yesno:"ویرایش سند,ثبت سند جدید" %}
-<form id="voucher-form" method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="p-5" novalidate>
+{% include 'main/accounting/panel/_modal_head.html' with title=voucher|yesno:"ویرایش سند,ثبت سند جدید" subtitle="هر ردیف فقط یکی از بدهکار یا بستانکار دارد؛ جمع دو ستون باید برابر باشد." %}
+<form id="voucher-form" method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
     {% csrf_token %}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div><label class="acc-label" for="v-date">تاریخ (شمسی)</label><input class="acc-input" id="v-date" name="date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ date }}" required></div>
-        <div><label class="acc-label" for="v-kind">نوع سند</label>
-            <select class="acc-input" id="v-kind" name="kind">{% for k, label in kinds %}<option value="{{ k }}" {% if kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-        <div class="col-span-2"><label class="acc-label" for="v-desc">شرح سند</label><input class="acc-input" id="v-desc" name="description" maxlength="500" value="{{ description }}" required></div>
+    <div class="ac-fgrid">
+        <div class="ac-field"><label for="v-date">تاریخ (شمسی)</label><input class="ac-in" id="v-date" name="date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ date }}" required></div>
+        <div class="ac-field"><label for="v-kind">نوع سند</label>
+            <select class="ac-in" id="v-kind" name="kind">{% for k, label in kinds %}<option value="{{ k }}" {% if kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        <div class="ac-field s2"><label for="v-desc">شرح سند</label><input class="ac-in" id="v-desc" name="description" maxlength="500" value="{{ description }}" required></div>
     </div>
-    <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-        <table class="w-full text-right" id="lines">
-            <thead class="bg-gray-50 dark:bg-gray-700 text-sm"><tr><th class="py-2 px-2">حساب</th><th class="px-2">طرف حساب</th><th class="px-2">مرکز هزینه</th><th class="px-2">شرح</th><th class="px-2">بدهکار</th><th class="px-2">بستانکار</th><th></th></tr></thead>
+    <div class="ac-lines">
+        <table id="lines">
+            <thead><tr><th>حساب</th><th>طرف حساب</th><th>مرکز هزینه</th><th>شرح</th><th>بدهکار</th><th>بستانکار</th><th></th></tr></thead>
             <tbody>{% for r in rows %}{% include 'main/accounting/panel/_line_row.html' %}{% endfor %}</tbody>
-            <tfoot class="font-bold text-sm"><tr><td colspan="4" class="py-2 px-2">جمع</td><td id="sum-debit" class="px-3">۰</td><td id="sum-credit" class="px-3">۰</td><td></td></tr></tfoot>
+            <tfoot><tr><td colspan="4">جمع</td><td id="sum-debit" class="num-cell">۰</td><td id="sum-credit" class="num-cell">۰</td><td></td></tr></tfoot>
         </table>
     </div>
     <template id="line-template">{% include 'main/accounting/panel/_line_row.html' with r=empty_row %}</template>
-    <div class="flex flex-wrap items-center gap-2 mt-4">
-        <button type="button" class="acc-btn" id="add-line"><i class="fas fa-plus ml-1" aria-hidden="true"></i>ردیف جدید</button>
-        <span id="balance-badge" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-200 text-gray-700" role="status" aria-live="polite" data-ok-class="text-xs font-medium px-3 py-1 rounded-full bg-success-100 text-success-800" data-bad-class="text-xs font-medium px-3 py-1 rounded-full bg-error-100 text-error-800">بی‌حساب</span>
-        <span class="flex-1"></span>
-        <button type="button" class="acc-btn" data-acc-close>انصراف</button>
-        <button type="submit" class="acc-btn-primary"><i class="fas fa-floppy-disk ml-1" aria-hidden="true"></i>ذخیره</button>
+    <div class="ac-foot" style="justify-content:flex-start">
+        <button type="button" class="ac-btn ac-btn-sm" id="add-line"><i class="fas fa-plus" aria-hidden="true"></i>ردیف جدید</button>
+        <span id="balance-badge" class="ac-st" role="status" aria-live="polite" data-ok-class="ac-st ok" data-bad-class="ac-st bad">بی‌حساب</span>
+        <span style="flex:1"></span>
+        <button type="button" class="ac-btn" data-acc-close>انصراف</button>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button>
     </div>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">مبلغ‌ها به ریال و عدد صحیح‌اند؛ هر ردیف فقط یکی از بدهکار یا بستانکار دارد. سند بی‌حساب را می‌شود ذخیره کرد ولی قطعی نمی‌شود.</p>
+    <p class="ac-hint">مبلغ‌ها به ریال و عدد صحیح‌اند. سند بی‌حساب را می‌شود ذخیره کرد ولی قطعی نمی‌شود.</p>
 </form>
