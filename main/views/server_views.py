@@ -26,6 +26,7 @@ from django.views.decorators.http import require_POST
 
 from main import hostinfo, ipblock, serverops, siteextras, twofactor
 from main.access import policy_required
+from main.views.admin_views import admin_dashboard
 from main.models import BlockedIP, DailyPageView, SiteRedirect, TwoFactorDevice
 from main.ratelimit import client_ip
 
@@ -44,8 +45,16 @@ def _rel(root, path):
 
 @policy_required('admin.manage')
 def admin_server(request):
-    tab = request.GET.get('tab') if request.GET.get('tab') in TABS else 'resources'
-    ctx = {'tab': tab, 'tabs': TABS}
+    """Server management lives inside the admin dashboard; this URL deep-links to a section of it."""
+    tab = request.GET.get('tab')
+    if tab == 'files':
+        return admin_server_files(request)
+    tab = tab if tab in TABS else 'resources'
+    return admin_dashboard(request, server_panel=_panel_context(request, tab))
+
+
+def _panel_context(request, tab):
+    ctx = {'server_open': True, 'tab': tab}
     if tab == 'resources':
         ctx.update(res=serverops.resources(), folders=serverops.folder_usage(), db_size=serverops.database_size(),
                    last_backup=serverops.last_backup_age_hours(), version=serverops.code_version())
@@ -77,7 +86,7 @@ def admin_server(request):
         if device is not None and not device.confirmed:
             ctx['setup_key'] = ' '.join(device.secret[i:i + 4] for i in range(0, len(device.secret), 4))
             ctx['setup_uri'] = twofactor.provisioning_uri(device.secret, request.user.username)
-    return render(request, 'main/admin/server.html', ctx)
+    return ctx
 
 
 @policy_required('admin.manage')
@@ -176,17 +185,17 @@ def admin_server_files(request):
     root_key = request.GET.get('root', 'media')
     rel = request.GET.get('path', '')
     root, directory = serverops.resolve_media(root_key, rel)
+    ctx = {'server_open': True, 'tab': 'files', 'root_key': root_key, 'roots': list(serverops.media_roots())}
     if directory is None or not directory.is_dir():
         if root is not None and directory is None:
             raise Http404
-        return render(request, 'main/admin/server_files.html', {'root_key': root_key, 'rows': [], 'rel': '', 'missing': True})
+        ctx.update(rows=[], rel='', missing=True)
+        return admin_dashboard(request, server_panel=ctx)
     q = request.GET.get('q', '').strip()
     rows = serverops.search_media(root, directory, q) if q else serverops.list_media(directory)
-    base = _rel(root, directory)
     parent = '' if directory == root else _rel(root, directory.parent)
-    return render(request, 'main/admin/server_files.html',
-                  {'root_key': root_key, 'rows': rows, 'rel': base, 'parent': parent, 'q': q,
-                   'roots': list(serverops.media_roots())})
+    ctx.update(rows=rows, rel=_rel(root, directory), parent=parent, q=q)
+    return admin_dashboard(request, server_panel=ctx)
 
 
 @policy_required('admin.manage')

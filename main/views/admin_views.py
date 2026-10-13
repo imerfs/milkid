@@ -41,8 +41,12 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
 @policy_required('admin.manage')
 @login_required
 @ensure_csrf_cookie
-def admin_dashboard(request):
-    """Enhanced dashboard for administrators"""
+def admin_dashboard(request, server_panel=None):
+    """Enhanced dashboard for administrators.
+
+    ``server_panel`` (set by the server-management views) is the context of the embedded
+    server section; the page then opens on that section.
+    """
     user_profile = request.user.profile
     from datetime import datetime, timedelta
     import json
@@ -364,6 +368,8 @@ def admin_dashboard(request):
         'rejected_municipalities_list': rejected_municipalities_list,
     }
 
+    if server_panel is not None:
+        context.update(server_panel)
     return render(request, 'main/dashboards/admin_dashboard.html', context)
 
 
