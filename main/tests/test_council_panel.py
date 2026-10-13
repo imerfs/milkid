@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from main.models import Conversation, CouncilMeeting, CouncilPoll, CouncilPollVote, Message
+from main.models import ServiceRequest, Conversation, CouncilMeeting, CouncilPoll, CouncilPollVote, Message
 from main.tests.helpers import client_for, make_user
 
 V = 'روستای الف'
@@ -228,3 +228,66 @@ class MessagesAndSettings(TestCase):
         page = client_for(self.a).get(reverse('main:council_dashboard'))
         for fake in ('احمد رضایی', 'rasooli@example.com', 'C-045', 'جناب آقای رسولی'):
             self.assertNotContains(page, fake)
+
+
+class VillageScope(TestCase):
+    """Council sees and acts only on requests/payments of citizens in its own village."""
+
+    def setUp(self):
+        from main.tests.helpers import make_request, make_payment
+        self.a = member()
+        mine = make_user('citizen', city_village=V)
+        other = make_user('citizen', city_village='روستای ب')
+        self.mine = make_request(mine, status='pending')
+        ServiceRequest.objects.filter(id=self.mine.id).update(title='درخواست-خودی')
+        self.theirs = make_request(other, status='pending')
+        ServiceRequest.objects.filter(id=self.theirs.id).update(title='درخواست-غریبه')
+        self.pay_mine = make_payment(mine)
+        self.pay_theirs = make_payment(other)
+
+    def test_cannot_vote_on_other_village_request(self):
+        client_for(self.a).post(reverse('main:council_submit_vote', args=[self.theirs.id]), {'vote': 'approve'})
+        self.assertFalse(self.theirs.votes.exists())
+        client_for(self.a).post(reverse('main:council_submit_vote', args=[self.mine.id]), {'vote': 'approve'})
+        self.assertTrue(self.mine.votes.exists())
+
+    def test_cannot_view_or_comment_other_village_request(self):
+        c = client_for(self.a)
+        self.assertEqual(c.get(reverse('main:council_request_detail', args=[self.theirs.id])).status_code, 404)
+        c.post(reverse('main:council_add_comment', args=[self.theirs.id]), {'comment': 'x'})
+        self.assertFalse(self.theirs.council_comments.exists())
+        self.assertEqual(c.get(reverse('main:council_request_detail', args=[self.mine.id])).status_code, 200)
+
+    def test_user_without_village_sees_nothing(self):
+        nowhere = make_user('council')
+        page = client_for(nowhere).get(reverse('main:council_dashboard'))
+        self.assertNotContains(page, 'درخواست-خودی')
+        self.assertNotContains(page, 'درخواست-غریبه')
+
+    def test_dashboard_lists_only_own_village(self):
+        page = client_for(self.a).get(reverse('main:council_dashboard'))
+        self.assertContains(page, 'درخواست-خودی')
+        self.assertNotContains(page, 'درخواست-غریبه')
+
+
+class RealTabs(TestCase):
+    def test_financial_deeds_and_history_show_database_rows_only(self):
+        from main.tests.helpers import make_request, make_payment
+        a = member()
+        citizen = make_user('citizen', city_village=V)
+        deed = make_request(citizen, status='pending')
+        ServiceRequest.objects.filter(id=deed.id).update(title='گواهی-نمونه-۱', request_type='property_deed')
+        pay = make_payment(citizen)
+        poll = make_poll(a, title='مصوبه-بسته')
+        client_for(a).post(reverse('main:council_poll_vote', args=[poll.id]), {'choice': 'approve'})
+        client_for(a).post(reverse('main:council_poll_close', args=[poll.id]))
+        page = client_for(a).get(reverse('main:council_dashboard'))
+        for text in ('گواهی-نمونه-۱', 'مصوبه-بسته', 'تصویب شد'):
+            self.assertContains(page, text)
+        for fake in ('سارا حسینی', '۱۴۰۳-۰۲', 'روستای فشم', '۲۴۵ میلیون', 'آیین‌نامه شهرسازی جدید'):
+            self.assertNotContains(page, fake)
+
+    def test_old_financial_and_review_urls_redirect_to_tabs(self):
+        c = client_for(member())
+        self.assertIn('tab=financial', c.get(reverse('main:council_financial_reports')).url)
+        self.assertIn('tab=voting', c.get(reverse('main:council_review_requests')).url)
