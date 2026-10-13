@@ -42,6 +42,17 @@ class ServerPanelIsAdminOnly(TestCase):
                 self.assertEqual(admin.get(reverse('main:admin_server'), {'tab': tab}).status_code, 200)
         self.assertEqual(admin.get(reverse('main:admin_server_files')).status_code, 200)
 
+    def test_server_sections_render_inside_the_admin_dashboard(self):
+        admin = client_for(make_user('admin'))
+        for url in (reverse('main:admin_server') + '?tab=ips', reverse('main:admin_server_files'),
+                    reverse('main:admin_server') + '?tab=files'):
+            with self.subTest(url=url):
+                response = admin.get(url)
+                self.assertTemplateUsed(response, 'main/dashboards/admin_dashboard.html')
+                self.assertContains(response, 'id="server-tab"')
+        self.assertNotContains(admin.get(reverse('main:admin_dashboard')), 'id="server-tab"')
+        self.assertNotContains(admin.get(reverse('main:admin_dashboard')), 'session-time')
+
 
 class FilesStayInsideTheirRoot(TestCase):
     def setUp(self):

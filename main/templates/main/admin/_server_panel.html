@@ -1,26 +1,20 @@
-{% extends 'base.html' %}
 {% load jalali_tags %}
-{% block title %}مدیریت سرور - ملک آیدی{% endblock %}
-{% block content %}
-<div class="container py-4" dir="rtl">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0"><i class="fas fa-server ml-2"></i>مدیریت سرور</h1>
-    <a href="{% url 'main:admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">بازگشت به پنل مدیریت</a>
-  </div>
+<section class="srv-panel" dir="rtl" aria-label="مدیریت سرور">
+  <h2 class="srv-title"><i class="fas fa-server"></i> مدیریت سرور</h2>
   {% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
 
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item"><a class="nav-link {% if tab == 'resources' %}active{% endif %}" href="?tab=resources">منابع</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'stats' %}active{% endif %}" href="?tab=stats">آمار بازدید</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'database' %}active{% endif %}" href="?tab=database">پایگاه داده</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'backups' %}active{% endif %}" href="?tab=backups">پشتیبان‌گیری</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'logs' %}active{% endif %}" href="?tab=logs">گزارش خطاها</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'ips' %}active{% endif %}" href="?tab=ips">مسدودسازی IP</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'redirects' %}active{% endif %}" href="?tab=redirects">تغییر مسیرها</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'services' %}active{% endif %}" href="?tab=services">ایمیل، دامنه و سرویس‌ها</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'cache' %}active{% endif %}" href="?tab=cache">حافظهٔ نهان</a></li>
-    <li class="nav-item"><a class="nav-link {% if tab == 'security' %}active{% endif %}" href="?tab=security">ورود دو مرحله‌ای</a></li>
-    <li class="nav-item"><a class="nav-link" href="{% url 'main:admin_server_files' %}">فایل‌ها</a></li>
+  <ul class="nav nav-tabs mb-3 srv-tabs">
+    <li class="nav-item"><a class="nav-link {% if tab == 'resources' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=resources">منابع</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'stats' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=stats">آمار بازدید</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'database' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=database">پایگاه داده</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'backups' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=backups">پشتیبان‌گیری</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'logs' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=logs">گزارش خطاها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'ips' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=ips">مسدودسازی IP</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'redirects' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=redirects">تغییر مسیرها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'services' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=services">ایمیل، دامنه و سرویس‌ها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'cache' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=cache">حافظهٔ نهان</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'security' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=security">ورود دو مرحله‌ای</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'files' %}active{% endif %}" href="{% url 'main:admin_server_files' %}">فایل‌ها</a></li>
   </ul>
 
   {% if tab == 'resources' %}
@@ -106,7 +100,7 @@
       {% else %}
         <p>دامنه‌های سایت: <span dir="ltr">{{ domains|join:', ' }}</span></p>
       {% endif %}
-      <a class="btn btn-outline-primary mb-2" href="?tab=services&check=1">بررسی DNS و SSL</a>
+      <a class="btn btn-outline-primary mb-2" href="{% url 'main:admin_server' %}?tab=services&check=1">بررسی DNS و SSL</a>
     {% else %}<p class="text-muted">دامنه‌ای در تنظیمات (REPLIT_DOMAINS یا SITE_URL) ثبت نشده است.</p>{% endif %}
     <p class="small text-muted">رکوردهای DNS (A، MX، SPF، DKIM، DMARC و ساب‌دامین‌ها) در پنل شرکت ثبت دامنه یا سرویس DNS تغییر می‌کنند، نه از داخل سایت.</p>
 
@@ -156,7 +150,7 @@
 
   {% elif tab == 'logs' %}
     {% if logs %}
-    <form method="get" class="mb-2 d-flex gap-2"><input type="hidden" name="tab" value="logs">
+    <form method="get" action="{% url 'main:admin_server' %}" class="mb-2 d-flex gap-2"><input type="hidden" name="tab" value="logs">
       <select name="file" class="form-select w-auto" onchange="this.form.submit()">{% for l in logs %}<option {% if l == chosen %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
     </form>
     <pre dir="ltr" class="border rounded p-3 small" style="max-height:60vh;overflow:auto;white-space:pre-wrap">{{ content }}</pre>
@@ -177,6 +171,47 @@
         <td><form method="post" action="{% url 'main:admin_server_ip_unblock' b.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">رفع مسدودیت</button></form></td></tr>
       {% empty %}<tr><td colspan="5" class="text-center text-muted">نشانی مسدودی وجود ندارد.</td></tr>{% endfor %}
     </table>
+
+  {% elif tab == 'files' %}
+  <p class="small text-muted">فقط داخل پوشه‌های media و private_media. حذف فایل برگشت‌پذیر نیست؛ ابتدا پشتیبان بگیرید.</p>
+  <ul class="nav nav-pills mb-3">
+    {% for r in roots %}<li class="nav-item"><a class="nav-link {% if r == root_key %}active{% endif %}" href="?root={{ r }}">{{ r }}</a></li>{% endfor %}
+  </ul>
+  {% if missing %}<p class="text-muted">این پوشه هنوز وجود ندارد.</p>{% else %}
+  <div class="row g-2 mb-3">
+    <form method="get" class="col-md-6 d-flex gap-2">
+      <input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+      <input name="q" value="{{ q }}" class="form-control" placeholder="جستجوی نام فایل در این پوشه و زیرپوشه‌ها">
+      <button class="btn btn-outline-primary">جستجو</button>
+    </form>
+    <form method="post" enctype="multipart/form-data" action="{% url 'main:admin_server_file_upload' %}" class="col-md-6 d-flex gap-2">
+      {% csrf_token %}<input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+      <input type="file" name="file" class="form-control" required>
+      <button class="btn btn-primary">بارگذاری</button>
+    </form>
+  </div>
+  <form method="post" action="{% url 'main:admin_server_file_action' %}" class="d-flex gap-2 mb-3" style="max-width:28rem">
+    {% csrf_token %}<input type="hidden" name="op" value="mkdir"><input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+    <input name="name" class="form-control" dir="ltr" placeholder="نام پوشهٔ جدید" required>
+    <button class="btn btn-outline-secondary">ساخت پوشه</button>
+  </form>
+  <p class="small text-muted">برای جابه‌جایی یا تغییر نام، مسیر کامل جدید را نسبت به پوشهٔ اصلی وارد کنید (مثلاً <span dir="ltr">letters/2026/new-name.pdf</span>).</p>
+  <p dir="ltr" class="text-end small">/{{ rel }}{% if q %} — search: {{ q }}{% endif %}</p>
+  <table class="table table-sm align-middle">
+    {% if rel %}<tr><td colspan="3"><a href="?root={{ root_key }}&path={{ parent|urlencode }}">⬆ پوشهٔ بالاتر</a></td></tr>{% endif %}
+    {% for row in rows %}
+    <tr>
+      <td dir="ltr" class="text-end">
+        {% if row.is_dir %}<a href="?root={{ root_key }}&path={% if rel %}{{ rel|urlencode }}/{% endif %}{{ row.name|urlencode }}">📁 {{ row.name }}</a>{% else %}{{ row.name }}{% endif %}
+      </td>
+      <td>{{ row.size|filesizeformat }}</td>
+      <td class="d-flex flex-wrap gap-1">
+        {% if rel %}{% with p=rel|add:'/'|add:row.name %}{% include 'main/admin/_file_actions.html' with item_path=p %}{% endwith %}
+        {% else %}{% include 'main/admin/_file_actions.html' with item_path=row.name %}{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="3" class="text-center text-muted">پوشه خالی است.</td></tr>{% endfor %}
+  </table>{% endif %}
 
   {% elif tab == 'security' %}
     {% if device.confirmed %}
@@ -206,5 +241,4 @@
     <p>پاک‌کردن حافظهٔ نهان داده‌های موقت را بازسازی می‌کند و شمارندهٔ محدودیت ورود را صفر می‌کند. کاربران وارد شده خارج نمی‌شوند.</p>
     <form method="post" action="{% url 'main:admin_server_cache_clear' %}" onsubmit="return confirm('حافظهٔ نهان پاک شود؟')">{% csrf_token %}<button class="btn btn-warning">پاک‌کردن حافظهٔ نهان</button></form>
   {% endif %}
-</div>
-{% endblock %}
+</section>
