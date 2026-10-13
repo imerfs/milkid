@@ -66,5 +66,5 @@ class RoleGates(TestCase):
         self.assertContains(response, 'صندوق رای‌گیری')
 
     def test_dehyari_is_not_bounced_from_mayor_requests(self):
-        response = client_for(make_user('dehyari')).get(reverse('main:mayor_requests_list'))
+        response = client_for(make_user('dehyari')).get(reverse('main:mayor_requests_list'), HTTP_X_PANEL='1')
         self.assertNotEqual(response.status_code, 302)

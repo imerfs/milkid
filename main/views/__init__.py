@@ -11,6 +11,7 @@ from .request_views import *
 from .misc_views import *
 from .dehyari_expert_views import *
 from .office_views import *
+from .mayor_panel import mayor_panel, tab_redirect
 from .letter_views import *
 from .appointment_views import *
 from .monitoring_views import *

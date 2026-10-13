@@ -38,6 +38,9 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
 @login_required
 def user_profile(request):
     """View user profile"""
+    from main.views.mayor_panel import tab_redirect
+    if (moved := tab_redirect(request, 'profile')):
+        return moved
     user_profile = request.user.profile
     
     context = {

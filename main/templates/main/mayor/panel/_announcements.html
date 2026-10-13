@@ -1,0 +1,37 @@
+{% load jalali_tags persian_filters %}
+<div class="mp-pane" data-url="{% url 'main:mayor_panel' 'announcements' %}">
+    <header class="mp-head"><div><h2>اطلاعیه‌ها</h2><p>پیام رسمی دهیاری را برای همهٔ اهالی یا نقش‌های مشخص منتشر کنید.</p></div>
+        <button type="button" class="mp-btn mp-btn-primary" data-mp-open="mp-new-ann"><i class="fas fa-plus" aria-hidden="true"></i> اطلاعیه جدید</button></header>
+    {% include 'main/mayor/panel/_flash.html' %}
+    <section class="mp-card" aria-label="اطلاعیه‌های منتشرشده">
+        {% for a in announcements %}
+        <article class="mp-row mp-row-ann">
+            <span class="mp-avatar mp-avatar-{{ a.priority }}" aria-hidden="true"><i class="fas fa-bullhorn"></i></span>
+            <div class="mp-grow"><b>{{ a.title }}</b>
+                <p class="mp-excerpt">{{ a.content|truncatechars:160 }}</p>
+                <small>{{ a.created_at|persian_date:"Y/m/d"|persian_numbers }} · {% if a.target_roles %}ویژهٔ نقش‌های انتخاب‌شده{% else %}همهٔ اهالی{% endif %}{% if a.expires_at %} · تا {{ a.expires_at|persian_date:"Y/m/d"|persian_numbers }}{% endif %}</small></div>
+            <span class="mp-badge mp-badge-{% if a.priority == 'urgent' %}red{% elif a.priority == 'high' %}amber{% elif a.priority == 'medium' %}green{% else %}gray{% endif %}">{{ a.get_priority_display }}</span>
+            <button type="button" class="mp-btn mp-btn-danger mp-btn-sm" data-mp-act="{% url 'main:announcement_delete' a.id %}" data-confirm="این اطلاعیه حذف شود؟"><i class="fas fa-trash" aria-hidden="true"></i> حذف</button>
+        </article>
+        {% empty %}
+        <div class="mp-empty"><i class="fas fa-bullhorn" aria-hidden="true"></i><p>هنوز اطلاعیه‌ای منتشر نکرده‌اید.</p></div>
+        {% endfor %}
+        {% include 'main/mayor/panel/_pager.html' with page=announcements extra="" %}
+    </section>
+
+    <dialog id="mp-new-ann" class="mp-dialog" aria-labelledby="mp-ann-h">
+        <form method="post" action="{% url 'main:create_announcement' %}" data-mp-post data-mp-close>
+            <h3 id="mp-ann-h">اطلاعیه جدید</h3>
+            <label>عنوان<input class="mp-input" name="title" maxlength="200" required></label>
+            <label>متن اطلاعیه<textarea class="mp-input" name="content" rows="5" maxlength="5000" required></textarea></label>
+            <div class="mp-grid">
+                <label>اولویت<select class="mp-input" name="priority">{% for v, l in priority_choices %}<option value="{{ v }}" {% if v == 'medium' %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+                <label>پایان نمایش (اختیاری)<input class="mp-input" type="datetime-local" name="expires_at" dir="ltr"></label>
+            </div>
+            <fieldset class="mp-fieldset"><legend>مخاطب (اگر چیزی انتخاب نشود، همهٔ اهالی)</legend>
+                {% for v, l in role_choices %}<label class="mp-check"><input type="checkbox" name="target_roles" value="{{ v }}"> {{ l }}</label>{% endfor %}
+            </fieldset>
+            <div class="mp-actions"><button type="button" class="mp-btn" data-mp-dismiss>انصراف</button><button type="submit" class="mp-btn mp-btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> انتشار</button></div>
+        </form>
+    </dialog>
+</div>

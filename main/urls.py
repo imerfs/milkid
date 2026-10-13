@@ -51,6 +51,7 @@ urlpatterns = [
     path('dashboard/admin/monitoring/chats/<int:conversation_id>/', views.admin_monitoring_chat, name='admin_monitoring_chat'),
     path('dashboard/council/', views.council_dashboard, name='council_dashboard'),
     path('dashboard/dehyari/', views.dehyari_dashboard, name='dehyari_dashboard'),
+    path('dashboard/dehyari/panel/<str:tab>/', views.mayor_panel, name='mayor_panel'),
     path('dashboard/dehyari-expert/', views.dehyari_expert_dashboard, name='dehyari_expert_dashboard'),
     path('dashboard/engineer/', views.dehyari_expert_dashboard, name='engineer_dashboard'),
     path('dashboard/inspector/', views.inspector_dashboard, name='inspector_dashboard'),

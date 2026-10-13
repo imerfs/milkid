@@ -1,0 +1,57 @@
+{% load jalali_tags persian_filters %}
+<div class="mp-pane" data-url="{% url 'main:mayor_panel' 'requests' %}">
+    <header class="mp-head"><div><h2>درخواست‌های مردم</h2><p>رسیدگی نهایی به پرونده‌های روستا: تأیید، رد یا ارجاع به کارشناس.</p></div></header>
+    {% include 'main/mayor/panel/_flash.html' %}
+    {% if not municipality %}
+    <div class="mp-card mp-empty"><i class="fas fa-circle-info" aria-hidden="true"></i><p>دهیاری شما هنوز ثبت نشده است؛ پس از ثبت، درخواست‌های روستا اینجا دیده می‌شود.</p></div>
+    {% else %}
+    <div class="mp-stats">
+        <div class="mp-stat"><span>همه</span><b>{{ stats.total|stringformat:"d"|persian_numbers }}</b></div>
+        <div class="mp-stat mp-stat-amber"><span>در انتظار</span><b>{{ stats.pending|stringformat:"d"|persian_numbers }}</b></div>
+        <div class="mp-stat mp-stat-blue"><span>در حال بررسی</span><b>{{ stats.in_review|stringformat:"d"|persian_numbers }}</b></div>
+        <div class="mp-stat mp-stat-green"><span>تأیید شده</span><b>{{ stats.approved|stringformat:"d"|persian_numbers }}</b></div>
+        <div class="mp-stat mp-stat-red"><span>رد شده</span><b>{{ stats.rejected|stringformat:"d"|persian_numbers }}</b></div>
+    </div>
+    <form method="get" action="{% url 'main:mayor_panel' 'requests' %}" data-mp-get class="mp-card mp-filter">
+        <label>وضعیت<select name="status" class="mp-input"><option value="">همه وضعیت‌ها</option>{% for code, name in status_choices %}<option value="{{ code }}" {% if code == status %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>
+        <label class="mp-grow">جستجو<input type="search" name="search" value="{{ search }}" class="mp-input" placeholder="کد رهگیری، نام متقاضی یا عنوان…" maxlength="100"></label>
+        <button type="submit" class="mp-btn mp-btn-primary"><i class="fas fa-filter" aria-hidden="true"></i> فیلتر</button>
+        <a href="{% url 'main:mayor_panel' 'requests' %}" data-mp-url class="mp-btn">بازنشانی</a>
+    </form>
+    <section class="mp-card" aria-label="فهرست درخواست‌ها">
+        {% for req in service_requests %}
+        <div class="mp-row mp-row-req">
+            <div class="mp-grow"><b>{{ req.title }}</b>
+                <small>{{ req.user.get_full_name|default:req.user.username }} · {{ req.get_request_type_display }} · {{ req.created_at|persian_date:"Y/m/d"|persian_numbers }} · <bdi>#{{ req.tracking_code|default:req.id|persian_numbers }}</bdi></small></div>
+            <span class="mp-badge mp-badge-{% if req.status == 'approved' %}green{% elif req.status == 'rejected' %}red{% elif req.status == 'in_review' %}blue{% else %}amber{% endif %}">{{ req.get_status_display }}</span>
+            <div class="mp-btns">
+                <a class="mp-btn mp-btn-sm" href="{% url 'main:request_detail' req.id %}" title="مشاهده جزئیات"><i class="fas fa-eye" aria-hidden="true"></i><span class="mp-sr">جزئیات</span></a>
+                {% if req.status != 'approved' and req.status != 'rejected' %}
+                <button type="button" class="mp-btn mp-btn-ok mp-btn-sm" data-mp-act="{% url 'main:mayor_request_approve' req.id %}" data-confirm="تأیید نهایی این پرونده؟"><i class="fas fa-check" aria-hidden="true"></i> تأیید</button>
+                <button type="button" class="mp-btn mp-btn-danger mp-btn-sm" data-mp-open="mp-reject" data-action="{% url 'main:mayor_request_reject' req.id %}"><i class="fas fa-xmark" aria-hidden="true"></i> رد</button>
+                {% if staff_members %}<button type="button" class="mp-btn mp-btn-sm" data-mp-open="mp-assign" data-action="{% url 'main:mayor_request_assign' req.id %}"><i class="fas fa-share" aria-hidden="true"></i> ارجاع</button>{% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="mp-empty"><i class="fas fa-inbox" aria-hidden="true"></i><p>درخواستی مطابق این فیلتر پیدا نشد.</p></div>
+        {% endfor %}
+        {% include 'main/mayor/panel/_pager.html' with page=service_requests extra=extra %}
+    </section>
+
+    <dialog id="mp-reject" class="mp-dialog" aria-labelledby="mp-reject-h">
+        <form method="post" data-mp-post data-mp-close>
+            <h3 id="mp-reject-h">رد درخواست</h3>
+            <label>علت رد (به متقاضی نمایش داده می‌شود)<textarea class="mp-input" name="reason" rows="3" maxlength="500" required></textarea></label>
+            <div class="mp-actions"><button type="button" class="mp-btn" data-mp-dismiss>انصراف</button><button type="submit" class="mp-btn mp-btn-danger">رد پرونده</button></div>
+        </form>
+    </dialog>
+    <dialog id="mp-assign" class="mp-dialog" aria-labelledby="mp-assign-h">
+        <form method="post" data-mp-post data-mp-close>
+            <h3 id="mp-assign-h">ارجاع به کارشناس</h3>
+            <label>کارمند<select class="mp-input" name="staff_id" required><option value="" selected disabled>انتخاب کنید…</option>{% for s in staff_members %}<option value="{{ s.user_id }}">{{ s.user.get_full_name|default:s.user.username }} — {{ s.get_role_display }}</option>{% endfor %}</select></label>
+            <div class="mp-actions"><button type="button" class="mp-btn" data-mp-dismiss>انصراف</button><button type="submit" class="mp-btn mp-btn-primary">ارجاع</button></div>
+        </form>
+    </dialog>
+    {% endif %}
+</div>
