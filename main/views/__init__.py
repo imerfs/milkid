@@ -3,6 +3,7 @@ from .auth_views import *
 from .dashboard_views import *
 from .dehyari_views import *
 from .council_views import *
+from .council_panel import *
 from .staff_views import *
 from .admin_views import *
 from .property_views import *

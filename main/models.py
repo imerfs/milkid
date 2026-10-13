@@ -1570,6 +1570,7 @@ from .models_accounting import *  # noqa: E402,F401,F403
 from .models_finance import *  # noqa: E402,F401,F403
 from .models_income import *  # noqa: E402,F401,F403
 from .models_payroll import *  # noqa: E402,F401,F403
+from .models_council import *  # noqa: E402,F401,F403
 
 
 class BlockedIP(models.Model):
