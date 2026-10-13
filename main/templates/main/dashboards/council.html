@@ -1,4 +1,5 @@
 {% load static %}
+{% load jalali_tags %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -78,6 +79,15 @@
             transform: translateX(0);
         }
         
+        #sidebar { display: flex; flex-direction: column; max-width: 85vw; flex-shrink: 0; }
+        #sidebar nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-top: 0.5rem; padding-bottom: 0.75rem; }
+        #sidebar .sidebar-link { padding: 0.7rem 1rem; gap: 0.5rem; line-height: 1.5; }
+        #sidebar .sidebar-link > div { min-width: 0; }
+        #sidebar .sidebar-link > span { flex-shrink: 0; }
+        #sidebar .sidebar-footer { flex-shrink: 0; padding: 1rem; border-top: 1px solid #e5e7eb; }
+        @media (min-width: 768px) {
+            #sidebar { position: sticky; top: 0; height: 100vh; transform: none; z-index: 10; }
+        }
         .stat-card {
             transition: all 0.3s ease;
         }
@@ -192,71 +202,52 @@
                 </div>
             </div>
             
-            <!-- Search Box -->
-            <div class="p-4 border-b">
-                <div class="relative">
-                    <input type="text" placeholder="جستجو..." class="w-full bg-gray-100 rounded-lg py-2 pr-10 pl-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
-                </div>
-            </div>
-            
-            <nav class="mt-2">
-                <a href="#" class="sidebar-link active flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('dashboard', this)">
+            <nav>
+                <a href="#" data-tab="dashboard" class="sidebar-link active flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('dashboard', this); return false;">
                     <div class="flex items-center"><i class="fas fa-tachometer-alt ml-3"></i>داشبورد</div>
                 </a>
-                <a href="{% url 'main:council_voting_list' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('voting', this)">
+                <a href="#" data-tab="voting" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('voting', this); return false;">
                     <div class="flex items-center"><i class="fas fa-vote-yea ml-3"></i>صندوق رای‌گیری</div>
-                    {% if stats.pending_votes > 0 %}<span class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.pending_votes }}</span>{% endif %}
+                    {% if stats.pending_votes|add:stats.open_polls > 0 %}<span class="bg-blue-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">{{ stats.pending_votes|add:stats.open_polls }}</span>{% endif %}
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('financial', this)">
+                <a href="#" data-tab="financial" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('financial', this); return false;">
                     <div class="flex items-center"><i class="fas fa-file-invoice-dollar ml-3"></i>تاییدهای مالی</div>
-                    {% if stats.pending_financial > 0 %}<span class="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.pending_financial }}</span>{% endif %}
+                    {% if stats.pending_financial > 0 %}<span class="bg-green-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">{{ stats.pending_financial }}</span>{% endif %}
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('deeds', this)">
+                <a href="#" data-tab="deeds" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('deeds', this); return false;">
                     <div class="flex items-center"><i class="fas fa-file-signature ml-3"></i>صدور گواهی تصرف</div>
-                    {% if stats.pending_deeds > 0 %}<span class="bg-amber-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.pending_deeds }}</span>{% endif %}
+                    {% if stats.pending_deeds > 0 %}<span class="bg-amber-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">{{ stats.pending_deeds }}</span>{% endif %}
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('history', this)">
+                <a href="#" data-tab="history" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('history', this); return false;">
                     <div class="flex items-center"><i class="fas fa-history ml-3"></i>سوابق مصوبات</div>
                 </a>
-                <a href="{% url 'main:appointments' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('calendar', this)">
+                <a href="#" data-tab="calendar" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('calendar', this); return false;">
                     <div class="flex items-center"><i class="fas fa-calendar-alt ml-3"></i>تقویم جلسات</div>
+                    {% if stats.upcoming_meetings > 0 %}<span class="bg-purple-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">{{ stats.upcoming_meetings }}</span>{% endif %}
                 </a>
-                <a href="{% url 'main:letters_inbox' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('messages', this)">
+                <a href="#" data-tab="messages" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('messages', this); return false;">
                     <div class="flex items-center"><i class="fas fa-envelope ml-3"></i>پیام‌ها</div>
-                    <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-badge">3</span>
+                    {% if stats.unread_messages > 0 %}<span class="bg-red-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center notification-badge">{{ stats.unread_messages }}</span>{% endif %}
                 </a>
-                <a href="#" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('members', this)">
+                <a href="#" data-tab="members" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('members', this); return false;">
                     <div class="flex items-center"><i class="fas fa-users ml-3"></i>اعضای شورا</div>
                 </a>
-                <a href="{% url 'main:user_profile' %}" class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1" onclick="showTab('settings', this)">
+                <a href="#" data-tab="settings" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('settings', this); return false;">
                     <div class="flex items-center"><i class="fas fa-cog ml-3"></i>تنظیمات</div>
                 </a>
             </nav>
-            
-            <!-- Notifications -->
-            <div class="p-4 mt-4 border-t">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-semibold text-sm">اطلاعیه‌ها</h3>
-                    <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-                </div>
-                <div class="text-xs text-gray-600 space-y-2">
-                    <div class="flex items-start">
-                        <i class="fas fa-exclamation-circle text-red-500 mt-1 ml-2"></i>
-                        <p>جلسه شورا فردا ساعت ۱۰ صبح</p>
-                    </div>
-                    <div class="flex items-start">
-                        <i class="fas fa-info-circle text-blue-500 mt-1 ml-2"></i>
-                        <p>۲ درخواست مالی جدید</p>
-                    </div>
-                </div>
+
+            <div class="sidebar-footer text-xs text-gray-600 space-y-2">
+                <div class="flex items-center justify-between"><span>رای‌گیری‌های باز</span><span class="font-bold">{{ stats.open_polls }}</span></div>
+                <div class="flex items-center justify-between"><span>جلسات پیش رو</span><span class="font-bold">{{ stats.upcoming_meetings }}</span></div>
+                <div class="flex items-center justify-between"><span>پیام‌های خوانده‌نشده</span><span class="font-bold">{{ stats.unread_messages }}</span></div>
             </div>
         </aside>
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Bar -->
-            <header class="glass-effect flex justify-between items-center p-4 border-b">
+            <header class="glass-effect flex justify-between items-center p-4 pr-16 md:pr-4 border-b">
                 <div class="flex items-center">
                     <h2 class="text-lg font-semibold text-gray-700">خوش آمدید، {{ user_profile.user.get_full_name|default:"کاربر" }}</h2>
                     <span class="mr-4 text-sm text-gray-500">
@@ -283,6 +274,11 @@
 
             <!-- Main Content Area -->
             <main class="flex-1 overflow-y-auto p-6 md:p-8 main-content">
+                {% if messages %}
+                <div class="mb-6 space-y-2" role="status">
+                    {% for message in messages %}<div class="rounded-lg px-4 py-3 text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">{{ message }}</div>{% endfor %}
+                </div>
+                {% endif %}
 
                 <!-- Dashboard Tab -->
                 <div id="dashboard-tab" class="active tab-content">
@@ -361,81 +357,6 @@
                         </div>
                     </div>
                     
-                    <!-- Charts and Progress -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">نمودار پیشرفت پروژه‌ها</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">بازسازی پارک محله</span>
-                                        <span class="text-sm font-medium">75%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-blue-600 h-2.5 rounded-full task-progress" style="width: 75%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">آسفالت خیابان اصلی</span>
-                                        <span class="text-sm font-medium">40%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-green-600 h-2.5 rounded-full task-progress" style="width: 40%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">ساخت کتابخانه عمومی</span>
-                                        <span class="text-sm font-medium">20%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-yellow-500 h-2.5 rounded-full task-progress" style="width: 20%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">توسعه فضای سبز</span>
-                                        <span class="text-sm font-medium">90%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-purple-600 h-2.5 rounded-full task-progress" style="width: 90%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">نمودار فعالیت‌های ماهانه</h3>
-                            <div class="flex items-end justify-between h-48">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 60%"></div>
-                                    <span class="mt-2 text-xs">فروردین</span>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 80%"></div>
-                                    <span class="mt-2 text-xs">اردیبهشت</span>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 45%"></div>
-                                    <span class="mt-2 text-xs">خرداد</span>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 70%"></div>
-                                    <span class="mt-2 text-xs">تیر</span>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 90%"></div>
-                                    <span class="mt-2 text-xs">مرداد</span>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-8 bg-teal-500 rounded-t" style="height: 65%"></div>
-                                    <span class="mt-2 text-xs">شهریور</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <!-- Requests Table -->
                     <div class="glass-effect p-6 rounded-xl">
                         <div class="flex justify-between items-center mb-6">
@@ -457,36 +378,24 @@
                                         <th class="py-3 px-4">کد پرونده</th>
                                         <th class="py-3 px-4">متقاضی</th>
                                         <th class="py-3 px-4">نوع درخواست</th>
-                                        <th class="py-3 px-4">اولویت</th>
+                                        <th class="py-3 px-4">وضعیت</th>
                                         <th class="py-3 px-4">تاریخ ثبت</th>
                                         <th class="py-3 px-4"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {% for req in voting_requests %}
                                     <tr class="hover:bg-gray-50">
-                                        <td class="py-4 px-4">C-045</td>
-                                        <td class="py-4 px-4">مریم قاسمی</td>
-                                        <td class="py-4 px-4">تغییر کاربری</td>
-                                        <td class="py-4 px-4">
-                                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">بالا</span>
-                                        </td>
-                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۱۵</td>
-                                        <td class="py-4 px-4">
-                                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="location.href='{% url 'main:council_voting_list' %}'">بررسی و رای‌دهی</button>
-                                        </td>
+                                        <td class="py-4 px-4">{{ req.id }}</td>
+                                        <td class="py-4 px-4">{{ req.user.get_full_name|default:req.user.username }}</td>
+                                        <td class="py-4 px-4">{{ req.get_request_type_display }}</td>
+                                        <td class="py-4 px-4">{{ req.get_status_display }}</td>
+                                        <td class="py-4 px-4">{{ req.created_at|jalali_date|persian_numbers }}</td>
+                                        <td class="py-4 px-4"><a href="{% url 'main:council_request_detail' req.id %}" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">بررسی</a></td>
                                     </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-4 px-4">F-012</td>
-                                        <td class="py-4 px-4">علی رضایی</td>
-                                        <td class="py-4 px-4">تایید پرداخت با چک</td>
-                                        <td class="py-4 px-4">
-                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">متوسط</span>
-                                        </td>
-                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۱۰</td>
-                                        <td class="py-4 px-4">
-                                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">بررسی درخواست</button>
-                                        </td>
-                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="6" class="text-center py-8 text-gray-500">موردی در انتظار اقدام نیست</td></tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>
@@ -495,83 +404,111 @@
 
                 <!-- Voting Tab -->
                 <div id="voting-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
+                    <div class="flex justify-between items-center mb-8 flex-wrap gap-3">
                         <h2 class="text-3xl font-bold text-gray-800">صندوق رای‌گیری</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
-                                <i class="fas fa-plus ml-2"></i>ایجاد رای‌گیری جدید
-                            </button>
-                        </div>
+                        {% if can_vote %}
+                        <button type="button" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="document.getElementById('poll-form').classList.toggle('hidden')">
+                            <i class="fas fa-plus ml-2"></i>ایجاد رای‌گیری جدید
+                        </button>
+                        {% endif %}
                     </div>
-                    
+
+                    {% if can_vote %}
+                    <form id="poll-form" method="post" action="{% url 'main:council_poll_create' %}" class="hidden glass-effect p-6 rounded-xl mb-8 space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label for="poll-title" class="block text-sm font-medium text-gray-700 mb-1">موضوع</label>
+                            <input id="poll-title" name="title" type="text" required maxlength="200" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label for="poll-desc" class="block text-sm font-medium text-gray-700 mb-1">توضیحات (اختیاری)</label>
+                            <textarea id="poll-desc" name="description" rows="3" maxlength="2000" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500"></textarea>
+                        </div>
+                        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">ثبت و شروع رای‌گیری</button>
+                    </form>
+                    {% endif %}
+
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">رای‌گیری‌های فعال</h3>
-                            <div class="space-y-4">
-                                {% for req in voting_requests %}
-                                <div class="border p-4 rounded-lg bg-blue-50">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <p class="font-bold">{{ req.title }} - {{ req.user.get_full_name }}</p>
-                                            <p class="text-sm text-gray-600 mt-2">{{ req.description|truncatewords:20 }}</p>
-                                            <div class="mt-4 flex items-center text-sm">
-                                                <span class="text-gray-500">تاریخ ثبت:</span>
-                                                <span class="font-medium mr-2">{{ req.created_at|date:"Y/m/d" }}</span>
-                                                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs mr-2">{{ req.get_status_display }}</span>
+                        <div class="lg:col-span-2 space-y-8">
+                            <div class="glass-effect p-6 rounded-xl">
+                                <h3 class="text-xl font-bold mb-6 text-gray-800">رای‌گیری‌های شورا</h3>
+                                <div class="space-y-4">
+                                    {% for card in poll_cards %}
+                                    <div class="border p-4 rounded-lg {% if card.poll.status == 'open' %}bg-blue-50{% else %}bg-gray-50{% endif %}">
+                                        <div class="flex justify-between items-start gap-3">
+                                            <div class="min-w-0">
+                                                <p class="font-bold break-words">{{ card.poll.title }}</p>
+                                                {% if card.poll.description %}<p class="text-sm text-gray-600 mt-2 break-words">{{ card.poll.description }}</p>{% endif %}
+                                                <p class="text-xs text-gray-500 mt-2">{{ card.poll.created_at|jalali_date|persian_numbers }} · {{ card.poll.created_by.get_full_name|default:card.poll.created_by.username }}</p>
                                             </div>
+                                            <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap {% if card.poll.status == 'open' %}bg-green-100 text-green-800{% else %}bg-gray-200 text-gray-700{% endif %}">{{ card.poll.get_status_display }}</span>
                                         </div>
-                                        <div class="flex flex-col items-center">
-                                            <div class="text-sm text-gray-500">آرا: {{ req.votes.count }}</div>
+                                        <div class="mt-4 flex flex-wrap gap-4 text-sm">
+                                            <span class="text-green-700">موافق: {{ card.tally.approve }}</span>
+                                            <span class="text-red-700">مخالف: {{ card.tally.reject }}</span>
+                                            <span class="text-gray-600">ممتنع: {{ card.tally.abstain }}</span>
+                                            <span class="text-gray-500">مجموع: {{ card.tally.total }}</span>
+                                        </div>
+                                        {% if can_vote and card.poll.status == 'open' %}
+                                        <div class="mt-4 flex flex-wrap items-center gap-2">
+                                            {% if card.voted %}
+                                            <span class="text-sm text-gray-600"><i class="fas fa-check-circle text-green-600 ml-1"></i>رای شما ثبت شده است</span>
+                                            {% else %}
+                                            <form method="post" action="{% url 'main:council_poll_vote' card.poll.id %}" class="flex gap-2">
+                                                {% csrf_token %}
+                                                <button name="choice" value="approve" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">موافق</button>
+                                                <button name="choice" value="reject" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm">مخالف</button>
+                                                <button name="choice" value="abstain" class="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm">ممتنع</button>
+                                            </form>
+                                            {% endif %}
+                                            <form method="post" action="{% url 'main:council_poll_close' card.poll.id %}" class="mr-auto" onsubmit="return confirm('رای‌گیری بسته شود؟')">
+                                                {% csrf_token %}
+                                                <button class="text-sm text-gray-600 hover:text-red-600"><i class="fas fa-lock ml-1"></i>بستن رای‌گیری</button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% empty %}
+                                    <div class="text-center text-gray-500 py-8">
+                                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                                        <p>هنوز رای‌گیری ثبت نشده است</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="glass-effect p-6 rounded-xl">
+                                <h3 class="text-xl font-bold mb-6 text-gray-800">درخواست‌های مردمی نیازمند رای</h3>
+                                <div class="space-y-4">
+                                    {% for req in voting_requests %}
+                                    <div class="border p-4 rounded-lg">
+                                        <p class="font-bold break-words">{{ req.title }} - {{ req.user.get_full_name }}</p>
+                                        <p class="text-sm text-gray-600 mt-2 break-words">{{ req.description|truncatewords:20 }}</p>
+                                        <div class="mt-3 text-sm text-gray-500">{{ req.created_at|jalali_date|persian_numbers }} · {{ req.get_status_display }} · آرا: {{ req.votes.count }}</div>
+                                        <div class="mt-4 flex flex-wrap gap-2">
+                                            <a href="{% url 'main:council_request_detail' req.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"><i class="fas fa-file-alt ml-2"></i>جزئیات</a>
+                                            {% if can_vote %}
+                                            <form method="post" action="{% url 'main:council_submit_vote' req.id %}">
+                                                {% csrf_token %}
+                                                <button name="vote" value="approve" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">موافق</button>
+                                                <button name="vote" value="reject" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm">مخالف</button>
+                                            </form>
+                                            {% endif %}
                                         </div>
                                     </div>
-                                    <div class="mt-4 flex gap-4">
-                                        <a href="{% url 'main:council_request_detail' req.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
-                                            <i class="fas fa-file-alt ml-2"></i>مشاهده جزئیات
-                                        </a>
-                                        <form method="post" action="{% url 'main:council_submit_vote' req.id %}" class="inline">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="vote" value="approve">
-                                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">
-                                                <i class="fas fa-check ml-2"></i>موافق
-                                            </button>
-                                        </form>
-                                        <form method="post" action="{% url 'main:council_submit_vote' req.id %}" class="inline">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="vote" value="reject">
-                                            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm">
-                                                <i class="fas fa-times ml-2"></i>مخالف
-                                            </button>
-                                        </form>
-                                    </div>
+                                    {% empty %}
+                                    <p class="text-center text-gray-500 py-4">درخواستی در انتظار رای نیست</p>
+                                    {% endfor %}
                                 </div>
-                                {% empty %}
-                                <div class="text-center text-gray-500 py-8">
-                                    <i class="fas fa-inbox text-4xl mb-4"></i>
-                                    <p>درخواستی برای رای‌گیری وجود ندارد</p>
-                                </div>
-                                {% endfor %}
                             </div>
                         </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
+
+                        <div class="glass-effect p-6 rounded-xl self-start">
                             <h3 class="text-xl font-bold mb-6 text-gray-800">آمار رای‌گیری‌ها</h3>
                             <div class="space-y-4">
-                                <div class="bg-blue-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-blue-600">12</div>
-                                    <div class="text-sm text-gray-600">کل رای‌گیری‌ها</div>
-                                </div>
-                                <div class="bg-green-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-green-600">8</div>
-                                    <div class="text-sm text-gray-600">تکمیل شده</div>
-                                </div>
-                                <div class="bg-yellow-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-yellow-600">2</div>
-                                    <div class="text-sm text-gray-600">در حال اجرا</div>
-                                </div>
-                                <div class="bg-red-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-red-600">2</div>
-                                    <div class="text-sm text-gray-600">در انتظار شروع</div>
-                                </div>
+                                <div class="bg-blue-50 p-4 rounded-lg"><div class="text-2xl font-bold text-blue-600">{{ poll_cards|length }}</div><div class="text-sm text-gray-600">کل رای‌گیری‌ها</div></div>
+                                <div class="bg-yellow-50 p-4 rounded-lg"><div class="text-2xl font-bold text-yellow-600">{{ stats.open_polls }}</div><div class="text-sm text-gray-600">باز</div></div>
+                                <div class="bg-green-50 p-4 rounded-lg"><div class="text-2xl font-bold text-green-600">{{ stats.total_votes_cast }}</div><div class="text-sm text-gray-600">آرای ثبت‌شده توسط شما در درخواست‌ها</div></div>
                             </div>
                         </div>
                     </div>
@@ -911,116 +848,105 @@
 
                 <!-- Calendar Tab -->
                 <div id="calendar-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
+                    <div class="flex justify-between items-center mb-8 flex-wrap gap-3">
                         <h2 class="text-3xl font-bold text-gray-800">تقویم جلسات شورا</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="location.href='{% url 'main:appointment_providers' %}'">
-                                <i class="fas fa-plus ml-2"></i>جلسه جدید
-                            </button>
-                        </div>
+                        {% if can_vote %}
+                        <button type="button" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="document.getElementById('meeting-form').classList.toggle('hidden')">
+                            <i class="fas fa-plus ml-2"></i>جلسه جدید
+                        </button>
+                        {% endif %}
                     </div>
-                    
+
+                    {% if can_vote %}
+                    <form id="meeting-form" method="post" action="{% url 'main:council_meeting_save' %}" class="{% if not edit_meeting %}hidden {% endif %}glass-effect p-6 rounded-xl mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% csrf_token %}
+                        {% if edit_meeting %}<input type="hidden" name="meeting_id" value="{{ edit_meeting.id }}">{% endif %}
+                        <div class="md:col-span-2">
+                            <label for="m-title" class="block text-sm font-medium text-gray-700 mb-1">عنوان</label>
+                            <input id="m-title" name="title" type="text" required maxlength="200" value="{{ edit_meeting.title }}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label for="m-date" class="block text-sm font-medium text-gray-700 mb-1">تاریخ (شمسی)</label>
+                            <input id="m-date" name="date" type="text" required dir="ltr" placeholder="۱۴۰۵/۰۷/۲۱" value="{% if edit_meeting %}{{ edit_meeting.starts_at|jalali_date }}{% endif %}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label for="m-time" class="block text-sm font-medium text-gray-700 mb-1">ساعت</label>
+                            <input id="m-time" name="time" type="text" required dir="ltr" placeholder="۱۰:۰۰" value="{% if edit_meeting %}{{ edit_meeting.starts_at|date:'H:i' }}{% endif %}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="m-loc" class="block text-sm font-medium text-gray-700 mb-1">مکان</label>
+                            <input id="m-loc" name="location" type="text" maxlength="200" value="{{ edit_meeting.location }}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="m-agenda" class="block text-sm font-medium text-gray-700 mb-1">دستور جلسه</label>
+                            <textarea id="m-agenda" name="agenda" rows="3" maxlength="3000" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">{{ edit_meeting.agenda }}</textarea>
+                        </div>
+                        {% if members %}
+                        <fieldset class="md:col-span-2">
+                            <legend class="block text-sm font-medium text-gray-700 mb-1">حاضرین</legend>
+                            <div class="flex flex-wrap gap-4">
+                                {% for person in members %}
+                                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="attendees" value="{{ person.id }}"{% if person in edit_meeting.attendees.all %} checked{% endif %}>{{ person.get_full_name|default:person.username }}</label>
+                                {% endfor %}
+                            </div>
+                        </fieldset>
+                        {% endif %}
+                        <div class="md:col-span-2 flex gap-2">
+                            <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">ذخیره جلسه</button>
+                            {% if edit_meeting %}<a href="?tab=calendar" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">انصراف</a>{% endif %}
+                        </div>
+                    </form>
+                    {% endif %}
+
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
                             <div class="flex justify-between items-center mb-6">
                                 <h3 class="text-xl font-bold text-gray-800">تقویم</h3>
-                                <div class="flex space-x-2 space-x-reverse">
-                                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                    <span class="font-medium">فروردین ۱۴۰۳</span>
-                                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
+                                <div class="flex items-center gap-2">
+                                    <a href="?tab=calendar&ym={{ calendar.prev }}" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm" aria-label="ماه قبل"><i class="fas fa-chevron-right"></i></a>
+                                    <span class="font-medium">{{ calendar.label|persian_numbers }}</span>
+                                    <a href="?tab=calendar&ym={{ calendar.next }}" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm" aria-label="ماه بعد"><i class="fas fa-chevron-left"></i></a>
                                 </div>
                             </div>
-                            
-                            <div class="grid grid-cols-7 gap-1 mb-2">
-                                <div class="text-center text-sm font-medium py-2">ش</div>
-                                <div class="text-center text-sm font-medium py-2">ی</div>
-                                <div class="text-center text-sm font-medium py-2">د</div>
-                                <div class="text-center text-sm font-medium py-2">س</div>
-                                <div class="text-center text-sm font-medium py-2">چ</div>
-                                <div class="text-center text-sm font-medium py-2">پ</div>
-                                <div class="text-center text-sm font-medium py-2">ج</div>
+                            <div class="grid grid-cols-7 gap-1 mb-2 text-center text-sm font-medium">
+                                <div class="py-2">ش</div><div class="py-2">ی</div><div class="py-2">د</div><div class="py-2">س</div><div class="py-2">چ</div><div class="py-2">پ</div><div class="py-2">ج</div>
                             </div>
-                            
-                            <div class="grid grid-cols-7 gap-1">
-                                <div class="calendar-day text-center py-2 rounded-lg text-gray-400">۲۸</div>
-                                <div class="calendar-day text-center py-2 rounded-lg text-gray-400">۲۹</div>
-                                <div class="calendar-day text-center py-2 rounded-lg text-gray-400">۳۰</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۳</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۴</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۵</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۶</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۷</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۸</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۹</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۰</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۱</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۲</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۳</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۴</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۵</div>
-                                <div class="calendar-day active text-center py-2 rounded-lg">۱۶</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۷</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۸</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۱۹</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۰</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۱</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۲</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۳</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۴</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۵</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۶</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۷</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۸</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۲۹</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۳۰</div>
-                                <div class="calendar-day text-center py-2 rounded-lg">۳۱</div>
+                            {% for week in calendar.weeks %}
+                            <div class="grid grid-cols-7 gap-1 mb-1">
+                                {% for cell in week %}
+                                {% if cell %}
+                                <div class="calendar-day text-center py-2 rounded-lg min-h-[3rem] {% if cell.today %}active{% endif %}">
+                                    {{ cell.day|persian_numbers }}
+                                    {% if cell.meetings %}<span class="block mx-auto mt-1 w-2 h-2 rounded-full bg-purple-500" title="{{ cell.meetings.0.title }}"></span>{% endif %}
+                                </div>
+                                {% else %}<div></div>{% endif %}
+                                {% endfor %}
                             </div>
+                            {% endfor %}
                         </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">جلسات آینده</h3>
+
+                        <div class="glass-effect p-6 rounded-xl self-start">
+                            <h3 class="text-xl font-bold mb-6 text-gray-800">جلسات پیش رو</h3>
                             <div class="space-y-4">
-                                <div class="border-l-4 border-blue-500 pl-4 py-2">
-                                    <div class="flex justify-between">
-                                        <h4 class="font-bold">جلسه عادی شورا</h4>
-                                        <span class="text-sm text-gray-500">۱۶ فروردین</span>
+                                {% for m in upcoming_meetings %}
+                                <div class="border-r-4 border-purple-500 pr-4 py-2">
+                                    <div class="flex justify-between gap-2">
+                                        <h4 class="font-bold break-words">{{ m.title }}</h4>
+                                        <span class="text-sm text-gray-500 whitespace-nowrap">{{ m.starts_at|jalali_date|persian_numbers }}</span>
                                     </div>
-                                    <p class="text-sm text-gray-600 mt-1">ساعت ۱۰:۰۰ - سالن جلسات</p>
-                                    <div class="mt-2 flex items-center text-sm">
-                                        <i class="fas fa-users text-gray-500 ml-2"></i>
-                                        <span class="text-gray-600">۷ نفر شرکت کننده</span>
+                                    <p class="text-sm text-gray-600 mt-1">ساعت {{ m.starts_at|date:"H:i"|persian_numbers }}{% if m.location %} - {{ m.location }}{% endif %}</p>
+                                    {% if m.agenda %}<p class="text-sm text-gray-500 mt-1 break-words">{{ m.agenda|truncatewords:15 }}</p>{% endif %}
+                                    <div class="mt-2 flex items-center text-sm text-gray-600"><i class="fas fa-users ml-2"></i>{{ m.attendees.all|length|stringformat:"d"|persian_numbers }} نفر حاضر</div>
+                                    {% if can_vote %}
+                                    <div class="mt-2 flex gap-3 text-sm">
+                                        <a href="?tab=calendar&edit={{ m.id }}" class="text-blue-600">ویرایش</a>
+                                        <form method="post" action="{% url 'main:council_meeting_cancel' m.id %}" onsubmit="return confirm('جلسه لغو شود؟')">{% csrf_token %}<button class="text-red-600">لغو جلسه</button></form>
                                     </div>
+                                    {% endif %}
                                 </div>
-                                
-                                <div class="border-l-4 border-green-500 pl-4 py-2">
-                                    <div class="flex justify-between">
-                                        <h4 class="font-bold">جلسه بودجه</h4>
-                                        <span class="text-sm text-gray-500">۲۳ فروردین</span>
-                                    </div>
-                                    <p class="text-sm text-gray-600 mt-1">ساعت ۱۴:۰۰ - سالن جلسات</p>
-                                    <div class="mt-2 flex items-center text-sm">
-                                        <i class="fas fa-users text-gray-500 ml-2"></i>
-                                        <span class="text-gray-600">۷ نفر شرکت کننده</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="border-l-4 border-purple-500 pl-4 py-2">
-                                    <div class="flex justify-between">
-                                        <h4 class="font-bold">جلسه بررسی پروژه‌ها</h4>
-                                        <span class="text-sm text-gray-500">۳۰ فروردین</span>
-                                    </div>
-                                    <p class="text-sm text-gray-600 mt-1">ساعت ۹:۰۰ - سالن جلسات</p>
-                                    <div class="mt-2 flex items-center text-sm">
-                                        <i class="fas fa-users text-gray-500 ml-2"></i>
-                                        <span class="text-gray-600">۷ نفر شرکت کننده</span>
-                                    </div>
-                                </div>
+                                {% empty %}
+                                <p class="text-center text-gray-500 py-4">جلسه‌ای برنامه‌ریزی نشده است</p>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
@@ -1028,302 +954,138 @@
 
                 <!-- Messages Tab -->
                 <div id="messages-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
+                    <div class="flex justify-between items-center mb-8 flex-wrap gap-3">
                         <h2 class="text-3xl font-bold text-gray-800">پیام‌ها</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="location.href='{% url 'main:letter_compose' %}'">
-                                <i class="fas fa-plus ml-2"></i>پیام جدید
-                            </button>
-                        </div>
+                        <button type="button" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700" onclick="document.getElementById('message-form').classList.toggle('hidden')">
+                            <i class="fas fa-plus ml-2"></i>پیام جدید
+                        </button>
                     </div>
-                    
+
+                    <form id="message-form" method="post" action="{% url 'main:council_message_new' %}" class="hidden glass-effect p-6 rounded-xl mb-8 space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label for="msg-to" class="block text-sm font-medium text-gray-700 mb-1">گیرنده</label>
+                            <select id="msg-to" name="recipient_id" required class="w-full bg-gray-100 rounded-lg py-2 px-4">
+                                {% for person in members %}<option value="{{ person.id }}">{{ person.get_full_name|default:person.username }} - {{ person.profile.get_role_display }}</option>{% empty %}<option value="">همکاری در روستای شما ثبت نشده است</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="msg-subject" class="block text-sm font-medium text-gray-700 mb-1">موضوع</label>
+                            <input id="msg-subject" name="subject" type="text" required maxlength="200" class="w-full bg-gray-100 rounded-lg py-2 px-4">
+                        </div>
+                        <div>
+                            <label for="msg-body" class="block text-sm font-medium text-gray-700 mb-1">متن</label>
+                            <textarea id="msg-body" name="message_body" rows="4" required maxlength="5000" class="w-full bg-gray-100 rounded-lg py-2 px-4"></textarea>
+                        </div>
+                        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">ارسال</button>
+                    </form>
+
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="glass-effect p-6 rounded-xl">
-                            <div class="mb-6">
-                                <h3 class="text-xl font-bold text-gray-800">لیست گفتگوها</h3>
-                            </div>
+                        <div class="glass-effect p-6 rounded-xl self-start">
+                            <h3 class="text-xl font-bold text-gray-800 mb-6">گفتگوها</h3>
                             <div class="space-y-2">
-                                <div class="message-item p-3 rounded-lg cursor-pointer">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <i class="fas fa-user text-blue-600"></i>
-                                        </div>
-                                        <div class="mr-3 flex-1">
-                                            <div class="flex justify-between">
-                                                <h4 class="font-medium">احمد رضایی</h4>
-                                                <span class="text-xs text-gray-500">۱۴:۳۰</span>
-                                            </div>
-                                            <p class="text-sm text-gray-600 truncate">در مورد پرونده C-045...</p>
-                                        </div>
-                                        <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">2</span>
+                                {% for conv in conversations %}
+                                <a href="?tab=messages&conv={{ conv.id }}" class="message-item block p-3 rounded-lg {% if active_conversation.id == conv.id %}bg-teal-50{% endif %}">
+                                    <div class="flex justify-between items-center gap-2">
+                                        <h4 class="font-medium truncate">{{ conv.subject }}</h4>
+                                        {% if conv.unread %}<span class="bg-red-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">{{ conv.unread }}</span>{% endif %}
                                     </div>
-                                </div>
-                                
-                                <div class="message-item p-3 rounded-lg cursor-pointer">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                            <i class="fas fa-users text-green-600"></i>
-                                        </div>
-                                        <div class="mr-3 flex-1">
-                                            <div class="flex justify-between">
-                                                <h4 class="font-medium">گروه شورا</h4>
-                                                <span class="text-xs text-gray-500">دیروز</span>
-                                            </div>
-                                            <p class="text-sm text-gray-600 truncate">جلسه فردا ساعت ۱۰ صبح...</p>
-                                        </div>
-                                        <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">1</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="message-item p-3 rounded-lg cursor-pointer">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                            <i class="fas fa-user text-purple-600"></i>
-                                        </div>
-                                        <div class="mr-3 flex-1">
-                                            <div class="flex justify-between">
-                                                <h4 class="font-medium">مریم قاسمی</h4>
-                                                <span class="text-xs text-gray-500">۲ روز پیش</span>
-                                            </div>
-                                            <p class="text-sm text-gray-600 truncate">ممنون از پیگیری شما...</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                    <p class="text-xs text-gray-500 mt-1">{{ conv.updated_at|jalali_datetime|persian_numbers }}</p>
+                                </a>
+                                {% empty %}
+                                <p class="text-center text-gray-500 py-4">گفتگویی وجود ندارد</p>
+                                {% endfor %}
                             </div>
                         </div>
-                        
+
                         <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
-                            <div class="mb-6">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <i class="fas fa-user text-blue-600"></i>
-                                    </div>
-                                    <div class="mr-3">
-                                        <h3 class="font-bold">احمد رضایی</h3>
-                                        <p class="text-sm text-gray-600">آخرین بازدید: ۱۴:۳۰</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
+                            {% if active_conversation %}
+                            <h3 class="font-bold mb-4 break-words">{{ active_conversation.subject }}</h3>
                             <div class="space-y-4 mb-6">
-                                <div class="flex justify-start">
-                                    <div class="bg-gray-100 rounded-lg p-4 max-w-md">
-                                        <p>سلام، در مورد پرونده C-045 می‌خواستم با شما صحبت کنم.</p>
-                                        <span class="text-xs text-gray-500 mt-1 block">۱۴:۲۰</span>
+                                {% for msg in thread %}
+                                <div class="flex {% if msg.sender_id == request.user.id %}justify-end{% else %}justify-start{% endif %}">
+                                    <div class="{% if msg.sender_id == request.user.id %}bg-teal-600 text-white{% else %}bg-gray-100{% endif %} rounded-lg p-4 max-w-md">
+                                        <p class="text-xs opacity-75 mb-1">{{ msg.sender.get_full_name|default:msg.sender.username }}</p>
+                                        <p class="whitespace-pre-line break-words">{{ msg.body }}</p>
+                                        <span class="text-xs opacity-75 mt-1 block">{{ msg.created_at|jalali_datetime|persian_numbers }}</span>
                                     </div>
                                 </div>
-                                
-                                <div class="flex justify-end">
-                                    <div class="bg-teal-600 text-white rounded-lg p-4 max-w-md">
-                                        <p>سلام، بفرمایید چه سوال دارید؟</p>
-                                        <span class="text-xs text-teal-200 mt-1 block">۱۴:۲۵</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex justify-start">
-                                    <div class="bg-gray-100 rounded-lg p-4 max-w-md">
-                                        <p>می‌خواستم بدانم آیا امکان تغییر کاربری از کشاورزی به مسکونی وجود دارد؟</p>
-                                        <span class="text-xs text-gray-500 mt-1 block">۱۴:۳۰</span>
-                                    </div>
-                                </div>
+                                {% endfor %}
                             </div>
-                            
-                            <div class="flex items-center">
-                                <input type="text" placeholder="پیام خود را بنویسید..." class="flex-1 bg-gray-100 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                <button class="bg-teal-600 text-white p-3 rounded-lg mr-2 hover:bg-teal-700">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
+                            <form method="post" action="{% url 'main:council_message_reply' active_conversation.id %}" class="flex items-center gap-2">
+                                {% csrf_token %}
+                                <input name="message_body" type="text" required maxlength="5000" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" class="flex-1 bg-gray-100 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                <button class="bg-teal-600 text-white p-3 rounded-lg hover:bg-teal-700" aria-label="ارسال"><i class="fas fa-paper-plane"></i></button>
+                            </form>
+                            {% else %}
+                            <p class="text-center text-gray-500 py-12"><i class="fas fa-comments text-4xl mb-4 block"></i>یک گفتگو را انتخاب کنید یا پیام جدید بفرستید</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
                 <!-- Members Tab -->
                 <div id="members-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-3xl font-bold text-gray-800">اعضای شورا</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
-                                <i class="fas fa-user-plus ml-2"></i>عضو جدید
-                            </button>
-                        </div>
-                    </div>
-                    
+                    <div class="mb-8"><h2 class="text-3xl font-bold text-gray-800">اعضای شورا و دهیار</h2></div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="glass-effect p-6 rounded-xl">
-                            <div class="flex flex-col items-center">
-                                <div class="relative mb-4">
-                                    <div class="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center">
-                                        <i class="fas fa-user text-teal-600 text-3xl"></i>
-                                    </div>
-                                    <span class="status-indicator status-online absolute bottom-0 right-0"></span>
-                                </div>
-                                <h3 class="text-lg font-bold">جناب آقای رسولی</h3>
-                                <p class="text-gray-600 text-sm">رئیس شورا</p>
-                                <div class="mt-4 flex space-x-2 space-x-reverse">
-                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
-                                        <i class="fas fa-phone"></i>
-                                    </button>
-                                </div>
-                            </div>
+                        {% for person in members %}
+                        <div class="glass-effect p-6 rounded-xl flex flex-col items-center">
+                            <div class="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mb-4"><i class="fas fa-user text-teal-600 text-3xl"></i></div>
+                            <h3 class="text-lg font-bold">{{ person.get_full_name|default:person.username }}</h3>
+                            <p class="text-gray-600 text-sm">{{ person.profile.get_role_display }}</p>
+                            {% if person.profile.mobile_number %}<p class="text-gray-500 text-sm mt-2" dir="ltr">{{ person.profile.mobile_number }}</p>{% endif %}
                         </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
-                            <div class="flex flex-col items-center">
-                                <div class="relative mb-4">
-                                    <div class="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <i class="fas fa-user text-blue-600 text-3xl"></i>
-                                    </div>
-                                    <span class="status-indicator status-away absolute bottom-0 right-0"></span>
-                                </div>
-                                <h3 class="text-lg font-bold">خانم فاطمه محمدی</h3>
-                                <p class="text-gray-600 text-sm">عضو شورا</p>
-                                <div class="mt-4 flex space-x-2 space-x-reverse">
-                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
-                                        <i class="fas fa-phone"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
-                            <div class="flex flex-col items-center">
-                                <div class="relative mb-4">
-                                    <div class="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center">
-                                        <i class="fas fa-user text-purple-600 text-3xl"></i>
-                                    </div>
-                                    <span class="status-indicator status-offline absolute bottom-0 right-0"></span>
-                                </div>
-                                <h3 class="text-lg font-bold">جناب آقای احمدی</h3>
-                                <p class="text-gray-600 text-sm">عضو شورا</p>
-                                <div class="mt-4 flex space-x-2 space-x-reverse">
-                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button class="bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300">
-                                        <i class="fas fa-phone"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        {% empty %}
+                        <p class="text-gray-500">عضو دیگری برای این روستا ثبت نشده است.</p>
+                        {% endfor %}
                     </div>
                 </div>
 
                 <!-- Settings Tab -->
                 <div id="settings-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-3xl font-bold text-gray-800">تنظیمات</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
-                                <i class="fas fa-save ml-2"></i>ذخیره تغییرات
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-2 glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">تنظیمات پروفایل</h3>
-                            <div class="space-y-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">نام و نام خانوادگی</label>
-                                    <input type="text" value="جناب آقای رسولی" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
-                                    <input type="text" value="rasooli" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
-                                    <input type="email" value="rasooli@example.com" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">شماره تماس</label>
-                                    <input type="tel" value="۰۹۱۲۳۴۵۶۷۸۹" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">تغییر رمز عبور</label>
-                                    <input type="password" placeholder="رمز عبور جدید" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500 mb-2">
-                                    <input type="password" placeholder="تکرار رمز عبور جدید" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                </div>
+                    <div class="mb-8"><h2 class="text-3xl font-bold text-gray-800">تنظیمات</h2></div>
+                    <form method="post" action="{% url 'main:council_settings_save' %}" class="glass-effect p-6 rounded-xl max-w-2xl space-y-6">
+                        {% csrf_token %}
+                        <h3 class="text-xl font-bold text-gray-800">پروفایل</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="s-first" class="block text-sm font-medium text-gray-700 mb-1">نام</label>
+                                <input id="s-first" name="first_name" type="text" required maxlength="30" value="{{ request.user.first_name }}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            </div>
+                            <div>
+                                <label for="s-last" class="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
+                                <input id="s-last" name="last_name" type="text" required maxlength="30" value="{{ request.user.last_name }}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            </div>
+                            <div>
+                                <label for="s-email" class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
+                                <input id="s-email" name="email" type="email" dir="ltr" value="{{ request.user.email }}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            </div>
+                            <div>
+                                <label for="s-mobile" class="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
+                                <input id="s-mobile" name="mobile_number" type="text" dir="ltr" maxlength="11" value="{{ user_profile.mobile_number|default:'' }}" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
                             </div>
                         </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">تنظیمات اعلان‌ها</h3>
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="font-medium">اعلان‌های رای‌گیری</h4>
-                                        <p class="text-sm text-gray-600">اطلاع رسانی برای رای‌گیری‌های جدید</p>
-                                    </div>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer" checked>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                                    </label>
-                                </div>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="font-medium">اعلان‌های مالی</h4>
-                                        <p class="text-sm text-gray-600">اطلاع رسانی برای درخواست‌های مالی</p>
-                                    </div>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer" checked>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                                    </label>
-                                </div>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="font-medium">اعلان‌های جلسات</h4>
-                                        <p class="text-sm text-gray-600">اطلاع رسانی برای جلسات جدید</p>
-                                    </div>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer" checked>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                                    </label>
-                                </div>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="font-medium">اعلان‌های پیام‌ها</h4>
-                                        <p class="text-sm text-gray-600">اطلاع رسانی برای پیام‌های جدید</p>
-                                    </div>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer">
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                                    </label>
-                                </div>
-                            </div>
+                        <h3 class="text-xl font-bold text-gray-800">تغییر رمز عبور (اختیاری)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input name="new_password1" type="password" autocomplete="new-password" placeholder="رمز عبور جدید" aria-label="رمز عبور جدید" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <input name="new_password2" type="password" autocomplete="new-password" placeholder="تکرار رمز عبور جدید" aria-label="تکرار رمز عبور جدید" class="w-full bg-gray-100 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-teal-500">
                         </div>
-                    </div>
+                        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700"><i class="fas fa-save ml-2"></i>ذخیره تغییرات</button>
+                    </form>
                 </div>
+
             </main>
         </div>
     </div>
 
     <script>
         function showTab(tabId, clickedLink) {
-            document.querySelectorAll('.main-content > div').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.main-content > div.tab-content').forEach(el => el.classList.remove('active'));
             const targetTab = document.getElementById(`${tabId}-tab`);
-            if(targetTab) targetTab.classList.add('active');
-
-            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
-            if(clickedLink) clickedLink.classList.add('active');
-
-            if (window.innerWidth < 768) {
-                toggleMobileMenu();
-            }
+            if (targetTab) targetTab.classList.add('active');
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.toggle('active', link.dataset.tab === tabId));
+            try { history.replaceState(null, '', '?tab=' + encodeURIComponent(tabId)); } catch (e) {}
+            if (clickedLink && window.innerWidth < 768) toggleMobileMenu();
         }
 
         function toggleMobileMenu() {
@@ -1336,13 +1098,10 @@
             icon.classList.toggle('fa-times');
         }
 
-        // Set current date
-        document.getElementById('current-date').textContent = 
-            new Date().toLocaleDateString('fa-IR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
+        document.getElementById('current-date').textContent =
+            new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        showTab('{{ initial_tab }}', null);
     </script>
     {% include 'partials/office_dock.html' %}
 </body>

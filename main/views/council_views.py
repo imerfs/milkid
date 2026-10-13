@@ -18,6 +18,8 @@ import json
 import os
 
 from .common import role_required
+from .council_panel import (calendar_context, colleagues, conversation_context, meetings_for, poll_cards, polls_for,
+                            panel_url)
 from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -32,6 +34,9 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
                    PropertyAdvertisement, AutoCADFile, PropertyData, Payment, Conversation, Message, MessageRecipient,
                    ViolationReport, Inspection, InspectionDocument, TechnicalReport, Province, County, District, CityVillage,
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
+
+
+PANEL_TABS = {'dashboard', 'voting', 'financial', 'deeds', 'history', 'calendar', 'messages', 'members', 'settings'}
 
 
 @policy_required('council.view')
@@ -84,8 +89,12 @@ def council_dashboard(request):
             status='approved',
             updated_at__month=timezone.now().month
         ).count(),
-        'meetings_held': 24,
+        'meetings_held': meetings_for(request.user).filter(status='held').count(),
+        'open_polls': polls_for(request.user).filter(status='open').count(),
+        'unread_messages': MessageRecipient.objects.filter(recipient=request.user, is_read=False).count(),
     }
+    meetings = meetings_for(request.user).prefetch_related('attendees')
+    stats['upcoming_meetings'] = meetings.filter(status='scheduled', starts_at__gte=timezone.now()).count()
     
     context = {
         'user_profile': user_profile,
@@ -95,37 +104,22 @@ def council_dashboard(request):
         'recent_votes': recent_votes,
         'notifications': notifications,
         'stats': stats,
+        'can_vote': user_profile.role == 'council',
+        'poll_cards': poll_cards(request.user),
+        'calendar': calendar_context(request.user, request.GET.get('ym')),
+        'upcoming_meetings': meetings.filter(status='scheduled', starts_at__gte=timezone.now())[:10],
+        'edit_meeting': meetings.filter(id=request.GET['edit']).first() if request.GET.get('edit', '').isdigit() else None,
+        'members': colleagues(request.user).select_related('profile'),
+        'initial_tab': tab if (tab := request.GET.get('tab')) in PANEL_TABS else 'dashboard',
+        **conversation_context(request.user, request.GET.get('conv')),
     }
     return render(request, 'main/dashboards/council.html', context)
 
 
 @policy_required('council.view')
 def council_voting_list(request):
-    """List of requests requiring council vote"""
-    from main.models import Vote
-    
-    user_profile = request.user.profile
-    
-    municipality_filter = Q()
-    if user_profile.city_village:
-        municipality_filter = Q(user__profile__city_village=user_profile.city_village)
-    
-    requests_list = ServiceRequest.objects.filter(
-        municipality_filter,
-        status__in=['pending', 'in_review']
-    ).exclude(
-        votes__council_member=request.user
-    ).select_related('user', 'service').prefetch_related('votes').order_by('-created_at')
-    
-    paginator = Paginator(requests_list, 10)
-    page_number = request.GET.get('page')
-    requests = paginator.get_page(page_number)
-    
-    context = {
-        'user_profile': user_profile,
-        'requests': requests,
-    }
-    return render(request, 'main/dashboards/council.html', context)
+    """Old URL: the voting box now lives in the council panel."""
+    return redirect(panel_url('voting'))
 
 
 @policy_required('council.vote')
@@ -176,7 +170,7 @@ def council_submit_vote(request, request_id):
                 return JsonResponse({'success': False, 'message': 'نوع رای نامعتبر است.'}, status=400)
             messages.error(request, 'نوع رای نامعتبر است.')
     
-    return redirect('main:council_dashboard')
+    return redirect(panel_url('voting'))
 
 
 @policy_required('council.view')

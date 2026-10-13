@@ -60,9 +60,10 @@ class RoleGates(TestCase):
         self.assertTurnedAway('inspector_dashboard', {}, make_user('accountant'), 'dashboard')
         self.assertTurnedAway('accountant_dashboard', {}, make_user('inspector'), 'dashboard')
 
-    def test_council_member_reaches_voting_list(self):
-        response = client_for(make_user('council')).get(reverse('main:council_voting_list'))
+    def test_council_member_reaches_voting_tab(self):
+        response = client_for(make_user('council')).get(reverse('main:council_voting_list'), follow=True)
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'صندوق رای‌گیری')
 
     def test_dehyari_is_not_bounced_from_mayor_requests(self):
         response = client_for(make_user('dehyari')).get(reverse('main:mayor_requests_list'))
