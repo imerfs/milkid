@@ -62,7 +62,7 @@ class StaffAccountCreation(TestCase):
     def test_existing_accounts_are_not_forced(self):
         user = make_user('citizen')
         self.assertFalse(user.profile.must_change_password)
-        self.assertNotEqual(client_for(user).get(reverse('main:letters_inbox')).status_code, 302)
+        self.assertNotEqual(client_for(user).get(reverse('main:letters_inbox'), HTTP_SEC_FETCH_DEST='iframe').status_code, 302)
 
     def test_dehyari_and_admin_roles_cannot_be_created(self):
         for role in ('dehyari', 'admin', 'citizen', 'resident', ''):

@@ -38,6 +38,9 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
 @login_required
 def my_requests(request):
     """User's service requests"""
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'tracking')):
+        return moved
     user_profile = request.user.profile
     
     # Get user's service requests
@@ -69,6 +72,9 @@ def my_requests(request):
 @login_required
 def create_request(request):
     """Create a new service request"""
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'new-request')):
+        return moved
     if request.method == 'POST':
         form = ServiceRequestForm(request.POST, request.FILES)
         if form.is_valid():
