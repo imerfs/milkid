@@ -94,5 +94,5 @@ class StaffAccountCreation(TestCase):
         self.assertEqual(client_for(self.dehyari).get(self.url).status_code, 405)
 
     def test_form_is_on_the_roles_page(self):
-        html = client_for(self.dehyari).get(reverse('main:role_grants')).content.decode()
+        html = client_for(self.dehyari).get(reverse('main:mayor_panel', args=['employees'])).content.decode()
         self.assertIn(self.url, html)

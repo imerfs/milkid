@@ -1,0 +1,8 @@
+{% load persian_filters jalali_tags %}
+{% if page.paginator.num_pages > 1 %}
+<nav class="mp-pager" aria-label="صفحه‌بندی">
+    {% if page.has_previous %}<a data-mp-url href="?page={{ page.previous_page_number }}{{ extra }}" class="mp-btn mp-btn-sm">قبلی</a>{% endif %}
+    <span>صفحه {{ page.number|persian_numbers }} از {{ page.paginator.num_pages|persian_numbers }}</span>
+    {% if page.has_next %}<a data-mp-url href="?page={{ page.next_page_number }}{{ extra }}" class="mp-btn mp-btn-sm">بعدی</a>{% endif %}
+</nav>
+{% endif %}

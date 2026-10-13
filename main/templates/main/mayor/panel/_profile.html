@@ -1,0 +1,39 @@
+{% load persian_filters jalali_tags %}
+<div class="mp-pane" data-url="{% url 'main:mayor_panel' 'profile' %}">
+    <header class="mp-head"><div><h2>پروفایل من</h2><p>اطلاعات تماس و رمز عبور حساب دهیار.</p></div></header>
+    {% include 'main/mayor/panel/_flash.html' %}
+    <div class="mp-split">
+        <aside class="mp-card mp-idcard">
+            <span class="mp-avatar mp-avatar-lg" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
+            <b>{{ request.user.get_full_name|default:request.user.username }}</b>
+            <small>{{ user_profile.get_role_display }}</small>
+            <dl>
+                <dt>نام کاربری</dt><dd dir="ltr">{{ request.user.username }}</dd>
+                <dt>کد ملی</dt><dd dir="ltr">{{ user_profile.national_id|default:"—"|persian_numbers }}</dd>
+                <dt>روستا / شهر</dt><dd>{{ user_profile.city_village|default:"—" }}</dd>
+            </dl>
+        </aside>
+        <div class="mp-stack">
+            <form method="post" action="{% url 'main:mayor_panel' 'profile' %}" data-mp-post data-mp-keep class="mp-card">
+                <h3 class="mp-card-title"><i class="fas fa-user-pen" aria-hidden="true"></i> اطلاعات من</h3>
+                <div class="mp-grid">
+                    <label>نام<input class="mp-input" name="first_name" value="{{ request.user.first_name }}" maxlength="30" required></label>
+                    <label>نام خانوادگی<input class="mp-input" name="last_name" value="{{ request.user.last_name }}" maxlength="30" required></label>
+                    <label>موبایل<input class="mp-input" name="mobile_number" value="{{ user_profile.mobile_number }}" dir="ltr" inputmode="numeric" pattern="09\d{9}" maxlength="11" required></label>
+                    <label>ایمیل<input class="mp-input" type="email" name="email" value="{{ request.user.email }}" dir="ltr" maxlength="150"></label>
+                </div>
+                <div class="mp-actions"><button type="submit" class="mp-btn mp-btn-primary"><i class="fas fa-floppy-disk" aria-hidden="true"></i> ذخیره</button></div>
+            </form>
+            <form method="post" action="{% url 'main:mayor_panel' 'profile' %}" data-mp-post data-mp-keep data-mp-reset class="mp-card">
+                <input type="hidden" name="action" value="password">
+                <h3 class="mp-card-title"><i class="fas fa-key" aria-hidden="true"></i> تغییر رمز عبور</h3>
+                <div class="mp-grid">
+                    <label>رمز فعلی<input class="mp-input" type="password" name="old_password" autocomplete="current-password" required></label>
+                    <label>رمز جدید<input class="mp-input" type="password" name="new_password" autocomplete="new-password" minlength="8" required></label>
+                    <label>تکرار رمز جدید<input class="mp-input" type="password" name="new_password2" autocomplete="new-password" minlength="8" required></label>
+                </div>
+                <div class="mp-actions"><button type="submit" class="mp-btn"><i class="fas fa-lock" aria-hidden="true"></i> تغییر رمز</button></div>
+            </form>
+        </div>
+    </div>
+</div>

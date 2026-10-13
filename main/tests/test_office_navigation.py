@@ -39,10 +39,10 @@ class Navigation(TestCase):
             page = self.get(who, name)
             self.assertIn('aria-label="میان‌بر مکاتبات و وقت‌ها"', page, name)
             self.assertIn(reverse('main:letter_compose'), page, name)
-        self.assertIn(reverse('main:role_grants'), self.get(self.dehyari, 'dehyari_dashboard'))
+        self.assertIn(reverse('main:mayor_panel', args=['employees']), self.get(self.dehyari, 'dehyari_dashboard'))
 
-    def test_mayor_staff_tab_opens_the_real_roles_page(self):
+    def test_mayor_staff_tab_opens_inside_the_panel(self):
         page = self.get(self.dehyari, 'dehyari_dashboard')
-        self.assertIn('data-real-link', page)
+        self.assertIn('data-tab-link', page)
         r = client_for(self.dehyari).get(reverse('main:mayor_staff_list'))
-        self.assertRedirects(r, reverse('main:role_grants'))
+        self.assertRedirects(r, reverse('main:role_grants'), fetch_redirect_response=False)

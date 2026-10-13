@@ -298,6 +298,9 @@ def mayor_staff_delete(request, staff_id):
 @policy_required('mayor.manage')
 def mayor_requests_list(request):
     """List all service requests with filtering and pagination"""
+    from main.views.mayor_panel import tab_redirect
+    if (moved := tab_redirect(request, 'requests')):
+        return moved
     user_profile = request.user.profile
     
     try:
@@ -305,7 +308,7 @@ def mayor_requests_list(request):
         municipality_filter = Q(user__profile__city_village=municipality.city_village)
     except Municipality.DoesNotExist:
         municipality = None
-        municipality_filter = Q()
+        municipality_filter = Q(pk__in=[])   # no municipality: show nothing, never every request
     
     requests_query = ServiceRequest.objects.filter(municipality_filter).select_related('user', 'service', 'assigned_to')
     
