@@ -38,6 +38,12 @@ def panel_url(tab, **params):
     return f"{reverse('main:council_dashboard')}?{query}"
 
 
+def village_q(user, prefix='user__profile__'):
+    """Rows of citizens in the user's village; a user with no village matches nothing."""
+    village = village_of(user)
+    return Q(**{prefix + 'city_village': village}) if village else Q(pk__in=[])
+
+
 def colleagues(user):
     """Council members and the dehyar of the same village (excluding the user)."""
     return User.objects.filter(profile__role__in=PANEL_ROLES, profile__city_village=village_of(user), is_active=True).exclude(id=user.id)

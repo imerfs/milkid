@@ -516,330 +516,103 @@
 
                 <!-- Financial Tab -->
                 <div id="financial-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-3xl font-bold text-gray-800">تاییدهای مالی</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
-                                <i class="fas fa-file-export ml-2"></i>خروجی اکسل
-                            </button>
+                    <div class="mb-8"><h2 class="text-3xl font-bold text-gray-800">تاییدهای مالی</h2></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                        <div class="glass-effect p-6 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-1">جمع پرداخت‌های در انتظار</p>
+                            <p class="text-2xl font-bold text-yellow-600">{{ payment_stats.total_pending|floatformat:0|persian_numbers }} <span class="text-sm font-normal">ریال</span></p>
+                            <p class="text-sm text-gray-500 mt-2">{{ payment_stats.pending_count|stringformat:"d"|persian_numbers }} مورد</p>
+                        </div>
+                        <div class="glass-effect p-6 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-1">دریافتی این ماه</p>
+                            <p class="text-2xl font-bold text-green-600">{{ payment_stats.total_received_month|floatformat:0|persian_numbers }} <span class="text-sm font-normal">ریال</span></p>
+                            <p class="text-sm text-gray-500 mt-2">{{ payment_stats.paid_count|stringformat:"d"|persian_numbers }} پرداخت</p>
                         </div>
                     </div>
-                    
                     <div class="glass-effect p-6 rounded-xl">
-                        <div class="mb-6">
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-xl font-bold text-gray-800">درخواست‌های مالی نیازمند تایید</h3>
-                                <div class="flex space-x-2 space-x-reverse">
-                                    <input type="text" placeholder="جستجو..." class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                    <select class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        <option>همه موارد</option>
-                                        <option>پرداخت با چک</option>
-                                        <option>تخفیفات</option>
-                                        <option>معافیت‌ها</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">پرداخت‌های در انتظار</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-right">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="py-3 px-4">متقاضی</th>
-                                        <th class="py-3 px-4">موضوع</th>
-                                        <th class="py-3 px-4">مبلغ / درصد</th>
-                                        <th class="py-3 px-4">تاریخ درخواست</th>
-                                        <th class="py-3 px-4">اولویت</th>
-                                        <th class="py-3 px-4"></th>
-                                    </tr>
-                                </thead>
+                                <thead><tr class="border-b">
+                                    <th class="py-3 px-4">پرداخت‌کننده</th><th class="py-3 px-4">نوع</th><th class="py-3 px-4">مبلغ (ریال)</th><th class="py-3 px-4">تاریخ</th><th class="py-3 px-4">وضعیت</th>
+                                </tr></thead>
                                 <tbody>
                                     {% for payment in financial_requests %}
                                     <tr class="hover:bg-green-50">
-                                        <td class="py-4 px-4">{{ payment.user.get_full_name }}</td>
+                                        <td class="py-4 px-4">{{ payment.user.get_full_name|default:payment.user.username }}</td>
                                         <td class="py-4 px-4">{{ payment.get_payment_type_display }}</td>
-                                        <td class="py-4 px-4">{{ payment.amount|floatformat:0 }} تومان</td>
-                                        <td class="py-4 px-4">{{ payment.created_at|date:"Y/m/d" }}</td>
-                                        <td class="py-4 px-4">
-                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">{{ payment.get_status_display }}</span>
-                                        </td>
-                                        <td class="py-4 px-4">
-                                            <a href="{% url 'main:council_financial_reports' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">مشاهده جزئیات</a>
-                                        </td>
+                                        <td class="py-4 px-4">{{ payment.amount|floatformat:0|persian_numbers }}</td>
+                                        <td class="py-4 px-4">{{ payment.created_at|jalali_date|persian_numbers }}</td>
+                                        <td class="py-4 px-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">{{ payment.get_status_display }}</span></td>
                                     </tr>
                                     {% empty %}
-                                    <tr>
-                                        <td colspan="6" class="text-center py-8 text-gray-500">
-                                            <i class="fas fa-inbox text-2xl mb-2"></i>
-                                            <p>درخواست مالی وجود ندارد</p>
-                                        </td>
-                                    </tr>
+                                    <tr><td colspan="5" class="text-center py-8 text-gray-500">پرداخت در انتظاری وجود ندارد</td></tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">نمودار توزیع بودجه</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">توسعه زیرساخت‌ها</span>
-                                        <span class="text-sm font-medium">35%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 35%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">خدمات شهری</span>
-                                        <span class="text-sm font-medium">25%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-green-600 h-2.5 rounded-full" style="width: 25%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">آموزش و فرهنگ</span>
-                                        <span class="text-sm font-medium">20%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-yellow-500 h-2.5 rounded-full" style="width: 20%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">بهداشت و درمان</span>
-                                        <span class="text-sm font-medium">15%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-purple-600 h-2.5 rounded-full" style="width: 15%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between mb-1">
-                                        <span class="text-sm font-medium">سایر</span>
-                                        <span class="text-sm font-medium">5%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-red-500 h-2.5 rounded-full" style="width: 5%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">آمار مالی</h3>
-                            <div class="space-y-4">
-                                <div class="bg-blue-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-blue-600">۲۴۵ میلیون تومان</div>
-                                    <div class="text-sm text-gray-600">بودجه کل سال</div>
-                                </div>
-                                <div class="bg-green-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-green-600">۱۲۰ میلیون تومان</div>
-                                    <div class="text-sm text-gray-600">هزینه شده</div>
-                                </div>
-                                <div class="bg-yellow-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-yellow-600">۱۲۵ میلیون تومان</div>
-                                    <div class="text-sm text-gray-600">مانده</div>
-                                </div>
-                                <div class="bg-red-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-red-600">۱۵ مورد</div>
-                                    <div class="text-sm text-gray-600">درخواست‌های معلق</div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Deeds Tab -->
                 <div id="deeds-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-3xl font-bold text-gray-800">صدور گواهی تصرف (املاک فاقد سند)</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
-                                <i class="fas fa-file-export ml-2"></i>خروجی PDF
-                            </button>
-                        </div>
+                    <div class="mb-8"><h2 class="text-3xl font-bold text-gray-800">صدور گواهی تصرف (املاک فاقد سند)</h2></div>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-blue-50 p-4 rounded-lg"><div class="text-2xl font-bold text-blue-600">{{ deed_stats.total|stringformat:"d"|persian_numbers }}</div><div class="text-sm text-gray-600">کل درخواست‌ها</div></div>
+                        <div class="bg-yellow-50 p-4 rounded-lg"><div class="text-2xl font-bold text-yellow-600">{{ deed_stats.pending|default:0|stringformat:"d"|persian_numbers }}</div><div class="text-sm text-gray-600">در انتظار</div></div>
+                        <div class="bg-purple-50 p-4 rounded-lg"><div class="text-2xl font-bold text-purple-600">{{ deed_stats.in_review|default:0|stringformat:"d"|persian_numbers }}</div><div class="text-sm text-gray-600">در حال بررسی</div></div>
+                        <div class="bg-green-50 p-4 rounded-lg"><div class="text-2xl font-bold text-green-600">{{ deed_stats.approved|default:0|stringformat:"d"|persian_numbers }}</div><div class="text-sm text-gray-600">تایید شده</div></div>
                     </div>
-                    
                     <div class="glass-effect p-6 rounded-xl">
-                        <div class="mb-6">
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-xl font-bold text-gray-800">درخواست‌های صدور گواهی</h3>
-                                <div class="flex space-x-2 space-x-reverse">
-                                    <input type="text" placeholder="جستجو..." class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                    <select class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        <option>همه موارد</option>
-                                        <option>قولنامه</option>
-                                        <option>وارث</option>
-                                        <option>سایر</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">درخواست‌های صدور گواهی</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-right">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="py-3 px-4">متقاضی</th>
-                                        <th class="py-3 px-4">آدرس ملک</th>
-                                        <th class="py-3 px-4">نوع مدرک فعلی</th>
-                                        <th class="py-3 px-4">تاریخ درخواست</th>
-                                        <th class="py-3 px-4">وضعیت</th>
-                                        <th class="py-3 px-4"></th>
-                                    </tr>
-                                </thead>
+                                <thead><tr class="border-b">
+                                    <th class="py-3 px-4">متقاضی</th><th class="py-3 px-4">عنوان</th><th class="py-3 px-4">تاریخ درخواست</th><th class="py-3 px-4">وضعیت</th><th class="py-3 px-4"></th>
+                                </tr></thead>
                                 <tbody>
+                                    {% for req in deed_rows %}
                                     <tr class="hover:bg-amber-50">
-                                        <td class="py-4 px-4">سارا حسینی</td>
-                                        <td class="py-4 px-4">روستای فشم، خ اصلی، پلاک ۱۲</td>
-                                        <td class="py-4 px-4">قولنامه</td>
-                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۰۵</td>
-                                        <td class="py-4 px-4">
-                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">در حال بررسی</span>
-                                        </td>
-                                        <td class="py-4 px-4">
-                                            <button class="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm">بررسی و صدور گواهی</button>
-                                        </td>
+                                        <td class="py-4 px-4">{{ req.user.get_full_name|default:req.user.username }}</td>
+                                        <td class="py-4 px-4">{{ req.title }}</td>
+                                        <td class="py-4 px-4">{{ req.created_at|jalali_date|persian_numbers }}</td>
+                                        <td class="py-4 px-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">{{ req.get_status_display }}</span></td>
+                                        <td class="py-4 px-4"><a href="{% url 'main:council_request_detail' req.id %}" class="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm">بررسی</a></td>
                                     </tr>
+                                    {% empty %}
+                                    <tr><td colspan="5" class="text-center py-8 text-gray-500">درخواستی ثبت نشده است</td></tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">آمار گواهی‌های صادر شده</h3>
-                            <div class="space-y-4">
-                                <div class="bg-green-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-green-600">۴۵</div>
-                                    <div class="text-sm text-gray-600">کل گواهی‌های صادر شده</div>
-                                </div>
-                                <div class="bg-blue-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-blue-600">۳۲</div>
-                                    <div class="text-sm text-gray-600">بر اساس قولنامه</div>
-                                </div>
-                                <div class="bg-purple-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-purple-600">۸</div>
-                                    <div class="text-sm text-gray-600">بر اساس ارث</div>
-                                </div>
-                                <div class="bg-yellow-50 p-4 rounded-lg">
-                                    <div class="text-2xl font-bold text-yellow-600">۵</div>
-                                    <div class="text-sm text-gray-600">سایر موارد</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glass-effect p-6 rounded-xl">
-                            <h3 class="text-xl font-bold mb-6 text-gray-800">فرآیند صدور گواهی</h3>
-                            <div class="space-y-4">
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">1</div>
-                                    <div class="mr-3">
-                                        <p class="font-medium">ثبت درخواست</p>
-                                        <p class="text-sm text-gray-600">تکمیل فرم و ارائه مدارک</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">2</div>
-                                    <div class="mr-3">
-                                        <p class="font-medium">بررسی اولیه</p>
-                                        <p class="text-sm text-gray-600">بررسی مدارک توسط کارشناس</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">3</div>
-                                    <div class="mr-3">
-                                        <p class="font-medium">تایید شورا</p>
-                                        <p class="text-sm text-gray-600">تصویب در جلسه شورا</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">4</div>
-                                    <div class="mr-3">
-                                        <p class="font-medium">صدور گواهی</p>
-                                        <p class="text-sm text-gray-600">چاپ و تحویل گواهی</p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- History Tab -->
                 <div id="history-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-3xl font-bold text-gray-800">سوابق مصوبات شورا</h2>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">
-                                <i class="fas fa-plus ml-2"></i>مصوبه جدید
-                            </button>
-                        </div>
-                    </div>
-                    
+                    <div class="mb-8"><h2 class="text-3xl font-bold text-gray-800">سوابق مصوبات شورا</h2><p class="text-sm text-gray-500 mt-2">نتیجه رای‌گیری‌های بسته‌شده در صندوق رای‌گیری</p></div>
                     <div class="glass-effect p-6 rounded-xl">
-                        <div class="mb-6">
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-xl font-bold text-gray-800">لیست مصوبات</h3>
-                                <div class="flex space-x-2 space-x-reverse">
-                                    <input type="text" placeholder="جستجو..." class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                    <select class="bg-gray-100 rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        <option>همه موارد</option>
-                                        <option>تایید شده</option>
-                                        <option>در حال بررسی</option>
-                                        <option>رد شده</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-right">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="py-3 px-4">شماره مصوبه</th>
-                                        <th class="py-3 px-4">موضوع</th>
-                                        <th class="py-3 px-4">تاریخ تصویب</th>
-                                        <th class="py-3 px-4">وضعیت</th>
-                                        <th class="py-3 px-4">عملیات</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr class="border-b">
+                                    <th class="py-3 px-4">شماره</th><th class="py-3 px-4">موضوع</th><th class="py-3 px-4">تاریخ بسته شدن</th><th class="py-3 px-4">آرا (موافق / مخالف / ممتنع)</th><th class="py-3 px-4">نتیجه</th>
+                                </tr></thead>
                                 <tbody>
+                                    {% for row in resolutions %}
                                     <tr class="hover:bg-gray-50">
-                                        <td class="py-4 px-4">۱۴۰۳-۰۱</td>
-                                        <td class="py-4 px-4">تصویب بودجه سال ۱۴۰۳</td>
-                                        <td class="py-4 px-4">۱۴۰۳/۰۱/۱۵</td>
+                                        <td class="py-4 px-4">{{ row.poll.id|stringformat:"d"|persian_numbers }}</td>
+                                        <td class="py-4 px-4 break-words">{{ row.poll.title }}</td>
+                                        <td class="py-4 px-4">{{ row.poll.closed_at|jalali_date|persian_numbers }}</td>
+                                        <td class="py-4 px-4">{{ row.tally.approve|stringformat:"d"|persian_numbers }} / {{ row.tally.reject|stringformat:"d"|persian_numbers }} / {{ row.tally.abstain|stringformat:"d"|persian_numbers }}</td>
                                         <td class="py-4 px-4">
-                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">تایید شده</span>
-                                        </td>
-                                        <td class="py-4 px-4">
-                                            <button class="text-blue-600 hover:text-blue-800">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="text-gray-600 hover:text-gray-800 mr-3">
-                                                <i class="fas fa-download"></i>
-                                            </button>
+                                            {% if row.outcome == 'approved' %}<span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">تصویب شد</span>
+                                            {% elif row.outcome == 'rejected' %}<span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm">رد شد</span>
+                                            {% else %}<span class="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm">بدون نتیجه</span>{% endif %}
                                         </td>
                                     </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-4 px-4">۱۴۰۳-۰۲</td>
-                                        <td class="py-4 px-4">آیین‌نامه شهرسازی جدید</td>
-                                        <td class="py-4 px-4">۱۴۰۳/۰۲/۱۰</td>
-                                        <td class="py-4 px-4">
-                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm">در حال بررسی</span>
-                                        </td>
-                                        <td class="py-4 px-4">
-                                            <button class="text-blue-600 hover:text-blue-800">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-gray-600 hover:text-gray-800 mr-3">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="5" class="text-center py-8 text-gray-500">هنوز رای‌گیری‌ای بسته نشده است</td></tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>

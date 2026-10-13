@@ -18,7 +18,7 @@ import json
 import os
 
 from .common import role_required
-from .council_panel import (calendar_context, colleagues, conversation_context, meetings_for, poll_cards, polls_for,
+from .council_panel import (village_q, calendar_context, colleagues, conversation_context, meetings_for, poll_cards, polls_for,
                             panel_url)
 from main.access import policy_required
 from main.messaging_views import (
@@ -46,9 +46,7 @@ def council_dashboard(request):
     
     user_profile = request.user.profile
     
-    municipality_filter = Q()
-    if user_profile.city_village:
-        municipality_filter = Q(user__profile__city_village=user_profile.city_village)
+    municipality_filter = village_q(request.user)
     
     voting_requests = ServiceRequest.objects.filter(
         municipality_filter,
@@ -67,6 +65,10 @@ def council_dashboard(request):
         request_type='property_deed',
         status__in=['pending', 'in_review']
     ).order_by('-created_at')[:10]
+    all_deeds = ServiceRequest.objects.filter(municipality_filter, request_type='property_deed')
+    deed_stats = {row['status']: row['n'] for row in all_deeds.values('status').annotate(n=Count('id'))}
+    deed_stats['total'] = sum(deed_stats.values())
+    payments, payment_stats = financial_summary(request.user)
     
     recent_votes = Vote.objects.filter(
         council_member=request.user
@@ -99,7 +101,11 @@ def council_dashboard(request):
     context = {
         'user_profile': user_profile,
         'voting_requests': voting_requests,
-        'financial_requests': financial_requests,
+        'financial_requests': payments,
+        'payment_stats': payment_stats,
+        'deed_rows': all_deeds.select_related('user').order_by('-created_at')[:20],
+        'deed_stats': deed_stats,
+        'resolutions': resolutions_for(request.user),
         'deed_requests': deed_requests,
         'recent_votes': recent_votes,
         'notifications': notifications,
@@ -127,7 +133,7 @@ def council_submit_vote(request, request_id):
     """Submit a vote on a request"""
     from main.models import Vote
     
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = get_object_or_404(ServiceRequest.objects.filter(village_q(request.user)), id=request_id)
     
     if request.method == 'POST':
         vote_choice = request.POST.get('vote')
@@ -175,52 +181,8 @@ def council_submit_vote(request, request_id):
 
 @policy_required('council.view')
 def council_review_requests(request):
-    """Review all requests with filtering and pagination"""
-    from main.models import Vote, CouncilComment
-    
-    user_profile = request.user.profile
-    
-    municipality_filter = Q()
-    if user_profile.city_village:
-        municipality_filter = Q(user__profile__city_village=user_profile.city_village)
-    
-    requests_list = ServiceRequest.objects.filter(municipality_filter)
-    
-    status_filter = request.GET.get('status')
-    if status_filter:
-        requests_list = requests_list.filter(status=status_filter)
-    
-    request_type_filter = request.GET.get('request_type')
-    if request_type_filter:
-        requests_list = requests_list.filter(request_type=request_type_filter)
-    
-    search_query = request.GET.get('search')
-    if search_query:
-        requests_list = requests_list.filter(
-            Q(title__icontains=search_query) | 
-            Q(description__icontains=search_query) |
-            Q(user__first_name__icontains=search_query) |
-            Q(user__last_name__icontains=search_query)
-        )
-    
-    requests_list = requests_list.select_related('user', 'service').prefetch_related(
-        'votes', 'council_comments'
-    ).order_by('-created_at')
-    
-    paginator = Paginator(requests_list, 15)
-    page_number = request.GET.get('page')
-    requests = paginator.get_page(page_number)
-    
-    context = {
-        'user_profile': user_profile,
-        'requests': requests,
-        'status_filter': status_filter,
-        'request_type_filter': request_type_filter,
-        'search_query': search_query,
-        'status_choices': ServiceRequest.STATUS_CHOICES,
-        'request_types': ServiceRequest.REQUEST_TYPES,
-    }
-    return render(request, 'main/dashboards/council_review.html', context)
+    """Old URL: requests needing a decision are listed in the voting tab of the council panel."""
+    return redirect(panel_url('voting'))
 
 
 @policy_required('council.view')
@@ -229,7 +191,7 @@ def council_request_detail(request, request_id):
     from main.models import Vote, CouncilComment
     
     service_request = get_object_or_404(
-        ServiceRequest.objects.select_related('user', 'service', 'assigned_to').prefetch_related(
+        ServiceRequest.objects.filter(village_q(request.user)).select_related('user', 'service', 'assigned_to').prefetch_related(
             'votes__council_member__profile',
             'council_comments__council_member__profile',
             'documents'
@@ -262,7 +224,7 @@ def council_add_comment(request, request_id):
     """Add a comment to a request"""
     from main.models import CouncilComment
     
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = get_object_or_404(ServiceRequest.objects.filter(village_q(request.user)), id=request_id)
     
     if request.method == 'POST':
         comment_text = request.POST.get('comment')
@@ -289,41 +251,32 @@ def council_add_comment(request, request_id):
     return redirect('main:council_request_detail', request_id=request_id)
 
 
+def financial_summary(user):
+    """Pending payments (newest first) and this month's totals for the council's village."""
+    scope = village_q(user)
+    now = timezone.now()
+    pending = Payment.objects.filter(scope, status='pending')
+    paid = Payment.objects.filter(scope, status='paid', paid_date__year=now.year, paid_date__month=now.month)
+    stats = {
+        'total_pending': pending.aggregate(Sum('amount'))['amount__sum'] or 0,
+        'total_received_month': paid.aggregate(Sum('amount'))['amount__sum'] or 0,
+        'pending_count': pending.count(),
+        'paid_count': paid.count(),
+    }
+    return pending.select_related('user', 'property').order_by('-created_at')[:20], stats
+
+
+def resolutions_for(user):
+    """Closed polls of the village with their outcome (the council's resolutions archive)."""
+    rows = []
+    for poll in polls_for(user).filter(status='closed').order_by('-closed_at')[:50]:
+        tally = poll.tally()
+        outcome = 'approved' if tally['approve'] > tally['reject'] else 'rejected' if tally['reject'] > tally['approve'] else 'tie'
+        rows.append({'poll': poll, 'tally': tally, 'outcome': outcome})
+    return rows
+
+
 @policy_required('council.view')
 def council_financial_reports(request):
-    """Financial reports and payment approvals for council"""
-    user_profile = request.user.profile
-    
-    municipality_filter = Q()
-    if user_profile.city_village:
-        municipality_filter = Q(user__profile__city_village=user_profile.city_village)
-    
-    pending_payments = Payment.objects.filter(
-        municipality_filter,
-        status='pending'
-    ).select_related('user', 'property').order_by('-created_at')
-    
-    paid_payments = Payment.objects.filter(
-        municipality_filter,
-        status='paid',
-        paid_date__month=timezone.now().month
-    ).select_related('user', 'property').order_by('-paid_date')
-    
-    financial_stats = {
-        'total_pending': pending_payments.aggregate(Sum('amount'))['amount__sum'] or 0,
-        'total_received_month': paid_payments.aggregate(Sum('amount'))['amount__sum'] or 0,
-        'pending_count': pending_payments.count(),
-        'paid_count': paid_payments.count(),
-    }
-    
-    paginator = Paginator(pending_payments, 15)
-    page_number = request.GET.get('page')
-    payments = paginator.get_page(page_number)
-    
-    context = {
-        'user_profile': user_profile,
-        'payments': payments,
-        'paid_payments': paid_payments[:10],
-        'financial_stats': financial_stats,
-    }
-    return render(request, 'main/dashboards/council_financial.html', context)
+    """Old URL: financial approvals now live in the council panel."""
+    return redirect(panel_url('financial'))
