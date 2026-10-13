@@ -46,6 +46,44 @@
             .mobile-sidebar.active {
                 transform: translateX(0);
             }
+            #sidebar {
+                display: flex;
+                flex-direction: column;
+                max-width: 85vw;
+                flex-shrink: 0;
+            }
+            #sidebar nav {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                margin-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+            #sidebar .sidebar-link {
+                padding: 0.7rem 1rem;
+                gap: 0.5rem;
+                line-height: 1.5;
+            }
+            #sidebar .sidebar-link > div {
+                min-width: 0;
+            }
+            #sidebar .sidebar-link > span {
+                flex-shrink: 0;
+            }
+            #sidebar .sidebar-footer {
+                flex-shrink: 0;
+                padding: 1rem;
+                border-top: 1px solid #e5e7eb;
+            }
+            @media (min-width: 768px) {
+                #sidebar {
+                    position: sticky;
+                    top: 0;
+                    height: 100vh;
+                    transform: none;
+                    z-index: 10;
+                }
+            }
             .stat-card:hover {
                 transform: translateY(-5px);
                 box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
@@ -217,7 +255,7 @@
                         </div>
                     </a>
                 </nav>
-                <div class="p-4 mt-auto border-t">
+                <div class="sidebar-footer">
                     <div class="flex items-center">
                         <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
                             <i class="fas fa-user text-purple-600"></i>
