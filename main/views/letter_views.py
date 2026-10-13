@@ -43,6 +43,9 @@ def _list_page(request, box):
 
 @login_required
 def letters_inbox(request):
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'messages')):
+        return moved
     return _list_page(request, 'inbox')
 
 

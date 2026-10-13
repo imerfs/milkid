@@ -64,6 +64,9 @@ def ai_fraud_detection(request):
 @login_required
 def payments_debts(request):
     """Payments and debts management"""
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'payments')):
+        return moved
     user_payments = Payment.objects.filter(user=request.user).order_by('-created_at')
 
     # Pagination

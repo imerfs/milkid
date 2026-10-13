@@ -558,6 +558,7 @@ class OnboardingTutorial {
 
 // Initialize Onboarding Tutorial
 (function (init) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); })(() => {
+    if (window.self !== window.top) return; // pages shown inside a panel frame get no tutorial of their own
     window.onboardingTutorial = new OnboardingTutorial();
     
     // Add tutorial trigger button to help menu

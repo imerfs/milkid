@@ -41,6 +41,9 @@ def user_profile(request):
     from main.views.mayor_panel import tab_redirect
     if (moved := tab_redirect(request, 'profile')):
         return moved
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'profile')):
+        return moved
     user_profile = request.user.profile
     
     context = {
@@ -52,6 +55,9 @@ def user_profile(request):
 @login_required
 def update_profile(request):
     """Update user profile"""
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'profile')):
+        return moved
     user_profile = request.user.profile
     
     if request.method == 'POST':

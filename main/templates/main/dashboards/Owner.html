@@ -12,822 +12,302 @@
         <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
 
         <style>
-            body {
-                font-family: "Vazirmatn", sans-serif;
-                background-color: #f3f4f6; /* gray-100 */
-            }
-            .main-content > div {
-                display: none;
-            }
-            .main-content > div.active {
-                display: block;
-            }
-
+            body { font-family: "Vazirmatn", sans-serif; background-color: #f3f4f6; }
+            .main-content > div.tab-content { display: none; }
+            .main-content > div.tab-content.active { display: block; }
             .sidebar-link.active {
-                background: linear-gradient(
-                    135deg,
-                    #22c55e 0%,
-                    #16a34a 100%
-                ); /* green-500 to green-600 */
-                color: white;
-                font-weight: bold;
-                box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
             }
-            .sidebar-link {
-                transition: all 0.3s ease;
-            }
-            .sidebar-link:hover {
-                background-color: rgba(34, 197, 94, 0.1);
-                transform: translateX(-3px);
-            }
+            .sidebar-link { transition: all 0.3s ease; }
+            .sidebar-link:hover { background-color: rgba(34, 197, 94, 0.1); }
+            .sidebar-link.active:hover { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
             .mobile-sidebar {
-                transform: translateX(100%);
-                position: fixed;
-                top: 0;
-                right: 0;
-                height: 100vh;
-                z-index: 50;
+                transform: translateX(100%); position: fixed; top: 0; right: 0; height: 100vh; z-index: 50;
                 transition: transform 0.3s ease;
             }
-            .mobile-sidebar.active {
-                transform: translateX(0);
+            .mobile-sidebar.active { transform: translateX(0); }
+            #sidebar { display: flex; flex-direction: column; max-width: 85vw; flex-shrink: 0; }
+            #sidebar nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-top: 0.5rem; padding-bottom: 0.75rem; }
+            #sidebar .sidebar-link { padding: 0.7rem 1rem; gap: 0.5rem; line-height: 1.5; }
+            #sidebar .sidebar-link > div { min-width: 0; }
+            #sidebar .sidebar-link > span { flex-shrink: 0; }
+            @media (min-width: 768px) {
+                #sidebar { position: sticky; top: 0; height: 100vh; transform: none; z-index: 10; }
             }
-            .stat-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            }
-            /* Custom styles for request timeline */
-            .timeline-item {
-                position: relative;
-                padding-right: 30px;
-                padding-bottom: 20px;
-            }
-            .timeline-item:last-child {
-                padding-bottom: 0;
-            }
-            .timeline-item::before {
-                content: "";
-                position: absolute;
-                right: 11px;
-                top: 5px;
-                width: 2px;
-                height: 100%;
-                background-color: #e5e7eb; /* gray-200 */
-            }
-            .timeline-item:last-child::before {
-                height: 0;
-            }
-            .timeline-dot {
-                position: absolute;
-                right: 0;
-                top: 5px;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
+            @media (max-width: 767px) { #panel-header { padding-right: 4rem; } }
+            .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); }
+            .panel-frame { width: 100%; height: calc(100vh - 12rem); min-height: 520px; border: 0; background: #fff; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+            .frame-wrap[hidden], .option-grid[hidden] { display: none; }
+            .seg-btn.active { background: #16a34a; color: #fff; }
         </style>
         {% include 'partials/seo_head.html' %}
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 </head>
-    <body class="text-gray-800 mk-tw">
-        <!-- Mobile Menu Overlay -->
-        <div
-            id="mobile-overlay"
-            class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"
-            onclick="toggleMobileMenu()"
-        ></div>
+        <body class="text-gray-800 mk-tw">
+        <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleMobileMenu()"></div>
 
         <div class="flex min-h-screen">
-            <!-- Mobile Menu Button -->
-            <button
-                class="fixed top-5 right-5 z-50 bg-white p-2 rounded-full shadow-lg md:hidden"
-                onclick="toggleMobileMenu()"
-            >
-                <i
-                    id="hamburger-icon"
-                    class="fas fa-bars text-gray-700 text-xl"
-                ></i>
+            <button class="fixed top-5 right-5 z-50 bg-white p-2 rounded-full shadow-lg md:hidden" onclick="toggleMobileMenu()" aria-label="منو">
+                <i id="hamburger-icon" class="fas fa-bars text-gray-700 text-xl"></i>
             </button>
 
-            <!-- Sidebar -->
-            <aside
-                id="sidebar"
-                class="w-72 bg-white text-gray-800 shadow-2xl mobile-sidebar md:relative md:transform-none"
-            >
-                <div
-                    class="p-6 border-b flex items-center justify-center relative"
-                >
+            <aside id="sidebar" class="w-72 bg-white text-gray-800 shadow-2xl mobile-sidebar md:relative md:transform-none">
+                <div class="p-6 border-b flex items-center justify-center relative">
                     <i class="fas fa-user-circle text-green-600 text-2xl"></i>
-                    <h1 class="text-xl font-bold text-green-600 mr-3">
-                        پنل کاربری
-                    </h1>
+                    <h1 class="text-xl font-bold text-green-600 mr-3">پنل شهروند</h1>
                 </div>
-                <nav class="mt-6">
-                    <a
-                        href="#"
-                        class="sidebar-link active flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                        onclick="showTab('dashboard', this)"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-tachometer-alt ml-3"></i>داشبورد
-                        </div>
+                <nav class="mt-6" aria-label="بخش‌های پنل">
+                    <a href="?tab=dashboard" data-tab="dashboard" class="sidebar-link active flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('dashboard', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-tachometer-alt ml-3"></i>داشبورد</div>
                     </a>
-                    <a
-                        href="{% url 'main:create_request' %}"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                        onclick="showTab('new-request', this)"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-plus-circle ml-3"></i>ثبت درخواست
-                            جدید
-                        </div>
+                    <a href="?tab=new-request" data-tab="new-request" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('new-request', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-plus-circle ml-3"></i>ثبت درخواست جدید</div>
                     </a>
-                    <a
-                        href="{% url 'main:my_requests' %}"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                        onclick="showTab('tracking', this)"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-tasks ml-3"></i>پیگیری درخواست‌ها
-                        </div>
-                        <span
-                            class="bg-amber-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                            >3</span
-                        >
+                    <a href="?tab=tracking" data-tab="tracking" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('tracking', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-tasks ml-3"></i>پیگیری درخواست‌ها</div>
+                        {% if stats.active_requests %}<span class="bg-amber-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.active_requests }}</span>{% endif %}
                     </a>
-                    <a
-                        href="#"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                        onclick="showTab('documents', this)"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-folder-open ml-3"></i>مدارک من
-                        </div>
+                    <a href="?tab=documents" data-tab="documents" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('documents', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-folder-open ml-3"></i>مدارک من</div>
                     </a>
-                    <a
-                        href="#"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                        onclick="showTab('payments', this)"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-wallet ml-3"></i>پرداخت بدهی‌ها
-                        </div>
-                        <span
-                            class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                            >1</span
-                        >
+                    <a href="?tab=payments" data-tab="payments" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('payments', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-wallet ml-3"></i>پرداخت بدهی‌ها</div>
+                        {% if stats.unpaid_payments %}<span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.unpaid_payments }}</span>{% endif %}
                     </a>
-                    <a
-                        href="{% url 'main:letters_inbox' %}"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                        onclick="showTab('messages', this)"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-envelope ml-3"></i>پیام‌ها و
-                            اطلاعیه‌ها
-                        </div>
-                        <span
-                            class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                            >2</span
-                        >
+                    <a href="?tab=messages" data-tab="messages" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('messages', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-envelope ml-3"></i>پیام‌ها و اطلاعیه‌ها</div>
+                        {% if stats.unread_notifications %}<span class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.unread_notifications }}</span>{% endif %}
                     </a>
-                    <a
-                        href="{% url 'main:my_property_ads' %}"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-home ml-3"></i>آگهی‌های ملک من
-                        </div>
+                    <a href="?tab=ads" data-tab="ads" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('ads', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-home ml-3"></i>آگهی‌های ملک من</div>
                     </a>
-                    <a
-                        href="{% url 'main:user_profile' %}"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
-                    >
-                        <div class="flex items-center">
-                            <i class="fas fa-user-edit ml-3"></i>ویرایش پروفایل
-                        </div>
+                    <a href="?tab=profile" data-tab="profile" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('profile', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-user-edit ml-3"></i>ویرایش پروفایل</div>
                     </a>
                 </nav>
             </aside>
 
-            <!-- Main Content -->
             <div class="flex-1 flex flex-col overflow-hidden">
-                <header
-                    class="bg-white flex justify-between items-center p-4 border-b"
-                >
-                    <div class="flex items-center">
-                        <h2 class="text-lg font-semibold text-gray-700">
-                            خوش آمدید، جناب {{ user.get_full_name|default:"کاربر گرامی" }}
-                        </h2>
-                    </div>
-                    <div class="flex items-center space-x-4 space-x-reverse">
-                        <a
-                            href="{% url 'main:logout' %}"
-                            class="text-red-500 hover:text-red-600 transition-colors flex items-center"
-                        >
-                            <i class="fas fa-sign-out-alt ml-2"></i>خروج
-                        </a>
-                    </div>
+                <header id="panel-header" class="bg-white flex justify-between items-center p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-700">خوش آمدید، {{ user.get_full_name|default:"کاربر گرامی" }}</h2>
+                    <a href="{% url 'main:logout' %}" class="text-red-500 hover:text-red-600 transition-colors flex items-center">
+                        <i class="fas fa-sign-out-alt ml-2"></i>خروج
+                    </a>
                 </header>
 
                 <main class="flex-1 overflow-y-auto p-6 md:p-8 main-content">
-                    <!-- Dashboard Tab -->
-                    <div id="dashboard-tab" class="active">
-                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
-                            داشبورد یکپارچه شخصی
-                        </h2>
-                        <div
-                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
-                        >
-                            <div
-                                class="stat-card bg-white p-6 rounded-xl shadow"
-                            >
+                    <div id="dashboard-tab" class="tab-content active">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">داشبورد یکپارچه شخصی</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                            <div class="stat-card bg-white p-6 rounded-xl shadow">
                                 <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-600 mb-1">
-                                            درخواست‌های فعال
-                                        </p>
-                                        <p
-                                            class="text-3xl font-bold text-amber-500"
-                                        >
-                                            3
-                                        </p>
-                                    </div>
-                                    <i
-                                        class="fas fa-tasks text-amber-500 text-2xl opacity-50"
-                                    ></i>
+                                    <div><p class="text-sm text-gray-600 mb-1">درخواست‌های فعال</p><p class="text-3xl font-bold text-amber-500">{{ stats.active_requests }}</p></div>
+                                    <i class="fas fa-tasks text-amber-500 text-2xl opacity-50"></i>
                                 </div>
                             </div>
-                            <div
-                                class="stat-card bg-white p-6 rounded-xl shadow"
-                            >
+                            <div class="stat-card bg-white p-6 rounded-xl shadow">
                                 <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-600 mb-1">
-                                            بدهی‌های پرداخت نشده
-                                        </p>
-                                        <p
-                                            class="text-3xl font-bold text-red-500"
-                                        >
-                                            ۱
-                                        </p>
-                                    </div>
-                                    <i
-                                        class="fas fa-wallet text-red-500 text-2xl opacity-50"
-                                    ></i>
+                                    <div><p class="text-sm text-gray-600 mb-1">بدهی‌های پرداخت نشده</p><p class="text-3xl font-bold text-red-500">{{ stats.unpaid_payments }}</p></div>
+                                    <i class="fas fa-wallet text-red-500 text-2xl opacity-50"></i>
                                 </div>
                             </div>
-                            <div
-                                class="stat-card bg-white p-6 rounded-xl shadow"
-                            >
+                            <div class="stat-card bg-white p-6 rounded-xl shadow">
                                 <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-600 mb-1">
-                                            پیام‌های جدید
-                                        </p>
-                                        <p
-                                            class="text-3xl font-bold text-blue-600"
-                                        >
-                                            ۲
-                                        </p>
-                                    </div>
-                                    <i
-                                        class="fas fa-envelope text-blue-500 text-2xl opacity-50"
-                                    ></i>
+                                    <div><p class="text-sm text-gray-600 mb-1">پیام‌های جدید</p><p class="text-3xl font-bold text-blue-600">{{ stats.unread_notifications }}</p></div>
+                                    <i class="fas fa-envelope text-blue-500 text-2xl opacity-50"></i>
                                 </div>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div class="bg-white p-6 rounded-xl shadow">
-                                <h3
-                                    class="text-2xl font-bold mb-6 text-gray-800"
-                                >
-                                    آخرین درخواست‌ها
-                                </h3>
+                                <h3 class="text-2xl font-bold mb-6 text-gray-800">آخرین درخواست‌ها</h3>
+                                {% if service_requests %}
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-right">
-                                        <thead>
-                                            <tr class="border-b">
-                                                <th class="py-3 px-2">نوع</th>
-                                                <th class="py-3 px-2">وضعیت</th>
-                                                <th class="py-3 px-2"></th>
-                                            </tr>
-                                        </thead>
+                                        <thead><tr class="border-b"><th class="py-3 px-2">عنوان</th><th class="py-3 px-2">وضعیت</th></tr></thead>
                                         <tbody>
+                                            {% for req in service_requests %}
                                             <tr class="hover:bg-gray-50">
-                                                <td class="py-4 px-2">
-                                                    ساخت با پروانه
-                                                </td>
-                                                <td class="py-4 px-2">
-                                                    <span
-                                                        class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-                                                        >تکمیل شده</span
-                                                    >
-                                                </td>
-                                                <td class="py-4 px-2">
-                                                    <a
-                                                        href="#"
-                                                        class="text-blue-600 text-sm"
-                                                        >مشاهده</a
-                                                    >
-                                                </td>
+                                                <td class="py-4 px-2">{{ req.title|truncatewords:5 }}</td>
+                                                <td class="py-4 px-2"><span class="{% if req.status == 'completed' %}bg-green-100 text-green-800{% elif req.status == 'approved' %}bg-blue-100 text-blue-800{% elif req.status == 'pending' %}bg-amber-100 text-amber-800{% else %}bg-red-100 text-red-800{% endif %} text-xs px-2 py-1 rounded-full">{{ req.get_status_display }}</span></td>
                                             </tr>
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="py-4 px-2">
-                                                    صدور سند
-                                                </td>
-                                                <td class="py-4 px-2">
-                                                    <span
-                                                        class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full"
-                                                        >در انتظار استعلام</span
-                                                    >
-                                                </td>
-                                                <td class="py-4 px-2">
-                                                    <a
-                                                        href="#"
-                                                        class="text-blue-600 text-sm"
-                                                        >پیگیری</a
-                                                    >
-                                                </td>
-                                            </tr>
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="py-4 px-2">
-                                                    تاییدیه سکونت
-                                                </td>
-                                                <td class="py-4 px-2">
-                                                    <span
-                                                        class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full"
-                                                        >نقص مدرک</span
-                                                    >
-                                                </td>
-                                                <td class="py-4 px-2">
-                                                    <a
-                                                        href="#"
-                                                        class="text-blue-600 text-sm"
-                                                        >تکمیل مدارک</a
-                                                    >
-                                                </td>
-                                            </tr>
+                                            {% endfor %}
                                         </tbody>
                                     </table>
                                 </div>
+                                <div class="text-center mt-4"><a href="?tab=tracking" onclick="showTab('tracking'); return false;" class="text-blue-600 hover:underline">پیگیری درخواست‌ها</a></div>
+                                {% else %}
+                                <p class="text-gray-500 text-center py-8">هیچ درخواستی ثبت نشده است</p>
+                                <div class="text-center"><a href="?tab=new-request" onclick="showTab('new-request'); return false;" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 inline-block">ثبت اولین درخواست</a></div>
+                                {% endif %}
                             </div>
                             <div class="bg-white p-6 rounded-xl shadow">
-                                <h3
-                                    class="text-2xl font-bold mb-6 text-gray-800"
-                                >
-                                    پیام‌ها و اطلاعیه‌ها
-                                </h3>
+                                <h3 class="text-2xl font-bold mb-6 text-gray-800">پیام‌ها و اطلاعیه‌ها</h3>
+                                {% if unread_notifications %}
                                 <ul class="space-y-4">
-                                    <li
-                                        class="flex items-start p-3 bg-red-50 rounded-lg"
-                                    >
-                                        <i
-                                            class="fas fa-exclamation-circle text-red-500 mt-1 ml-3"
-                                        ></i>
-                                        <div>
-                                            <p class="font-bold">
-                                                درخواست تکمیل مدارک
-                                            </p>
-                                            <p class="text-sm text-gray-600">
-                                                پرونده #P-152 شما دارای نقص مدرک
-                                                است.
-                                            </p>
-                                        </div>
+                                    {% for notif in unread_notifications %}
+                                    <li class="flex items-start p-3 {% if notif.notification_type == 'payment_reminder' %}bg-red-50{% elif notif.notification_type == 'request_status' %}bg-blue-50{% else %}bg-gray-50{% endif %} rounded-lg">
+                                        <i class="fas fa-{% if notif.notification_type == 'payment_reminder' %}exclamation-circle text-red-500{% elif notif.notification_type == 'request_status' %}info-circle text-blue-500{% else %}bell text-gray-500{% endif %} mt-1 ml-3"></i>
+                                        <div><p class="font-bold">{{ notif.title }}</p><p class="text-sm text-gray-600">{{ notif.message|truncatewords:15 }}</p></div>
                                     </li>
-                                    <li
-                                        class="flex items-start p-3 bg-blue-50 rounded-lg"
-                                    >
-                                        <i
-                                            class="fas fa-info-circle text-blue-500 mt-1 ml-3"
-                                        ></i>
-                                        <div>
-                                            <p class="font-bold">
-                                                اطلاعیه عمومی
-                                            </p>
-                                            <p class="text-sm text-gray-600">
-                                                مهلت پرداخت عوارض سالانه تا
-                                                پایان شهریور تمدید شد.
-                                            </p>
-                                        </div>
-                                    </li>
+                                    {% endfor %}
                                 </ul>
+                                {% else %}
+                                <p class="text-gray-500 text-center py-8">پیام خوانده‌نشده‌ای وجود ندارد</p>
+                                {% endif %}
+                                <div class="text-center mt-4"><a href="?tab=messages" onclick="showTab('messages'); return false;" class="text-blue-600 hover:underline">همه پیام‌ها و اطلاعیه‌ها</a></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- New Request Tab -->
-                    <div id="new-request-tab">
-                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
-                            ثبت درخواست جدید
-                        </h2>
-                        <div class="bg-white p-8 rounded-xl shadow">
-                            <label
-                                for="service-type"
-                                class="block text-lg font-semibold mb-4"
-                                >لطفاً نوع خدمت مورد نظر خود را انتخاب
-                                کنید:</label
-                            >
-                            <select
-                                id="service-type"
-                                class="w-full p-4 border border-gray-300 rounded-lg text-lg"
-                            >
-                                <option value="">-- انتخاب کنید --</option>
-                                <optgroup label="ساخت و ساز">
-                                    <option value="permit">
-                                        ساخت و ساز با پروانه
-                                    </option>
-                                    <option value="no-permit">
-                                        ساخت و ساز بدون پروانه
-                                    </option>
-                                </optgroup>
-                                <optgroup label="مدیریت اسناد">
-                                    <option value="deed">صدور سند</option>
-                                    <option value="land-use">
-                                        تغییر کاربری
-                                    </option>
-                                    <option value="join-plan">
-                                        الحاق به طرح
-                                    </option>
-                                </optgroup>
-                                <optgroup label="سایر خدمات">
-                                    <option value="residency">
-                                        تاییدیه سکونت
-                                    </option>
-                                    <option value="property-ad">
-                                        آگهی ملک
-                                    </option>
-                                </optgroup>
-                            </select>
-                            <div class="text-left mt-6">
-                                <button
-                                    id="start-process-btn"
-                                    class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700"
-                                    onclick="startServiceProcess()"
-                                >
-                                    شروع فرآیند
-                                </button>
-                            </div>
+                    <div id="new-request-tab" class="tab-content">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">ثبت درخواست جدید</h2>
+                        <div id="new-request-options" class="option-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {% for url, icon, title, hint in service_options %}
+                            <button type="button" data-open-frame="{{ url }}" class="stat-card bg-white p-6 rounded-xl shadow text-right">
+                                <i class="fas fa-{{ icon }} text-green-600 text-2xl mb-3"></i>
+                                <p class="font-bold text-lg">{{ title }}</p>
+                                <p class="text-sm text-gray-600 mt-1">{{ hint }}</p>
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <div id="new-request-frame" class="frame-wrap" hidden>
+                            <button type="button" class="text-blue-600 hover:underline mb-4" data-close-frame><i class="fas fa-arrow-right ml-2"></i>بازگشت به انتخاب خدمت</button>
+                            <iframe class="panel-frame" title="فرم ثبت درخواست"></iframe>
                         </div>
                     </div>
 
-                    <!-- Tracking Tab -->
-                    <div id="tracking-tab">
-                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
-                            پیگیری وضعیت درخواست‌ها
-                        </h2>
+                    <div id="tracking-tab" class="tab-content">
+                        <iframe class="panel-frame" title="پیگیری درخواست‌ها" data-frame-src="{% url 'main:my_requests' %}"></iframe>
+                    </div>
+
+                    <div id="documents-tab" class="tab-content">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-8">مدارک من</h2>
                         <div class="bg-white p-6 rounded-xl shadow">
-                            <div class="border p-4 rounded-lg">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <h4 class="font-bold text-lg">
-                                            پرونده #S-021 - صدور سند
-                                        </h4>
-                                        <p class="text-sm text-gray-500">
-                                            آخرین بروزرسانی: ۲ روز پیش
-                                        </p>
+                            {% if user_documents %}
+                            <div class="space-y-3">
+                                {% for doc in user_documents %}
+                                <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-file-alt text-blue-500 text-2xl"></i>
+                                        <div>
+                                            <p class="font-semibold">{{ doc.document_name }}</p>
+                                            <p class="text-sm text-gray-500">{{ doc.request.title }} · {{ doc.uploaded_at|date:"Y/m/d H:i" }}</p>
+                                        </div>
                                     </div>
-                                    <span
-                                        class="bg-amber-100 text-amber-800 text-sm font-semibold px-3 py-1 rounded-full"
-                                        >در انتظار استعلام</span
-                                    >
+                                    <a href="{% url 'main:dashboard_download_document' doc.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm" aria-label="دریافت {{ doc.document_name }}"><i class="fas fa-download"></i></a>
                                 </div>
-                                <div class="mt-6">
-                                    <div class="timeline-item">
-                                        <div
-                                            class="timeline-dot bg-green-500 text-white"
-                                        >
-                                            <i class="fas fa-check"></i>
-                                        </div>
-                                        <p class="font-semibold">
-                                            ثبت درخواست و مدارک
-                                        </p>
-                                        <p class="text-sm text-gray-500">
-                                            ۱۴۰۳/۰۵/۰۸
-                                        </p>
-                                    </div>
-                                    <div class="timeline-item">
-                                        <div
-                                            class="timeline-dot bg-green-500 text-white"
-                                        >
-                                            <i class="fas fa-check"></i>
-                                        </div>
-                                        <p class="font-semibold">
-                                            تایید مدارک توسط کارشناس
-                                        </p>
-                                        <p class="text-sm text-gray-500">
-                                            ۱۴۰۳/۰۵/۰۹
-                                        </p>
-                                    </div>
-                                    <div class="timeline-item">
-                                        <div
-                                            class="timeline-dot bg-amber-500 text-white"
-                                        >
-                                            <i
-                                                class="fas fa-hourglass-half"
-                                            ></i>
-                                        </div>
-                                        <p class="font-semibold">
-                                            ارسال استعلام به بنیاد مسکن
-                                        </p>
-                                        <p class="text-sm text-gray-500">
-                                            در حال انجام...
-                                        </p>
-                                    </div>
-                                    <div class="timeline-item opacity-50">
-                                        <div class="timeline-dot bg-gray-300">
-                                            <i class="fas fa-ellipsis-h"></i>
-                                        </div>
-                                        <p class="font-semibold">
-                                            تکمیل پوشه و تحویل
-                                        </p>
-                                    </div>
-                                </div>
+                                {% endfor %}
                             </div>
+                            {% else %}
+                            <p class="text-gray-500 text-center py-8">هنوز مدرکی بارگذاری نشده است. مدارک را هنگام ثبت درخواست پیوست کنید.</p>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <!-- Documents Tab -->
-                    <div id="documents-tab">
-                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
-                            مدیریت مدارک
-                        </h2>
-                        <div class="bg-white p-6 rounded-xl shadow">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-semibold">
-                                    مدارک بارگذاری شده
-                                </h3>
-                                <button
-                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-                                >
-                                    <i class="fas fa-upload ml-2"></i>آپلود مدرک
-                                    جدید
-                                </button>
-                            </div>
-                            <ul class="space-y-3">
-                                <li
-                                    class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                                >
-                                    <span>تصویر کارت ملی</span
-                                    ><span
-                                        class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-                                        >تایید شده</span
-                                    >
-                                </li>
-                                <li
-                                    class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                                >
-                                    <span>تصویر شناسنامه</span
-                                    ><span
-                                        class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-                                        >تایید شده</span
-                                    >
-                                </li>
-                                <li
-                                    class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                                >
-                                    <span>سند مالکیت</span
-                                    ><span
-                                        class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full"
-                                        >در انتظار بررسی</span
-                                    >
-                                </li>
-                            </ul>
-                        </div>
+                    <div id="payments-tab" class="tab-content">
+                        <iframe class="panel-frame" title="پرداخت بدهی‌ها" data-frame-src="{% url 'main:payments_debts' %}"></iframe>
                     </div>
 
-                    <!-- Payments Tab -->
-                    <div id="payments-tab">
-                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
-                            پرداخت بدهی‌ها
-                        </h2>
-                        <div class="bg-white p-6 rounded-xl shadow">
-                            <div class="border p-4 rounded-lg bg-red-50">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <h4 class="font-bold">
-                                            عوارض سالانه ۱۴۰۳
-                                        </h4>
-                                        <p
-                                            class="text-lg font-bold text-red-600 mt-1"
-                                        >
-                                            ۱۵۰,۰۰۰ تومان
-                                        </p>
-                                    </div>
-                                    <button
-                                        class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold"
-                                     onclick="location.href='{% url 'main:payments_debts' %}'">
-                                        پرداخت آنلاین
-                                    </button>
-                                </div>
-                            </div>
+                    <div id="messages-tab" class="tab-content">
+                                                <div class="flex gap-2 mb-4" role="tablist">
+                            <button type="button" class="seg-btn active bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:letters_inbox' %}">نامه‌ها</button>
+                            <button type="button" class="seg-btn bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:announcement_list' %}">اطلاعیه‌ها</button>
+                            <button type="button" class="seg-btn bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:conversation_list' %}">گفتگوها</button>
                         </div>
+                        <iframe class="panel-frame" title="پیام‌ها و اطلاعیه‌ها" data-frame-src="{% url 'main:letters_inbox' %}"></iframe>
                     </div>
 
-                    <!-- Messages Tab -->
-                    <div id="messages-tab">
-                        <h2 class="text-3xl font-bold text-gray-800 mb-8">
-                            پیام‌ها و اطلاعیه‌ها
-                        </h2>
-                        
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            
-                            <!-- Announcements List (Main Column) -->
-                            <div class="lg:col-span-2">
-                                <div class="bg-white p-6 rounded-xl shadow">
-                                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4">
-                                        <h3 class="text-xl font-bold text-gray-800 mb-4 sm:mb-0 flex items-center">
-                                            <i class="fas fa-bullhorn ml-2 text-green-600"></i>
-                                            اطلاعیه‌های دریافتی
-                                        </h3>
-                                        <div>
-                                            <label for="scope-filter" class="text-sm font-medium">فیلتر:</label>
-                                            <select id="scope-filter" class="p-2 border border-gray-300 rounded-lg bg-white">
-                                                <option value="all">همه اطلاعیه‌ها</option>
-                                                <option value="my-area">فقط محله من</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                    <div id="ads-tab" class="tab-content">
+                        <iframe class="panel-frame" title="آگهی‌های ملک من" data-frame-src="{% url 'main:my_property_ads' %}"></iframe>
+                    </div>
 
-                                    <div class="space-y-6">
-                                        <!-- Announcement Card 1 -->
-                                        <div class="p-6 bg-blue-50 rounded-lg border border-blue-200">
-                                            <div class="flex justify-between items-start">
-                                                <div>
-                                                    <h4 class="font-bold text-lg text-blue-800">اطلاعیه قطعی آب</h4>
-                                                    <p class="text-sm text-gray-500 mt-1">منتشر شده در: ۱۴۰۳/۰۵/۲۰ - ۱۰:۰۰</p>
-                                                </div>
-                                                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">کل روستا</span>
-                                            </div>
-                                            <p class="mt-4 text-gray-700">به اطلاع ساکنین محترم می‌رساند به دلیل تعمیرات خط لوله اصلی، آب شرب روستا در روز سه‌شنبه مورخ ۱۴۰۳/۰۵/۲۲ از ساعت ۸ صبح الی ۱۴ قطع خواهد بود. لطفاً تمهیدات لازم را در نظر بگیرید.</p>
-                                            <div class="text-left mt-4">
-                                                <button class="text-blue-600 font-semibold text-sm hover:underline">مشاهده جزئیات</button>
-                                            </div>
-                                        </div>
-
-                                        <!-- Announcement Card 2 -->
-                                        <div class="p-6 bg-gray-50 rounded-lg border">
-                                            <div class="flex justify-between items-start">
-                                                <div>
-                                                    <h4 class="font-bold text-lg">جلسه ماهانه شورا</h4>
-                                                    <p class="text-sm text-gray-500 mt-1">منتشر شده در: ۱۴۰۳/۰۴/۱۵ - ۱۸:۰۰</p>
-                                                </div>
-                                                <span class="bg-gray-200 text-gray-800 text-xs px-3 py-1 rounded-full">کل روستا</span>
-                                            </div>
-                                            <p class="mt-4 text-gray-700">جلسه ماهانه شورای اسلامی روستا جهت بررسی مشکلات و پیشنهادات شما عزیزان در تاریخ ۱۴۰۳/۰۴/۲۰ در محل دهیاری برگزار خواهد شد.</p>
-                                            <div class="text-left mt-4">
-                                                <button class="text-blue-600 font-semibold text-sm hover:underline">مشاهده جزئیات</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- User Actions (Sidebar Column) -->
-                            <div class="space-y-8">
-                                <!-- Submit Report Form -->
-                                <div class="bg-white p-6 rounded-xl shadow">
-                                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                                        <i class="fas fa-paper-plane ml-2 text-green-600"></i>
-                                        ثبت پیام یا گزارش حادثه
-                                    </h3>
-                                    <form id="report-form" class="space-y-4">
-                                        <div>
-                                            <label for="report-type" class="block font-medium mb-1">نوع پیام</label>
-                                            <select id="report-type" required class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                                                <option value="incident">حادثه (ترکیدگی لوله، قطعی برق و...)</option>
-                                                <option value="suggestion">پیشنهاد</option>
-                                                <option value="complaint">شکایت (تخلف ساختمانی و...)</option>
-                                                <option value="other">سایر موارد</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label for="report-message" class="block font-medium mb-1">متن گزارش</label>
-                                            <textarea id="report-message" rows="4" required class="w-full p-3 border border-gray-300 rounded-lg"></textarea>
-                                        </div>
-                                        <div>
-                                            <label for="report-attachment" class="block font-medium mb-1">ضمیمه کردن عکس یا ویدئو</label>
-                                            <input type="file" id="report-attachment" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
-                                        </div>
-                                        <div class="text-left pt-2">
-                                            <button type="submit" class="bg-green-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-green-700 transition-all">
-                                                <i class="fas fa-paper-plane mr-2"></i>ارسال به دهیاری
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-
-                                <!-- Track Reports -->
-                                <div class="bg-white p-6 rounded-xl shadow">
-                                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                                        <i class="fas fa-tasks ml-2 text-green-600"></i>
-                                        پیگیری گزارش‌های ارسالی
-                                    </h3>
-                                    <ul class="space-y-4">
-                                        <li class="p-4 bg-gray-50 rounded-lg border">
-                                            <div class="flex justify-between items-center">
-                                                <p class="font-semibold">گزارش ترکیدگی لوله</p>
-                                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">انجام شد</span>
-                                            </div>
-                                            <p class="text-sm text-gray-500 mt-1">تاریخ ثبت: ۱۴۰۳/۰۵/۱۸</p>
-                                        </li>
-                                        <li class="p-4 bg-gray-50 rounded-lg border">
-                                            <div class="flex justify-between items-center">
-                                                <p class="font-semibold">پیشنهاد بهسازی خیابان</p>
-                                                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">در حال بررسی</span>
-                                            </div>
-                                            <p class="text-sm text-gray-500 mt-1">تاریخ ثبت: ۱۴۰۳/۰۵/۱۰</p>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
+                    <div id="profile-tab" class="tab-content">
+                        <iframe class="panel-frame" title="ویرایش پروفایل" data-frame-src="{% url 'main:update_profile' %}"></iframe>
                     </div>
                 </main>
             </div>
         </div>
 
         <script>
-            function showTab(tabId, clickedLink) {
-                document
-                    .querySelectorAll(".main-content > div")
-                    .forEach((el) => el.classList.remove("active"));
-                const targetTab = document.getElementById(`${tabId}-tab`);
-                if (targetTab) targetTab.classList.add("active");
+            // Pages opened inside the panel hide their own site chrome and "back to dashboard" links.
+            const FRAME_CSS = 'body>nav.navbar,body>footer,.footer,.skip-link,#main-content>nav[aria-label],header.bg-white.shadow-lg,' +
+                '.voice-button,.listening-indicator,.voice-help-modal,' +
+                'a[href="/dashboard/"],a[href="/dashboard/owner/"]{display:none!important}';
+            // Where a page the frame lands on really belongs (e.g. after submitting a form).
+            const PATH_TAB = {'/dashboard/': 'dashboard', '/dashboard/owner/': 'dashboard', '/requests/': 'tracking',
+                              '/my-property-ads/': 'ads', '/payments/': 'payments', '/letters/': 'messages'};
+            let activeTab = 'dashboard';
 
-                document
-                    .querySelectorAll(".sidebar-link")
-                    .forEach((link) => link.classList.remove("active"));
-                if (clickedLink) clickedLink.classList.add("active");
+            function frameUrl(url) { return url + (url.includes('?') ? '&' : '?') + 'embed=1'; }
 
-                if (window.innerWidth < 768) {
-                    toggleMobileMenu();
-                }
+            function setFrame(frame, url) {
+                frame.dataset.loaded = url;
+                frame.src = frameUrl(url);
+            }
+
+            function loadTabFrames(tabId) {
+                document.querySelectorAll('#' + tabId + '-tab iframe[data-frame-src]').forEach(frame => {
+                    if (!frame.dataset.loaded) setFrame(frame, frame.dataset.frameSrc);
+                });
+            }
+
+            function showTab(tabId, link) {
+                activeTab = tabId;
+                document.querySelectorAll('.main-content > div.tab-content').forEach(el => el.classList.toggle('active', el.id === tabId + '-tab'));
+                document.querySelectorAll('.sidebar-link').forEach(a => a.classList.toggle('active', a.dataset.tab === tabId));
+                try { history.replaceState(null, '', '?tab=' + encodeURIComponent(tabId)); } catch (e) {}
+                loadTabFrames(tabId);
+                if (link && window.innerWidth < 768) toggleMobileMenu();
             }
 
             function toggleMobileMenu() {
-                const sidebar = document.getElementById("sidebar");
-                const overlay = document.getElementById("mobile-overlay");
-                const icon = document.getElementById("hamburger-icon");
-                sidebar.classList.toggle("active");
-                overlay.classList.toggle("hidden");
-                icon.classList.toggle("fa-bars");
-                icon.classList.toggle("fa-times");
+                document.getElementById('sidebar').classList.toggle('active');
+                document.getElementById('mobile-overlay').classList.toggle('hidden');
+                const icon = document.getElementById('hamburger-icon');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
             }
 
-            // Service request mapping
-            const serviceMapping = {
-                'permit': 'building-permit',
-                'no-permit': 'construction-without-permit', 
-                'deed': 'property-deed-issuance',
-                'land-use': 'land-use-change',
-                'join-plan': 'join-development-plan',
-                'property-ad': 'property-advertisement',
-                'residency': 'residence-confirmation'
-            };
-
-            function startServiceProcess() {
-                const serviceSelect = document.getElementById('service-type');
-                const selectedValue = serviceSelect.value;
-                
-                if (!selectedValue) {
-                    alert('لطفاً ابتدا نوع خدمت را انتخاب کنید.');
-                    return;
-                }
-                
-                // Special case for residence confirmation - go directly to step1
-                if (selectedValue === 'residency') {
-                    window.location.href = '/services/residence-confirmation/step1/';
-                    return;
-                }
-                
-                // Redirect to service detail page
-                const serviceSlug = serviceMapping[selectedValue];
-                if (serviceSlug) {
-                    window.location.href = `/services/${serviceSlug}/`;
-                } else {
-                    // Fallback to general create request page
-                    window.location.href = '/requests/create/';
-                }
+            function closeServiceFrame() {
+                const wrap = document.getElementById('new-request-frame');
+                wrap.hidden = true;
+                wrap.querySelector('iframe').src = 'about:blank';
+                document.getElementById('new-request-options').hidden = false;
             }
 
-            // Report Form Handler
-            document.addEventListener('DOMContentLoaded', function() {
-                const reportForm = document.getElementById("report-form");
-                if (reportForm) {
-                    reportForm.addEventListener("submit", function (event) {
-                        event.preventDefault();
-                        const reportType = document.getElementById('report-type');
-                        const selectedText = reportType.options[reportType.selectedIndex].text;
-                        alert(`گزارش شما با موضوع "${selectedText}" با موفقیت به دهیاری ارسال شد!`);
-                        this.reset();
-                    });
+            document.querySelectorAll('[data-open-frame]').forEach(btn => btn.addEventListener('click', () => {
+                const wrap = document.getElementById('new-request-frame');
+                setFrame(wrap.querySelector('iframe'), btn.dataset.openFrame);
+                wrap.hidden = false;
+                document.getElementById('new-request-options').hidden = true;
+            }));
+            document.querySelector('[data-close-frame]').addEventListener('click', closeServiceFrame);
+
+            document.querySelectorAll('.seg-btn').forEach(btn => btn.addEventListener('click', () => {
+                document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+                setFrame(document.querySelector('#messages-tab iframe'), btn.dataset.seg);
+            }));
+
+            document.querySelectorAll('iframe.panel-frame').forEach(frame => frame.addEventListener('load', () => {
+                let doc, path;
+                try { doc = frame.contentDocument; path = frame.contentWindow.location.pathname; } catch (e) { return; }
+                if (!doc || !doc.head || path === 'blank') return;
+                const style = doc.createElement('style');
+                style.textContent = FRAME_CSS;
+                doc.head.appendChild(style);
+                const tab = PATH_TAB[path];
+                if (tab && tab !== activeTab) {
+                    // The frame was sent to another section's page: show that section in place.
+                    if (frame.closest('#new-request-tab')) closeServiceFrame();
+                    document.querySelectorAll('#' + tab + '-tab iframe[data-frame-src]').forEach(f => { f.removeAttribute('data-loaded'); });
+                    showTab(tab);
                 }
-            });
+            }));
+
+            showTab('{{ initial_tab }}');
         </script>
         {% include 'partials/office_dock.html' %}
 </body>

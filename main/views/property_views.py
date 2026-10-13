@@ -1,3 +1,4 @@
+from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
@@ -33,40 +34,37 @@ from main.models import (PropertyImage, UserProfile, ServiceRequest, Notificatio
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
 
 
+SERVICE_OPTIONS = (
+    ('building_permit_form', 'building', 'ساخت‌وساز با پروانه', 'صدور پروانه ساختمان'),
+    ('without_permit_form', 'hammer', 'ساخت‌وساز بدون پروانه', 'ثبت و استعلام ساخت‌وساز بدون پروانه'),
+    ('property_deed_form', 'file-signature', 'صدور سند', 'درخواست سند مالکیت'),
+    ('land_use_change_form', 'map-marked-alt', 'تغییر کاربری', 'تغییر کاربری زمین یا ملک'),
+    ('hadi_plan_form', 'road', 'الحاق به طرح', 'الحاق به طرح هادی روستا'),
+    ('residence_confirmation_form', 'id-card', 'تاییدیه سکونت', 'گواهی سکونت در روستا'),
+    ('property_advertisement_form', 'bullhorn', 'آگهی ملک', 'ثبت آگهی خرید، فروش یا اجاره'),
+    ('create_request', 'envelope-open-text', 'درخواست عمومی', 'هر درخواست یا شکایت دیگر از دهیاری'),
+)
+
+
 @login_required
 def owner_dashboard(request):
-    """Dashboard for property owners and residents"""
-    user_profile = request.user.profile
-    
-    # Get user's properties
-    user_properties = Property.objects.filter(owner_national_id=user_profile.national_id)[:5]
-    
-    # Get user's service requests
-    service_requests = ServiceRequest.objects.filter(user=request.user).order_by('-created_at')[:5]
-    
-    # Get user's property advertisements
-    property_ads = PropertyAdvertisement.objects.filter(user=request.user).order_by('-created_at')[:3]
-    
-    # Get unread notifications
-    unread_notifications = Notification.objects.filter(user=request.user, is_read=False)[:5]
-    
-    # Statistics
+    """Citizen panel: dashboard plus every citizen section (requests, payments, messages, ads, profile) in place"""
+    from main.views.citizen_panel import PANEL_TABS
+    mine = ServiceRequest.objects.filter(user=request.user)
+    unread = Notification.objects.filter(user=request.user, is_read=False)
     stats = {
-        'total_properties': user_properties.count(),
-        'total_requests': service_requests.count(),
-        'pending_requests': ServiceRequest.objects.filter(user=request.user, status='pending').count(),
-        'approved_requests': ServiceRequest.objects.filter(user=request.user, status='approved').count(),
-        'total_ads': property_ads.count(),
-        'unread_notifications': unread_notifications.count(),
+        'active_requests': mine.exclude(status__in=['completed', 'rejected']).count(),
+        'unpaid_payments': Payment.objects.filter(user=request.user, status='pending').count(),
+        'unread_notifications': unread.count(),
     }
-    
     context = {
-        'user_profile': user_profile,
-        'user_properties': user_properties,
-        'service_requests': service_requests,
-        'property_ads': property_ads,
-        'unread_notifications': unread_notifications,
+        'user_profile': request.user.profile,
+        'service_requests': mine.order_by('-created_at')[:5],
+        'unread_notifications': unread[:5],
+        'user_documents': RequestDocument.objects.filter(request__user=request.user).order_by('-uploaded_at')[:20],
         'stats': stats,
+        'service_options': [(reverse('main:' + name), icon, title, hint) for name, icon, title, hint in SERVICE_OPTIONS],
+        'initial_tab': tab if (tab := request.GET.get('tab')) in PANEL_TABS else 'dashboard',
     }
     return render(request, 'main/dashboards/Owner.html', context)
 
@@ -352,6 +350,9 @@ def property_advertisement_step2(request):
 @login_required
 def my_property_ads(request):
     """User's property advertisements"""
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'ads')):
+        return moved
     user_ads = PropertyAdvertisement.objects.filter(user=request.user).order_by('-created_at')
 
     pending_count = user_ads.filter(status='pending').count()
