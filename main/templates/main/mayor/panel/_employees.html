@@ -1,0 +1,66 @@
+{% load jalali_tags persian_filters %}
+<div class="mp-pane" data-url="{% url 'main:mayor_panel' 'employees' %}">
+    <header class="mp-head"><div><h2>کارمندان دهیاری</h2><p>به ساکنان روستا نقش بدهید یا پس بگیرید؛ هر تغییر ثبت می‌شود و کاربر خبردار می‌شود.</p></div>
+        <button type="button" class="mp-btn mp-btn-primary" data-mp-open="mp-create-staff"><i class="fas fa-user-plus" aria-hidden="true"></i> ساخت حساب کارمند</button></header>
+    {% include 'main/mayor/panel/_flash.html' %}
+    {% if error %}<div class="mp-flash mp-flash-err" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>{{ error }}</span></div>{% endif %}
+
+    <section class="mp-card" aria-labelledby="mp-staff-h">
+        <h3 id="mp-staff-h" class="mp-card-title"><i class="fas fa-users" aria-hidden="true"></i> کارکنان فعلی <span class="mp-count">{{ staff|length|stringformat:"d"|persian_numbers }}</span></h3>
+        {% for profile in staff %}
+        <div class="mp-row">
+            <span class="mp-avatar" aria-hidden="true"><i class="fas {{ role_icons|dict_get:profile.role }}"></i></span>
+            <div class="mp-grow"><b>{{ profile.user.get_full_name|default:profile.user.username }}</b>
+                <small>{{ profile.user.username }}{% if profile.mobile_number %} · {{ profile.mobile_number|persian_numbers }}{% endif %}</small></div>
+            <span class="mp-badge mp-badge-blue">{{ profile.get_role_display }}</span>
+            <form method="post" action="{% url 'main:role_revoke' profile.user_id %}" data-mp-post data-confirm="نقش این کاربر برداشته شود؟">
+                <button type="submit" class="mp-btn mp-btn-danger mp-btn-sm"><i class="fas fa-user-minus" aria-hidden="true"></i> برداشتن نقش</button>
+            </form>
+        </div>
+        {% empty %}
+        <div class="mp-empty"><i class="fas fa-user-gear" aria-hidden="true"></i><p>هنوز نقشی به کسی داده نشده است. از بخش زیر ساکنان را جستجو کنید.</p></div>
+        {% endfor %}
+    </section>
+
+    <section class="mp-card" aria-labelledby="mp-grant-h">
+        <h3 id="mp-grant-h" class="mp-card-title"><i class="fas fa-user-check" aria-hidden="true"></i> دادن نقش به یکی از ساکنان</h3>
+        <form method="get" action="{% url 'main:mayor_panel' 'employees' %}" data-mp-get class="mp-search" role="search">
+            <label for="mp-q" class="mp-sr">نام، نام کاربری، کد ملی یا موبایل</label>
+            <input type="search" id="mp-q" name="q" value="{{ q }}" class="mp-input" placeholder="نام، نام کاربری، کد ملی یا موبایل…" maxlength="60">
+            <button class="mp-btn mp-btn-primary" type="submit"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> جستجو</button>
+        </form>
+        {% if q %}
+            {% for profile in candidates %}
+            <form method="post" action="{% url 'main:role_grant' %}" data-mp-post class="mp-row mp-row-form">
+                <input type="hidden" name="user_id" value="{{ profile.user_id }}">
+                <span class="mp-avatar" aria-hidden="true">{{ profile.user.username|slice:":1"|upper }}</span>
+                <div class="mp-grow"><b>{{ profile.user.get_full_name|default:profile.user.username }}</b><small>{{ profile.user.username }} · {{ profile.get_role_display }}</small></div>
+                <label class="mp-sr" for="mp-role-{{ profile.user_id }}">نقش</label>
+                <select name="role" id="mp-role-{{ profile.user_id }}" class="mp-input mp-input-sm" required>
+                    <option value="" selected disabled>انتخاب نقش…</option>
+                    {% for value, label, icon in grantable %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                </select>
+                <button type="submit" class="mp-btn mp-btn-ok mp-btn-sm"><i class="fas fa-check" aria-hidden="true"></i> اعطا</button>
+            </form>
+            {% empty %}
+            <div class="mp-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><p>کاربری با این مشخصات در روستای شما پیدا نشد.</p></div>
+            {% endfor %}
+        {% else %}<p class="mp-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> برای دیدن نتیجه، نام یا کد ملی را جستجو کنید.</p>{% endif %}
+    </section>
+
+    <dialog id="mp-create-staff" class="mp-dialog" aria-labelledby="mp-create-h">
+        <form method="post" action="{% url 'main:role_create_account' %}" data-mp-post data-mp-close>
+            <h3 id="mp-create-h">ساخت حساب کارمند</h3>
+            <p class="mp-hint">حساب در روستای شما ساخته می‌شود. رمز اولیه همان کد ملی است و کاربر در اولین ورود باید آن را عوض کند.</p>
+            <div class="mp-grid">
+                <label>نام<input class="mp-input" name="first_name" maxlength="30" required></label>
+                <label>نام خانوادگی<input class="mp-input" name="last_name" maxlength="30" required></label>
+                <label>نام کاربری<input class="mp-input" name="username" dir="ltr" minlength="3" maxlength="30" pattern="[A-Za-z0-9._\-]+" required></label>
+                <label>کد ملی<input class="mp-input" name="national_id" dir="ltr" inputmode="numeric" pattern="\d{10}" maxlength="10" required></label>
+                <label>موبایل<input class="mp-input" name="mobile_number" dir="ltr" inputmode="numeric" pattern="09\d{9}" maxlength="11" required></label>
+                <label>نقش<select class="mp-input" name="role" required><option value="" selected disabled>انتخاب نقش…</option>{% for value, label, icon in grantable %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+            </div>
+            <div class="mp-actions"><button type="button" class="mp-btn" data-mp-dismiss>انصراف</button><button type="submit" class="mp-btn mp-btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> ساخت حساب</button></div>
+        </form>
+    </dialog>
+</div>

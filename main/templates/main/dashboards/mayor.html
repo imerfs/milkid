@@ -373,6 +373,7 @@
     {% include 'partials/seo_head.html' %}
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mayor-panel.css' %}">
 </head>
 <body class="font-vazir bg-slate-100 text-gray-800 mk-tw">
     <div class="flex h-screen overflow-hidden">
@@ -405,13 +406,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'main:role_grants' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="employees" data-real-link>
+                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="employees" data-tab-link>
                             <i class="fas fa-users ml-3 w-5"></i>
                             <span>کارمندان</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'main:mayor_requests_list' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="requests" data-real-link>
+                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="requests" data-tab-link>
                             <i class="fas fa-file-alt ml-3 w-5"></i>
                             <span>درخواست‌ها</span>
                         </a>
@@ -441,13 +442,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'main:announcement_list' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="announcements" data-real-link>
+                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="announcements" data-tab-link>
                             <i class="fas fa-bullhorn ml-3 w-5"></i>
                             <span>اطلاعیه‌ها</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'main:user_profile' %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="profile" data-real-link>
+                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="profile" data-tab-link>
                             <i class="fas fa-user ml-3 w-5"></i>
                             <span>پروفایل</span>
                         </a>
@@ -720,7 +721,7 @@
                                     <h3 class="text-xl font-semibold text-gray-800">اقدامات سریع</h3>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
-                                    <button class="bg-blue-100 hover:bg-blue-200 text-blue-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:role_grants' %}'">
+                                    <button class="bg-blue-100 hover:bg-blue-200 text-blue-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="mpOpen('employees')">
                                         <i class="fas fa-user-plus text-2xl mb-2"></i>
                                         <span class="text-sm">اضافه کردن کارمند</span>
                                     </button>
@@ -728,7 +729,7 @@
                                         <i class="fas fa-file-medical text-2xl mb-2"></i>
                                         <span class="text-sm">ایجاد درخواست</span>
                                     </button>
-                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="location.href='{% url 'main:create_announcement' %}'">
+                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-4 rounded-xl flex flex-col items-center transition-colors" onclick="mpOpen('announcements')">
                                         <i class="fas fa-bullhorn text-2xl mb-2"></i>
                                         <span class="text-sm">ارسال اطلاعیه</span>
                                     </button>
@@ -801,7 +802,7 @@
                                                 <p class="text-xs text-gray-500 mt-1">۴ ساعت پیش</p>
                                             </div>
                                         </div>
-                                        <button class="text-yellow-600 hover:text-yellow-800 text-sm font-medium" onclick="location.href='{% url 'main:user_profile' %}'">مشاهده پروفایل</button>
+                                        <button class="text-yellow-600 hover:text-yellow-800 text-sm font-medium" onclick="mpOpen('profile')">مشاهده پروفایل</button>
                                     </div>
                                 </div>
                             </div>
@@ -1369,641 +1370,14 @@
                     </div>
 
                     <!-- Employees Content -->
-                    <div id="employees-content" class="page-content hidden">
-                        <!-- Page Title -->
-                        <div class="mb-8">
-                            <h2 class="text-3xl font-bold text-gray-800">مدیریت کارمندان</h2>
-                            <p class="text-gray-600 mt-2">افزودن، ویرایش و مدیریت کارمندان شهرداری</p>
-                        </div>
-
-                        <!-- Action Bar -->
-                        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div class="flex-1">
-                                    <div class="relative">
-                                        <input type="text" placeholder="جستجوی کارمندان..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                                    </div>
-                                </div>
-                                <div class="flex gap-3">
-                                    <button class="btn btn-primary flex items-center">
-                                        <i class="fas fa-plus ml-2"></i>
-                                        افزودن کارمند جدید
-                                    </button>
-                                    <button class="btn btn-secondary flex items-center">
-                                        <i class="fas fa-filter ml-2"></i>
-                                        فیلتر
-                                    </button>
-                                    <button class="btn btn-secondary flex items-center">
-                                        <i class="fas fa-download ml-2"></i>
-                                        خروجی
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Employees Table -->
-                        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-                            <div class="overflow-x-auto">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>نام و نام خانوادگی</th>
-                                            <th>سمت</th>
-                                            <th>شماره تماس</th>
-                                            <th>ایمیل</th>
-                                            <th>تاریخ استخدام</th>
-                                            <th>وضعیت</th>
-                                            <th>عملیات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                <div class="flex items-center">
-                                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center ml-3">
-                                                        <span class="text-blue-600 font-bold">ا</span>
-                                                    </div>
-                                                    <span>احمد محمدی</span>
-                                                </div>
-                                            </td>
-                                            <td>مدیر مالی</td>
-                                            <td>09123456789</td>
-                                            <td>ahmad@example.com</td>
-                                            <td>۱۴۰۰/۰۵/۱۵</td>
-                                            <td><span class="status-badge status-approved">فعال</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="flex items-center">
-                                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center ml-3">
-                                                        <span class="text-purple-600 font-bold">ف</span>
-                                                    </div>
-                                                    <span>فاطمه احمدی</span>
-                                                </div>
-                                            </td>
-                                            <td>کارشناس املاک</td>
-                                            <td>09123456788</td>
-                                            <td>fateme@example.com</td>
-                                            <td>۱۴۰۱/۰۲/۲۰</td>
-                                            <td><span class="status-badge status-approved">فعال</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="flex items-center">
-                                                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center ml-3">
-                                                        <span class="text-green-600 font-bold">ع</span>
-                                                    </div>
-                                                    <span>علی کریمی</span>
-                                                </div>
-                                            </td>
-                                            <td>مهندس شهرسازی</td>
-                                            <td>09123456787</td>
-                                            <td>ali@example.com</td>
-                                            <td>۱۴۰۱/۰۸/۱۰</td>
-                                            <td><span class="status-badge status-approved">فعال</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="flex items-center">
-                                                    <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center ml-3">
-                                                        <span class="text-yellow-600 font-bold">م</span>
-                                                    </div>
-                                                    <span>مریم رضایی</span>
-                                                </div>
-                                            </td>
-                                            <td>مسئول پروژه‌ها</td>
-                                            <td>09123456786</td>
-                                            <td>maryam@example.com</td>
-                                            <td>۱۴۰۲/۰۱/۰۵</td>
-                                            <td><span class="status-badge status-processing">آزمایشی</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <!-- Pagination -->
-                            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                                <div class="text-sm text-gray-700">
-                                    نمایش <span class="font-medium">1</span> تا <span class="font-medium">4</span> از <span class="font-medium">4</span> نتیجه
-                                </div>
-                                <div class="flex gap-2">
-                                    <button class="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50" disabled>
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                    <button class="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50" disabled>
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Add Employee Form -->
-                        <div class="bg-white rounded-2xl shadow-lg p-6">
-                            <div class="flex items-center mb-6">
-                                <div class="w-1 h-6 bg-blue-600 rounded-r ml-3"></div>
-                                <h3 class="text-xl font-semibold text-gray-800">افزودن کارمند جدید</h3>
-                            </div>
-                            
-                            <form class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="form-group">
-                                    <label class="form-label">نام</label>
-                                    <input type="text" class="form-input" placeholder="نام را وارد کنید">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">نام خانوادگی</label>
-                                    <input type="text" class="form-input" placeholder="نام خانوادگی را وارد کنید">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">کد ملی</label>
-                                    <input type="text" class="form-input" placeholder="کد ملی را وارد کنید">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">شماره تماس</label>
-                                    <input type="text" class="form-input" placeholder="شماره تماس را وارد کنید">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">ایمیل</label>
-                                    <input type="email" class="form-input" placeholder="ایمیل را وارد کنید">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">نام کاربری</label>
-                                    <input type="text" class="form-input" placeholder="نام کاربری را وارد کنید">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">رمز عبور</label>
-                                    <input type="password" class="form-input" placeholder="رمز عبور را وارد کنید">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">سمت</label>
-                                    <select class="form-select">
-                                        <option value="">سمت را انتخاب کنید</option>
-                                        <option value="council_member">اعضا شورا</option>
-                                        <option value="technical_expert">کارشناس فنی</option>
-                                        <option value="technical_supervisor">ناظر فنی</option>
-                                        <option value="financial_expert">کارشناس مالی</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">تاریخ استخدام</label>
-                                    <input type="date" class="form-input">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">وضعیت</label>
-                                    <select class="form-select">
-                                        <option value="active">فعال</option>
-                                        <option value="inactive">غیرفعال</option>
-                                        <option value="probation">آزمایشی</option>
-                                    </select>
-                                </div>
-                                <div class="form-group md:col-span-2">
-                                    <label class="form-label">آدرس</label>
-                                    <textarea class="form-textarea" placeholder="آدرس را وارد کنید"></textarea>
-                                </div>
-                                <div class="form-group md:col-span-2 flex justify-end gap-3">
-                                    <button type="button" class="btn btn-secondary">انصراف</button>
-                                    <button type="submit" class="btn btn-primary">ذخیره کارمند</button>
-                                </div>
-                            </form>
-                        </div>
+                    <div id="employees-content" class="page-content hidden" data-panel="{% url 'main:mayor_panel' 'employees' %}">
+                        <div class="mp-loading" role="status"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> در حال بارگذاری…</div>
                     </div>
 
-                    <!-- Requests Content -->
-                    <div id="requests-content" class="page-content hidden">
-                        <!-- Page Title -->
-                        <div class="mb-8 flex flex-wrap justify-between items-center gap-4">
-                            <div>
-                                <h2 class="text-3xl font-bold text-gray-800">مدیریت درخواست‌ها</h2>
-                                <p class="text-gray-600 mt-2">پیگیری و رسیدگی به پرونده‌های ارجاع شده از کارشناس و شورا</p>
-                            </div>
-                            <a href="{% url 'main:mayor_requests_list' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow hover:shadow-md transition flex items-center gap-2">
-                                <i class="fas fa-clipboard-check"></i>
-                                <span>کارتابل تخصصی بررسی و تایید پرونده‌ها</span>
-                            </a>
-                        </div>
-
-                        <!-- Stats Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">کل درخواست‌ها</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۱۲۴</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <i class="fas fa-file-alt text-blue-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">در حال بررسی</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۴۷</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                                        <i class="fas fa-hourglass-half text-yellow-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">تایید شده</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۶۲</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">رد شده</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۱۵</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                                        <i class="fas fa-times-circle text-red-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tabs -->
-                        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-                            <div class="tab-container">
-                                <ul class="tab-list">
-                                    <li class="tab-item">
-                                        <button class="tab-button active" data-tab="all">همه درخواست‌ها</button>
-                                    </li>
-                                    <li class="tab-item">
-                                        <button class="tab-button" data-tab="pending">در انتظار بررسی</button>
-                                    </li>
-                                    <li class="tab-item">
-                                        <button class="tab-button" data-tab="processing">در حال بررسی</button>
-                                    </li>
-                                    <li class="tab-item">
-                                        <button class="tab-button" data-tab="approved">تایید شده</button>
-                                    </li>
-                                    <li class="tab-item">
-                                        <button class="tab-button" data-tab="rejected">رد شده</button>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <!-- Tab Content -->
-                            <div class="tab-content active" id="all-tab">
-                                <div class="overflow-x-auto">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>کد درخواست</th>
-                                                <th>نام درخواست‌دهنده</th>
-                                                <th>نوع درخواست</th>
-                                                <th>تاریخ ثبت</th>
-                                                <th>وضعیت</th>
-                                                <th>عملیات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>#R-1247</td>
-                                                <td>رضا محمدی</td>
-                                                <td>تغییر کاربری</td>
-                                                <td>۱۴۰۲/۰۳/۱۵</td>
-                                                <td><span class="status-badge status-processing">در حال بررسی</span></td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-green-600 hover:text-green-800">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                        <button class="text-red-600 hover:text-red-800">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>#R-1246</td>
-                                                <td>سارا احمدی</td>
-                                                <td>مجوز ساخت</td>
-                                                <td>۱۴۰۲/۰۳/۱۴</td>
-                                                <td><span class="status-badge status-pending">در انتظار بررسی</span></td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-green-600 hover:text-green-800">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                        <button class="text-red-600 hover:text-red-800">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>#R-1245</td>
-                                                <td>علی رضایی</td>
-                                                <td>تقسیم ملک</td>
-                                                <td>۱۴۰۲/۰۳/۱۳</td>
-                                                <td><span class="status-badge status-approved">تایید شده</span></td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-gray-600 hover:text-gray-800">
-                                                            <i class="fas fa-print"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>#R-1244</td>
-                                                <td>زهرا کریمی</td>
-                                                <td>تغییر کاربری</td>
-                                                <td>۱۴۰۲/۰۳/۱۲</td>
-                                                <td><span class="status-badge status-rejected">رد شده</span></td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-gray-600 hover:text-gray-800">
-                                                            <i class="fas fa-redo"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="pending-tab">
-                                <div class="overflow-x-auto">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>کد درخواست</th>
-                                                <th>نام درخواست‌دهنده</th>
-                                                <th>نوع درخواست</th>
-                                                <th>تاریخ ثبت</th>
-                                                <th>عملیات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>#R-1246</td>
-                                                <td>سارا احمدی</td>
-                                                <td>مجوز ساخت</td>
-                                                <td>۱۴۰۲/۰۳/۱۴</td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-green-600 hover:text-green-800">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                        <button class="text-red-600 hover:text-red-800">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="processing-tab">
-                                <div class="overflow-x-auto">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>کد درخواست</th>
-                                                <th>نام درخواست‌دهنده</th>
-                                                <th>نوع درخواست</th>
-                                                <th>تاریخ ثبت</th>
-                                                <th>عملیات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>#R-1247</td>
-                                                <td>رضا محمدی</td>
-                                                <td>تغییر کاربری</td>
-                                                <td>۱۴۰۲/۰۳/۱۵</td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-green-600 hover:text-green-800">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                        <button class="text-red-600 hover:text-red-800">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="approved-tab">
-                                <div class="overflow-x-auto">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>کد درخواست</th>
-                                                <th>نام درخواست‌دهنده</th>
-                                                <th>نوع درخواست</th>
-                                                <th>تاریخ ثبت</th>
-                                                <th>عملیات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>#R-1245</td>
-                                                <td>علی رضایی</td>
-                                                <td>تقسیم ملک</td>
-                                                <td>۱۴۰۲/۰۳/۱۳</td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-gray-600 hover:text-gray-800">
-                                                            <i class="fas fa-print"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="rejected-tab">
-                                <div class="overflow-x-auto">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>کد درخواست</th>
-                                                <th>نام درخواست‌دهنده</th>
-                                                <th>نوع درخواست</th>
-                                                <th>تاریخ ثبت</th>
-                                                <th>عملیات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>#R-1244</td>
-                                                <td>زهرا کریمی</td>
-                                                <td>تغییر کاربری</td>
-                                                <td>۱۴۰۲/۰۳/۱۲</td>
-                                                <td>
-                                                    <div class="flex gap-2">
-                                                        <button class="text-blue-600 hover:text-blue-800">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="text-gray-600 hover:text-gray-800">
-                                                            <i class="fas fa-redo"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- New Request Form -->
-                        <div class="bg-white rounded-2xl shadow-lg p-6">
-                            <div class="flex items-center mb-6">
-                                <div class="w-1 h-6 bg-purple-600 rounded-r ml-3"></div>
-                                <h3 class="text-xl font-semibold text-gray-800">ایجاد درخواست جدید</h3>
-                            </div>
-                            
-                            <form class="space-y-6">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="form-group">
-                                        <label class="form-label">نوع درخواست</label>
-                                        <select class="form-select">
-                                            <option value="">نوع درخواست را انتخاب کنید</option>
-                                            <option value="usage-change">تغییر کاربری</option>
-                                            <option value="construction-permit">مجوز ساخت</option>
-                                            <option value="property-division">تقسیم ملک</option>
-                                            <option value="ownership-transfer">انتقال سند</option>
-                                            <option value="other">سایر</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">اولویت</label>
-                                        <select class="form-select">
-                                            <option value="low">کم</option>
-                                            <option value="medium" selected>متوسط</option>
-                                            <option value="high">بالا</option>
-                                            <option value="urgent">فوری</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">نام درخواست‌دهنده</label>
-                                        <input type="text" class="form-input" placeholder="نام درخواست‌دهنده را وارد کنید">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">شماره تماس</label>
-                                        <input type="text" class="form-input" placeholder="شماره تماس را وارد کنید">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">کد ملی</label>
-                                        <input type="text" class="form-input" placeholder="کد ملی را وارد کنید">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">آدرس ملک</label>
-                                        <input type="text" class="form-input" placeholder="آدرس ملک را وارد کنید">
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">توضیحات</label>
-                                    <textarea class="form-textarea" placeholder="توضیحات مربوط به درخواست را وارد کنید"></textarea>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">فایل‌های ضمیمه</label>
-                                    <div class="flex items-center justify-center w-full">
-                                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                                <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
-                                                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">برای آپلود کلیک کنید</span> یا فایل را اینجا بکشید</p>
-                                                <p class="text-xs text-gray-500">PDF, JPG, PNG (حداکثر 5MB)</p>
-                                            </div>
-                                            <input type="file" class="hidden" multiple />
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex justify-end gap-3">
-                                    <button type="button" class="btn btn-secondary">انصراف</button>
-                                    <button type="submit" class="btn btn-primary">ثبت درخواست</button>
-                                </div>
-                            </form>
-                        </div>
+                    <div id="requests-content" class="page-content hidden" data-panel="{% url 'main:mayor_panel' 'requests' %}">
+                        <div class="mp-loading" role="status"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> در حال بارگذاری…</div>
                     </div>
 
-                    <!-- Violations Content -->
                     <div id="violations-content" class="page-content hidden">
                         <!-- Page Title -->
                         <div class="mb-8">
@@ -2473,384 +1847,14 @@
                     </div>
 
                     <!-- Announcements Content -->
-                    <div id="announcements-content" class="page-content hidden">
-                        <!-- Page Title -->
-                        <div class="mb-8">
-                            <h2 class="text-3xl font-bold text-gray-800">مدیریت اطلاعیه‌ها</h2>
-                            <p class="text-gray-600 mt-2">ایجاد و مدیریت اطلاعیه‌های عمومی</p>
-                        </div>
-
-                        <!-- Stats Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">کل اطلاعیه‌ها</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۴۲</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                                        <i class="fas fa-bullhorn text-green-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">منتشر شده</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۳۶</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <i class="fas fa-check-circle text-blue-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">در انتظار انتشار</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۴</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                                        <i class="fas fa-clock text-yellow-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-lg p-6">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-gray-500 text-sm">منقضی شده</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2">۲</p>
-                                    </div>
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                                        <i class="fas fa-calendar-times text-gray-600 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Action Bar -->
-                        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div class="flex-1">
-                                    <div class="relative">
-                                        <input type="text" placeholder="جستجوی اطلاعیه‌ها..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                                    </div>
-                                </div>
-                                <div class="flex gap-3">
-                                    <button class="btn btn-primary flex items-center">
-                                        <i class="fas fa-plus ml-2"></i>
-                                        ایجاد اطلاعیه جدید
-                                    </button>
-                                    <button class="btn btn-secondary flex items-center">
-                                        <i class="fas fa-filter ml-2"></i>
-                                        فیلتر
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Announcements Table -->
-                        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-                            <div class="overflow-x-auto">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>عنوان اطلاعیه</th>
-                                            <th>محدوده انتشار</th>
-                                            <th>تاریخ انتشار</th>
-                                            <th>وضعیت</th>
-                                            <th>عملیات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>تعطیلی شهرداری در روز عید فطر</td>
-                                            <td>کل شهر</td>
-                                            <td>۱۴۰۲/۰۳/۱۵</td>
-                                            <td><span class="status-badge status-approved">منتشر شده</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="text-green-600 hover:text-green-800">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>آغاز فصل بهاری و خدمات شهری</td>
-                                            <td>کل شهر</td>
-                                            <td>۱۴۰۲/۰۳/۱۰</td>
-                                            <td><span class="status-badge status-approved">منتشر شده</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="text-green-600 hover:text-green-800">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>اخطاریه regarding قطعی آب</td>
-                                            <td>خیابان امام</td>
-                                            <td>۱۴۰۲/۰۳/۰۵</td>
-                                            <td><span class="status-badge status-approved">منتشر شده</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="text-green-600 hover:text-green-800">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>برنامه‌های نوروزی شهرداری</td>
-                                            <td>پارک شهر</td>
-                                            <td>۱۴۰۲/۰۳/۰۱</td>
-                                            <td><span class="status-badge status-pending">در انتظار انتشار</span></td>
-                                            <td>
-                                                <div class="flex gap-2">
-                                                    <button class="text-blue-600 hover:text-blue-800">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="text-green-600 hover:text-green-800">
-                                                        <i class="fas fa-paper-plane"></i>
-                                                    </button>
-                                                    <button class="text-red-600 hover:text-red-800">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <!-- Pagination -->
-                            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                                <div class="text-sm text-gray-700">
-                                    نمایش <span class="font-medium">1</span> تا <span class="font-medium">4</span> از <span class="font-medium">4</span> نتیجه
-                                </div>
-                                <div class="flex gap-2">
-                                    <button class="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50" disabled>
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                    <button class="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50" disabled>
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- New Announcement Form -->
-                        <div class="bg-white rounded-2xl shadow-lg p-6">
-                            <div class="flex items-center mb-6">
-                                <div class="w-1 h-6 bg-green-600 rounded-r ml-3"></div>
-                                <h3 class="text-xl font-semibold text-gray-800">ایجاد اطلاعیه جدید</h3>
-                            </div>
-                            
-                            <form class="space-y-6">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="form-group">
-                                        <label class="form-label">عنوان اطلاعیه</label>
-                                        <input type="text" class="form-input" placeholder="عنوان اطلاعیه را وارد کنید">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">محدوده انتشار</label>
-                                        <select class="form-select">
-                                            <option value="all">کل شهر</option>
-                                            <option value="mahale1">محله ۱</option>
-                                            <option value="mahale2">محله ۲</option>
-                                            <option value="street1">خیابان شهید بهشتی</option>
-                                            <option value="street2">خیابان امام خمینی</option>
-                                            <option value="park">پارک شهر</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">تاریخ و ساعت انتشار</label>
-                                        <input type="datetime-local" class="form-input">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">اولویت</label>
-                                        <select class="form-select">
-                                            <option value="low">کم</option>
-                                            <option value="medium" selected>متوسط</option>
-                                            <option value="high">بالا</option>
-                                            <option value="urgent">فوری</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">متن اطلاعیه</label>
-                                    <textarea class="form-textarea" placeholder="متن اطلاعیه را وارد کنید"></textarea>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">فایل ضمیمه (اختیاری)</label>
-                                    <div class="flex items-center justify-center w-full">
-                                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                                <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
-                                                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">برای آپلود کلیک کنید</span> یا فایل را اینجا بکشید</p>
-                                                <p class="text-xs text-gray-500">PDF, JPG, PNG (حداکثر 5MB)</p>
-                                            </div>
-                                            <input type="file" class="hidden" />
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="send-sms" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
-                                    <label for="send-sms" class="mr-2 text-sm font-medium text-gray-700">ارسال پیامک به شهروندان</label>
-                                </div>
-                                
-                                <div class="flex justify-end gap-3">
-                                    <button type="button" class="btn btn-secondary">ذخیره پیش‌نویس</button>
-                                    <button type="submit" class="btn btn-primary">انتشار اطلاعیه</button>
-                                </div>
-                            </form>
-                        </div>
+                    <div id="announcements-content" class="page-content hidden" data-panel="{% url 'main:mayor_panel' 'announcements' %}">
+                        <div class="mp-loading" role="status"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> در حال بارگذاری…</div>
                     </div>
 
-                    <!-- Profile Content -->
-                    <div id="profile-content" class="page-content hidden">
-                        <!-- Page Title -->
-                        <div class="mb-8">
-                            <h2 class="text-3xl font-bold text-gray-800">ویرایش پروفایل</h2>
-                            <p class="text-gray-600 mt-2">مدیریت اطلاعات شخصی و تنظیمات حساب کاربری</p>
-                        </div>
-
-                        <!-- Profile Form -->
-                        <div class="bg-white rounded-2xl shadow-lg p-6">
-                            <form id="profile-form" class="space-y-6">
-                                {% csrf_token %}
-                                <!-- Personal Information Section -->
-                                <div class="border-b border-gray-200 pb-6">
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">اطلاعات شخصی</h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">نام</label>
-                                            <input type="text" id="first_name" name="first_name" 
-                                                   value="{{ user.first_name|default:'' }}"
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div>
-                                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">نام خانوادگی</label>
-                                            <input type="text" id="last_name" name="last_name" 
-                                                   value="{{ user.last_name|default:'' }}"
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div>
-                                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">ایمیل</label>
-                                            <input type="email" id="email" name="email" 
-                                                   value="{{ user.email|default:'' }}"
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div>
-                                            <label for="mobile_number" class="block text-sm font-medium text-gray-700 mb-2">شماره موبایل</label>
-                                            <input type="text" id="mobile_number" name="mobile_number" 
-                                                   value="{{ user.profile.mobile_number|default:'' }}"
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                   placeholder="09xxxxxxxxx">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Professional Information Section -->
-                                <div class="border-b border-gray-200 pb-6">
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">اطلاعات شغلی</h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label for="national_id" class="block text-sm font-medium text-gray-700 mb-2">کد ملی</label>
-                                            <input type="text" id="national_id" name="national_id" 
-                                                   value="{{ user.profile.national_id|default:'' }}"
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                                                   readonly>
-                                            <p class="text-xs text-gray-500 mt-1">کد ملی قابل ویرایش نیست</p>
-                                        </div>
-                                        <div>
-                                            <label for="role_display" class="block text-sm font-medium text-gray-700 mb-2">نقش</label>
-                                            <input type="text" id="role_display" 
-                                                   value="دهیار/شهردار"
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
-                                                   readonly>
-                                            <p class="text-xs text-gray-500 mt-1">نقش شما در سیستم</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Address Information Section -->
-                                <div class="border-b border-gray-200 pb-6">
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">آدرس و موقعیت</h3>
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">آدرس کامل</label>
-                                            <textarea id="address" name="address" rows="3"
-                                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                      placeholder="آدرس کامل محل سکونت یا دفتر کاری خود را وارد کنید">{{ user.profile.address|default:'' }}</textarea>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Password Change Section -->
-                                <div class="pb-6">
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">تغییر رمز عبور</h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">رمز عبور فعلی</label>
-                                            <input type="password" id="current_password" name="current_password" 
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div></div>
-                                        <div>
-                                            <label for="new_password" class="block text-sm font-medium text-gray-700 mb-2">رمز عبور جدید</label>
-                                            <input type="password" id="new_password" name="new_password" 
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div>
-                                            <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">تکرار رمز عبور جدید</label>
-                                            <input type="password" id="confirm_password" name="confirm_password" 
-                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Form Actions -->
-                                <div class="flex justify-end space-x-4 space-x-reverse pt-6">
-                                    <button type="button" 
-                                            class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                                        انصراف
-                                    </button>
-                                    <button type="submit" 
-                                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                        <i class="fas fa-save ml-2"></i>
-                                        ذخیره تغییرات
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                    <div id="profile-content" class="page-content hidden" data-panel="{% url 'main:mayor_panel' 'profile' %}">
+                        <div class="mp-loading" role="status"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> در حال بارگذاری…</div>
                     </div>
 
-                    <!-- Settings Content -->
                     <div id="settings-content" class="page-content hidden">
                         <!-- Page Title -->
                         <div class="mb-8">
@@ -3136,7 +2140,6 @@
             
             sidebarItems.forEach(item => {
                 item.addEventListener('click', function(e) {
-                    if (this.hasAttribute('data-real-link')) return;   // goes to a real page, not an in-page tab
                     e.preventDefault();
                     
                     // Remove active class from all sidebar items
@@ -3155,6 +2158,7 @@
                     const selectedContent = document.getElementById(`${pageName}-content`);
                     if (selectedContent) {
                         selectedContent.classList.remove('hidden');
+                        if (window.mpLoadTab) window.mpLoadTab(selectedContent);   // employees/requests/announcements/profile load live
                     }
                     
                     // Update page title based on selected page
@@ -3226,70 +2230,6 @@
                 });
             });
             
-            // Profile form submission handler
-            const profileForm = document.getElementById('profile-form');
-            if (profileForm) {
-                profileForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    // Get form data
-                    const formData = new FormData(profileForm);
-                    
-                    // Validate password fields
-                    const newPassword = formData.get('new_password');
-                    const confirmPassword = formData.get('confirm_password');
-                    
-                    if (newPassword && newPassword !== confirmPassword) {
-                        showMessage('رمز عبور جدید و تکرار آن یکسان نیستند!', 'error');
-                        return;
-                    }
-                    
-                    // Show loading state
-                    const submitButton = profileForm.querySelector('button[type="submit"]');
-                    const originalText = submitButton.innerHTML;
-                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>در حال ذخیره...';
-                    submitButton.disabled = true;
-                    
-                    // Send AJAX request
-                    fetch('{% url "main:update_profile" %}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showMessage('پروفایل با موفقیت بروزرسانی شد!', 'success');
-                            // Clear password fields
-                            document.getElementById('current_password').value = '';
-                            document.getElementById('new_password').value = '';
-                            document.getElementById('confirm_password').value = '';
-                            
-                            // Update header name if changed
-                            if (data.full_name) {
-                                const headerName = document.querySelector('.font-medium.text-gray-800');
-                                if (headerName) {
-                                    headerName.textContent = data.full_name;
-                                }
-                            }
-                        } else {
-                            showMessage(data.message || 'خطایی در بروزرسانی پروفایل رخ داد!', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showMessage('خطا در ارتباط با سرور!', 'error');
-                    })
-                    .finally(() => {
-                        // Restore button state
-                        submitButton.innerHTML = originalText;
-                        submitButton.disabled = false;
-                    });
-                });
-            }
-            
             // Helper function to show messages
             function showMessage(message, type = 'success') {
                 const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
@@ -3311,20 +2251,6 @@
                 }, 4000);
             }
             
-            // Form submission handler for other forms
-            const otherForms = document.querySelectorAll('form:not(#profile-form)');
-            otherForms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    // Show success message
-                    showMessage('عملیات با موفقیت انجام شد!', 'success');
-                    
-                    // Reset form
-                    form.reset();
-                });
-            });
-            
             // Add hover effect to quick action buttons
             const quickActionButtons = document.querySelectorAll('.grid button');
             quickActionButtons.forEach(button => {
@@ -3337,6 +2263,8 @@
             });
         });
     </script>
+    {% csrf_token %}
+    <script src="{% static 'js/mayor-panel.js' %}" defer></script>
     {% include 'partials/office_dock.html' %}
 </body>
 </html>
