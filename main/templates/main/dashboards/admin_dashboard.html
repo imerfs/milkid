@@ -527,6 +527,31 @@
                 100% { transform: scale(2.5); opacity: 0; }
             }
 
+            /* Embedded mailbox (Gmail-style, site colors) */
+            .mail-panel { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: 1rem; font-size: 0.9rem; }
+            .mail-panel .mail-side { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 0.75rem; align-self: start; }
+            .mail-panel .mail-compose-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.75rem; border-radius: 1rem; background: var(--primary-color); color: #fff; font-weight: 700; margin-bottom: 0.75rem; text-decoration: none; }
+            .mail-panel .mail-folder { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.9rem; border-radius: 999px; color: #374151; text-decoration: none; }
+            .mail-panel .mail-folder:hover { background: #f3f4f6; }
+            .mail-panel .mail-folder.active { background: rgba(220, 38, 38, 0.1); color: var(--primary-color); font-weight: 700; }
+            .mail-panel .mail-main { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; min-width: 0; overflow: hidden; }
+            .mail-panel .mail-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.6rem 0.9rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
+            .mail-panel .mail-bar input[type=search] { flex: 1 1 10rem; padding: 0.4rem 0.8rem; border: 1px solid #d1d5db; border-radius: 999px; font: inherit; }
+            .mail-panel .mail-btn { padding: 0.35rem 0.8rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background: #fff; font: inherit; cursor: pointer; color: #374151; text-decoration: none; }
+            .mail-panel .mail-btn:hover { background: #f3f4f6; }
+            .mail-panel .mail-row { display: grid; grid-template-columns: auto 11rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; padding: 0.6rem 0.9rem; border-bottom: 1px solid #f1f5f9; color: inherit; text-decoration: none; }
+            .mail-panel .mail-row:hover { box-shadow: inset 0 0 0 1px #d1d5db; }
+            .mail-panel .mail-row.unread { font-weight: 700; background: #fff; }
+            .mail-panel .mail-row.read { background: #f8fafc; color: #4b5563; }
+            .mail-panel .mail-row .snip { font-weight: 400; color: #6b7280; }
+            .mail-panel .mail-row .cut, .mail-panel .mail-row .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .mail-panel .mail-view, .mail-panel .mail-form { padding: 1.25rem; }
+            .mail-panel .mail-view h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+            .mail-panel .mail-body { white-space: pre-wrap; word-break: break-word; line-height: 1.9; margin-top: 1rem; }
+            .mail-panel .mail-form input, .mail-panel .mail-form textarea { width: 100%; padding: 0.5rem 0.7rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font: inherit; margin-bottom: 0.75rem; }
+            .mail-panel .mail-empty { padding: 2.5rem; text-align: center; color: #6b7280; }
+            @media (max-width: 800px) { .mail-panel { grid-template-columns: 1fr; } .mail-panel .mail-row { grid-template-columns: auto minmax(0, 1fr) auto; } .mail-panel .mail-row .who { display: none; } }
+
             /* Embedded server-management panel: the few Bootstrap-style helpers its markup uses */
             .srv-panel { font-size: 0.9rem; }
             .srv-panel .srv-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
@@ -640,7 +665,7 @@
                 <nav class="mt-6">
                     <a
                         href="#"
-                        class="sidebar-link{% if not server_open %} active{% endif %} flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        class="sidebar-link{% if not server_open and not mail_open %} active{% endif %} flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('dashboard', this)"
                     >
                         <div class="flex items-center">
@@ -716,6 +741,15 @@
                         </div>
                     </a>
                     <a
+                        href="{% url 'main:admin_mail' %}"
+                        class="sidebar-link{% if mail_open %} active{% endif %} flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope ml-3"></i>صندوق ایمیل
+                        </div>
+                        {% if mail_unread %}<span class="bg-red-500 text-white text-xs rounded-full h-5 min-w-5 px-1 flex items-center justify-center">{{ mail_unread }}</span>{% endif %}
+                    </a>
+                    <a
                         href="#"
                         class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('reports', this)"
@@ -783,7 +817,7 @@
 
                 <main class="flex-1 overflow-y-auto p-6 md:p-8 main-content">
                     <!-- Dashboard Tab -->
-                    <div id="dashboard-tab"{% if not server_open %} class="active"{% endif %}>
+                    <div id="dashboard-tab"{% if not server_open and not mail_open %} class="active"{% endif %}>
                         <div class="flex justify-between items-center mb-8">
                             <h2 class="text-3xl font-bold text-gray-800">
                                 داشبورد مدیریت کلی سیستم
@@ -2284,6 +2318,12 @@
                             </div>
                         </div>
                     </div>
+                    {% if mail_open %}
+                    <!-- Admin mailbox (embedded) -->
+                    <div id="mail-tab" class="active">
+                        {% include 'main/admin/_mail_panel.html' %}
+                    </div>
+                    {% endif %}
                     {% if server_open %}
                     <!-- Server management (embedded) -->
                     <div id="server-tab" class="active">

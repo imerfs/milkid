@@ -13,6 +13,7 @@
     <li class="nav-item"><a class="nav-link {% if tab == 'redirects' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=redirects">تغییر مسیرها</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'services' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=services">ایمیل، دامنه و سرویس‌ها</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'cache' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=cache">حافظهٔ نهان</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'sms' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=sms">پنل پیامک</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'security' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=security">ورود دو مرحله‌ای</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'files' %}active{% endif %}" href="{% url 'main:admin_server_files' %}">فایل‌ها</a></li>
   </ul>
@@ -48,6 +49,33 @@
         <table class="table table-sm"><thead><tr><th>صفحه</th><th>بازدید</th></tr></thead>
         {% for p in top_pages %}<tr><td dir="ltr" class="text-end">{{ p.path }}</td><td>{{ p.total }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">—</td></tr>{% endfor %}</table></div>
     </div>
+
+  {% elif tab == 'sms' %}
+    <h2 class="h6">اتصال به پنل پیامک (API)</h2>
+    {% if not sms_config.enabled %}<div class="alert alert-warning">پنل پیامک فعال نیست؛ پس از ذخیرهٔ تنظیمات و فعال کردن، سایر بخش‌ها می‌توانند پیامک بفرستند.</div>{% endif %}
+    <p class="small text-muted">سامانه یک درخواست POST با بدنهٔ JSON به نشانی API می‌فرستد؛ نام فیلدها و هدر احراز هویت را مطابق مستندات شرکت پیامکی خود تنظیم کنید. نشانی باید https باشد. کلید API رمزنگاری‌شده ذخیره می‌شود و دوباره نمایش داده نمی‌شود.</p>
+    <form method="post" action="{% url 'main:admin_sms_save' %}" class="mb-4" style="max-width:40rem">
+      {% csrf_token %}
+      <div class="mb-3"><label class="form-label">نشانی API</label><input name="base_url" class="form-control" dir="ltr" placeholder="https://api.example.com/v1/send" value="{{ sms_config.base_url }}"></div>
+      <div class="mb-3"><label class="form-label">کلید API {% if sms_key_set %}<span class="small text-muted">(ذخیره شده؛ برای تغییر، کلید جدید را وارد کنید)</span>{% endif %}</label><input name="api_key" type="password" class="form-control" dir="ltr" autocomplete="off" placeholder="{% if sms_key_set %}••••••••{% endif %}"></div>
+      <div class="mb-3"><label class="form-label">شمارهٔ فرستنده</label><input name="sender" class="form-control" dir="ltr" value="{{ sms_config.sender }}"></div>
+      <div class="row">
+        <div class="col-md-3"><label class="form-label">هدر احراز هویت</label><input name="auth_header" class="form-control" dir="ltr" value="{{ sms_config.auth_header }}"></div>
+        <div class="col-md-3"><label class="form-label">پیشوند کلید</label><input name="auth_prefix" class="form-control" dir="ltr" value="{{ sms_config.auth_prefix }}"></div>
+      </div>
+      <div class="row">
+        <div class="col-md-3"><label class="form-label">فیلد گیرنده</label><input name="to_field" class="form-control" dir="ltr" value="{{ sms_config.to_field }}"></div>
+        <div class="col-md-3"><label class="form-label">فیلد متن</label><input name="text_field" class="form-control" dir="ltr" value="{{ sms_config.text_field }}"></div>
+        <div class="col-md-3"><label class="form-label">فیلد فرستنده</label><input name="sender_field" class="form-control" dir="ltr" value="{{ sms_config.sender_field }}"></div>
+      </div>
+      <label class="d-flex align-items-center gap-2 mb-3"><input type="checkbox" name="enabled" value="1" {% if sms_config.enabled %}checked{% endif %}> فعال</label>
+      <button class="btn btn-primary">ذخیره</button>
+    </form>
+    <h2 class="h6">ارسال پیامک آزمایشی</h2>
+    <form method="post" action="{% url 'main:admin_sms_test' %}" class="d-flex gap-2" style="max-width:32rem">
+      {% csrf_token %}<input name="phone" class="form-control" dir="ltr" inputmode="numeric" placeholder="09123456789" required>
+      <button class="btn btn-outline-primary">ارسال</button>
+    </form>
 
   {% elif tab == 'redirects' %}
     <form method="post" action="{% url 'main:admin_server_redirect_add' %}" class="row g-2 mb-3">

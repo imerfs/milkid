@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}پشتیبانی - ملک آیدی{% endblock %}
+{% block content %}
+<div class="container mt-4" style="max-width: 42rem">
+    <h1 class="h3 fw-bold mb-2"><i class="fas fa-headset"></i> ارتباط با پشتیبانی</h1>
+    <p class="text-muted mb-4">پیام شما برای مدیر سامانه ثبت می‌شود و پاسخ آن به ایمیل حساب شما فرستاده می‌شود.{% if not request.user.email %} <strong>ایمیلی برای حساب شما ثبت نشده است؛ آن را در پروفایل وارد کنید تا پاسخ را دریافت کنید.</strong>{% endif %}</p>
+    {% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}">{{ m }}</div>{% endfor %}
+    <form method="post" class="card card-body">
+        {% csrf_token %}
+        <div class="mb-3"><label class="form-label" for="subject">موضوع</label>
+            <input class="form-control" id="subject" name="subject" maxlength="200" required value="{{ subject|default:'' }}"></div>
+        <div class="mb-3"><label class="form-label" for="body">متن پیام</label>
+            <textarea class="form-control" id="body" name="body" rows="8" maxlength="20000" required>{{ body|default:'' }}</textarea></div>
+        <button class="btn btn-primary">ارسال به پشتیبانی</button>
+    </form>
+</div>
+{% endblock %}
