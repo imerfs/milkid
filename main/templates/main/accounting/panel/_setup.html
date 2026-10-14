@@ -1,0 +1,32 @@
+{% load accounting_tags %}
+{% if g.year and not year %}<div class="ac-notice warn" role="alert">سال مالی انتخاب‌شده پیدا نشد.</div>{% endif %}
+{% if not years_counted %}<div class="ac-notice" role="status"><i class="fas fa-circle-info" aria-hidden="true" style="margin-top:5px"></i><span>برای شروع، سرفصل حساب‌ها را بسازید و سال مالی جاری را باز کنید؛ بعد اسناد، فیش‌ها و بودجه اینجا کار می‌کنند.</span></div>{% endif %}
+<div class="ac-grid2">
+    <section class="ac-card" aria-labelledby="setup-years">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="setup-years">سال‌های مالی</h2></div>
+        <ul class="ac-list">
+            {% for y in years_counted %}
+            <li><button type="button" class="ac-link" hx-get="{{ panel_url }}?year={{ y.id }}&tab=overview">سال {{ y.year|fa }}</button>
+                <span class="muted" style="font-size:12.5px">{{ y.count|rial }} سند{% if y.is_closed %} · <span class="ac-st">بسته</span>{% endif %}</span></li>
+            {% empty %}
+            <li class="muted" style="justify-content:center">سال مالی‌ای باز نشده است.</li>
+            {% endfor %}
+        </ul>
+        <form hx-post="{% url 'main:acc_p_year_open' %}" hx-swap="none" class="ac-box">
+            {% csrf_token %}
+            <label class="ac-lab" for="s-year">باز کردن سال مالی جدید (سال شمسی)</label>
+            <div style="display:flex;gap:8px"><input class="ac-in" id="s-year" name="year" inputmode="numeric" dir="ltr" maxlength="4" value="{{ this_year|fa }}" required><button type="submit" class="ac-btn ac-btn-brand">باز کردن</button></div>
+            <p class="ac-hint">سال از اول فروردین تا آخر اسفند است؛ سند افتتاحیه را خودتان با نوع «افتتاحیه» ثبت کنید.</p>
+        </form>
+    </section>
+    <section class="ac-card" aria-labelledby="setup-chart">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="setup-chart">سرفصل حساب‌ها</h2></div>
+        {% if has_accounts %}
+        <p class="muted" style="margin:0 0 14px"><i class="fas fa-circle-check" style="color:var(--ok)" aria-hidden="true"></i> سرفصل‌ها ثبت شده‌اند. حساب تازه را از صفحهٔ «سرفصل حساب‌ها» اضافه کنید.</p>
+        <button type="button" class="ac-btn" hx-get="{{ panel_url }}?tab=accounts">مشاهده سرفصل حساب‌ها</button>
+        {% else %}
+        <p class="muted" style="margin:0 0 14px">سرفصل پیش‌فرض دهیاری (بانک‌ها، بدهکاران، بستانکاران، منابع و مصارف بودجه) را بسازید و بعد حساب‌های خود را اضافه کنید.</p>
+        <form hx-post="{% url 'main:acc_p_seed' %}" hx-swap="none">{% csrf_token %}<button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>ساخت سرفصل پیش‌فرض</button></form>
+        {% endif %}
+    </section>
+</div>

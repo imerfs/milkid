@@ -1,0 +1,10 @@
+{% load accounting_tags %}
+{% if page.has_other_pages %}
+<nav class="ac-pager" aria-label="صفحه‌بندی">
+    <span>صفحه {{ page.number|fa }} از {{ page.paginator.num_pages|fa }}</span>
+    <div>
+        {% if page.has_previous %}<button type="button" class="ac-btn ac-btn-sm" hx-get="{{ panel_url }}?{{ query }}&page={{ page.previous_page_number }}">قبلی</button>{% endif %}
+        {% if page.has_next %}<button type="button" class="ac-btn ac-btn-sm" hx-get="{{ panel_url }}?{{ query }}&page={{ page.next_page_number }}">بعدی</button>{% endif %}
+    </div>
+</nav>
+{% endif %}

@@ -1,0 +1,93 @@
+{% load jalali_tags %}
+<section dir="rtl" aria-label="صندوق ایمیل">
+  <h2 class="text-2xl font-bold mb-4"><i class="fas fa-envelope" style="color: var(--primary-color)"></i> صندوق ایمیل <span class="text-sm text-gray-500 font-normal" dir="ltr">{{ mail_from }}</span></h2>
+  {% for m in messages %}<div class="mb-3 p-3 rounded-lg text-sm {% if m.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-800{% endif %}">{{ m }}</div>{% endfor %}
+  <div class="mail-panel">
+    <nav class="mail-side" aria-label="پوشه‌ها">
+      <a class="mail-compose-btn" href="{% url 'main:admin_mail' %}?compose=1"><i class="fas fa-pen"></i> نوشتن ایمیل</a>
+      <a class="mail-folder {% if mail_folder == 'inbox' %}active{% endif %}" href="{% url 'main:admin_mail' %}?folder=inbox"><span><i class="fas fa-inbox ml-2"></i> دریافتی</span>{% if mail_unread %}<strong>{{ mail_unread }}</strong>{% endif %}</a>
+      <a class="mail-folder {% if mail_folder == 'sent' %}active{% endif %}" href="{% url 'main:admin_mail' %}?folder=sent"><span><i class="fas fa-paper-plane ml-2"></i> ارسال‌شده</span></a>
+      <a class="mail-folder {% if mail_folder == 'trash' %}active{% endif %}" href="{% url 'main:admin_mail' %}?folder=trash"><span><i class="fas fa-trash ml-2"></i> زباله‌دان</span>{% if mail_trash %}<span>{{ mail_trash }}</span>{% endif %}</a>
+    </nav>
+
+    <div class="mail-main">
+      {% if mail_compose.open %}
+        <form method="post" action="{% url 'main:admin_mail_send' %}" class="mail-form">
+          {% csrf_token %}
+          <h3 class="font-bold mb-3">ایمیل جدید</h3>
+          <label for="mail-to">به (چند گیرنده را با ویرگول جدا کنید)</label>
+          <input id="mail-to" name="to" dir="ltr" required value="{{ mail_compose.to|default:'' }}">
+          <label for="mail-subject">موضوع</label>
+          <input id="mail-subject" name="subject" maxlength="200" required value="{{ mail_compose.subject|default:'' }}">
+          <label for="mail-body">متن</label>
+          <textarea id="mail-body" name="body" rows="12" maxlength="20000" required>{{ mail_compose.body|default:'' }}</textarea>
+          <button class="mail-compose-btn" style="width:auto;display:inline-flex;padding:.5rem 1.5rem"><i class="fas fa-paper-plane"></i> ارسال</button>
+          <a class="mail-btn" href="{% url 'main:admin_mail' %}">انصراف</a>
+        </form>
+      {% elif mail_selected %}
+        <div class="mail-bar">
+          <a class="mail-btn" href="{% url 'main:admin_mail' %}?folder={{ mail_folder }}"><i class="fas fa-arrow-right"></i> بازگشت</a>
+          <a class="mail-btn" href="{% url 'main:admin_mail' %}?compose=1&reply={{ mail_selected.id }}"><i class="fas fa-reply"></i> پاسخ</a>
+          <form method="post" action="{% url 'main:admin_mail_action' %}" class="d-flex gap-2" style="display:flex;gap:.5rem">
+            {% csrf_token %}<input type="hidden" name="ids" value="{{ mail_selected.id }}"><input type="hidden" name="folder" value="{{ mail_folder }}">
+            {% if mail_selected.folder == 'trash' %}
+              <button class="mail-btn" name="op" value="restore">بازگردانی</button>
+              <button class="mail-btn" name="op" value="delete" onclick="return confirm('برای همیشه حذف شود؟')">حذف همیشگی</button>
+            {% else %}
+              <button class="mail-btn" name="op" value="trash"><i class="fas fa-trash"></i> حذف</button>
+              <button class="mail-btn" name="op" value="unread">خوانده‌نشده</button>
+            {% endif %}
+          </form>
+        </div>
+        <article class="mail-view">
+          <h3>{{ mail_selected.subject|default:'(بدون موضوع)' }}</h3>
+          {% if mail_selected.failed %}<div class="mb-2 p-2 rounded bg-red-50 text-red-700 text-sm">ارسال ناموفق بود: {{ mail_selected.error }}</div>{% endif %}
+          <div class="text-sm text-gray-600">
+            از: <span dir="ltr">{{ mail_selected.sender|default:'—' }}</span>{% if mail_selected.user %} ({{ mail_selected.user.get_full_name|default:mail_selected.user.username }}){% endif %}<br>
+            به: <span dir="ltr">{{ mail_selected.recipients|default:'پشتیبانی' }}</span><br>
+            {{ mail_selected.created_at|jalali_date }}
+          </div>
+          <div class="mail-body">{{ mail_selected.body }}</div>
+        </article>
+      {% else %}
+        <form method="post" action="{% url 'main:admin_mail_action' %}" id="mail-list-form">
+          {% csrf_token %}<input type="hidden" name="folder" value="{{ mail_folder }}">
+          <div class="mail-bar">
+            <input type="checkbox" aria-label="انتخاب همه" onclick="document.querySelectorAll('#mail-list-form .mail-check').forEach(function (c) { c.checked = this.checked }, this)">
+            {% if mail_folder == 'trash' %}
+              <button class="mail-btn" name="op" value="restore">بازگردانی</button>
+              <button class="mail-btn" name="op" value="delete" onclick="return confirm('موارد انتخاب‌شده برای همیشه حذف شوند؟')">حذف همیشگی</button>
+            {% else %}
+              <button class="mail-btn" name="op" value="trash"><i class="fas fa-trash"></i></button>
+              <button class="mail-btn" name="op" value="read">خوانده‌شده</button>
+              <button class="mail-btn" name="op" value="unread">خوانده‌نشده</button>
+            {% endif %}
+            <input type="search" form="mail-search" name="q" value="{{ mail_q }}" placeholder="جستجو در ایمیل‌ها" aria-label="جستجو">
+            {% if mail_folder == 'inbox' %}
+              <button class="mail-btn" formaction="{% url 'main:admin_mail_fetch' %}" {% if not imap_ready %}disabled title="IMAP_HOST در فایل .env تنظیم نشده است"{% endif %}><i class="fas fa-sync"></i> دریافت از سرور</button>
+            {% endif %}
+          </div>
+          {% for m in mail_page %}
+            <div class="mail-row {% if m.is_read %}read{% else %}unread{% endif %}">
+              <input type="checkbox" class="mail-check" name="ids" value="{{ m.id }}" aria-label="انتخاب">
+              <a class="who" href="{% url 'main:admin_mail' %}?folder={{ mail_folder }}&id={{ m.id }}" dir="ltr" style="color:inherit;text-decoration:none">{% if mail_folder == 'sent' %}{{ m.recipients }}{% else %}{{ m.sender|default:'—' }}{% endif %}</a>
+              <a class="cut" href="{% url 'main:admin_mail' %}?folder={{ mail_folder }}&id={{ m.id }}" style="color:inherit;text-decoration:none">{% if m.failed %}<i class="fas fa-exclamation-triangle text-red-600"></i> {% endif %}{% if m.source == 'support' %}<i class="fas fa-headset" title="پشتیبانی سایت"></i> {% endif %}{{ m.subject|default:'(بدون موضوع)' }} <span class="snip">— {{ m.body|truncatechars:80 }}</span></a>
+              <span class="text-xs text-gray-500">{{ m.created_at|jalali_date }}</span>
+            </div>
+          {% empty %}
+            <div class="mail-empty"><i class="fas fa-envelope-open text-3xl mb-2"></i><p>{% if mail_q %}نتیجه‌ای پیدا نشد.{% else %}این پوشه خالی است.{% endif %}</p>
+              {% if mail_folder == 'inbox' and not imap_ready %}<p class="text-xs">پیام‌های فرم پشتیبانی سایت اینجا می‌آیند. برای دریافت ایمیل از سرور، IMAP_HOST و IMAP_USER و IMAP_PASSWORD را در .env تنظیم کنید.</p>{% endif %}</div>
+          {% endfor %}
+        </form>
+        <form id="mail-search" method="get" action="{% url 'main:admin_mail' %}"><input type="hidden" name="folder" value="{{ mail_folder }}"></form>
+        {% if mail_page.has_other_pages %}
+          <div class="mail-bar">
+            {% if mail_page.has_previous %}<a class="mail-btn" href="?folder={{ mail_folder }}&q={{ mail_q|urlencode }}&page={{ mail_page.previous_page_number }}">قبلی</a>{% endif %}
+            <span>صفحه {{ mail_page.number }} از {{ mail_page.paginator.num_pages }}</span>
+            {% if mail_page.has_next %}<a class="mail-btn" href="?folder={{ mail_folder }}&q={{ mail_q|urlencode }}&page={{ mail_page.next_page_number }}">بعدی</a>{% endif %}
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</section>

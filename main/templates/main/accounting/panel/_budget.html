@@ -1,0 +1,37 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <div class="ac-tools">
+        <div class="ac-seg" role="group" aria-label="دامنهٔ اسناد">
+            <button type="button" class="{% if not final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=budget">همه اسناد</button>
+            <button type="button" class="{% if final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=budget&final=1">فقط قطعی</button>
+        </div>
+        <a class="ac-link ok ac-spaced" href="{% url 'main:acc_budget_export' year.id %}{% if final_only %}?final=1{% endif %}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
+    </div>
+    <div class="ac-table-wrap">
+        <table>
+            <thead><tr><th>کد</th><th>شرح حساب</th><th>بودجه مصوب</th><th>عملکرد</th><th>باقی‌مانده</th><th style="min-width:9rem">درصد</th></tr></thead>
+            <tbody>
+            {% for r in rows %}
+                <tr class="{% if r.over %}over{% endif %}">
+                    <td class="muted nw" dir="ltr">{{ r.code }}</td>
+                    <td><a class="ac-link" href="{% url 'main:acc_ledger' year.id r.account_id %}">{{ r.title }}</a> <span class="ac-tag">{% if r.kind == 'resource' %}منبع{% else %}مصرف{% endif %}</span></td>
+                    <td class="num-cell">{{ r.budget|rial }}</td>
+                    <td class="num-cell">{{ r.actual|rial }}</td>
+                    <td class="num-cell">{{ r.remaining|rial }}</td>
+                    <td>
+                        {% if r.percent is None %}<span class="muted">—</span>{% else %}
+                        <div style="display:flex;align-items:center;gap:8px"><span class="ac-track" style="flex:1"><span class="ac-fill{% if r.over %} over{% endif %}" style="width: {% if r.percent > 100 %}100{% else %}{{ r.percent }}{% endif %}%"></span></span><span style="font-size:11.5px;white-space:nowrap">{{ r.percent|fa }}٪</span></div>{% endif %}
+                        {% if r.over %}<span class="ac-bad-text" style="font-size:11.5px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> بیش از بودجه</span>{% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6"><div class="ac-empty"><span class="eic"><i class="fas fa-chart-pie" aria-hidden="true"></i></span><h4>هنوز بودجه یا گردشی ثبت نشده است</h4></div></td></tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr><td></td><td>جمع منابع</td><td class="num-cell">{{ totals.resource.budget|rial }}</td><td class="num-cell">{{ totals.resource.actual|rial }}</td><td colspan="2"></td></tr>
+                <tr><td></td><td>جمع مصارف</td><td class="num-cell">{{ totals.use.budget|rial }}</td><td class="num-cell">{{ totals.use.actual|rial }}</td><td colspan="2"></td></tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

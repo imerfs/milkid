@@ -1,0 +1,23 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <div class="ac-tools">
+        <form hx-get="{{ panel_url }}" hx-trigger="submit, keyup changed delay:400ms from:input[name=q]" role="search">
+            <input type="hidden" name="tab" value="parties">
+            <label class="ac-searchbox"><span class="ac-sr">جستجوی نام یا کد ملی</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="نام یا کد ملی..."></label>
+        </form>
+        <button type="button" class="ac-btn ac-btn-brand ac-spaced" hx-get="{% url 'main:acc_p_party_new' %}" hx-target="#acc-modal-body"><i class="fas fa-user-plus" aria-hidden="true"></i><span class="lbl">طرف حساب جدید</span></button>
+    </div>
+    <div class="ac-table-wrap">
+        <table>
+            <thead><tr><th>نام</th><th>نوع</th><th>کد ملی / شناسه ملی</th><th>تماس</th></tr></thead>
+            <tbody>
+            {% for p in page %}
+                <tr><td>{{ p.name }}</td><td><span class="ac-tag">{{ p.get_kind_display }}</span></td><td dir="ltr" class="muted" style="text-align:end">{{ p.national_id }}</td><td dir="ltr" class="muted" style="text-align:end">{{ p.mobile|default:p.phone }}</td></tr>
+            {% empty %}
+                <tr><td colspan="4"><div class="ac-empty"><span class="eic"><i class="fas fa-address-book" aria-hidden="true"></i></span><h4>{% if filtered %}موردی پیدا نشد{% else %}طرف‌حسابی ثبت نشده است{% endif %}</h4></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'main/accounting/panel/_pager.html' %}
+</div>

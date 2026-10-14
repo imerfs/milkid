@@ -181,138 +181,29 @@ def inspector_dashboard(request):
     return render(request, 'main/dashboards/Technical supervisor.html', context)
 
 
+# Menu entries of the accountant page that are not built yet; shown disabled.
+ACCOUNTANT_SOON = []
+
+
 @policy_required('staff.accountant')
 def accountant_dashboard(request):
-    """Dashboard for financial manager (مسئول مالی)"""
-    from main.models import Payment, Notification
-    from django.db.models import Sum, Count, Q
-    from datetime import datetime, timedelta
-    from dateutil.relativedelta import relativedelta
-    import json
-    import jdatetime
-    
-    user_profile = request.user.profile
-    
-    # Get filter parameters from request
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-    section_filter = request.GET.get('section', 'all')
-    search_query = request.GET.get('search', '')
-    page_number = request.GET.get('page', 1)
-    
-    # Get all payments
-    all_payments = Payment.objects.all()
-    filtered_payments = all_payments
-    
-    # Apply date filter
-    if date_from:
-        try:
-            from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
-            filtered_payments = filtered_payments.filter(created_at__date__gte=from_date)
-        except:
-            pass
-    
-    if date_to:
-        try:
-            to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
-            filtered_payments = filtered_payments.filter(created_at__date__lte=to_date)
-        except:
-            pass
-    
-    # Apply section filter
-    if section_filter == 'income':
-        filtered_payments = filtered_payments.filter(payment_type__in=['property_tax', 'permit_fee'])
-    elif section_filter == 'expense':
-        filtered_payments = filtered_payments.filter(payment_type__in=['construction_fine', 'service_fee', 'other'])
-    elif section_filter == 'salary':
-        filtered_payments = filtered_payments.filter(payment_type='service_fee')
-    
-    # Apply search filter
-    if search_query:
-        filtered_payments = filtered_payments.filter(
-            Q(description__icontains=search_query) |
-            Q(receipt_number__icontains=search_query) |
-            Q(user__first_name__icontains=search_query) |
-            Q(user__last_name__icontains=search_query)
-        )
-    
-    # Pagination for transactions
-    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-    paginator = Paginator(filtered_payments.order_by('-created_at'), 10)
+    """Dashboard for financial manager (مسئول مالی): one page; the workspace loads from main/views/accounting_panel."""
+    from main.models import Notification
+    from main.accounting import ledger
+    from main.office.errors import OfficeError
+
+    # The workspace needs a municipality; without one the page says so instead of failing.
     try:
-        transactions_page = paginator.page(page_number)
-    except PageNotAnInteger:
-        transactions_page = paginator.page(1)
-    except EmptyPage:
-        transactions_page = paginator.page(paginator.num_pages)
-    
-    # Financial Statistics
-    total_income = all_payments.filter(status='completed', payment_type__in=['property_tax', 'permit_fee']).aggregate(Sum('amount'))['amount__sum'] or 0
-    total_expense = all_payments.filter(status='completed', payment_type__in=['construction_fine', 'service_fee', 'other']).aggregate(Sum('amount'))['amount__sum'] or 0
-    pending_payments = all_payments.filter(status='pending').aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # Monthly income trend (last 6 months)
-    monthly_income_labels = []
-    monthly_income_data = []
-    for i in range(5, -1, -1):
-        date = timezone.now() - relativedelta(months=i)
-        jalali_date = jdatetime.datetime.fromgregorian(datetime=date)
-        month_name = jalali_date.strftime('%B')[:3]
-        
-        income = all_payments.filter(
-            status='completed',
-            payment_type__in=['property_tax', 'permit_fee'],
-            created_at__month=date.month,
-            created_at__year=date.year
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        monthly_income_labels.append(month_name)
-        monthly_income_data.append(float(income))
-    
-    # Payment type distribution
-    payment_type_labels = []
-    payment_type_data = []
-    for payment_type_code, payment_type_name in Payment.PAYMENT_TYPES:
-        count = all_payments.filter(payment_type=payment_type_code, status='completed').count()
-        if count > 0:
-            payment_type_labels.append(payment_type_name)
-            payment_type_data.append(count)
-    
-    # Recent notifications
-    notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5]
-    
-    # Pending payments for approval
-    pending_for_approval = all_payments.filter(status='pending').order_by('-created_at')[:10]
-    
-    stats = {
-        'total_income': int(total_income),
-        'total_expense': int(total_expense),
-        'net_profit': int(total_income - total_expense),
-        'pending_payments': int(pending_payments),
-        'total_transactions': all_payments.count(),
-        'pending_count': all_payments.filter(status='pending').count(),
-        'completed_count': all_payments.filter(status='completed').count(),
-        'rejected_count': all_payments.filter(status='rejected').count(),
-        'monthly_income_labels': json.dumps(monthly_income_labels),
-        'monthly_income_data': json.dumps(monthly_income_data),
-        'payment_type_labels': json.dumps(payment_type_labels),
-        'payment_type_data': json.dumps(payment_type_data),
-    }
-    
-    context = {
-        'user_profile': user_profile,
-        'stats': stats,
-        'transactions': transactions_page,
-        'notifications': notifications,
-        'pending_for_approval': pending_for_approval,
-        'filters': {
-            'date_from': date_from,
-            'date_to': date_to,
-            'section': section_filter,
-            'search': search_query,
-        }
-    }
-    return render(request, 'main/dashboards/accountant.html', context)
+        acc_muni_name = ledger.municipality_of(request.user).name
+    except OfficeError:
+        acc_muni_name = None
+    return render(request, 'main/dashboards/accountant.html', {
+        'acc_ready': acc_muni_name is not None,
+        'acc_muni_name': acc_muni_name or '',
+        'user_profile': request.user.profile,
+        'notifications': Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5],
+        'acc_soon': ACCOUNTANT_SOON,
+    })
 
 
 @policy_required('staff.any')

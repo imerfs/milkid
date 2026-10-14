@@ -254,7 +254,12 @@ class UserProfile(GeographyLink):
 
     # Additional fields
     is_verified = models.BooleanField(default=False, verbose_name='تایید شده')
+    # Set for accounts a dehyari creates (initial password = national ID); cleared on the first password change.
+    must_change_password = models.BooleanField(default=False, verbose_name='نیاز به تغییر رمز')
     deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='تاریخ حذف')
+    # Original unique values of a deleted account (the live ones are released for a new registration).
+    deleted_username = models.CharField(max_length=150, blank=True, default='', editable=False)
+    deleted_national_id = models.CharField(max_length=10, blank=True, default='', editable=False)
     is_active = models.BooleanField(default=True, verbose_name='فعال')
     approval_status = models.CharField(
         max_length=20,
@@ -1562,3 +1567,51 @@ class CityVillageRequest(models.Model):
 from .models_office import *  # noqa: E402,F401,F403
 
 from .models_accounting import *  # noqa: E402,F401,F403
+from .models_finance import *  # noqa: E402,F401,F403
+from .models_income import *  # noqa: E402,F401,F403
+from .models_payroll import *  # noqa: E402,F401,F403
+from .models_council import *  # noqa: E402,F401,F403
+from .models_mail import *  # noqa: E402,F401,F403
+
+
+class BlockedIP(models.Model):
+    """Client address refused by main.ipblock.BlockedIPMiddleware; managed by admins only."""
+    ip = models.GenericIPAddressField(unique=True, verbose_name='نشانی IP')
+    reason = models.CharField(max_length=200, blank=True, verbose_name='دلیل')
+    created_by = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class TwoFactorDevice(models.Model):
+    """TOTP secret of a user who turned on two-step login (main.twofactor)."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='two_factor')
+    secret = models.CharField(max_length=64)
+    confirmed = models.BooleanField(default=False)
+    last_step = models.BigIntegerField(null=True, blank=True)   # last accepted time step, against replay
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class SiteRedirect(models.Model):
+    """301/302 redirect managed from the admin server panel (main.siteextras.RedirectMiddleware)."""
+    old_path = models.CharField(max_length=300, unique=True, verbose_name='نشانی قدیم')
+    new_path = models.CharField(max_length=500, verbose_name='نشانی جدید')
+    permanent = models.BooleanField(default=True, verbose_name='دائمی (۳۰۱)')
+    hits = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['old_path']
+
+
+class DailyPageView(models.Model):
+    """Page views per day and path (main.siteextras.PageViewMiddleware), for the admin stats tab."""
+    day = models.DateField()
+    path = models.CharField(max_length=200)
+    views = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['day', 'path'], name='uniq_daily_page_view')]
+        indexes = [models.Index(fields=['day'])]

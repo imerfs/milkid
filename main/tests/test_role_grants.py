@@ -110,13 +110,14 @@ class RevokingRoles(Village):
 class RolesPage(Village):
     def test_lists_staff_and_finds_residents_of_the_village_only(self):
         self.grant(self.resident, 'accountant')
-        page = client_for(self.dehyari).get(reverse('main:role_grants')).content.decode()
+        panel = reverse('main:mayor_panel', args=['employees'])
+        page = client_for(self.dehyari).get(panel).content.decode()
         self.assertIn(self.resident.username, page)
-        found = client_for(self.dehyari).get(reverse('main:role_grants'), {'q': 'citizen'}).content.decode()
+        found = client_for(self.dehyari).get(panel, {'q': 'citizen'}).content.decode()
         self.assertNotIn(self.stranger.username, found)
 
     def test_empty_state_when_nobody_has_a_role_yet(self):
-        page = client_for(self.dehyari).get(reverse('main:role_grants')).content.decode()
+        page = client_for(self.dehyari).get(reverse('main:mayor_panel', args=['employees'])).content.decode()
         self.assertIn('هنوز نقشی', page)
 
     def test_citizen_cannot_open_the_page(self):

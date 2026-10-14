@@ -1,0 +1,52 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='قرارداد' %}
+<div class="ac-mb">
+    <dl class="ac-dl">
+        <div><dt>شماره</dt><dd>{{ c.number|fa }}</dd></div>
+        <div><dt>وضعیت</dt><dd><span class="ac-st {% if c.status == 'active' %}ok{% elif c.status == 'suspended' %}warn{% elif c.status == 'terminated' %}bad{% else %}brand{% endif %}">{{ c.get_status_display }}</span></dd></div>
+        <div><dt>پیمانکار</dt><dd>{{ c.contractor.name }}</dd></div>
+        <div class="wide"><dt>موضوع</dt><dd>{{ c.subject }}</dd></div>
+        <div><dt>دوره</dt><dd>{{ c.start_date|jalali_date|fa }} تا {{ c.end_date|jalali_date|fa }}</dd></div>
+        <div><dt>مبلغ قرارداد</dt><dd>{{ c.amount|rial }} ریال</dd></div>
+        <div><dt>سقف مبلغ</dt><dd>{{ c.ceiling|rial }} ریال</dd></div>
+        <div><dt>کارکرد تاکنون</dt><dd>{{ used|rial }} ریال</dd></div>
+        <div><dt>باقی‌مانده سقف</dt><dd>{{ left|rial }} ریال</dd></div>
+        <div class="wide"><dt>درصدها</dt><dd style="font-weight:400">ارزش افزوده {{ c.vat_pct|floatformat:"-2"|fa }}٪ · حسن انجام کار {{ c.good_performance_pct|floatformat:"-2"|fa }}٪ · بیمه پیمانکار {{ c.contractor_insurance_pct|floatformat:"-2"|fa }}٪ · بیمه کارفرما {{ c.employer_insurance_pct|floatformat:"-2"|fa }}٪ · مالیات {{ c.tax_pct|floatformat:"-2"|fa }}٪</dd></div>
+    </dl>
+
+    <h3 class="ac-sec-title">صورت‌وضعیت‌ها</h3>
+    <div class="ac-lines" style="margin-bottom:16px"><table>
+        <thead><tr><th>شماره</th><th>تاریخ</th><th>کارکرد</th><th>ارزش افزوده</th><th>حسن انجام کار</th><th>بیمه</th><th>مالیات</th><th>خالص پرداخت</th><th><span class="ac-sr">عملیات</span></th></tr></thead>
+        <tbody>
+        {% for s in statements %}
+            <tr{% if s.canceled_at %} style="opacity:.5;text-decoration:line-through"{% endif %}>
+                <td>{{ s.number|fa }}</td><td class="nw">{{ s.date|jalali_date|fa }}</td><td class="num-cell">{{ s.gross|rial }}</td><td class="num-cell">{{ s.vat|rial }}</td><td class="num-cell">{{ s.good_performance|rial }}</td><td class="num-cell">{{ s.contractor_insurance|rial }}</td><td class="num-cell">{{ s.tax|rial }}</td><td class="num-cell"><b>{{ s.net|rial }}</b></td>
+                <td>{% if not s.canceled_at and not year.is_closed %}<form hx-post="{% url 'main:acc_p_statement_cancel' s.id %}" hx-swap="none" hx-confirm="این صورت‌وضعیت باطل شود؟">{% csrf_token %}<button class="ac-link bad" type="submit">ابطال</button></form>{% endif %}</td>
+            </tr>
+        {% empty %}<tr><td colspan="9" class="muted" style="text-align:center;padding:16px">صورت‌وضعیتی ثبت نشده است.</td></tr>{% endfor %}
+        </tbody>
+        {% if statements %}<tfoot><tr><td colspan="2"><b>جمع</b></td><td class="num-cell">{{ totals.gross|rial }}</td><td class="num-cell">{{ totals.vat|rial }}</td><td class="num-cell">{{ totals.good_performance|rial }}</td><td class="num-cell">{{ totals.contractor_insurance|rial }}</td><td class="num-cell">{{ totals.tax|rial }}</td><td class="num-cell"><b>{{ totals.net|rial }}</b></td><td></td></tr></tfoot>{% endif %}
+    </table></div>
+
+    {% if guarantees %}<h3 class="ac-sec-title">ضمانت‌نامه‌ها</h3>
+    <ul class="muted" style="margin:0 0 16px;padding-inline-start:18px">{% for g in guarantees %}<li>{{ g.get_kind_display }} - {{ g.get_doc_kind_display }} {{ g.serial|fa }} - {{ g.amount|rial }} ریال - تا {{ g.expires_on|jalali_date|fa }} ({{ g.get_status_display }})</li>{% endfor %}</ul>{% endif %}
+
+    {% if c.status == 'active' and not year.is_closed %}
+    <form method="post" hx-post="{% url 'main:acc_p_statement_new' c.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-box" novalidate>
+        {% csrf_token %}
+        <h3 class="ac-sec-title">ثبت صورت‌وضعیت</h3>
+        <div class="ac-fgrid">
+            {% for f, _ in fields %}<div class="ac-field s{{ f.size }}"><label for="s-{{ f.name }}">{{ f.label }}</label><input class="ac-in" id="s-{{ f.name }}" name="{{ f.name }}" {% if f.kind == 'date' %}dir="ltr"{% elif f.kind == 'amount' %}inputmode="numeric" dir="ltr"{% endif %} value="{{ p|get:f.name }}"></div>{% endfor %}
+        </div>
+        <div class="ac-foot"><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-plus" aria-hidden="true"></i>ثبت صورت‌وضعیت</button></div>
+    </form>
+    {% endif %}
+    {% if c.status == 'active' or c.status == 'suspended' %}
+    <form hx-post="{% url 'main:acc_p_contract_status' c.id %}" hx-swap="none" class="ac-foot" style="justify-content:flex-start;margin-top:12px">
+        {% csrf_token %}
+        <label for="c-status" class="muted">تغییر وضعیت قرارداد:</label>
+        <select class="ac-in" id="c-status" name="status" style="max-width:200px">{% for k, label in statuses %}<option value="{{ k }}" {% if k == c.status %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <button type="submit" class="ac-btn">اعمال</button>
+    </form>
+    {% endif %}
+</div>

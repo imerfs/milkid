@@ -41,6 +41,27 @@
         </div>
     </section>
 
+    <section class="card mb-4" aria-labelledby="create-heading">
+        <div class="card-header"><h2 class="h5 mb-0" id="create-heading"><i class="fas fa-id-card ms-2"></i>ساخت حساب کارمند</h2></div>
+        <div class="card-body">
+            <p class="text-muted small">حساب در روستای شما ساخته می‌شود و رمز موقت فقط یک بار نمایش داده می‌شود.</p>
+            <form method="post" action="{% url 'main:role_create_account' %}" class="row g-2" data-once>
+                {% csrf_token %}
+                <div class="col-12 col-md-4"><label class="form-label" for="c-first">نام</label><input class="form-control" id="c-first" name="first_name" maxlength="30" required></div>
+                <div class="col-12 col-md-4"><label class="form-label" for="c-last">نام خانوادگی</label><input class="form-control" id="c-last" name="last_name" maxlength="30" required></div>
+                <div class="col-12 col-md-4"><label class="form-label" for="c-user">نام کاربری</label><input class="form-control" id="c-user" name="username" dir="ltr" minlength="3" maxlength="30" pattern="[A-Za-z0-9._\-]+" required></div>
+                <div class="col-12 col-md-4"><label class="form-label" for="c-nid">کد ملی</label><input class="form-control" id="c-nid" name="national_id" dir="ltr" inputmode="numeric" pattern="\d{10}" maxlength="10" required></div>
+                <div class="col-12 col-md-4"><label class="form-label" for="c-mobile">موبایل</label><input class="form-control" id="c-mobile" name="mobile_number" dir="ltr" inputmode="numeric" pattern="09\d{9}" maxlength="11" required></div>
+                <div class="col-12 col-md-4"><label class="form-label" for="c-role">نقش</label>
+                    <select class="form-select" id="c-role" name="role" required>
+                        <option value="" selected disabled>انتخاب نقش…</option>
+                        {% for value, label, icon in grantable %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                    </select></div>
+                <div class="col-12"><button type="submit" class="btn btn-success"><i class="fas fa-user-plus ms-1"></i>ساخت حساب</button></div>
+            </form>
+        </div>
+    </section>
+
     <section class="card" aria-labelledby="grant-heading">
         <div class="card-header"><h2 class="h5 mb-0" id="grant-heading"><i class="fas fa-user-plus ms-2"></i>دادن نقش جدید</h2></div>
         <div class="card-body">

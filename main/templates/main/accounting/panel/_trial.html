@@ -1,0 +1,27 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <div class="ac-tools">
+        <div class="ac-seg" role="group" aria-label="دامنهٔ اسناد">
+            <button type="button" class="{% if not final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=trial">همه اسناد</button>
+            <button type="button" class="{% if final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=trial&final=1">فقط قطعی</button>
+        </div>
+    </div>
+    <div class="ac-table-wrap">
+        <table>
+            <thead><tr><th>کد</th><th>شرح حساب</th><th>بدهکار</th><th>بستانکار</th><th>مانده</th></tr></thead>
+            <tbody>
+            {% for r in rows %}
+                <tr>
+                    <td class="muted nw" dir="ltr">{{ r.code }}</td>
+                    <td><button type="button" class="ac-link" hx-get="{% url 'main:acc_p_ledger' year.id r.account_id %}{% if final_only %}?final=1{% endif %}" hx-target="#acc-modal-body">{{ r.title }}</button></td>
+                    <td class="num-cell">{{ r.debit|rial }}</td><td class="num-cell">{{ r.credit|rial }}</td>
+                    <td class="num-cell">{{ r.balance|rial }}{% if r.balance > 0 %} بدهکار{% elif r.balance < 0 %} بستانکار{% endif %}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5"><div class="ac-empty"><span class="eic"><i class="fas fa-scale-balanced" aria-hidden="true"></i></span><h4>هنوز گردشی ثبت نشده است</h4></div></td></tr>
+            {% endfor %}
+            </tbody>
+            <tfoot><tr><td></td><td>جمع</td><td class="num-cell">{{ totals.debit|rial }}</td><td class="num-cell">{{ totals.credit|rial }}</td><td></td></tr></tfoot>
+        </table>
+    </div>
+</div>

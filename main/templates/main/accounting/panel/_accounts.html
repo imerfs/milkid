@@ -1,0 +1,26 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <div class="ac-tools">
+        <form hx-get="{{ panel_url }}" hx-trigger="submit, keyup changed delay:400ms from:input[name=q]" role="search">
+            <input type="hidden" name="tab" value="accounts">
+            <label class="ac-searchbox"><span class="ac-sr">جستجوی کد یا شرح حساب</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="کد یا شرح حساب..."></label>
+        </form>
+        <button type="button" class="ac-btn ac-btn-brand ac-spaced" hx-get="{% url 'main:acc_p_account_new' %}" hx-target="#acc-modal-body"><i class="fas fa-plus" aria-hidden="true"></i><span class="lbl">حساب جدید</span></button>
+    </div>
+    <div class="ac-table-wrap">
+        <table>
+            <thead><tr><th>کد</th><th>شرح</th><th>نوع</th><th>ماهیت</th><th>ثبت سند</th></tr></thead>
+            <tbody>
+            {% for a in page %}
+                <tr><td class="muted nw" dir="ltr">{{ a.code }}</td>
+                    <td>{{ a.title }}{% if a.requires_party %} <span class="ac-st brand">طرف حساب</span>{% endif %}</td>
+                    <td>{{ a.get_kind_display }}</td><td>{{ a.get_nature_display }}</td>
+                    <td>{% if a.is_postable %}<i class="fas fa-check" style="color:var(--ok)" aria-label="بله"></i>{% else %}<span class="muted">سرفصل</span>{% endif %}</td></tr>
+            {% empty %}
+                <tr><td colspan="5"><div class="ac-empty"><span class="eic"><i class="fas fa-sitemap" aria-hidden="true"></i></span><h4>{% if filtered %}موردی پیدا نشد{% else %}حسابی ثبت نشده است{% endif %}</h4>{% if not filtered %}<p>از صفحهٔ «سال مالی و شروع کار» سرفصل پیش‌فرض را بسازید.</p>{% endif %}</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'main/accounting/panel/_pager.html' %}
+</div>

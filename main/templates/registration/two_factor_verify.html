@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}ورود دو مرحله‌ای - ملک آیدی{% endblock %}
+{% block content %}
+<div class="container py-5" dir="rtl" style="max-width:28rem">
+  <h1 class="h4 mb-3"><i class="fas fa-shield-alt ml-2"></i>ورود دو مرحله‌ای</h1>
+  {% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+  <p>کد شش‌رقمی برنامهٔ احراز هویت گوشی خود را وارد کنید.</p>
+  <form method="post">
+    {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    <label for="code" class="form-label">کد تأیید</label>
+    <input id="code" name="code" class="form-control mb-3" dir="ltr" inputmode="numeric" autocomplete="one-time-code" maxlength="6" autofocus required>
+    <button class="btn btn-primary w-100">ورود</button>
+  </form>
+  <p class="mt-3 small"><a href="{% url 'main:logout' %}">خروج و ورود با حساب دیگر</a></p>
+</div>
+{% endblock %}

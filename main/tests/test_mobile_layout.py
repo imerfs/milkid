@@ -14,9 +14,10 @@ class PanelMenusOnPhones(TestCase):
 
     def test_accountant_menu_starts_closed_and_opens_from_the_button(self):
         html = self.html('accountant', 'main:accountant_dashboard')
-        self.assertIn('translate-x-full md:translate-x-0', html)      # closed on phones, always open on desktop
-        self.assertNotIn('translate-x-0 md:translate-x-0', html)      # the old always-open state
-        self.assertIn('id="sidebar-toggle"', html)
+        self.assertIn('id="ac-burger"', html)                         # the phone button that opens the drawer
+        self.assertIn('class="ac-side"', html)                        # closed by default; `.open` shows it on phones
+        self.assertNotIn('class="ac-side open"', html)
+        self.assertIn('class="ac-mobnav"', html)                      # pill navigation stays reachable on phones
 
     def test_expert_panel_has_a_real_phone_menu(self):
         html = self.html('engineer', 'main:dehyari_expert_dashboard')

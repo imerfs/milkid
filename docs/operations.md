@@ -36,3 +36,13 @@ PostgreSQL (Docker): `docker compose exec -T db pg_restore -U melkid -d melkid -
 - `LOG_FORMAT=json` prints one JSON object per log line (Docker sets it). `docker compose logs -f web`.
 - `SENTRY_DSN=...` turns on error reporting (no personal data is sent). Sentry's hosted service may be unreachable from Iran:
   use a self-hosted Sentry/GlitchTip DSN instead.
+
+## Admin server panel and two-step login
+
+`/dashboard/admin/server/` (admins only) shows resources, database tables, backups, error logs, the IP
+block list, cache and uploaded files. Every change it makes is logged to `logs/security.log`.
+
+An admin can turn on two-step login (TOTP, Google/Microsoft Authenticator) in its "ورود دو مرحله‌ای" tab.
+If that admin loses the phone, remove the device on the server and log in with the password only:
+
+    cd /opt/milkid && ./venv/bin/python manage.py shell -c "from main.models import TwoFactorDevice; TwoFactorDevice.objects.filter(user__username='USERNAME').delete()"

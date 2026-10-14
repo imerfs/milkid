@@ -1,0 +1,14 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='طرف حساب جدید' %}
+<form method="post" hx-post="{% url 'main:acc_p_party_new' %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
+    {% csrf_token %}
+    <div class="ac-fgrid">
+        <div class="ac-field s2"><label for="pt-kind">نوع</label><select class="ac-in" id="pt-kind" name="kind"><option value="real">حقیقی</option><option value="legal" {% if p.kind == 'legal' %}selected{% endif %}>حقوقی</option></select></div>
+        <div class="ac-field s2"><label for="pt-nid">کد ملی (۱۰ رقم) / شناسه ملی (۱۱ رقم)</label><input class="ac-in" id="pt-nid" name="national_id" inputmode="numeric" dir="ltr" maxlength="11" value="{{ p.national_id }}"></div>
+        <div class="ac-field s4"><label for="pt-name">نام</label><input class="ac-in" id="pt-name" name="name" maxlength="200" value="{{ p.name }}" required></div>
+        <div class="ac-field s2"><label for="pt-mobile">همراه</label><input class="ac-in" id="pt-mobile" name="mobile" inputmode="tel" dir="ltr" maxlength="20" value="{{ p.mobile }}"></div>
+        <div class="ac-field s2"><label for="pt-phone">تلفن</label><input class="ac-in" id="pt-phone" name="phone" inputmode="tel" dir="ltr" maxlength="20" value="{{ p.phone }}"></div>
+        <div class="ac-field s4"><label for="pt-addr">نشانی</label><input class="ac-in" id="pt-addr" name="address" maxlength="500" value="{{ p.address }}"></div>
+    </div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>انصراف</button><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button></div>
+</form>

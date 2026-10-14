@@ -1,0 +1,5 @@
+<div class="ac-mh">
+    <div><h2 id="acc-modal-title">{{ title }}</h2>{% if subtitle %}<p>{{ subtitle }}</p>{% endif %}</div>
+    <button type="button" data-acc-close class="ac-mclose" aria-label="بستن"><i class="fas fa-times" aria-hidden="true"></i></button>
+</div>
+{% if error %}<div class="ac-merr" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}

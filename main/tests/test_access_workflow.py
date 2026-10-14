@@ -45,8 +45,8 @@ class CouncilVoteAccess(TestCase):
         self.assertEqual(Vote.objects.count(), 0)
 
     def test_council_member_can_vote(self):
-        sr = make_request()
-        member = make_user('council')
+        sr = make_request(make_user('citizen', city_village='روستای الف'))
+        member = make_user('council', city_village='روستای الف')
         self.vote(member, sr)
         self.assertEqual(Vote.objects.filter(request=sr, council_member=member).count(), 1)
 

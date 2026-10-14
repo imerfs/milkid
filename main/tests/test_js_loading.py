@@ -42,7 +42,7 @@ class TailwindIsPrebuilt(TestCase):
         self.assertTrue(path)
         css = open(path, encoding='utf-8').read()
         self.assertLess(len(css), 150_000)
-        for selector in ('.bg-primary-600', '.animate-fade-in', '.md\:w-1\/2', '.dark\:bg-gray-800', '.font-vazir'):
+        for selector in ('.bg-primary-600', '.animate-fade-in', '.md\:w-1\/2', '.dark\:hover\:bg-gray-700', '.font-vazir'):
             self.assertIn(selector, css)
 
     def test_standalone_pages_link_the_built_stylesheet_last(self):

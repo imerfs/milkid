@@ -38,6 +38,12 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
 @login_required
 def user_profile(request):
     """View user profile"""
+    from main.views.mayor_panel import tab_redirect
+    if (moved := tab_redirect(request, 'profile')):
+        return moved
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'profile')):
+        return moved
     user_profile = request.user.profile
     
     context = {
@@ -49,6 +55,9 @@ def user_profile(request):
 @login_required
 def update_profile(request):
     """Update user profile"""
+    from main.views.citizen_panel import panel_tab_redirect
+    if (moved := panel_tab_redirect(request, 'profile')):
+        return moved
     user_profile = request.user.profile
     
     if request.method == 'POST':
@@ -151,58 +160,3 @@ class CustomLoginView(LoginView):
 def staff_registration_info(request):
     """صفحه راهنمای ثبت‌نام کارمندان"""
     return render(request, 'main/staff_registration_info.html')
-
-
-def register_role(request, role='dehyari'):
-    """ثبت‌نام نقش‌های مختلف سامانه"""
-    role_names = {
-        'dehyari': 'دهیار',
-        'engineer': 'مهندس / کارشناس فنی',
-        'council': 'عضو شورا',
-        'accountant': 'مسئول مالی',
-        'inspector': 'ناظر فنی',
-    }
-    role_name = role_names.get(role, 'کارمند')
-    
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            messages.success(request, f'درخواست ثبت‌نام شما به عنوان {role_name} با موفقیت ثبت شد و پس از بررسی توسط مدیر سامانه فعال خواهد شد.')
-            return redirect('main:pending_verification')
-    else:
-        initial_data = {'role': role}
-        form = CustomUserCreationForm(initial=initial_data)
-
-    template_name = f'registration/register_{role}.html'
-    context = {
-        'form': form,
-        'role': role,
-        'role_name': role_name
-    }
-    return render(request, template_name, context)
-
-
-def register_dehyari(request):
-    """ثبت‌نام دهیار"""
-    return register_role(request, role='dehyari')
-
-
-def register_engineer(request):
-    """ثبت‌نام مهندس/کارشناس فنی"""
-    return register_role(request, role='engineer')
-
-
-def register_council(request):
-    """ثبت‌نام عضو شورا"""
-    return register_role(request, role='council')
-
-
-def register_accountant(request):
-    """ثبت‌نام مسئول مالی"""
-    return register_role(request, role='accountant')
-
-
-def register_inspector(request):
-    """ثبت‌نام ناظر فنی"""
-    return register_role(request, role='inspector')

@@ -41,8 +41,12 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
 @policy_required('admin.manage')
 @login_required
 @ensure_csrf_cookie
-def admin_dashboard(request):
-    """Enhanced dashboard for administrators"""
+def admin_dashboard(request, server_panel=None):
+    """Enhanced dashboard for administrators.
+
+    ``server_panel`` (set by the server-management views) is the context of the embedded
+    server section; the page then opens on that section.
+    """
     user_profile = request.user.profile
     from datetime import datetime, timedelta
     import json
@@ -364,6 +368,8 @@ def admin_dashboard(request):
         'rejected_municipalities_list': rejected_municipalities_list,
     }
 
+    if server_panel is not None:
+        context.update(server_panel)
     return render(request, 'main/dashboards/admin_dashboard.html', context)
 
 
@@ -481,6 +487,14 @@ def manage_property_ads(request):
 
 
 @policy_required('admin.manage')
+def admin_user_detail(request, user_id):
+    """Read-only profile page for one user (admins only; no password hash is exposed)."""
+    profile = get_object_or_404(UserProfile.objects.select_related('user'), user_id=user_id)
+    towns = Municipality.objects.filter(Q(admin_user=profile.user) | Q(manager_user=profile.user)).distinct()
+    return render(request, 'main/admin/user_detail.html', {'profile': profile, 'subject': profile.user, 'towns': towns})
+
+
+@policy_required('admin.manage')
 def manage_users(request):
     """Enhanced user management for administrators"""
     # Get users by categories
@@ -550,6 +564,7 @@ def manage_users(request):
     context = {
         'pending_users': pending_users,
         'all_users': users_page,
+        'deleted_users': UserProfile.objects.filter(deleted_at__isnull=False).select_related('user').order_by('-deleted_at'),
     }
     return render(request, 'main/manage_users.html', context)
 

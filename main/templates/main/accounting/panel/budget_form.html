@@ -1,0 +1,13 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='ثبت بودجه مصوب' %}
+<form method="post" hx-post="{% url 'main:acc_p_budget' year.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
+    {% csrf_token %}
+    <div class="ac-field"><label for="b-account">حساب منبع یا مصرف</label>
+        <select class="ac-in" id="b-account" name="account" required><option value="">انتخاب کنید</option>{% for a in choices %}<option value="{{ a.id }}" {% if p.account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></div>
+    <div class="ac-field"><label for="b-amount">بودجه مصوب سال {{ year.year|fa }} (ریال)</label><input class="ac-in" id="b-amount" name="amount" inputmode="numeric" dir="ltr" value="{{ p.amount }}" required></div>
+    <p class="ac-hint">اگر برای این حساب قبلاً بودجه ثبت شده باشد، مبلغ جدید جایگزین می‌شود.</p>
+    <div class="ac-foot">
+        <button type="button" class="ac-btn" data-acc-close>انصراف</button>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button>
+    </div>
+</form>

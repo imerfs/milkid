@@ -74,6 +74,8 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'main.ipblock.BlockedIPMiddleware',  # admin-managed IP block list
+    'main.siteextras.RedirectMiddleware',  # admin-managed 301/302 redirects
     'main.ratelimit.AuthThrottleMiddleware',  # brute-force / spam throttling
     'main.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -82,8 +84,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'main.upload_guard.UploadValidationMiddleware',  # extension/size/content checks on every upload
+    'main.middleware.ForcePasswordChangeMiddleware',  # first-login password change
+    'main.twofactor.TwoFactorMiddleware',  # second login step for users with 2FA on
     'main.middleware.ActiveUserMiddleware',  # Online user tracking & access control
     'main.middleware.PerformanceMonitoringMiddleware',  # Performance monitoring
+    'main.siteextras.PageViewMiddleware',  # daily page-view counts for the admin stats tab
     'main.middleware.RequestLoggingMiddleware',  # Security logging
     'main.middleware.ErrorHandlingMiddleware',  # Error handling
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',  # Disabled for development in iframe
@@ -435,6 +440,22 @@ SITE_EMAIL = os.environ.get('SITE_EMAIL', '')
 SITE_PHONE = os.environ.get('SITE_PHONE', '')
 SITE_ADDRESS_LOCALITY = os.environ.get('SITE_ADDRESS_LOCALITY', '')
 SITE_ADDRESS_STREET = os.environ.get('SITE_ADDRESS_STREET', '')
+
+# Outgoing email (SMTP). Defaults match Django's (localhost:25); set these in .env to use a real mailbox.
+EMAIL_HOST = os.environ.get('EMAIL_HOST') or 'localhost'
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT') or '25')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER') or ''
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') or ''
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT') or '10')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'webmaster@localhost'
+SERVER_EMAIL = os.environ.get('SERVER_EMAIL') or DEFAULT_FROM_EMAIL
+# Incoming mail for the admin mailbox (optional; without IMAP_HOST the inbox holds only support-form messages).
+IMAP_HOST = os.environ.get('IMAP_HOST') or ''
+IMAP_PORT = int(os.environ.get('IMAP_PORT') or '993')
+IMAP_USER = os.environ.get('IMAP_USER') or ''
+IMAP_PASSWORD = os.environ.get('IMAP_PASSWORD') or ''
 
 # Bootstrap calls the error alert 'danger'
 MESSAGE_TAGS = {message_levels.ERROR: 'danger'}

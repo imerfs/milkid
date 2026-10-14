@@ -390,6 +390,9 @@ def create_announcement(request):
 @login_required
 def announcement_list(request):
     """لیست اطلاعیه‌ها"""
+    from main.views.mayor_panel import tab_redirect
+    if (moved := tab_redirect(request, 'announcements')):
+        return moved
     user_profile = request.user.profile
     
     # اطلاعیه‌های مربوط به کاربر

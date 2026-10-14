@@ -146,6 +146,22 @@ class RequestLoggingMiddleware:
         return request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR')
 
 
+class ForcePasswordChangeMiddleware:
+    """Keeps users with an initial (national-ID) password on the change-password page until they change it."""
+    ALLOWED = ('/password/change/', '/logout/', '/static/', '/media/')
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, 'user', None)
+        if (user is not None and user.is_authenticated and not request.path.startswith(self.ALLOWED)
+                and getattr(getattr(user, 'profile', None), 'must_change_password', False)):
+            from django.shortcuts import redirect
+            return redirect('main:password_change')
+        return self.get_response(request)
+
+
 class ActiveUserMiddleware:
     """
     Middleware to monitor active users and manage real-time online status.

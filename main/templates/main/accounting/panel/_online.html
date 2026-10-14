@@ -1,0 +1,49 @@
+{% load accounting_tags jalali_tags %}
+<section class="ac-card" aria-labelledby="online-pending" style="margin-bottom:20px">
+    <div class="ac-card-head"><h2 class="ac-card-title" id="online-pending">در انتظار تایید</h2><span class="ac-st warn">{{ pending_count|rial }} مورد</span></div>
+    {% for p in pending %}
+    <div class="ac-pend" data-payment-card>
+        <div>
+            <p class="t">{{ p.description }}</p>
+            <p class="s">{{ p.amount|floatformat:"0g" }} تومان · {{ p.user.get_full_name|default:p.user.username }}</p>
+            <p class="s" style="font-size:11.5px">{{ p.created_at|jalali_date }} · رسید {{ p.receipt_number }}</p>
+        </div>
+        <div style="display:flex;gap:8px">
+            <button type="button" class="ac-btn ac-btn-ok ac-btn-sm" data-review-url="{% url 'main:api_approve_payment' p.id %}">تایید</button>
+            <button type="button" class="ac-btn ac-btn-bad ac-btn-sm" data-review-url="{% url 'main:api_reject_payment' p.id %}">رد</button>
+        </div>
+    </div>
+    {% empty %}
+    <div class="ac-empty"><span class="eic" style="color:var(--ok)"><i class="fas fa-circle-check" aria-hidden="true"></i></span><p>پرداختی در انتظار تایید نیست.</p></div>
+    {% endfor %}
+</section>
+
+<section class="ac-card" aria-labelledby="online-all">
+    <div class="ac-card-head"><h2 class="ac-card-title" id="online-all">تراکنش‌ها</h2></div>
+    <div class="ac-tools" role="search" aria-label="فیلتر تراکنش‌ها">
+        <form hx-get="{{ panel_url }}" hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name=q]">
+            <input type="hidden" name="tab" value="online">
+            <label class="ac-searchbox"><span class="ac-sr">جستجو در تراکنش‌ها</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="شماره رسید، شرح یا نام کاربر..."></label>
+            <label class="ac-select"><span class="ac-sr">وضعیت</span><select name="pay_status"><option value="">همه وضعیت‌ها</option><option value="pending" {% if g.pay_status == 'pending' %}selected{% endif %}>در انتظار</option><option value="completed" {% if g.pay_status == 'completed' %}selected{% endif %}>تکمیل‌شده</option><option value="rejected" {% if g.pay_status == 'rejected' %}selected{% endif %}>ردشده</option></select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        </form>
+    </div>
+    <div class="ac-table-wrap">
+        <table>
+            <thead><tr><th>رسید</th><th>شرح</th><th>کاربر</th><th>مبلغ (تومان)</th><th>تاریخ</th><th>وضعیت</th></tr></thead>
+            <tbody>
+            {% for t in page %}
+                <tr>
+                    <td class="nw">{{ t.receipt_number }}</td><td>{{ t.description|truncatechars:50 }}</td>
+                    <td>{{ t.user.get_full_name|default:t.user.username }}</td>
+                    <td class="num-cell" style="font-weight:600;color:{% if t.payment_type == 'property_tax' or t.payment_type == 'permit_fee' %}var(--ok)">+{% else %}var(--bad)">-{% endif %}{{ t.amount|floatformat:"0g" }}</td>
+                    <td class="nw muted">{{ t.created_at|jalali_date }}</td>
+                    <td><span class="ac-st {% if t.status == 'completed' %}ok{% elif t.status == 'rejected' %}bad{% else %}warn{% endif %}">{{ t.get_status_display }}</span></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6"><div class="ac-empty"><span class="eic"><i class="fas fa-credit-card" aria-hidden="true"></i></span><h4>تراکنشی یافت نشد</h4></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'main/accounting/panel/_pager.html' %}
+</section>

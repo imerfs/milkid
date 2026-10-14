@@ -1,0 +1,272 @@
+{% load jalali_tags %}
+<section class="srv-panel" dir="rtl" aria-label="مدیریت سرور">
+  <h2 class="srv-title"><i class="fas fa-server"></i> مدیریت سرور</h2>
+  {% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+
+  <ul class="nav nav-tabs mb-3 srv-tabs">
+    <li class="nav-item"><a class="nav-link {% if tab == 'resources' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=resources">منابع</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'stats' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=stats">آمار بازدید</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'database' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=database">پایگاه داده</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'backups' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=backups">پشتیبان‌گیری</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'logs' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=logs">گزارش خطاها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'ips' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=ips">مسدودسازی IP</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'redirects' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=redirects">تغییر مسیرها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'services' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=services">ایمیل، دامنه و سرویس‌ها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'cache' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=cache">حافظهٔ نهان</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'sms' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=sms">پنل پیامک</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'security' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=security">ورود دو مرحله‌ای</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'files' %}active{% endif %}" href="{% url 'main:admin_server_files' %}">فایل‌ها</a></li>
+  </ul>
+
+  {% if tab == 'resources' %}
+    {% if res.warnings %}<div class="alert alert-warning">مصرف بالا: {{ res.warnings|join:'، ' }} (بیش از ۸۵٪)</div>{% endif %}
+    <div class="row g-3 mb-4">
+      <div class="col-md-4"><div class="card p-3"><div class="small text-muted">پردازنده ({{ res.cpus }} هسته)</div>
+        {% if res.load %}<div class="h5">{{ res.load_percent }}٪</div><div class="small">میانگین بار: {{ res.load.0 }} / {{ res.load.1 }} / {{ res.load.2 }}</div>{% else %}<div class="text-muted">در دسترس نیست</div>{% endif %}</div></div>
+      <div class="col-md-4"><div class="card p-3"><div class="small text-muted">حافظه (RAM)</div>
+        {% if res.mem_total %}<div class="h5">{{ res.mem_percent }}٪</div><div class="small">{{ res.mem_used|filesizeformat }} از {{ res.mem_total|filesizeformat }}</div>{% else %}<div class="text-muted">در دسترس نیست</div>{% endif %}</div></div>
+      <div class="col-md-4"><div class="card p-3"><div class="small text-muted">دیسک</div>
+        <div class="h5">{{ res.disk_percent }}٪</div><div class="small">{{ res.disk_used|filesizeformat }} از {{ res.disk_total|filesizeformat }}</div></div></div>
+    </div>
+    {% if last_backup is None %}<div class="alert alert-warning">هنوز هیچ نسخه پشتیبانی از پایگاه داده وجود ندارد.</div>
+    {% elif last_backup > 48 %}<div class="alert alert-warning">آخرین پشتیبان {{ last_backup }} ساعت پیش ساخته شده؛ زمان‌بندی خودکار (milkid-backup.timer) را بررسی کنید.</div>{% endif %}
+    {% if res.net_rx is not None %}<p class="small text-muted">ترافیک شبکه از زمان روشن شدن: دریافت {{ res.net_rx|filesizeformat }}، ارسال {{ res.net_tx|filesizeformat }}</p>{% endif %}
+    {% if version %}<p class="small text-muted">نسخهٔ کد: <span dir="ltr">{{ version.branch|default:'' }} {{ version.commit|default:'?' }}</span></p>{% endif %}
+    {% if res.uptime_days is not None %}<p class="small text-muted">زمان روشن بودن سرور: {{ res.uptime_days }} روز</p>{% endif %}
+    <h2 class="h6">مصرف فضا به تفکیک پوشه</h2>
+    <table class="table table-sm w-auto">
+      {% for label, size in folders %}<tr><td>{{ label }}</td><td>{{ size|filesizeformat }}</td></tr>{% endfor %}
+      {% if db_size is not None %}<tr><td>پایگاه داده (SQLite)</td><td>{{ db_size|filesizeformat }}</td></tr>{% endif %}
+    </table>
+
+  {% elif tab == 'stats' %}
+    <p>بازدید صفحه‌ها در ۳۰ روز اخیر: <strong>{{ month_total }}</strong> <span class="small text-muted">(فقط صفحه‌های عمومی و داشبوردها؛ بدون بخش مدیریت، API و فایل‌ها)</span></p>
+    <div class="row g-4">
+      <div class="col-md-5"><h2 class="h6">بازدید روزانه</h2>
+        <table class="table table-sm"><thead><tr><th>روز</th><th>بازدید</th></tr></thead>
+        {% for d in days %}<tr><td>{{ d.day|jalali_date }}</td><td>{{ d.total }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">هنوز آماری ثبت نشده است.</td></tr>{% endfor %}</table></div>
+      <div class="col-md-7"><h2 class="h6">صفحه‌های پربازدید</h2>
+        <table class="table table-sm"><thead><tr><th>صفحه</th><th>بازدید</th></tr></thead>
+        {% for p in top_pages %}<tr><td dir="ltr" class="text-end">{{ p.path }}</td><td>{{ p.total }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">—</td></tr>{% endfor %}</table></div>
+    </div>
+
+  {% elif tab == 'sms' %}
+    <h2 class="h6">اتصال به پنل پیامک (API)</h2>
+    {% if not sms_config.enabled %}<div class="alert alert-warning">پنل پیامک فعال نیست؛ پس از ذخیرهٔ تنظیمات و فعال کردن، سایر بخش‌ها می‌توانند پیامک بفرستند.</div>{% endif %}
+    <p class="small text-muted">سامانه یک درخواست POST با بدنهٔ JSON به نشانی API می‌فرستد؛ نام فیلدها و هدر احراز هویت را مطابق مستندات شرکت پیامکی خود تنظیم کنید. نشانی باید https باشد. کلید API رمزنگاری‌شده ذخیره می‌شود و دوباره نمایش داده نمی‌شود.</p>
+    <form method="post" action="{% url 'main:admin_sms_save' %}" class="mb-4" style="max-width:40rem">
+      {% csrf_token %}
+      <div class="mb-3"><label class="form-label">نشانی API</label><input name="base_url" class="form-control" dir="ltr" placeholder="https://api.example.com/v1/send" value="{{ sms_config.base_url }}"></div>
+      <div class="mb-3"><label class="form-label">کلید API {% if sms_key_set %}<span class="small text-muted">(ذخیره شده؛ برای تغییر، کلید جدید را وارد کنید)</span>{% endif %}</label><input name="api_key" type="password" class="form-control" dir="ltr" autocomplete="off" placeholder="{% if sms_key_set %}••••••••{% endif %}"></div>
+      <div class="mb-3"><label class="form-label">شمارهٔ فرستنده</label><input name="sender" class="form-control" dir="ltr" value="{{ sms_config.sender }}"></div>
+      <div class="row">
+        <div class="col-md-3"><label class="form-label">هدر احراز هویت</label><input name="auth_header" class="form-control" dir="ltr" value="{{ sms_config.auth_header }}"></div>
+        <div class="col-md-3"><label class="form-label">پیشوند کلید</label><input name="auth_prefix" class="form-control" dir="ltr" value="{{ sms_config.auth_prefix }}"></div>
+      </div>
+      <div class="row">
+        <div class="col-md-3"><label class="form-label">فیلد گیرنده</label><input name="to_field" class="form-control" dir="ltr" value="{{ sms_config.to_field }}"></div>
+        <div class="col-md-3"><label class="form-label">فیلد متن</label><input name="text_field" class="form-control" dir="ltr" value="{{ sms_config.text_field }}"></div>
+        <div class="col-md-3"><label class="form-label">فیلد فرستنده</label><input name="sender_field" class="form-control" dir="ltr" value="{{ sms_config.sender_field }}"></div>
+      </div>
+      <label class="d-flex align-items-center gap-2 mb-3"><input type="checkbox" name="enabled" value="1" {% if sms_config.enabled %}checked{% endif %}> فعال</label>
+      <button class="btn btn-primary">ذخیره</button>
+    </form>
+    <h2 class="h6">ارسال پیامک آزمایشی</h2>
+    <form method="post" action="{% url 'main:admin_sms_test' %}" class="d-flex gap-2" style="max-width:32rem">
+      {% csrf_token %}<input name="phone" class="form-control" dir="ltr" inputmode="numeric" placeholder="09123456789" required>
+      <button class="btn btn-outline-primary">ارسال</button>
+    </form>
+
+  {% elif tab == 'redirects' %}
+    <form method="post" action="{% url 'main:admin_server_redirect_add' %}" class="row g-2 mb-3">
+      {% csrf_token %}
+      <div class="col-md-4"><input name="old_path" class="form-control" dir="ltr" placeholder="/old-page/" required></div>
+      <div class="col-md-4"><input name="new_path" class="form-control" dir="ltr" placeholder="/new-page/ یا https://..." required></div>
+      <div class="col-md-2"><select name="permanent" class="form-select"><option value="1">۳۰۱ دائمی</option><option value="0">۳۰۲ موقت</option></select></div>
+      <div class="col-md-2"><button class="btn btn-primary w-100">ذخیره</button></div>
+    </form>
+    <p class="small text-muted">بخش مدیریت، API و فایل‌ها قابل تغییر مسیر نیستند تا دسترسی شما قطع نشود. اعمال تغییر تا یک دقیقه طول می‌کشد.</p>
+    <table class="table align-middle">
+      <thead><tr><th>نشانی قدیم</th><th>نشانی جدید</th><th>نوع</th><th>دفعات</th><th></th></tr></thead>
+      {% for r in redirects %}
+      <tr><td dir="ltr" class="text-end">{{ r.old_path }}</td><td dir="ltr" class="text-end">{{ r.new_path }}</td><td>{% if r.permanent %}۳۰۱{% else %}۳۰۲{% endif %}</td><td>{{ r.hits }}</td>
+        <td><form method="post" action="{% url 'main:admin_server_redirect_delete' r.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td></tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted">تغییر مسیری تعریف نشده است.</td></tr>{% endfor %}
+    </table>
+
+  {% elif tab == 'services' %}
+    <h2 class="h6">ایمیل خروجی (SMTP)</h2>
+    {% if not email.configured %}<div class="alert alert-warning">سرور ایمیل تنظیم نشده است؛ ایمیل‌های سامانه (اعلان‌ها، بازیابی رمز) ارسال نمی‌شوند. متغیرهای EMAIL_HOST، EMAIL_PORT، EMAIL_HOST_USER، EMAIL_HOST_PASSWORD و EMAIL_USE_TLS را در فایل .env روی سرور تنظیم کنید.</div>{% endif %}
+    <table class="table table-sm w-auto">
+      <tr><td>سرور</td><td dir="ltr">{{ email.host }}:{{ email.port }}</td></tr>
+      <tr><td>امنیت اتصال</td><td dir="ltr">{{ email.security }}</td></tr>
+      <tr><td>نام کاربری</td><td dir="ltr">{{ email.user }}</td></tr>
+      <tr><td>رمز</td><td>{% if email.password_set %}تنظیم شده (نمایش داده نمی‌شود){% else %}تنظیم نشده{% endif %}</td></tr>
+      <tr><td>فرستنده</td><td dir="ltr">{{ email.from }}</td></tr>
+    </table>
+    <form method="post" action="{% url 'main:admin_server_email_test' %}" class="d-flex gap-2 mb-4" style="max-width:32rem">
+      {% csrf_token %}<input name="to" type="email" class="form-control" dir="ltr" placeholder="{{ request.user.email|default:'you@example.com' }}">
+      <button class="btn btn-outline-primary">ارسال ایمیل آزمایشی</button>
+    </form>
+
+    <h2 class="h6">دامنه، DNS و SSL</h2>
+    {% if domains %}
+      {% if domain_reports %}
+        {% for d in domain_reports %}
+        <div class="card p-3 mb-3">
+          <div class="fw-bold" dir="ltr">{{ d.domain }}</div>
+          <table class="table table-sm mb-2">
+            <tr><td>A (IP)</td><td dir="ltr">{{ d.a|join:', '|default:'—' }}</td></tr>
+            <tr><td>MX (ایمیل)</td><td dir="ltr">{{ d.mx|join:', '|default:'—' }}</td></tr>
+            <tr><td>SPF</td><td dir="ltr" style="word-break:break-all">{{ d.spf|join:' | '|default:'—' }}</td></tr>
+            <tr><td>DMARC</td><td dir="ltr" style="word-break:break-all">{{ d.dmarc|join:' | '|default:'—' }}</td></tr>
+            <tr><td>گواهی SSL</td><td>{% if d.cert_days is not None %}{{ d.cert_days }} روز مانده ({{ d.cert_expires|jalali_date }}){% else %}<span dir="ltr">{{ d.cert_error }}</span>{% endif %}</td></tr>
+          </table>
+          {% for h in d.hints %}<div class="small text-warning">• {{ h }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <p>دامنه‌های سایت: <span dir="ltr">{{ domains|join:', ' }}</span></p>
+      {% endif %}
+      <a class="btn btn-outline-primary mb-2" href="{% url 'main:admin_server' %}?tab=services&check=1">بررسی DNS و SSL</a>
+    {% else %}<p class="text-muted">دامنه‌ای در تنظیمات (REPLIT_DOMAINS یا SITE_URL) ثبت نشده است.</p>{% endif %}
+    <p class="small text-muted">رکوردهای DNS (A، MX، SPF، DKIM، DMARC و ساب‌دامین‌ها) در پنل شرکت ثبت دامنه یا سرویس DNS تغییر می‌کنند، نه از داخل سایت.</p>
+
+    <h2 class="h6 mt-4">اجرا و محدودیت منابع</h2>
+    <table class="table table-sm w-auto">
+      <tr><td>Python / Django</td><td dir="ltr">{{ runtime.python }} / {{ runtime.django }}</td></tr>
+      <tr><td>حالت اشکال‌زدایی (DEBUG)</td><td>{% if runtime.debug %}<span class="text-danger">روشن (در سرور اصلی باید خاموش باشد)</span>{% else %}خاموش{% endif %}</td></tr>
+      <tr><td>پایگاه داده / کش</td><td dir="ltr">{{ runtime.database }} / {{ runtime.cache }}</td></tr>
+      <tr><td>اجرا داخل Docker</td><td>{% if runtime.docker %}بله{% else %}خیر (systemd + gunicorn){% endif %}</td></tr>
+      <tr><td>فرایندهای gunicorn</td><td>{% if runtime.gunicorn_processes %}{{ runtime.gunicorn_processes }} فرایند، {{ runtime.gunicorn_rss|filesizeformat }} حافظه{% else %}—{% endif %}</td></tr>
+      <tr><td>سقف حافظه (cgroup)</td><td>{% if runtime.memory_limit %}{{ runtime.memory_limit|filesizeformat }}{% else %}بدون سقف{% endif %}</td></tr>
+      <tr><td>سقف CPU (cgroup)</td><td>{% if runtime.cpu_limit %}{{ runtime.cpu_limit }} هسته{% else %}بدون سقف{% endif %}</td></tr>
+      <tr><td>سقف فایل‌های باز</td><td>{{ runtime.open_files_limit|default:'—' }}</td></tr>
+      <tr><td>حداکثر حجم آپلود</td><td>{{ runtime.max_upload|filesizeformat }}</td></tr>
+      {% for prefix, limit, window in runtime.throttles %}<tr><td>محدودیت درخواست <span dir="ltr">{{ prefix }}</span></td><td>{{ limit }} بار در {{ window }} ثانیه برای هر IP</td></tr>{% endfor %}
+    </table>
+
+  {% elif tab == 'database' %}
+    <p>نوع: <strong>{{ db.vendor }}</strong>{% if db.size %}، حجم: {{ db.size|filesizeformat }}{% endif %}، مجموع رکوردها: {{ db.total_rows }}</p>
+    <div class="d-flex gap-2 mb-3">
+      <form method="post" action="{% url 'main:admin_server_db_maintain' %}">{% csrf_token %}<input type="hidden" name="action" value="check"><button class="btn btn-outline-primary">بررسی سلامت جداول</button></form>
+      <form method="post" action="{% url 'main:admin_server_db_maintain' %}">{% csrf_token %}<input type="hidden" name="action" value="optimize"><button class="btn btn-outline-success">بهینه‌سازی</button></form>
+    </div>
+    <div class="table-responsive" style="max-height:60vh">
+    <table class="table table-sm">
+      <thead><tr><th>جدول</th><th>تعداد رکورد</th></tr></thead>
+      {% for name, count in db.tables %}<tr><td dir="ltr" class="text-end">{{ name }}</td><td>{{ count }}</td></tr>{% endfor %}
+    </table></div>
+
+  {% elif tab == 'backups' %}
+    <form method="post" action="{% url 'main:admin_server_backup' %}" class="mb-3 d-flex align-items-center gap-3">
+      {% csrf_token %}
+      <button class="btn btn-primary">ساخت نسخه پشتیبان از پایگاه داده</button>
+      <label class="small"><input type="checkbox" name="media" value="1"> فایل‌های بارگذاری‌شده هم باشد</label>
+    </form>
+    <p class="small text-muted">پشتیبان خودکار هر شب ساعت ۰۳:۳۰ (UTC) با milkid-backup.timer ساخته می‌شود و ۱۴ نسخهٔ آخر نگه داشته می‌شود. بازگردانی عمداً از داخل وب انجام نمی‌شود (جایگزینی پایگاه داده در حال کار خطرناک است)؛ مراحل آن در docs/operations.md آمده است.</p>
+    <table class="table align-middle">
+      <thead><tr><th>نام</th><th>حجم</th><th>زمان</th><th></th></tr></thead>
+      {% for b in backups %}
+      <tr><td dir="ltr" class="text-end">{{ b.name }}</td><td>{{ b.size|filesizeformat }}</td><td>{{ b.mtime|date:'Y-m-d H:i' }}</td>
+        <td class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'main:admin_server_backup_download' b.name %}">دانلود</a>
+          <form method="post" action="{% url 'main:admin_server_backup_delete' b.name %}" onsubmit="return confirm('این نسخه حذف شود؟')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form>
+        </td></tr>
+      {% empty %}<tr><td colspan="4" class="text-center text-muted">هنوز نسخه‌ای ساخته نشده است.</td></tr>{% endfor %}
+    </table>
+
+  {% elif tab == 'logs' %}
+    {% if logs %}
+    <form method="get" action="{% url 'main:admin_server' %}" class="mb-2 d-flex gap-2"><input type="hidden" name="tab" value="logs">
+      <select name="file" class="form-select w-auto" onchange="this.form.submit()">{% for l in logs %}<option {% if l == chosen %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    </form>
+    <pre dir="ltr" class="border rounded p-3 small" style="max-height:60vh;overflow:auto;white-space:pre-wrap">{{ content }}</pre>
+    {% else %}<p class="text-muted">فایل گزارشی وجود ندارد.</p>{% endif %}
+
+  {% elif tab == 'ips' %}
+    <form method="post" action="{% url 'main:admin_server_ip_block' %}" class="row g-2 mb-3">
+      {% csrf_token %}
+      <div class="col-md-3"><input name="ip" class="form-control" dir="ltr" placeholder="مثلاً 203.0.113.5" required></div>
+      <div class="col-md-6"><input name="reason" class="form-control" maxlength="200" placeholder="دلیل (اختیاری)"></div>
+      <div class="col-md-3"><button class="btn btn-danger">مسدود کن</button></div>
+    </form>
+    <p class="small text-muted">نشانی شما: <span dir="ltr">{{ my_ip }}</span> (قابل مسدود شدن نیست). اعمال تغییر تا یک دقیقه طول می‌کشد.</p>
+    <table class="table align-middle">
+      <thead><tr><th>IP</th><th>دلیل</th><th>توسط</th><th>تاریخ</th><th></th></tr></thead>
+      {% for b in blocked %}
+      <tr><td dir="ltr" class="text-end">{{ b.ip }}</td><td>{{ b.reason }}</td><td>{{ b.created_by.username }}</td><td>{{ b.created_at|jalali_datetime }}</td>
+        <td><form method="post" action="{% url 'main:admin_server_ip_unblock' b.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">رفع مسدودیت</button></form></td></tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted">نشانی مسدودی وجود ندارد.</td></tr>{% endfor %}
+    </table>
+
+  {% elif tab == 'files' %}
+  <p class="small text-muted">فقط داخل پوشه‌های media و private_media. حذف فایل برگشت‌پذیر نیست؛ ابتدا پشتیبان بگیرید.</p>
+  <ul class="nav nav-pills mb-3">
+    {% for r in roots %}<li class="nav-item"><a class="nav-link {% if r == root_key %}active{% endif %}" href="?root={{ r }}">{{ r }}</a></li>{% endfor %}
+  </ul>
+  {% if missing %}<p class="text-muted">این پوشه هنوز وجود ندارد.</p>{% else %}
+  <div class="row g-2 mb-3">
+    <form method="get" class="col-md-6 d-flex gap-2">
+      <input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+      <input name="q" value="{{ q }}" class="form-control" placeholder="جستجوی نام فایل در این پوشه و زیرپوشه‌ها">
+      <button class="btn btn-outline-primary">جستجو</button>
+    </form>
+    <form method="post" enctype="multipart/form-data" action="{% url 'main:admin_server_file_upload' %}" class="col-md-6 d-flex gap-2">
+      {% csrf_token %}<input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+      <input type="file" name="file" class="form-control" required>
+      <button class="btn btn-primary">بارگذاری</button>
+    </form>
+  </div>
+  <form method="post" action="{% url 'main:admin_server_file_action' %}" class="d-flex gap-2 mb-3" style="max-width:28rem">
+    {% csrf_token %}<input type="hidden" name="op" value="mkdir"><input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ rel }}">
+    <input name="name" class="form-control" dir="ltr" placeholder="نام پوشهٔ جدید" required>
+    <button class="btn btn-outline-secondary">ساخت پوشه</button>
+  </form>
+  <p class="small text-muted">برای جابه‌جایی یا تغییر نام، مسیر کامل جدید را نسبت به پوشهٔ اصلی وارد کنید (مثلاً <span dir="ltr">letters/2026/new-name.pdf</span>).</p>
+  <p dir="ltr" class="text-end small">/{{ rel }}{% if q %} — search: {{ q }}{% endif %}</p>
+  <table class="table table-sm align-middle">
+    {% if rel %}<tr><td colspan="3"><a href="?root={{ root_key }}&path={{ parent|urlencode }}">⬆ پوشهٔ بالاتر</a></td></tr>{% endif %}
+    {% for row in rows %}
+    <tr>
+      <td dir="ltr" class="text-end">
+        {% if row.is_dir %}<a href="?root={{ root_key }}&path={% if rel %}{{ rel|urlencode }}/{% endif %}{{ row.name|urlencode }}">📁 {{ row.name }}</a>{% else %}{{ row.name }}{% endif %}
+      </td>
+      <td>{{ row.size|filesizeformat }}</td>
+      <td class="d-flex flex-wrap gap-1">
+        {% if rel %}{% with p=rel|add:'/'|add:row.name %}{% include 'main/admin/_file_actions.html' with item_path=p %}{% endwith %}
+        {% else %}{% include 'main/admin/_file_actions.html' with item_path=row.name %}{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="3" class="text-center text-muted">پوشه خالی است.</td></tr>{% endfor %}
+  </table>{% endif %}
+
+  {% elif tab == 'security' %}
+    {% if device.confirmed %}
+      <div class="alert alert-success">ورود دو مرحله‌ای برای حساب شما فعال است. پس از رمز عبور، کد شش‌رقمی برنامهٔ احراز هویت پرسیده می‌شود.</div>
+      <form method="post" action="{% url 'main:admin_two_factor_disable' %}" class="d-flex gap-2" style="max-width:28rem">
+        {% csrf_token %}<input name="code" class="form-control" dir="ltr" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="کد فعلی" required>
+        <button class="btn btn-outline-danger">غیرفعال کردن</button>
+      </form>
+    {% elif device %}
+      <ol>
+        <li>برنامهٔ Google Authenticator یا Microsoft Authenticator را روی گوشی باز کنید.</li>
+        <li>گزینهٔ «وارد کردن کلید راه‌اندازی» (Enter a setup key) را بزنید و این کلید را وارد کنید (نوع: بر پایهٔ زمان):
+          <div class="h5 my-2" dir="ltr">{{ setup_key }}</div>
+          <div class="small text-muted" dir="ltr" style="word-break:break-all">{{ setup_uri }}</div></li>
+        <li>کد شش‌رقمی‌ای که برنامه نشان می‌دهد را اینجا وارد کنید:</li>
+      </ol>
+      <form method="post" action="{% url 'main:admin_two_factor_confirm' %}" class="d-flex gap-2" style="max-width:28rem">
+        {% csrf_token %}<input name="code" class="form-control" dir="ltr" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        <button class="btn btn-primary">تأیید و فعال‌سازی</button>
+      </form>
+    {% else %}
+      <p>با ورود دو مرحله‌ای، اگر رمز عبور شما لو برود هم کسی بدون گوشی شما نمی‌تواند وارد پنل مدیریت شود.</p>
+      <form method="post" action="{% url 'main:admin_two_factor_start' %}">{% csrf_token %}<button class="btn btn-primary">شروع فعال‌سازی</button></form>
+    {% endif %}
+
+  {% else %}
+    <p>پاک‌کردن حافظهٔ نهان داده‌های موقت را بازسازی می‌کند و شمارندهٔ محدودیت ورود را صفر می‌کند. کاربران وارد شده خارج نمی‌شوند.</p>
+    <form method="post" action="{% url 'main:admin_server_cache_clear' %}" onsubmit="return confirm('حافظهٔ نهان پاک شود؟')">{% csrf_token %}<button class="btn btn-warning">پاک‌کردن حافظهٔ نهان</button></form>
+  {% endif %}
+</section>

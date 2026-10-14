@@ -1,0 +1,19 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='صدور فیش نقدی' subtitle='فیش را برای یک پرداخت‌کننده صادر کنید؛ پرداخت‌ها را بعداً ثبت می‌کنید.' %}
+<form method="post" hx-post="{% url 'main:acc_p_bill_new' year.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
+    {% csrf_token %}
+    <div class="ac-fgrid">
+        <div class="ac-field s2"><label for="f-date">تاریخ (شمسی)</label><input class="ac-in" id="f-date" name="date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ p.date }}" required></div>
+        <div class="ac-field s2"><label for="f-amount">مبلغ (ریال)</label><input class="ac-in" id="f-amount" name="amount" inputmode="numeric" dir="ltr" value="{{ p.amount }}" required></div>
+        <div class="ac-field s4"><label for="f-party">پرداخت‌کننده</label>
+            <select class="ac-in" id="f-party" name="party" required><option value="">انتخاب کنید</option>{% for x in parties %}<option value="{{ x.id }}" {% if p.party == x.id|stringformat:'s' %}selected{% endif %}>{{ x.name }}</option>{% endfor %}</select>
+            <button type="button" class="ac-link" style="font-size:12px" hx-get="{% url 'main:acc_p_party_new' %}" hx-target="#acc-modal-body">افزودن طرف حساب جدید</button></div>
+        <div class="ac-field s4"><label for="f-income">حساب درآمد</label>
+            <select class="ac-in" id="f-income" name="income_account" required><option value="">انتخاب کنید</option>{% for a in incomes %}<option value="{{ a.id }}" {% if p.income_account == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code|fa }} - {{ a.title }}</option>{% endfor %}</select></div>
+        <div class="ac-field s4"><label for="f-desc">شرح</label><input class="ac-in" id="f-desc" name="description" maxlength="500" value="{{ p.description }}" required></div>
+    </div>
+    <div class="ac-foot">
+        <button type="button" class="ac-btn" data-acc-close>انصراف</button>
+        <button type="submit" class="ac-btn ac-btn-ok"><i class="fas fa-receipt" aria-hidden="true"></i>صدور فیش</button>
+    </div>
+</form>

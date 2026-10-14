@@ -4,14 +4,15 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from openpyxl import Workbook
 
 from main.access import policy_required
-from main.accounting import chart, ledger
+from main.accounting import bills, budget, chart, ledger
 from main.accounting.parse import jalali_str, parse_amount, parse_int_or_none, parse_jalali
-from main.models import Account, CostCenter, FiscalYear, Party, Voucher
+from main.models import Account, BillPayment, CostCenter, FiscalYear, Party, Voucher
 from main.office.errors import Conflict, Invalid, NotFound, OfficeError
 
 PAGE_SIZE = 25
@@ -223,27 +224,47 @@ def acc_voucher_delete(request, voucher_id):
 
 # ---------- chart of accounts and parties ----------
 
+def new_account(muni, post):
+    """Validate and create a chart-of-accounts row from form data; raises Invalid/Conflict."""
+    code, title = post.get('code', '').strip(), post.get('title', '').strip()
+    if not code.isascii() or not code.isalnum() or len(code) > 20 or not title or len(title) > 200:
+        raise Invalid('کد (حروف و رقم انگلیسی، حداکثر ۲۰) و شرح حساب را درست وارد کنید.')
+    kind, nature = post.get('kind'), post.get('nature')
+    if kind not in dict(Account.KINDS) or nature not in dict(Account.NATURES):
+        raise Invalid('نوع یا ماهیت حساب نامعتبر است.')
+    parent = Account.objects.filter(municipality=muni, pk=parse_int_or_none(post.get('parent'))).first()
+    try:
+        with transaction.atomic():
+            return Account.objects.create(
+                municipality=muni, code=code, title=title, kind=kind, nature=nature, parent=parent,
+                is_postable=bool(post.get('is_postable')), requires_party=bool(post.get('requires_party')))
+    except IntegrityError:
+        raise Conflict('این کد حساب قبلاً ثبت شده است.')
+
+
+def new_party(muni, post):
+    """Validate and create a party from form data; raises Invalid."""
+    from main.accounting.parse import digits
+    party = Party(municipality=muni, kind=post.get('kind', 'real'), name=post.get('name', '').strip(),
+                  national_id=digits(post.get('national_id')), phone=digits(post.get('phone')),
+                  mobile=digits(post.get('mobile')), address=post.get('address', '').strip())
+    try:
+        if party.kind not in dict(Party.KINDS) or not party.name:
+            raise ValidationError('نوع و نام طرف حساب را درست وارد کنید.')
+        party.full_clean()
+        party.save()
+    except ValidationError as exc:
+        raise Invalid(' '.join(exc.messages))
+    return party
+
+
 @_guard()
 def acc_accounts(request):
     muni = ledger.municipality_of(request.user)
     error, status, posted = None, 200, request.POST
     if request.method == 'POST':
         try:
-            code, title = request.POST.get('code', '').strip(), request.POST.get('title', '').strip()
-            if not code.isascii() or not code.isalnum() or len(code) > 20 or not title or len(title) > 200:
-                raise Invalid('کد (حروف و رقم انگلیسی، حداکثر ۲۰) و شرح حساب را درست وارد کنید.')
-            kind, nature = request.POST.get('kind'), request.POST.get('nature')
-            if kind not in dict(Account.KINDS) or nature not in dict(Account.NATURES):
-                raise Invalid('نوع یا ماهیت حساب نامعتبر است.')
-            parent = Account.objects.filter(municipality=muni, pk=parse_int_or_none(request.POST.get('parent'))).first()
-            try:
-                with transaction.atomic():
-                    Account.objects.create(
-                        municipality=muni, code=code, title=title, kind=kind, nature=nature, parent=parent,
-                        is_postable=bool(request.POST.get('is_postable')),
-                        requires_party=bool(request.POST.get('requires_party')))
-            except IntegrityError:
-                raise Conflict('این کد حساب قبلاً ثبت شده است.')
+            new_account(muni, request.POST)
             messages.success(request, 'حساب افزوده شد.')
             return redirect('main:acc_accounts')
         except OfficeError as exc:
@@ -258,20 +279,12 @@ def acc_parties(request):
     muni = ledger.municipality_of(request.user)
     error, status = None, 200
     if request.method == 'POST':
-        from main.accounting.parse import digits
-        party = Party(municipality=muni, kind=request.POST.get('kind', 'real'),
-                      name=request.POST.get('name', '').strip(), national_id=digits(request.POST.get('national_id')),
-                      phone=digits(request.POST.get('phone')), mobile=digits(request.POST.get('mobile')),
-                      address=request.POST.get('address', '').strip())
         try:
-            if party.kind not in dict(Party.KINDS) or not party.name:
-                raise ValidationError('نوع و نام طرف حساب را درست وارد کنید.')
-            party.full_clean()
-            party.save()
+            new_party(muni, request.POST)
             messages.success(request, 'طرف حساب افزوده شد.')
             return redirect('main:acc_parties')
-        except ValidationError as exc:
-            error, status = ' '.join(exc.messages), 400
+        except OfficeError as exc:
+            error, status = str(exc), exc.status
     q = request.GET.get('q', '').strip()
     parties = Party.objects.filter(municipality=muni)
     if q:
@@ -300,3 +313,141 @@ def acc_ledger(request, year_id, account_id):
     return render(request, 'main/accounting/ledger.html', {
         'year': year, 'account': account, 'final_only': final_only,
         'rows': ledger.account_ledger(request.user, year, account, include_temporary=not final_only)})
+
+
+# ---------- budget ----------
+
+@_guard()
+def acc_budget(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    muni = ledger.municipality_of(request.user)
+    error, status = None, 200
+    if request.method == 'POST':
+        try:
+            account = Account.objects.filter(municipality=muni, pk=parse_int_or_none(request.POST.get('account'))).first()
+            if account is None:
+                raise Invalid('حساب را انتخاب کنید.')
+            budget.set_budget(request.user, year, account, parse_amount(request.POST.get('amount')))
+            messages.success(request, 'بودجه ذخیره شد.')
+            return redirect('main:acc_budget', year_id=year.id)
+        except OfficeError as exc:
+            error, status = str(exc), exc.status
+    final_only = request.GET.get('final') == '1'
+    rows, totals = budget.report(request.user, year, include_temporary=not final_only)
+    choices = Account.objects.filter(municipality=muni, kind__in=budget.BUDGET_KINDS, is_postable=True)
+    return render(request, 'main/accounting/budget.html', {
+        'year': year, 'rows': rows, 'totals': totals, 'choices': choices, 'final_only': final_only,
+        'error': error, 'p': request.POST}, status=status)
+
+
+def _cell(text):
+    """Excel runs cells starting with = + - @ as formulas; titles come from users, so keep them text."""
+    text = str(text)
+    return "'" + text if text[:1] in ('=', '+', '-', '@') else text
+
+
+@_guard()
+def acc_budget_export(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    rows, totals = budget.report(request.user, year, include_temporary=request.GET.get('final') != '1')
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f'بودجه {year.year}'
+    ws.sheet_view.rightToLeft = True
+    ws.append(['کد', 'شرح', 'نوع', 'بودجه مصوب', 'عملکرد', 'باقی‌مانده', 'درصد'])
+    for r in rows:
+        ws.append([r['code'], _cell(r['title']), 'منابع' if r['kind'] == 'resource' else 'مصارف',
+                   int(r['budget']), int(r['actual']), int(r['remaining']), r['percent']])
+    for key, label in (('resource', 'جمع منابع'), ('use', 'جمع مصارف')):
+        t = totals[key]
+        ws.append(['', label, '', int(t['budget']), int(t['actual']), int(t['budget'] - t['actual']), None])
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="budget-{year.year}.xlsx"'
+    wb.save(response)
+    return response
+
+
+# ---------- cash bills ----------
+
+def _bill_form_data(muni):
+    return {'parties': Party.objects.filter(municipality=muni),
+            'incomes': Account.objects.filter(municipality=muni, kind='budget_resource', is_postable=True),
+            'banks': Account.objects.filter(municipality=muni, kind='asset', is_postable=True)}
+
+
+def _find(model, muni, raw):
+    pk = parse_int_or_none(raw)
+    return model.objects.filter(municipality=muni, pk=pk).first() if pk else None
+
+
+@_guard()
+def acc_bills(request, year_id):
+    year = ledger.get_year(request.user, year_id)
+    muni = ledger.municipality_of(request.user)
+    error, status = None, 200
+    if request.method == 'POST':
+        try:
+            p = request.POST
+            bill = bills.issue_bill(request.user, year, parse_jalali(p.get('date', '')), _find(Party, muni, p.get('party')),
+                                    _find(Account, muni, p.get('income_account')), parse_amount(p.get('amount')),
+                                    p.get('description', ''))
+            messages.success(request, f'فیش شماره {bill.number} صادر شد.')
+            return redirect('main:acc_bill_detail', bill_id=bill.id)
+        except OfficeError as exc:
+            error, status = str(exc), exc.status
+    page = Paginator(bills.bills_for(request.user, year), PAGE_SIZE).get_page(request.GET.get('page'))
+    return render(request, 'main/accounting/bills.html', {
+        'year': year, 'page': page, 'error': error, 'p': request.POST, **_bill_form_data(muni)}, status=status)
+
+
+def _bill_detail(request, bill, error=None, status=200):
+    muni = ledger.municipality_of(request.user)
+    return render(request, 'main/accounting/bill_detail.html', {
+        'bill': bill, 'year': bill.fiscal_year, 's': bills.summary(bill), 'payments': bill.payments.select_related(
+            'voucher', 'bank_account'), 'methods': BillPayment.METHODS, 'error': error, 'p': request.POST,
+        **_bill_form_data(muni)}, status=status)
+
+
+@_guard()
+def acc_bill_detail(request, bill_id):
+    return _bill_detail(request, bills.get_bill(request.user, bill_id))
+
+
+@_guard()
+@require_POST
+def acc_bill_pay(request, bill_id):
+    bill = bills.get_bill(request.user, bill_id)
+    muni = ledger.municipality_of(request.user)
+    p = request.POST
+    try:
+        bills.record_payment(request.user, bill, parse_jalali(p.get('date', '')), parse_amount(p.get('amount')),
+                             _find(Account, muni, p.get('bank_account')), p.get('method', ''), p.get('reference', ''))
+    except OfficeError as exc:
+        return _bill_detail(request, bill, str(exc), exc.status)
+    messages.success(request, 'پرداخت ثبت شد و سند درآمد (موقت) صادر شد.')
+    return redirect('main:acc_bill_detail', bill_id=bill.id)
+
+
+@_guard()
+@require_POST
+def acc_bill_cancel(request, bill_id):
+    bill = bills.get_bill(request.user, bill_id)
+    try:
+        bills.cancel_bill(request.user, bill)
+        messages.success(request, 'فیش ابطال شد.')
+    except OfficeError as exc:
+        messages.error(request, str(exc))
+    return redirect('main:acc_bill_detail', bill_id=bill.id)
+
+
+@_guard()
+@require_POST
+def acc_payment_cancel(request, payment_id):
+    muni = ledger.municipality_of(request.user)
+    payment = get_object_or_404(BillPayment, pk=payment_id, bill__municipality=muni)
+    try:
+        bills.cancel_payment(request.user, payment)
+        messages.success(request, 'پرداخت ابطال شد و سند آن حذف شد.')
+    except OfficeError as exc:
+        messages.error(request, str(exc))
+    return redirect('main:acc_bill_detail', bill_id=payment.bill_id)

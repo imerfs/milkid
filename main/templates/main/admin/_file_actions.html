@@ -1,0 +1,28 @@
+{% if not row.is_dir %}
+<a class="btn btn-sm btn-outline-primary" href="{% url 'main:admin_server_file_download' %}?root={{ root_key }}&path={{ item_path|urlencode }}">دانلود</a>
+{% endif %}
+<form method="post" action="{% url 'main:admin_server_file_action' %}" onsubmit="var d=prompt('مسیر جدید (تغییر نام یا انتقال):', this.dest.value); if(!d) return false; this.dest.value=d;">
+  {% csrf_token %}<input type="hidden" name="op" value="move"><input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ item_path }}"><input type="hidden" name="dest" value="{{ item_path }}">
+  <button class="btn btn-sm btn-outline-secondary">تغییر نام/انتقال</button></form>
+{% if not row.is_dir %}
+<form method="post" action="{% url 'main:admin_server_file_action' %}" onsubmit="var d=prompt('مسیر کپی:', this.dest.value); if(!d) return false; this.dest.value=d;">
+  {% csrf_token %}<input type="hidden" name="op" value="copy"><input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ item_path }}"><input type="hidden" name="dest" value="{{ item_path }}">
+  <button class="btn btn-sm btn-outline-secondary">کپی</button></form>
+{% endif %}
+<form method="post" action="{% url 'main:admin_server_file_action' %}">
+  {% csrf_token %}<input type="hidden" name="op" value="zip"><input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ item_path }}">
+  <button class="btn btn-sm btn-outline-secondary">فشرده‌سازی</button></form>
+{% if row.name|lower|slice:"-4:" == '.zip' %}
+<form method="post" action="{% url 'main:admin_server_file_action' %}">
+  {% csrf_token %}<input type="hidden" name="op" value="unzip"><input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ item_path }}">
+  <button class="btn btn-sm btn-outline-secondary">استخراج</button></form>
+{% endif %}
+{% if row.is_dir %}
+<form method="post" action="{% url 'main:admin_server_file_action' %}" onsubmit="return confirm('این پوشهٔ خالی حذف شود؟')">
+  {% csrf_token %}<input type="hidden" name="op" value="rmdir"><input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ item_path }}">
+  <button class="btn btn-sm btn-outline-danger">حذف پوشه</button></form>
+{% else %}
+<form method="post" action="{% url 'main:admin_server_file_delete' %}" onsubmit="return confirm('این فایل برای همیشه حذف شود؟')">
+  {% csrf_token %}<input type="hidden" name="root" value="{{ root_key }}"><input type="hidden" name="path" value="{{ item_path }}">
+  <button class="btn btn-sm btn-outline-danger">حذف</button></form>
+{% endif %}

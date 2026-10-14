@@ -1,0 +1,29 @@
+{% load accounting_tags jalali_tags %}
+{% url 'main:acc_panel' as panel_url %}
+<div id="acc-view" data-tab="{{ tab }}" data-tab-label="{{ tab_meta.1 }}" data-year="{{ year.id }}" data-panel-url="{{ panel_url }}"
+     {% if year and not year.is_closed %}data-new-voucher="{% url 'main:acc_p_voucher_new' year.id %}" data-new-bill="{% url 'main:acc_p_bill_new' year.id %}" data-new-budget="{% url 'main:acc_p_budget' year.id %}"{% endif %}
+     data-new-party="{% url 'main:acc_p_party_new' %}" data-new-account="{% url 'main:acc_p_account_new' %}"
+     hx-target="#acc-panel" hx-swap="innerHTML">
+    <div class="ac-head">
+        <div>
+            <h1 class="ac-title">{{ tab_meta.1 }}</h1>
+            <p class="ac-sub">{{ tab_meta.4 }}</p>
+        </div>
+        <div class="ac-actions">
+            {% if year %}
+            <div class="ac-yearsel"><label for="acc-year" class="ac-sr">سال مالی</label>
+                <select id="acc-year" name="year" hx-get="{{ panel_url }}" hx-include="[name=tab]"><option value="" disabled>سال مالی</option>{% for y in years %}<option value="{{ y.id }}" {% if y.id == year.id %}selected{% endif %}>سال {{ y.year|fa }}{% if y.is_closed %} (بسته){% endif %}</option>{% endfor %}</select>
+                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                <input type="hidden" name="tab" value="{{ tab }}">
+            </div>
+            {% if year.is_closed %}<span class="ac-closed">سال بسته است</span>{% else %}
+            <button type="button" class="ac-btn" hx-get="{% url 'main:acc_p_budget' year.id %}" hx-target="#acc-modal-body" title="ثبت بودجه"><i class="fas fa-chart-pie" aria-hidden="true"></i><span class="lbl">ثبت بودجه</span></button>
+            <button type="button" class="ac-btn ac-btn-ok" hx-get="{% url 'main:acc_p_bill_new' year.id %}" hx-target="#acc-modal-body" title="صدور فیش نقدی"><i class="fas fa-receipt" aria-hidden="true"></i><span class="lbl">صدور فیش نقدی</span></button>
+            <button type="button" class="ac-btn ac-btn-brand" hx-get="{% url 'main:acc_p_voucher_new' year.id %}" hx-target="#acc-modal-body" title="سند جدید"><i class="fas fa-plus" aria-hidden="true"></i><span class="lbl">سند جدید</span></button>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% include tab_template %}
+</div>

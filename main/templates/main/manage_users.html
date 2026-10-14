@@ -157,6 +157,7 @@
                                     <td>{{ user_profile.created_at|persian_date:"Y/m/d" }}</td>
                                     <td>
                                         <div class="btn-group-vertical" role="group">
+                                            <a href="{% url 'main:admin_user_detail' user_profile.user_id %}" class="btn btn-sm btn-outline-primary mb-1"><i class="fas fa-eye me-1"></i>مشاهده اطلاعات</a>
                                             {% if user_profile.is_active and user_profile.user.is_active %}
                                                 <!-- User is active - show freeze option -->
                                                 <form method="post" class="d-inline mb-1">
@@ -200,6 +201,36 @@
                                         <i class="fas fa-users text-muted me-2"></i>کاربری یافت نشد
                                     </td>
                                 </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Deleted Users Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-user-slash me-2"></i>کاربران حذف‌شده ({{ deleted_users|length }})</h5></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="deleted-users-table">
+                            <thead>
+                                <tr><th>نام کامل</th><th>نام کاربری</th><th>کد ملی</th><th>نقش</th><th>تاریخ حذف</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for p in deleted_users %}
+                                <tr>
+                                    <td>{{ p.user.get_full_name|default:"-" }}</td>
+                                    <td>{{ p.deleted_username|default:p.user.username }}</td>
+                                    <td>{{ p.deleted_national_id|default:"-" }}</td>
+                                    <td>{{ p.get_role_display }}</td>
+                                    <td>{{ p.deleted_at|date:"Y/m/d H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">کاربر حذف‌شده‌ای وجود ندارد</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
