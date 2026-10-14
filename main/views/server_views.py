@@ -31,7 +31,7 @@ from main.models import BlockedIP, DailyPageView, SiteRedirect, TwoFactorDevice
 from main.ratelimit import client_ip
 
 audit = logging.getLogger('django.security.serverpanel')
-TABS = ('resources', 'stats', 'database', 'backups', 'logs', 'ips', 'redirects', 'services', 'cache', 'security')
+TABS = ('resources', 'stats', 'database', 'backups', 'logs', 'ips', 'redirects', 'services', 'cache', 'sms', 'security')
 
 
 def _back(tab, **query):
@@ -68,6 +68,10 @@ def _panel_context(request, tab):
         ctx.update(email=hostinfo.email_settings(), runtime=hostinfo.runtime(), domains=hostinfo.site_domains())
         if request.GET.get('check') == '1':      # network lookups only on demand: they can take seconds
             ctx['domain_reports'] = [hostinfo.domain_report(d) for d in ctx['domains'][:5]]
+    elif tab == 'sms':
+        from main import sms
+        config = sms.get_config()
+        ctx.update(sms_config=config, sms_key_set=bool(sms.api_key(config)))
     elif tab == 'redirects':
         ctx['redirects'] = SiteRedirect.objects.all()
     elif tab == 'database':

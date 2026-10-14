@@ -17,6 +17,7 @@ from .appointment_views import *
 from .monitoring_views import *
 from .server_views import *
 from .twofactor_views import *
+from .mail_views import *
 from .accounting_views import *
 from .accounting_panel import *
 from .accounting_finance import *

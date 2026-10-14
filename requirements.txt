@@ -50,3 +50,4 @@ openpyxl>=3.1
 
 # Production server
 gunicorn>=22.0.0
+cryptography>=42.0  # encrypts the SMS gateway key at rest (main.sms)
