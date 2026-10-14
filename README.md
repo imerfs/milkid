@@ -273,7 +273,7 @@ gunicorn django_project.wsgi:application --bind 0.0.0.0:8000
 ## 📞 پشتیبانی
 
 برای سوالات و پشتیبانی:
-- ایمیل: support@melkid.ir
+- ایمیل: support@amirl.ir
 - تلگرام: @melkid_support
 
 ---
