@@ -17,6 +17,7 @@ from functools import wraps
 import json
 import os
 
+from main.gis import locks
 from main.access import role_of
 from .common import role_required
 from main.messaging_views import (
@@ -162,7 +163,11 @@ def dashboard_submit_request(request):
         title = request.POST.get('title')
         description = request.POST.get('description')
         property_address = request.POST.get('property_address', '')
-        
+        parcel_number = request.POST.get('parcel_number', '').strip()[:50]
+
+        if parcel_number and (refusal := locks.refusal(parcel_number)):      # a locked plot gets no services
+            messages.error(request, refusal)
+            return redirect('main:user_dashboard')
         if not service_id or not title or not description:
             messages.error(request, 'لطفا تمامی فیلدهای ضروری را پر کنید.')
             return redirect('main:user_dashboard')
@@ -188,6 +193,7 @@ def dashboard_submit_request(request):
                 title=title,
                 description=description,
                 property_address=property_address,
+                parcel_number=parcel_number,
                 province=prov_obj,
                 county=county_obj,
                 city_village=village_obj,

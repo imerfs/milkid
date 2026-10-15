@@ -1,14 +1,15 @@
 """Load a village map's GeoJSON (built by scripts/gis/build_village_map.py) into the database.
 
 Safe to run again with a newer drawing: plots are matched by their stable ``uid``, geometry and numbers are
-updated in place, and a plot that has an archive or payments is never deleted.
+updated in place, and a plot that has an archive, payments or a lock is never deleted. Names an administrator gave
+to land-use classes and neighbourhoods are kept.
 """
-import hashlib
 import json
-from collections import defaultdict
 from pathlib import Path
 
 from django.utils import timezone
+
+from main.gis.uids import parcel_uids, renewal_code
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data' / 'gis'
 
@@ -17,48 +18,31 @@ VILLAGES = {
     'dastgerd': {
         'name': 'دستگرد', 'province': 'خراسان جنوبی', 'county': 'بیرجند', 'district': 'مرکزی',
         'file': DATA_DIR / 'dastgerd.geojson',
-        'source_note': 'نقشه‌ی برداشت روستای دستگرد (join14040110.dwg)',
+        'source_note': 'نقشه‌ی برداشت روستای دستگرد (join14040110) و نقشه‌ی ۱۴۰۵ (Pish-Dastgerd)',
     },
 }
 
-
-def _centroid(ring):
-    xs = [p[0] for p in ring]
-    ys = [p[1] for p in ring]
-    return sum(xs) / len(xs), sum(ys) / len(ys)
+PARCEL_FIELDS = ['block_no', 'number', 'renewal_code', 'kind', 'area_m2', 'other_numbers', 'duplicate_code', 'zone',
+                 'land_use', 'building_area_m2', 'building_count', 'easement_hits', 'first_year', 'last_year',
+                 'geometry']
 
 
-def parcel_uids(features):
-    """Stable identity per plot: its renewal code, '#2' ... for repeated codes, a position hash if unnumbered."""
-    seen = defaultdict(list)
-    for index, feature in enumerate(features):
-        seen[feature['properties']['code']].append(index)
-    uids = {}
-    for code, indexes in seen.items():
-        if not code:
-            for index in indexes:
-                lng, lat = _centroid(features[index]['geometry']['coordinates'][0])
-                uids[index] = 'u' + hashlib.sha1(f'{lng:.6f},{lat:.6f}'.encode()).hexdigest()[:10]
-            continue
-        # the biggest keeps the bare code, the rest are numbered by size then position, so a reload keeps them
-        ordered = sorted(indexes, key=lambda i: (-features[i]['properties']['area'],
-                                                 _centroid(features[i]['geometry']['coordinates'][0])))
-        for rank, index in enumerate(ordered):
-            uids[index] = code if rank == 0 else f'{code}#{rank + 1}'
-    return uids
+def _has_other_links(parcel):
+    return hasattr(parcel, 'archive') or parcel.payments.exists() or parcel.locks.exists()
 
 
 def load_village_map(slug, models, geography=None, geojson_path=None):
-    """Create or update the map ``slug``. ``models`` has VillageMap, MapBlock, MapParcel and CityVillage
-    (the real ones, or historical ones inside a migration). Returns a dict of counts."""
+    """Create or update the map ``slug``. ``models`` has VillageMap, MapBlock, MapParcel, MapZone, MapEasement,
+    MapBuilding, LandUseClass and CityVillage (the real ones, or historical ones inside a migration).
+    Returns a dict of counts."""
     spec = VILLAGES[slug]
     path = Path(geojson_path or spec['file'])
     collection = json.loads(path.read_text(encoding='utf-8'))
     features = collection['features']
-    parcels = [f for f in features if f['properties']['type'] == 'parcel']
-    blocks = [f for f in features if f['properties']['type'] == 'block']
+    by_type = {name: [f for f in features if f['properties']['type'] == name]
+               for name in ('parcel', 'block', 'zone', 'easement', 'building')}
 
-    ring = [p for f in blocks for p in f['geometry']['coordinates'][0]]
+    ring = [p for f in by_type['block'] for p in f['geometry']['coordinates'][0]]
     centre = (sum(p[1] for p in ring) / len(ring), sum(p[0] for p in ring) / len(ring)) if ring else (0, 0)
     link = geography.resolve(province=spec['province'], county=spec['county'], district=spec['district'],
                              city_village=spec['name'], models=models) if geography else {}
@@ -68,17 +52,38 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
         'loaded_at': timezone.now(),
     })
 
+    # land-use classes: new ones from the drawing; a name someone typed is never overwritten
+    classes = {}
+    for item in collection.get('land_use', []):
+        if not item['key']:
+            continue
+        row, created = models.LandUseClass.objects.get_or_create(
+            village_map=village_map, key=item['key'], defaults={'name': item['name'], 'plot_count': item['plots']})
+        if not created:
+            row.plot_count = item['plots']
+            if not row.name and item['name']:
+                row.name = item['name']
+            row.save()
+        classes[item['key']] = row
+
     existing = {p.uid: p for p in models.MapParcel.objects.filter(village_map=village_map)}
-    uids = parcel_uids(parcels)
+    uids = parcel_uids(by_type['parcel'])
+    uid_of_index = {}
     create, update = [], []
-    for index, feature in enumerate(parcels):
+    for index, feature in enumerate(by_type['parcel']):
         props = feature['properties']
-        values = dict(block_no=props['block'], number=props['number'], renewal_code=props['code'],
-                      kind=props['kind'], area_m2=props['area'], other_numbers=props['other_numbers'],
-                      duplicate_code=props['duplicate'], geometry=feature['geometry'])
-        uid = uids[index]
-        if uid in existing:
-            row = existing.pop(uid)
+        uid = props.get('uid') or uids[index]
+        uid_of_index[uid] = True
+        row = existing.pop(uid, None)
+        guild, apartment = (row.guild_no, row.apartment_no) if row else (0, 0)
+        values = dict(block_no=props['block'], number=props['number'], kind=props['kind'], area_m2=props['area'],
+                      other_numbers=props['other_numbers'], duplicate_code=props['duplicate'], zone=props['zone'],
+                      renewal_code=renewal_code(guild, apartment, props['number'], props['block'], props['zone']),
+                      land_use=classes.get(props.get('lu')), building_area_m2=props.get('bld_area', 0),
+                      building_count=props.get('bld_count', 0), easement_hits=props.get('easements', []),
+                      first_year=props.get('first_year'), last_year=props.get('last_year'),
+                      geometry=feature['geometry'])
+        if row is not None:
             for key, value in values.items():
                 setattr(row, key, value)
             update.append(row)
@@ -86,12 +91,10 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
             create.append(models.MapParcel(village_map=village_map, uid=uid, **values))
     models.MapParcel.objects.bulk_create(create, batch_size=500)
     if update:
-        models.MapParcel.objects.bulk_update(
-            update, ['block_no', 'number', 'renewal_code', 'kind', 'area_m2', 'other_numbers', 'duplicate_code',
-                     'geometry'], batch_size=500)
+        models.MapParcel.objects.bulk_update(update, PARCEL_FIELDS, batch_size=500)
     removed = 0
-    for uid, row in existing.items():                      # plots that are no longer in the drawing
-        if not hasattr(row, 'archive') and not row.payments.exists():
+    for row in existing.values():                      # plots that are no longer in the drawing
+        if not _has_other_links(row):
             row.delete()
             removed += 1
 
@@ -99,6 +102,27 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
     models.MapBlock.objects.bulk_create([
         models.MapBlock(village_map=village_map, number=f['properties']['number'],
                         parcel_count=f['properties']['parcels'], area_m2=f['properties']['area'],
-                        geometry=f['geometry']) for f in blocks], batch_size=200)
+                        geometry=f['geometry']) for f in by_type['block']], batch_size=200)
+
+    names = dict(models.MapZone.objects.filter(village_map=village_map).values_list('number', 'name'))
+    models.MapZone.objects.filter(village_map=village_map).delete()
+    models.MapZone.objects.bulk_create([
+        models.MapZone(village_map=village_map, number=f['properties']['number'], name=names.get(f['properties']['number'], ''),
+                       block_count=f['properties']['blocks'], parcel_count=f['properties']['parcels'],
+                       geometry=f['geometry']) for f in by_type['zone']])
+
+    models.MapEasement.objects.filter(village_map=village_map).delete()
+    models.MapEasement.objects.bulk_create([
+        models.MapEasement(village_map=village_map, kind=f['properties']['kind'], label=f['properties']['label'],
+                           geometry=f['geometry']) for f in by_type['easement']], batch_size=200)
+
+    parcel_ids = dict(models.MapParcel.objects.filter(village_map=village_map).values_list('uid', 'pk'))
+    models.MapBuilding.objects.filter(village_map=village_map).delete()
+    models.MapBuilding.objects.bulk_create([
+        models.MapBuilding(village_map=village_map, parcel_id=parcel_ids.get(f['properties']['parcel']),
+                           area_m2=f['properties']['area'], geometry=f['geometry']) for f in by_type['building']],
+        batch_size=500)
     return {'parcels_created': len(create), 'parcels_updated': len(update), 'parcels_removed': removed,
-            'blocks': len(blocks), 'linked': bool(village_map.city_village_id)}
+            'blocks': len(by_type['block']), 'zones': len(by_type['zone']), 'easements': len(by_type['easement']),
+            'buildings': len(by_type['building']), 'land_use_classes': len(classes),
+            'linked': bool(village_map.city_village_id)}

@@ -595,7 +595,19 @@ class CitizenRegistrationForm(UserCreationForm):
 
         return user
 
-class ServiceRequestForm(forms.ModelForm):
+class LockedParcelGuard:
+    """Refuse a request whose plot number is the renewal code of a locked plot (see main/gis/locks.py)."""
+
+    def clean_parcel_number(self):
+        from main.gis import locks
+        value = self.cleaned_data.get('parcel_number')  # pylint: disable=no-member  # a mixin of ModelForm classes
+        message = locks.refusal(value) if value else ''
+        if message:
+            raise forms.ValidationError(message)
+        return value
+
+
+class ServiceRequestForm(LockedParcelGuard, forms.ModelForm):
     """
     Enhanced form for creating new service requests with property details
     """
@@ -1559,7 +1571,7 @@ class PropertySearchForm(forms.Form):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
 
-class ConstructionPermitForm(forms.ModelForm):
+class ConstructionPermitForm(LockedParcelGuard, forms.ModelForm):
     """
     Specialized form for construction permit requests with geographic dropdowns
     """

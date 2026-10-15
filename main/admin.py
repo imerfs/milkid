@@ -229,3 +229,24 @@ class CityVillageAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+# Village web-GIS: land-use colours and neighbourhoods get their names here
+from main.models import LandUseClass, MapZone, VillageMap  # noqa: E402
+
+
+@admin.register(LandUseClass)
+class LandUseClassAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'key', 'plot_count', 'village_map')
+    list_editable = ()
+    readonly_fields = ('key', 'plot_count', 'village_map')
+
+
+@admin.register(MapZone)
+class MapZoneAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'number', 'parcel_count', 'village_map')
+    readonly_fields = ('number', 'parcel_count', 'block_count', 'village_map', 'geometry')
+
+
+@admin.register(VillageMap)
+class VillageMapAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'county_name', 'city_village', 'loaded_at')

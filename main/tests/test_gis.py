@@ -1,6 +1,7 @@
 # pylint: disable=import-error  # shapely is optional (scripts/gis/requirements.txt); the tests using it skip without it
 """Village web-GIS: who may open Dastgerd's map, what the archive accepts, and that a reload keeps the archives."""
 import json
+import re
 import tempfile
 from pathlib import Path
 from unittest import skipUnless
@@ -9,10 +10,11 @@ from django.test import TestCase
 from django.urls import reverse
 
 from main import geography, models as all_models
-from main.gis import loader
-from main.models import (CityVillage, County, District, MapParcel, ParcelArchive, ParcelFeePayment, Province,
-                         VillageMap)
-from main.tests.helpers import client_for, make_user
+from main.gis import data as gis_data, loader
+from main.gis.uids import parcel_uids, renewal_code
+from main.models import (CityVillage, County, District, LandUseClass, MapBuilding, MapEasement, MapParcel, MapZone,
+                         ParcelArchive, ParcelFeePayment, ParcelLock, Province, VillageMap)
+from main.tests.helpers import client_for, make_service, make_user
 
 try:
     import shapely  # noqa: F401  pylint: disable=unused-import
@@ -50,6 +52,8 @@ class MapAccess(TestCase):
             'page': reverse('main:gis_map', args=[SLUG]),
             'data': reverse('main:gis_data', args=[SLUG]),
             'detail': reverse('main:gis_parcel', args=[SLUG, parcel.pk]),
+            'buildings': reverse('main:gis_buildings', args=[SLUG]),
+            'easements': reverse('main:gis_easements', args=[SLUG]),
         }
 
     def setUp(self):
@@ -58,8 +62,9 @@ class MapAccess(TestCase):
     def test_anonymous_is_sent_to_login_or_refused(self):
         urls = self.urls(self.parcel)
         self.assertEqual(client_for().get(urls['page']).status_code, 302)
-        self.assertEqual(client_for().get(urls['data']).status_code, 401)
-        self.assertEqual(client_for().get(urls['detail']).status_code, 401)
+        for name in ('data', 'detail', 'buildings', 'easements'):
+            self.assertEqual(client_for().get(urls[name]).status_code, 401, name)
+        self.assertEqual(post_json(client_for(), reverse('main:gis_lock', args=[SLUG, self.parcel.pk]), {}).status_code, 401)
         self.assertEqual(post_json(client_for(), reverse('main:gis_archive_save', args=[SLUG, self.parcel.pk]), {}).status_code, 401)
 
     def test_other_roles_are_refused_even_in_the_village(self):
@@ -68,11 +73,14 @@ class MapAccess(TestCase):
             client = client_for(make_user(role, **LOCAL))
             with self.subTest(role=role):
                 self.assertEqual(client.get(urls['page']).status_code, 302)
-                self.assertEqual(client.get(urls['data']).status_code, 403)
-                self.assertEqual(client.get(urls['detail']).status_code, 403)
+                for name in ('data', 'detail', 'buildings', 'easements'):
+                    self.assertEqual(client.get(urls[name]).status_code, 403, name)
                 self.assertEqual(post_json(client, reverse('main:gis_archive_save', args=[SLUG, self.parcel.pk]),
                                            {'owner_name': 'x'}).status_code, 403)
+                self.assertEqual(post_json(client, reverse('main:gis_lock', args=[SLUG, self.parcel.pk]),
+                                           {'reason': 'debt'}).status_code, 403)
         self.assertFalse(ParcelArchive.objects.exists())
+        self.assertFalse(ParcelLock.objects.exists())
 
     def test_engineer_of_another_village_is_refused(self):
         urls = self.urls(self.parcel)
@@ -92,8 +100,10 @@ class MapAccess(TestCase):
         self.assertEqual(client.get(urls['page']).status_code, 200)
         data = client.get(urls['data'])
         self.assertEqual(data.status_code, 200)
-        kinds = {f['properties']['t'] for f in data.json()['features']}
-        self.assertEqual(kinds, {'b', 'p'})
+        body = data.json()
+        self.assertEqual(set(body), {'parcels', 'blocks', 'zones', 'land_uses', 'centre'})
+        self.assertGreater(len(body['parcels']['features']), 3000)
+        self.assertEqual(len(body['zones']['features']), 5)
         self.assertEqual(client.get(urls['detail']).json()['parcel']['code'], self.parcel.renewal_code)
 
     def test_engineer_linked_through_the_divisions_table_is_matched_by_link(self):
@@ -231,19 +241,13 @@ class ReloadKeepsArchives(TestCase):
     def test_uids_are_unique_and_stable(self):
         features = [f for f in json.loads(loader.VILLAGES[SLUG]['file'].read_text(encoding='utf-8'))['features']
                     if f['properties']['type'] == 'parcel']
-        first, second = loader.parcel_uids(features), loader.parcel_uids(features)
+        first, second = parcel_uids(features), parcel_uids(features)
         self.assertEqual(first, second)
         self.assertEqual(len(set(first.values())), len(features))
 
 
 @skipUnless(HAVE_SHAPELY, 'shapely is only needed to rebuild the map from a drawing (scripts/gis/requirements.txt)')
 class BuildFromDrawing(TestCase):
-    def test_renewal_code_is_block_dash_plot(self):
-        from scripts.gis.build_village_map import renewal_code
-        self.assertEqual(renewal_code('69', '12'), '69-12')
-        self.assertEqual(renewal_code('', '12'), '')
-        self.assertEqual(renewal_code('69', ''), '')
-
     def test_numbers_without_an_outline_split_the_free_block_area(self):
         from shapely.geometry import Point, box
         from scripts.gis.build_village_map import estimate_missing_plots
@@ -263,3 +267,343 @@ class BuildFromDrawing(TestCase):
         result = estimate_missing_plots(box(0, 0, 10, 10), [], [(Point(5, 5), '7')])
         self.assertEqual([n for n, _ in result], ['7'])
         self.assertAlmostEqual(result[0][1].area, 100)
+
+
+class RenewalCode(TestCase):
+    def test_code_is_guild_apartment_plot_block_zone(self):
+        self.assertEqual(renewal_code(0, 0, '12', '69', '3'), '0-0-12-69-3')
+        self.assertEqual(renewal_code(5, 2, '7', '101', '4'), '5-2-7-101-4')
+
+    def test_no_code_without_plot_block_or_zone(self):
+        for args in ((0, 0, '', '69', '3'), (0, 0, '12', '', '3'), (0, 0, '12', '69', '')):
+            self.assertEqual(renewal_code(*args), '')
+
+    def test_every_stored_code_has_the_five_parts(self):
+        pattern = re.compile(r'^\d+-\d+-\d+-\d+-[1-5]$')
+        codes = list(MapParcel.objects.exclude(renewal_code='').values_list('renewal_code', flat=True))
+        self.assertGreater(len(codes), 3000)
+        self.assertEqual([c for c in codes if not pattern.match(c)][:5], [])
+
+    def test_code_agrees_with_the_plots_own_fields(self):
+        for parcel in MapParcel.objects.exclude(renewal_code='')[:400]:
+            self.assertEqual(parcel.renewal_code, f'{parcel.guild_no}-{parcel.apartment_no}-{parcel.number}-{parcel.block_no}-{parcel.zone}')
+
+    def test_most_plots_have_a_code_and_unnumbered_ones_do_not(self):
+        total = MapParcel.objects.count()
+        self.assertGreater(MapParcel.objects.exclude(renewal_code='').count(), 0.85 * total)
+        self.assertFalse(MapParcel.objects.filter(number='').exclude(renewal_code='').exists())
+
+
+class MapContents(TestCase):
+    def setUp(self):
+        self.village = VillageMap.objects.get(slug=SLUG)
+
+    def test_five_neighbourhoods_each_with_a_polygon(self):
+        zones = MapZone.objects.filter(village_map=self.village)
+        self.assertEqual(sorted(z.number for z in zones), ['1', '2', '3', '4', '5'])
+        self.assertTrue(all(z.geometry['type'] in ('Polygon', 'MultiPolygon') and z.parcel_count > 100 for z in zones))
+
+    def test_plots_belong_to_a_neighbourhood_and_a_block_has_one(self):
+        self.assertLess(MapParcel.objects.filter(village_map=self.village, zone='').count(), 20)
+        by_block = {}
+        for block, zone in MapParcel.objects.exclude(zone='').exclude(block_no='').values_list('block_no', 'zone'):
+            by_block.setdefault(block, []).append(zone)
+        agree = sum(max(zs.count(z) for z in set(zs)) for zs in by_block.values())
+        self.assertGreater(agree / sum(len(zs) for zs in by_block.values()), 0.98)
+
+    def test_land_use_colours_come_from_the_drawing(self):
+        classes = {c.key: c for c in LandUseClass.objects.filter(village_map=self.village)}
+        self.assertGreater(len(classes), 10)
+        self.assertEqual(classes['ffff00'].name, 'مسکونی')
+        self.assertTrue(all(re.fullmatch(r'[0-9a-f]{6}', key) for key in classes))
+        residential = MapParcel.objects.filter(land_use__key='ffff00').count()
+        self.assertGreater(residential, 2000)
+
+    def test_buildings_are_the_improvements_on_the_land(self):
+        self.assertGreater(MapBuilding.objects.filter(village_map=self.village).count(), 3000)
+        built = MapParcel.objects.filter(village_map=self.village, building_count__gt=0)
+        self.assertGreater(built.count(), 2000)
+        for parcel in built[:200]:
+            self.assertGreater(parcel.building_area_m2, 0)
+            self.assertLess(parcel.building_area_m2, parcel.area_m2 * 3 + 10)
+
+    def test_easement_kinds_and_the_plots_that_break_them(self):
+        kinds = set(MapEasement.objects.filter(village_map=self.village).values_list('kind', flat=True))
+        self.assertTrue({'qanat', 'defense2', 'general'} <= kinds)
+        hit = list(MapParcel.objects.exclude(easement_hits=[]))
+        self.assertTrue(hit)
+        for parcel in hit:
+            self.assertTrue(all({'k', 'a'} <= set(h) for h in parcel.easement_hits))
+
+    def test_timeline_marks_what_the_two_surveys_disagree_on(self):
+        gone = MapParcel.objects.filter(last_year__isnull=False)
+        self.assertTrue(gone.exists())
+        self.assertEqual(set(gone.values_list('last_year', flat=True)), {1404})
+
+
+class MapLayersEndpoints(TestCase):
+    def setUp(self):
+        self.client = client_for(make_user('engineer', **LOCAL))
+
+    def test_buildings_and_easements_are_feature_collections(self):
+        buildings = self.client.get(reverse('main:gis_buildings', args=[SLUG])).json()
+        easements = self.client.get(reverse('main:gis_easements', args=[SLUG])).json()
+        self.assertEqual(buildings['type'], 'FeatureCollection')
+        self.assertGreater(len(buildings['features']), 3000)
+        self.assertEqual({f['properties']['k'] for f in easements['features']} - {'general', 'quality', 'qanat', 'qanat_quality', 'defense1', 'defense2'}, set())
+
+    def test_plots_carry_what_the_map_colours_by(self):
+        features = self.client.get(reverse('main:gis_data', args=[SLUG])).json()['parcels']['features']
+        props = features[0]['properties']
+        for key in ('id', 'code', 'b', 'n', 'z', 'e', 'a', 'lu', 'ba', 'h', 'f', 'py', 'pay', 'lk', 'fy', 'ly'):
+            self.assertIn(key, props)
+
+    def test_the_page_hands_the_script_its_configuration(self):
+        page = self.client.get(reverse('main:gis_map', args=[SLUG]))
+        self.assertContains(page, 'id="vm-config"')
+        self.assertContains(page, 'vm-timeline')
+        self.assertContains(page, 'data-easement="qanat"')
+        self.assertContains(page, 'name="colormode" value="use"')
+
+
+class ParcelDetailShowsTheNewFacts(TestCase):
+    def test_area_building_zone_land_use_and_violations(self):
+        client = client_for(make_user('engineer', **LOCAL))
+        violating = MapParcel.objects.exclude(easement_hits=[]).first()
+        detail = client.get(reverse('main:gis_parcel', args=[SLUG, violating.pk])).json()['parcel']
+        self.assertTrue(detail['easements'])
+        self.assertTrue(all(e['label'] for e in detail['easements']))
+        built = MapParcel.objects.filter(building_count__gt=0, land_use__key='ffff00').first()
+        detail = client.get(reverse('main:gis_parcel', args=[SLUG, built.pk])).json()['parcel']
+        self.assertEqual(detail['land_use']['name'], 'مسکونی')
+        self.assertEqual(detail['land_use']['color'], '#ffff00')
+        self.assertGreater(detail['building_area'], 0)
+        self.assertEqual(detail['zone'], built.zone)
+        self.assertEqual(detail['code'], built.renewal_code)
+
+
+class LockingAParcel(TestCase):
+    def setUp(self):
+        self.parcel = MapParcel.objects.filter(village_map__slug=SLUG).exclude(renewal_code='').first()
+        self.user = make_user('engineer', **LOCAL)
+        self.client = client_for(self.user)
+        self.lock_url = reverse('main:gis_lock', args=[SLUG, self.parcel.pk])
+
+    def test_locking_for_each_of_the_three_reasons(self):
+        for reason in ('debt', 'neighbor_complaint', 'street_occupation'):
+            response = post_json(self.client, self.lock_url, {'reason': reason, 'notes': 'یادداشت'})
+            self.assertEqual(response.status_code, 200, response.content)
+        parcel = response.json()['parcel']
+        self.assertTrue(parcel['locked'])
+        self.assertEqual({lock['reason'] for lock in parcel['locks']}, {'debt', 'neighbor_complaint', 'street_occupation'})
+        self.assertEqual(ParcelLock.objects.filter(parcel=self.parcel, unlocked_at__isnull=True).count(), 3)
+        self.assertTrue(all(lock.locked_by == self.user for lock in ParcelLock.objects.all()))
+
+    def test_an_unknown_reason_or_a_repeat_is_refused(self):
+        self.assertEqual(post_json(self.client, self.lock_url, {'reason': 'because'}).status_code, 400)
+        self.assertEqual(post_json(self.client, self.lock_url, {}).status_code, 400)
+        self.assertEqual(post_json(self.client, self.lock_url, {'reason': 'debt'}).status_code, 200)
+        self.assertEqual(post_json(self.client, self.lock_url, {'reason': 'debt'}).status_code, 400)
+        self.assertEqual(ParcelLock.objects.count(), 1)
+
+    def test_releasing_needs_a_reason_and_keeps_the_history(self):
+        post_json(self.client, self.lock_url, {'reason': 'debt'})
+        lock = ParcelLock.objects.get()
+        release = reverse('main:gis_unlock', args=[SLUG, self.parcel.pk, lock.pk])
+        self.assertEqual(post_json(self.client, release, {'notes': ''}).status_code, 400)
+        self.assertTrue(ParcelLock.objects.get().active)
+        response = post_json(self.client, release, {'notes': 'بدهی پرداخت شد'})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['parcel']['locked'])
+        lock.refresh_from_db()
+        self.assertEqual((lock.active, lock.unlocked_by, lock.unlock_notes), (False, self.user, 'بدهی پرداخت شد'))
+        self.assertEqual(post_json(self.client, release, {'notes': 'دوباره'}).status_code, 404)    # already released
+        self.assertEqual(post_json(self.client, self.lock_url, {'reason': 'debt'}).status_code, 200)  # can be locked again
+        self.assertEqual(ParcelLock.objects.filter(parcel=self.parcel).count(), 2)
+
+    def test_the_map_data_shows_who_is_locked_and_when(self):
+        post_json(self.client, self.lock_url, {'reason': 'street_occupation'})
+        features = self.client.get(reverse('main:gis_data', args=[SLUG])).json()['parcels']['features']
+        props = next(f['properties'] for f in features if f['properties']['id'] == self.parcel.pk)
+        start = gis_data.current_year()
+        self.assertEqual(props['lk'], [[start, 0]])
+
+    def test_a_plot_of_another_village_cannot_be_locked_through_this_one(self):
+        other = VillageMap.objects.create(slug='other', name='جای دیگر')
+        foreign = MapParcel.objects.create(village_map=other, uid='1-1', geometry={'type': 'Polygon', 'coordinates': []})
+        response = post_json(self.client, reverse('main:gis_lock', args=[SLUG, foreign.pk]), {'reason': 'debt'})
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(ParcelLock.objects.exists())
+
+    def test_the_admin_may_lock_too(self):
+        admin = client_for(make_user('admin'))
+        self.assertEqual(post_json(admin, self.lock_url, {'reason': 'debt'}).status_code, 200)
+
+
+class TimelineFlags(TestCase):
+    def test_permit_payment_and_lock_years_reach_the_map(self):
+        village = VillageMap.objects.get(slug=SLUG)
+        parcel = MapParcel.objects.filter(village_map=village).exclude(renewal_code='').first()
+        ParcelArchive.objects.create(parcel=parcel, owner_name='مالک', permit_date=__import__('datetime').date(2025, 5, 1))
+        ParcelFeePayment.objects.create(parcel=parcel, fee_type='x', amount=5, paid_on=__import__('datetime').date(2024, 4, 1))
+        flags = gis_data.live_flags(village)[parcel.pk]
+        self.assertEqual((flags['f'], flags['py']), (1, 1404))        # 2025-05-01 is 1404/02/11
+        self.assertEqual(flags['pay'], [1403])
+
+    def test_an_archive_without_a_permit_date_has_no_permit_year(self):
+        village = VillageMap.objects.get(slug=SLUG)
+        parcel = MapParcel.objects.filter(village_map=village).first()
+        ParcelArchive.objects.create(parcel=parcel, owner_name='مالک')
+        flags = gis_data.live_flags(village)[parcel.pk]
+        self.assertEqual((flags['f'], flags['py']), (1, None))
+
+
+class LoaderKeepsWhatPeopleTyped(TestCase):
+    def test_a_name_given_to_a_colour_and_a_zone_survives_a_reload(self):
+        village = VillageMap.objects.get(slug=SLUG)
+        LandUseClass.objects.filter(village_map=village).exclude(key='ffff00').update(name='نام تستی')
+        MapZone.objects.filter(village_map=village, number='2').update(name='محله‌ی بالا')
+        parcel = MapParcel.objects.filter(village_map=village).exclude(renewal_code='').first()
+        ParcelLock.objects.create(parcel=parcel, reason='debt')
+        loader.load_village_map(SLUG, all_models, geography=geography)
+        self.assertTrue(LandUseClass.objects.filter(village_map=village, name='نام تستی').exists())
+        self.assertEqual(MapZone.objects.get(village_map=village, number='2').name, 'محله‌ی بالا')
+        self.assertTrue(ParcelLock.objects.filter(parcel=parcel, unlocked_at__isnull=True).exists())
+
+    def test_a_plot_with_a_lock_survives_a_drawing_without_it(self):
+        village = VillageMap.objects.get(slug=SLUG)
+        keep = MapParcel.objects.filter(village_map=village).exclude(renewal_code='').first()
+        ParcelLock.objects.create(parcel=keep, reason='debt')
+        collection = json.loads(loader.VILLAGES[SLUG]['file'].read_text(encoding='utf-8'))
+        collection['features'] = [f for f in collection['features'] if f['properties'].get('uid') != keep.uid]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'smaller.geojson'
+            path.write_text(json.dumps(collection, ensure_ascii=False), encoding='utf-8')
+            loader.load_village_map(SLUG, all_models, geography=geography, geojson_path=path)
+        self.assertTrue(MapParcel.objects.filter(pk=keep.pk).exists())
+
+
+@skipUnless(HAVE_SHAPELY, 'shapely is only needed to rebuild the map from a drawing (scripts/gis/requirements.txt)')
+class BuildHelpers(TestCase):
+    def test_two_parallel_lines_become_one_corridor_between_them(self):
+        from shapely.geometry import LineString
+        from scripts.gis.build_village_map import pair_corridors
+        a = LineString([(0, 0), (100, 0)])
+        b = LineString([(0, 15), (100, 15)])
+        far = LineString([(0, 500), (100, 500)])
+        corridors, rest = pair_corridors([a, b, far])
+        self.assertEqual(len(corridors), 1)
+        self.assertAlmostEqual(corridors[0].area, 1500, delta=1)
+        self.assertEqual(len(rest), 1)                      # the lone line stays a line
+
+    def test_a_short_stub_is_never_paired(self):
+        from shapely.geometry import LineString
+        from scripts.gis.build_village_map import pair_corridors
+        corridors, rest = pair_corridors([LineString([(0, 0), (5, 0)]), LineString([(0, 2), (5, 2)])])
+        self.assertEqual((corridors, len(rest)), ([], 2))
+
+    def test_the_most_specific_solid_fill_decides_the_land_use(self):
+        from shapely.geometry import Point, box
+        from shapely.strtree import STRtree
+        from scripts.gis.build_village_map import land_use_of
+        fills = [(box(0, 0, 100, 100), 'big', 'ffff00', True), (box(40, 40, 60, 60), 'small', 'ff0000', True),
+                 (box(0, 0, 100, 100), 'pattern', 'ffffff', False)]
+        tree = STRtree([f[0] for f in fills])
+        self.assertEqual(land_use_of(Point(50, 50), fills, tree), ('ff0000', 'small'))
+        self.assertEqual(land_use_of(Point(10, 10), fills, tree), ('ffff00', 'big'))
+        self.assertIsNone(land_use_of(Point(500, 500), fills, tree))
+
+    def test_geometry_json_reprojects_every_shape(self):
+        from shapely.geometry import LineString, MultiPolygon, box
+        from scripts.gis.build_village_map import geometry_json
+        shift = lambda x, y: (x + 1, y + 2)
+        self.assertEqual(geometry_json(LineString([(0, 0), (1, 1)]), shift)['coordinates'], [[1, 2], [2, 3]])
+        self.assertEqual(geometry_json(box(0, 0, 1, 1), shift)['type'], 'Polygon')
+        self.assertEqual(geometry_json(MultiPolygon([box(0, 0, 1, 1), box(5, 5, 6, 6)]), shift)['type'], 'MultiPolygon')
+
+
+class LockedPlotsGetNoServices(TestCase):
+    """A locked plot is refused new requests, and requests naming it cannot be approved."""
+
+    def setUp(self):
+        self.parcel = MapParcel.objects.filter(village_map__slug=SLUG).exclude(renewal_code='').first()
+        self.code = self.parcel.renewal_code
+        self.citizen = make_user('citizen', **LOCAL)
+        self.service = make_service()
+    def lock(self, reason='debt'):
+        return ParcelLock.objects.create(parcel=self.parcel, reason=reason)
+
+    def submit(self, code):
+        return client_for(self.citizen).post(reverse('main:dashboard_submit_request'), {
+            'service': self.service.pk, 'title': 'درخواست', 'description': 'توضیح', 'parcel_number': code})
+
+    def test_the_message_names_the_reason(self):
+        from main.gis import locks
+        self.assertEqual(locks.refusal(self.code), '')
+        self.lock('debt')
+        self.lock('street_occupation')
+        message = locks.refusal(self.code)
+        self.assertIn('بدهی', message)
+        self.assertIn('اشغال معبر', message)
+        self.assertIn(self.code, message)
+
+    def test_codes_are_found_however_they_are_typed(self):
+        from main.gis import locks
+        self.lock()
+        typed = self.code.replace('-', ' ')
+        persian = typed.translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
+        for variant in (self.code, typed, persian, f' {self.code} ', self.code.replace('-', '_')):
+            self.assertTrue(locks.locked_parcels(variant), variant)
+        self.assertEqual(locks.locked_parcels('1-1-1-1-1-1'), [])
+        self.assertEqual(locks.locked_parcels(''), [])
+
+    def test_a_request_for_a_locked_plot_is_not_created(self):
+        from main.models import ServiceRequest
+        self.lock()
+        self.submit(self.code)
+        self.assertFalse(ServiceRequest.objects.filter(user=self.citizen).exists())
+
+    def test_a_request_is_created_once_the_lock_is_released_or_for_another_plot(self):
+        from django.utils import timezone
+        from main.models import ServiceRequest
+        lock = self.lock()
+        self.submit('0-0-999-999-9')                       # some other plot: allowed
+        self.assertEqual(ServiceRequest.objects.filter(user=self.citizen).count(), 1)
+        lock.unlocked_at = timezone.now()
+        lock.save()
+        self.submit(self.code)
+        self.assertEqual(ServiceRequest.objects.filter(user=self.citizen).count(), 2)
+        self.assertEqual(ServiceRequest.objects.filter(user=self.citizen, parcel_number=self.code).count(), 1)
+
+    def test_staff_cannot_approve_a_request_for_a_locked_plot(self):
+        from main import lifecycle
+        from main.models import ServiceRequest
+        request = ServiceRequest.objects.create(user=self.citizen, request_type='other', title='t', description='d',
+                                                parcel_number=self.code, status='pending')
+        engineer = make_user('engineer', **LOCAL)
+        self.lock()
+        with self.assertRaises(lifecycle.TransitionError):
+            lifecycle.approve(request, engineer)
+        with self.assertRaises(lifecycle.TransitionError):
+            lifecycle.set_status(request, engineer, 'approved')
+        request.refresh_from_db()
+        self.assertEqual(request.status, 'pending')
+        lifecycle.reject(request, engineer, 'بدهی')       # saying no is always allowed
+        self.assertEqual(request.status, 'rejected')
+
+    def test_approval_works_when_the_plot_is_not_locked(self):
+        from main import lifecycle
+        from main.models import ServiceRequest
+        request = ServiceRequest.objects.create(user=self.citizen, request_type='other', title='t', description='d',
+                                                parcel_number=self.code, status='pending')
+        lifecycle.approve(request, make_user('engineer', **LOCAL))
+        self.assertEqual(request.status, 'approved')
+
+    def test_the_request_form_refuses_a_locked_plot(self):
+        from main.forms import ConstructionPermitForm, ServiceRequestForm
+        self.lock()
+        for form_class in (ServiceRequestForm, ConstructionPermitForm):
+            form = form_class({'title': 't', 'description': 'd', 'parcel_number': self.code})
+            form.is_valid()
+            self.assertIn('parcel_number', form.errors, form_class.__name__)
+            self.assertIn('قفل', form.errors['parcel_number'][0])
