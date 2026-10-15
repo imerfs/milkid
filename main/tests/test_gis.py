@@ -103,7 +103,7 @@ class MapAccess(TestCase):
         body = data.json()
         self.assertEqual(set(body), {'parcels', 'blocks', 'zones', 'land_uses', 'centre'})
         self.assertGreater(len(body['parcels']['features']), 3000)
-        self.assertEqual(len(body['zones']['features']), 5)
+        self.assertEqual(len(body['zones']['features']), 6)
         self.assertEqual(client.get(urls['detail']).json()['parcel']['code'], self.parcel.renewal_code)
 
     def test_engineer_linked_through_the_divisions_table_is_matched_by_link(self):
@@ -279,7 +279,7 @@ class RenewalCode(TestCase):
             self.assertEqual(renewal_code(*args), '')
 
     def test_every_stored_code_has_the_five_parts(self):
-        pattern = re.compile(r'^\d+-\d+-\d+-\d+-[1-5]$')
+        pattern = re.compile(r'^\d+-\d+-\d+-\d+-[1-6]$')
         codes = list(MapParcel.objects.exclude(renewal_code='').values_list('renewal_code', flat=True))
         self.assertGreater(len(codes), 3000)
         self.assertEqual([c for c in codes if not pattern.match(c)][:5], [])
@@ -298,15 +298,16 @@ class MapContents(TestCase):
     def setUp(self):
         self.village = VillageMap.objects.get(slug=SLUG)
 
-    def test_five_neighbourhoods_each_with_a_polygon(self):
+    def test_six_neighbourhoods_each_with_a_polygon(self):
         zones = MapZone.objects.filter(village_map=self.village)
-        self.assertEqual(sorted(z.number for z in zones), ['1', '2', '3', '4', '5'])
+        self.assertEqual(sorted(z.number for z in zones), ['1', '2', '3', '4', '5', '6'])
         self.assertTrue(all(z.geometry['type'] in ('Polygon', 'MultiPolygon') and z.parcel_count > 100 for z in zones))
 
     def test_plots_belong_to_a_neighbourhood_and_a_block_has_one(self):
         self.assertLess(MapParcel.objects.filter(village_map=self.village, zone='').count(), 20)
         by_block = {}
-        for block, zone in MapParcel.objects.exclude(zone='').exclude(block_no='').values_list('block_no', 'zone'):
+        village = MapParcel.objects.exclude(zone='').exclude(zone='6').exclude(block_no='')   # block numbers of zone 6 restart at 1
+        for block, zone in village.values_list('block_no', 'zone'):
             by_block.setdefault(block, []).append(zone)
         agree = sum(max(zs.count(z) for z in set(zs)) for zs in by_block.values())
         self.assertGreater(agree / sum(len(zs) for zs in by_block.values()), 0.98)
@@ -607,3 +608,169 @@ class LockedPlotsGetNoServices(TestCase):
             form.is_valid()
             self.assertIn('parcel_number', form.errors, form_class.__name__)
             self.assertIn('قفل', form.errors['parcel_number'][0])
+
+
+class HousingAreaIsNeighbourhoodSix(TestCase):
+    def setUp(self):
+        self.village = VillageMap.objects.get(slug=SLUG)
+        self.housing = MapParcel.objects.filter(village_map=self.village, zone='6')
+
+    def test_the_housing_plots_are_in_the_map(self):
+        self.assertGreater(self.housing.count(), 800)
+        self.assertEqual(MapZone.objects.get(village_map=self.village, number='6').parcel_count, self.housing.exclude(block_no='').count())
+
+    def test_its_blocks_restart_at_one_and_do_not_clash_with_the_villages(self):
+        from main.models import MapBlock
+        housing = MapBlock.objects.filter(village_map=self.village, zone='6')
+        self.assertEqual(housing.count(), 32)
+        self.assertTrue(MapBlock.objects.filter(village_map=self.village, number='3').exclude(zone='6').exists())
+        self.assertTrue(housing.filter(number='3').exists())              # block 3 exists twice, in different neighbourhoods
+
+    def test_codes_and_uids_say_which_neighbourhood_they_are_in(self):
+        coded = self.housing.exclude(renewal_code='')
+        self.assertGreater(coded.count(), 500)
+        for parcel in coded[:300]:
+            self.assertTrue(parcel.renewal_code.endswith('-6'), parcel.renewal_code)
+            self.assertTrue(parcel.uid.startswith('6:'), parcel.uid)
+        self.assertEqual(MapParcel.objects.filter(village_map=self.village).values('uid').distinct().count(),
+                         MapParcel.objects.filter(village_map=self.village).count())
+
+    def test_permits_the_drawing_marks_and_the_subdivision_numbers(self):
+        self.assertGreater(self.housing.filter(permit_in_drawing=True).count(), 150)
+        self.assertGreater(self.housing.exclude(lot_no='').count(), 800)
+        self.assertFalse(MapParcel.objects.exclude(zone='6').filter(permit_in_drawing=True).exists())
+
+    @skipUnless(HAVE_SHAPELY, 'shapely is only needed to rebuild the map (scripts/gis/requirements.txt)')
+    def test_no_housing_plot_overlaps_a_plot_of_the_village(self):
+        from shapely.geometry import shape
+        from shapely.strtree import STRtree
+        village = [shape(p.geometry) for p in MapParcel.objects.filter(village_map=self.village, kind='drawn').exclude(zone='6')]
+        tree = STRtree(village)
+        bad = 0
+        for plot in self.housing[:400]:
+            geometry = shape(plot.geometry)
+            bad += any(geometry.intersection(village[i]).area > 1 for i in tree.query(geometry))
+        self.assertEqual(bad, 0)
+
+    def test_the_panel_shows_the_lot_number_and_the_permit_mark(self):
+        client = client_for(make_user('engineer', **LOCAL))
+        parcel = self.housing.filter(permit_in_drawing=True).exclude(renewal_code='').first()
+        detail = client.get(reverse('main:gis_parcel', args=[SLUG, parcel.pk])).json()['parcel']
+        self.assertTrue(detail['permit_in_drawing'])
+        self.assertEqual(detail['zone'], '6')
+        self.assertEqual(detail['lot_no'], parcel.lot_no)
+
+
+class LegendNames(TestCase):
+    def names(self):
+        return {c.key: c.name for c in LandUseClass.objects.filter(village_map__slug=SLUG)}
+
+    def test_colours_take_the_names_the_plans_legend_gives_them(self):
+        names = self.names()
+        self.assertEqual(names['ffff00'], 'مسکونی')
+        self.assertEqual(names['ff0000'], 'تجاری')
+        self.assertEqual(names['004c4c'], 'مذهبی')
+        self.assertEqual(names['7fffff'], 'آموزشی (دبستان)')
+        self.assertEqual(names['999999'], 'اداری')
+        self.assertEqual(names['00ff00'], 'فضای سبز عمومی')
+
+    def test_a_colour_the_legend_does_not_list_stays_unnamed(self):
+        self.assertEqual(self.names()['ffbf00'], '')
+
+    def test_easements_carry_the_plans_own_wording(self):
+        from main.gis import rules
+        self.assertEqual(rules.label('qanat'), 'حریم کمی قنات')
+        self.assertIn('۶ متر', rules.rule('qanat'))
+        self.assertIn('پیلوت', rules.rule('defense1'))
+        self.assertIn('پیلوت', rules.rule('defense2'))
+        self.assertIn('ممنوع', rules.rule('quality'))
+        self.assertEqual(rules.rule('general'), '')
+
+    def test_a_plot_in_a_qanat_easement_is_shown_the_rule(self):
+        client = client_for(make_user('engineer', **LOCAL))
+        parcel = MapParcel.objects.exclude(easement_hits=[]).first()
+        detail = client.get(reverse('main:gis_parcel', args=[SLUG, parcel.pk])).json()['parcel']
+        self.assertTrue(all(e['label'] for e in detail['easements']))
+        self.assertTrue(any(e['rule'] for e in detail['easements']))
+
+
+class LandAndBuildingAreHalvesOfAProperty(TestCase):
+    def setUp(self):
+        self.parcel = MapParcel.objects.filter(village_map__slug=SLUG, building_count__gt=0).exclude(renewal_code='').first()
+        self.client = client_for(make_user('engineer', **LOCAL))
+        self.url = reverse('main:gis_archive_save', args=[SLUG, self.parcel.pk])
+
+    def test_each_half_has_its_own_owner(self):
+        response = post_json(self.client, self.url, {
+            'owner_name': 'صاحب زمین', 'owner_national_id': '0123456789',
+            'building_owner_name': 'صاحب ساختمان', 'building_owner_national_id': '۱۲۳۴۵۶۷۸۹۰', 'building_owner_phone': '09151234567',
+            'building_floors': '۲', 'building_floor_area': '186.5'})
+        self.assertEqual(response.status_code, 200, response.content)
+        archive = ParcelArchive.objects.get(parcel=self.parcel)
+        self.assertEqual((archive.owner_name, archive.building_owner_name), ('صاحب زمین', 'صاحب ساختمان'))
+        self.assertEqual((archive.building_owner_national_id, archive.building_floors, archive.building_floor_area),
+                         ('1234567890', 2, 186.5))
+        shown = response.json()['parcel']['archive']
+        self.assertEqual((shown['building_owner_name'], shown['building_floors'], shown['building_floor_area']), ('صاحب ساختمان', 2, 186.5))
+
+    def test_bad_building_values_are_refused(self):
+        for body in ({'building_owner_national_id': '12'}, {'building_floors': '0'}, {'building_floors': 'دو'},
+                     {'building_floors': '500'}, {'building_floor_area': 'x'}, {'building_floor_area': '-5'},
+                     {'building_owner_phone': '09x'}, {'building_owner_name': 'x' * 200}):
+            with self.subTest(body=body):
+                self.assertEqual(post_json(self.client, self.url, body).status_code, 400)
+        self.assertFalse(ParcelArchive.objects.exists())
+
+    def test_the_plot_shows_both_areas(self):
+        detail = self.client.get(reverse('main:gis_parcel', args=[SLUG, self.parcel.pk])).json()['parcel']
+        self.assertGreater(detail['area'], 0)
+        self.assertGreater(detail['building_area'], 0)
+        self.assertEqual(detail['building_count'], self.parcel.building_count)
+
+    def test_clicking_a_building_can_find_its_plot(self):
+        buildings = self.client.get(reverse('main:gis_buildings', args=[SLUG])).json()['features']
+        owned = [b for b in buildings if b['properties']['p']]
+        self.assertGreater(len(owned), 3000)
+        self.assertTrue(MapParcel.objects.filter(pk=owned[0]['properties']['p']).exists())
+
+    def test_the_page_has_a_tick_for_land_and_one_for_buildings_and_for_zones(self):
+        page = self.client.get(reverse('main:gis_map', args=[SLUG]))
+        for marker in ('data-layer="plots"', 'data-layer="buildings"', 'data-layer="zones"', 'id="vm-filter"', 'data-pane="building"'):
+            self.assertContains(page, marker)
+        self.assertNotContains(page, 'vm-chip')                  # the status chips no longer sit on the map
+
+
+@skipUnless(HAVE_SHAPELY, 'shapely is only needed to rebuild the map from a drawing (scripts/gis/requirements.txt)')
+class HousingAreaHelpers(TestCase):
+    def test_touching_plots_form_one_block_named_by_the_label_inside(self):
+        from shapely.geometry import Point, box
+        from scripts.gis.housing_area import group_blocks
+        lots = [box(0, 0, 10, 10), box(10, 0, 20, 10), box(20, 0, 30, 10), box(100, 0, 110, 10)]
+        group_of, names, _ = group_blocks(lots, [(Point(15, 5), '7'), (Point(105, 5), '9')])
+        self.assertEqual(len({group_of[0], group_of[1], group_of[2]}), 1)
+        self.assertNotEqual(group_of[0], group_of[3])
+        self.assertEqual([names[g] for g in group_of], ['7', '7', '7', '9'])
+
+    def test_a_group_without_a_label_takes_the_nearest_labelled_one_if_close(self):
+        from shapely.geometry import Point, box
+        from scripts.gis.housing_area import group_blocks
+        lots = [box(0, 0, 10, 10), box(60, 0, 70, 10), box(1000, 0, 1010, 10)]
+        group_of, names, _ = group_blocks(lots, [(Point(5, 5), '3')])
+        self.assertEqual(names[group_of[0]], '3')
+        self.assertEqual(names[group_of[1]], '3')           # 55 m away: close enough
+        self.assertEqual(names[group_of[2]], '')            # 1 km away: no block
+
+    def test_the_label_nearest_the_centre_wins(self):
+        from shapely.geometry import Point, box
+        from scripts.gis.housing_area import nearest_inside
+        lot = box(0, 0, 10, 10)
+        self.assertEqual(nearest_inside(lot, [(Point(1, 1), 'edge'), (Point(5, 5), 'middle'), (Point(50, 5), 'outside')]), 'middle')
+        self.assertIsNone(nearest_inside(lot, [(Point(50, 5), 'outside')]))
+
+    def test_the_legends_numbers_name_the_hatch_layers(self):
+        from scripts.gis.build_village_map import land_use_name
+        self.assertEqual(land_use_name('1p'), 'مسکونی')
+        self.assertEqual(land_use_name('2 hp'), 'تجاری')
+        self.assertEqual(land_use_name('27hp'), 'جهانگردی و پذیرایی')
+        self.assertEqual(land_use_name('50 p'), '')                   # not in the legend
+        self.assertEqual(land_use_name('hp'), '')

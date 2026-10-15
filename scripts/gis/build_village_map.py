@@ -24,6 +24,7 @@ shapely, pyproj and ezdxf are needed here only, never on the server: the server 
 """
 import argparse
 import collections
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -37,11 +38,12 @@ STREET_LAYER = 'mabar'
 PLOT_LAYER = 'مرز قطعه22-8'
 PLOT_NUMBER_LAYER = 'Parcell_No'
 BUILDING_LAYER = 'l.building'
-NO_FILL_LAYERS = {BUILDING_LAYER, 'h.building'}      # hatches that are patterns on buildings, not land use
+NO_FILL_LAYERS = {BUILDING_LAYER, 'h.building', 'پروانه'}   # patterns on buildings and the permit marks, not land use
 NEAREST_BLOCK_LIMIT = 120.0          # metres: a plot in no block ring is given to a marker at most this far away
 MIN_PLOT_AREA = 2.0                  # square metres: slivers and drawing debris are not plots
 MIN_ESTIMATED_AREA = 4.0
 MIN_EASEMENT_OVERLAP = 1.0           # square metres of a plot inside an easement before it counts as a violation
+HOUSING_BBOX = (713050.0, 3645020.0, 714250.0, 3646240.0)   # where the housing area lies (UTM metres)
 CORRIDOR_PAIR_LIMIT = 70.0           # metres: two easement lines this close are the two sides of one corridor
 
 # Easement layers of the detail drawing -> (kind, label). The kind is what the map's tick boxes switch.
@@ -57,6 +59,21 @@ EASEMENT_LAYERS = {
 # What each fill colour of the detail drawing is. Only yellow is certain (the residential fill under 2 190 plots,
 # which also carry the residential building polygons); the other colours are named once the drawing's legend is read.
 LAND_USE_NAMES = {'ffff00': 'مسکونی'}
+
+# The master plan's legend (read from its legacy Persian font, see scripts/gis/shx_text.py) numbers its land uses, and
+# the hatch layers carry the number: layer "27hp" is use 27. Only the numbers the legend lists are named.
+LAND_USE_CODES = {
+    1: 'مسکونی', 2: 'تجاری', 5: 'آموزشی (دبستان)', 6: 'آموزشی (متوسطه اول)', 7: 'آموزشی (متوسطه دوم)',
+    10: 'فرهنگی', 12: 'مذهبی', 14: 'اداری', 16: 'تأسیسات و تجهیزات', 19: 'درمانی (درمانگاه)',
+    20: 'درمانی (خانه بهداشت)', 27: 'جهانگردی و پذیرایی', 28: 'ورزشی - تفریحی', 31: 'پارک و فضای سبز',
+    32: 'فضای سبز عمومی',
+}
+
+
+def land_use_name(layer):
+    """The legend's name for a hatch layer such as '1p', '2 hp' or '27hp', or '' when its number is not in the legend."""
+    digits = ''.join(itertools.takewhile(str.isdigit, layer.strip()))
+    return LAND_USE_CODES.get(int(digits), '') if digits else ''
 
 
 def _shapely():
@@ -261,7 +278,7 @@ def geometry_json(geometry, transform):
     return {'type': 'LineString', 'coordinates': ring(geometry.coords)}
 
 
-def build(survey_doc, epsg, detail_doc=None, zones=None, survey_year=1404, detail_year=1405):
+def build(survey_doc, epsg, detail_doc=None, zones=None, survey_year=1404, detail_year=1405, housing_doc=None):
     """Return (GeoJSON FeatureCollection in WGS84, statistics) from the survey and, optionally, the detail drawing."""
     LineString, _, _, Point, _, _, unary_union, _, STRtree = _shapely()
     from pyproj import Transformer
@@ -327,6 +344,21 @@ def build(survey_doc, epsg, detail_doc=None, zones=None, survey_year=1404, detai
             records.append(dict(kind='estimated', block=block, number=number, other_numbers=[],
                                 block_source='ring', geometry=geometry))
 
+    # --- the housing area (neighbourhood 6): plots built from subdivision lines, with their own block numbers ---
+    housing_blocks = []
+    if housing_doc is not None:
+        from scripts.gis import housing_area
+        housing_fills = hatch_fills(housing_doc.modelspace(), housing_doc.layers)
+        housing_tree = STRtree([f[0] for f in housing_fills]) if housing_fills else None
+        new_plots, housing_blocks, _ = housing_area.extract(
+            housing_doc, HOUSING_BBOX, land_use_of, housing_fills, housing_tree, avoid=[r['geometry'] for r in records])
+        for plot in new_plots:
+            plot.update(zone=housing_area.ZONE, prefix=housing_area.UID_PREFIX)
+            records.append(plot)
+        stats['housing_plots'] = len(new_plots)
+        stats['housing_blocks'] = len(housing_blocks)
+        stats['housing_with_permit'] = sum(1 for p in new_plots if p['permit'])
+
     to_wgs = Transformer.from_crs(f'EPSG:{epsg}', 'EPSG:4326', always_xy=True)
 
     def transform(x, y):
@@ -359,13 +391,14 @@ def build(survey_doc, epsg, detail_doc=None, zones=None, survey_year=1404, detai
     for r in records:
         geometry = r['geometry']
         point = geometry.representative_point()
-        zone = zones['plots'].get(f"{r['block']}-{r['number']}") or zones['blocks'].get(r['block'])
+        zone = r.get('zone') or zones['plots'].get(f"{r['block']}-{r['number']}") or zones['blocks'].get(r['block'])
         props = {
             'type': 'parcel', 'kind': r['kind'], 'block': r['block'], 'number': r['number'], 'zone': zone or '',
             'area': round(geometry.area, 1), 'block_source': r['block_source'], 'other_numbers': r['other_numbers'],
+            'prefix': r.get('prefix', ''), 'lot_no': r.get('lot_no', ''), 'permit': bool(r.get('permit')),
         }
-        if detail_doc is not None:
-            use = land_use_of(point, fills, fill_tree) if fills else None
+        if detail_doc is not None or 'land_use' in r:
+            use = r['land_use'] if 'land_use' in r else (land_use_of(point, fills, fill_tree) if fills else None)
             props['lu'], props['lu_layer'] = use if use else ('', '')
             land_use_count[props['lu']] += 1
             mine = [building_polys[i] for i in building_tree.query(geometry)
@@ -387,31 +420,40 @@ def build(survey_doc, epsg, detail_doc=None, zones=None, survey_year=1404, detai
                     by_kind[h['k']] = h
             props['easements'] = sorted(by_kind.values(), key=lambda h: h['k'])
             # survey differences: a plot that is in the 1404 survey but no longer in the 1405 drawing
-            tree, polys = new_plot_tree
-            twin = any(abs(polys[i].area - geometry.area) <= 0.03 * max(geometry.area, 1) + 0.2
-                       and polys[i].centroid.distance(geometry.centroid) < 0.4 for i in tree.query(geometry.buffer(0.3)))
-            if r['kind'] == 'drawn' and not twin:
-                props['last_year'] = survey_year
+            if new_plot_tree is not None and not r.get('prefix'):
+                tree, polys = new_plot_tree
+                twin = any(abs(polys[i].area - geometry.area) <= 0.03 * max(geometry.area, 1) + 0.2
+                           and polys[i].centroid.distance(geometry.centroid) < 0.4 for i in tree.query(geometry.buffer(0.3)))
+                if r['kind'] == 'drawn' and not twin:
+                    props['last_year'] = survey_year
         parcel_features.append({'type': 'Feature', 'properties': props, 'geometry': geometry_json(geometry, transform)})
 
     uids = parcel_uids(parcel_features)
-    counts = collections.Counter((f['properties']['block'], f['properties']['number'])
+    counts = collections.Counter((f['properties']['prefix'], f['properties']['block'], f['properties']['number'])
                                  for f in parcel_features if f['properties']['block'] and f['properties']['number'])
     for index, feature in enumerate(parcel_features):
         props = feature['properties']
         props['uid'] = uids[index]
         props['code'] = renewal_code(0, 0, props['number'], props['block'], props['zone'])
-        props['duplicate'] = counts.get((props['block'], props['number']), 0) > 1
+        props['duplicate'] = counts.get((props['prefix'], props['block'], props['number']), 0) > 1
         stats['duplicate_codes'] += props['duplicate']
         stats['without_zone'] += not props['zone']
     features.extend(parcel_features)
 
-    plots_per_block = collections.Counter(r['block'] for r in records if r['block'])
+    plots_per_block = collections.Counter(r['block'] for r in records if r['block'] and not r.get('prefix'))
+    housing_per_block = collections.Counter(r['block'] for r in records if r['block'] and r.get('prefix'))
     for number, polygon in sorted(blocks, key=lambda b: (len(b[0]), b[0])):
         features.append({
             'type': 'Feature',
             'properties': {'type': 'block', 'number': number, 'parcels': plots_per_block.get(number, 0),
                            'area': round(polygon.area, 1), 'zone': zones['blocks'].get(number, '')},
+            'geometry': geometry_json(polygon, transform),
+        })
+    for number, polygon in housing_blocks:
+        features.append({
+            'type': 'Feature',
+            'properties': {'type': 'block', 'number': number, 'parcels': housing_per_block.get(number, 0),
+                           'area': round(polygon.area, 1), 'zone': '6'},
             'geometry': geometry_json(polygon, transform),
         })
 
@@ -434,19 +476,34 @@ def build(survey_doc, epsg, detail_doc=None, zones=None, survey_year=1404, detai
     for number, polygon in blocks:
         if zones['blocks'].get(number) and plots_per_block.get(number):
             by_zone[zones['blocks'][number]].append(polygon)
+    zone_parcels = {zone: sum(plots_per_block[n] for n, _ in blocks if zones['blocks'].get(n) == zone) for zone in by_zone}
+    if housing_blocks:
+        by_zone['6'] = [polygon for _, polygon in housing_blocks]
+        zone_parcels['6'] = sum(housing_per_block.values())
     for zone, polygons in sorted(by_zone.items()):
         shape = unary_union(polygons).buffer(14).buffer(-12)
         features.append({'type': 'Feature',
                          'properties': {'type': 'zone', 'number': zone, 'blocks': len(polygons),
-                                        'parcels': sum(plots_per_block[n] for n, _ in blocks
-                                                       if zones['blocks'].get(n) == zone)},
+                                        'parcels': zone_parcels[zone]},
                          'geometry': geometry_json(shape, transform)})
 
+    # a colour is named after the legend's number of the hatch layer most of its plots come from
+    layers_of = collections.defaultdict(collections.Counter)
+    for f in parcel_features:
+        if f['properties'].get('lu'):
+            layers_of[f['properties']['lu']][f['properties'].get('lu_layer', '')] += 1
+    land_use_names = {}
+    for key, layers in layers_of.items():
+        named = collections.Counter()
+        for layer, n in layers.items():
+            named[land_use_name(layer)] += n
+        top = named.most_common(1)[0][0]
+        land_use_names[key] = top
     stats['features'] = len(features)
     stats['land_use_classes'] = len(land_use_count)
     collection = {
         'type': 'FeatureCollection', 'features': features,
-        'land_use': [{'key': key, 'name': LAND_USE_NAMES.get(key, ''), 'plots': count}
+        'land_use': [{'key': key, 'name': land_use_names.get(key) or LAND_USE_NAMES.get(key, ''), 'plots': count}
                      for key, count in land_use_count.most_common()],
         'years': {'survey': survey_year, 'detail': detail_year},
     }
@@ -459,13 +516,15 @@ def main(argv=None):
     parser.add_argument('output')
     parser.add_argument('--detail-dxf', help='the newer drawing with land-use fills, easements and buildings')
     parser.add_argument('--zones', help='JSON written by georef_zones.py: neighbourhood of each block / plot')
+    parser.add_argument('--housing-dxf', help='the housing-area plan (neighbourhood 6): subdivision lines, plot labels, permits')
     parser.add_argument('--epsg', type=int, default=32640, help='coordinate system of the drawings (UTM zone 40N)')
     args = parser.parse_args(argv)
     import ezdxf
     sys.stdout.reconfigure(encoding='utf-8')
     zones = json.loads(Path(args.zones).read_text(encoding='utf-8')) if args.zones else None
     detail = ezdxf.readfile(args.detail_dxf) if args.detail_dxf else None
-    collection, stats = build(ezdxf.readfile(args.dxf), args.epsg, detail_doc=detail, zones=zones)
+    housing = ezdxf.readfile(args.housing_dxf) if args.housing_dxf else None
+    collection, stats = build(ezdxf.readfile(args.dxf), args.epsg, detail_doc=detail, zones=zones, housing_doc=housing)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(collection, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')

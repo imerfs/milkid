@@ -12,7 +12,7 @@
   if (!canLock) app.classList.add('vm-nolock');
 
   const LAST_YEAR = cfg.years[cfg.years.length - 1];
-  const ZONE_COLORS = { '1': '#f78e38', '2': '#fafa64', '3': '#a1c298', '4': '#2891c8', '5': '#e8141a' };
+  const ZONE_COLORS = { '1': '#f78e38', '2': '#fafa64', '3': '#a1c298', '4': '#2891c8', '5': '#e8141a', '6': '#8e44ad' };
   const EASEMENT_COLORS = { general: '#16a34a', quality: '#0ea5e9', qanat: '#a855f7', qanat_quality: '#6366f1', defense1: '#ef4444', defense2: '#f97316' };
   const STATUS = {
     empty: { fillColor: '#cbd5e1', color: '#475569' },
@@ -86,7 +86,10 @@
   const landUses = new Map();          // id -> { color, name, count }
   const groups = { plots: L.layerGroup(), blocks: L.layerGroup(), zones: L.layerGroup(), blockLabels: L.layerGroup(), plotLabels: L.layerGroup(), buildings: L.layerGroup() };
   const easementGroups = {};
-  let colorMode = 'status';
+  const buildingsOf = new Map();      // plot id -> its building layers
+  const BUILDING_STYLE = { color: '#7c2d12', weight: 0.8, fillColor: '#c2410c', fillOpacity: 0.85 };
+  const BUILDING_SELECTED = { color: '#facc15', weight: 2, fillColor: '#f97316', fillOpacity: 0.95 };
+  let colorMode = 'use';
   let filter = 'all';
   let year = LAST_YEAR;
   let selectedId = null;
@@ -117,6 +120,7 @@
       case 'empty': return !(st.filed || st.paid);
       case 'locked': return st.locked;
       case 'violation': return p.h.length > 0;
+      case 'permit': return p.pm || (p.py != null && p.py <= year);
       case 'estimated': return p.e;
       default: return true;
     }
@@ -132,9 +136,14 @@
     return style;
   }
 
+  function restyleBuildings(id, on) {
+    (buildingsOf.get(id) || []).forEach((layer) => { layer.setStyle(on ? BUILDING_SELECTED : BUILDING_STYLE); if (on) layer.bringToFront(); });
+  }
+
   function restyle(id) {
     const item = plots.get(id);
     if (!item) return;
+    restyleBuildings(id, id === selectedId);
     if (id === selectedId) { item.layer.setStyle({ color: '#d97706', weight: 3, fillColor: '#fbbf24', fillOpacity: 0.92, dashArray: null, opacity: 1 }); item.layer.bringToFront(); return; }
     item.layer.setStyle(styleFor(item.props));
   }
@@ -202,7 +211,13 @@
         buildingsLoaded = true;
         try {
           const data = await fetchLayer(cfg.urls.buildings);
-          groups.buildings.addLayer(L.geoJSON(data, { renderer: canvas, interactive: false, style: { color: '#92400e', weight: 0.6, fillColor: '#b45309', fillOpacity: 0.65 } }));
+          data.features.forEach((feature) => {
+            const parcelId = feature.properties.p;
+            const layer = L.geoJSON(feature, { renderer: canvas, style: BUILDING_STYLE });
+            layer.on('click', () => { if (parcelId && plots.has(parcelId)) select(parcelId, false, 'building'); });
+            if (parcelId) { (buildingsOf.get(parcelId) || buildingsOf.set(parcelId, []).get(parcelId)).push(layer); }
+            groups.buildings.addLayer(layer);
+          });
         } catch (e) { buildingsLoaded = false; notice('بارگذاری اعیان ممکن نشد.', true); }
       }
       setGroup(groups.buildings, true);
@@ -277,6 +292,7 @@
     if (colorMode === 'zone') Object.entries(ZONE_COLORS).forEach(([n, c]) => add(c, `محله ${fa(n)}`));
     if (colorMode === 'easement') { add(EASEMENT_COLORS.qanat, 'در حریم'); add('#e5e7eb', 'خارج از حریم'); }
     if (colorMode === 'use') [...landUses.values()].slice(0, 14).forEach((u) => add(u.color, `${u.name} (${fa(u.count)})`));
+    add('#c2410c', 'اعیان (ساختمان)');
     add('#fff', 'قفل‌شده: خط ضخیم قرمز', 'solid');
   }
 
@@ -318,7 +334,13 @@
   }
   const parcelUrl = (id, suffix) => cfg.urls.parcel.replace(/0\/$/, `${id}/${suffix || ''}`);
 
-  async function select(id, zoom) {
+  function showTab(name) {
+    document.querySelectorAll('.vm-tab').forEach((t) => t.classList.toggle('is-on', t.dataset.tab === name));
+    ['land', 'building', 'payments', 'locks'].forEach((pane) => { document.querySelector(`[data-pane="${pane}"]`).hidden = pane !== name; });
+    $('vm-archive').querySelector('[data-pane-shared]').hidden = !['land', 'building'].includes(name);
+  }
+
+  async function select(id, zoom, focus) {
     const old = selectedId;
     selectedId = id;
     if (old !== null && old !== id) restyle(old);
@@ -329,6 +351,7 @@
     if (!response.ok) { show($('vm-archive-msg'), 'دریافت اطلاعات قطعه ممکن نشد.', true); return null; }
     const parcel = (await response.json()).parcel;
     fill(parcel);
+    if (focus) showTab(focus);
     return parcel;
   }
 
@@ -340,8 +363,15 @@
     $('vm-block').textContent = parcel.block || '—';
     $('vm-number').textContent = parcel.number || '—';
     $('vm-zone').textContent = parcel.zone ? `محله ${fa(parcel.zone)}` : '—';
+    $('vm-lot').textContent = parcel.lot_no || '—';
     $('vm-area').textContent = `${fa(Math.round(parcel.area))} م²`;
-    $('vm-building').textContent = parcel.building_count ? `${fa(Math.round(parcel.building_area))} م² (${fa(parcel.building_count)} بنا)` : 'بدون بنا';
+    const floorArea = parcel.archive.building_floor_area;
+    $('vm-building').textContent = parcel.building_count
+      ? `${fa(Math.round(parcel.building_area))} م² سطح اشغال (${fa(parcel.building_count)} بنا)${floorArea ? `، زیربنا ${fa(Math.round(floorArea))} م²` : ''}${parcel.archive.building_floors ? `، ${fa(parcel.archive.building_floors)} طبقه` : ''}`
+      : 'بدون بنا';
+    $('vm-land-owner').textContent = parcel.archive.owner_name ? `مالک عرصه: ${parcel.archive.owner_name}` : 'مالک عرصه ثبت نشده';
+    $('vm-building-owner').textContent = parcel.archive.building_owner_name ? `مالک اعیان: ${parcel.archive.building_owner_name}` : 'مالک اعیان ثبت نشده';
+    $('vm-permit-mark').hidden = !parcel.permit_in_drawing;
     const use = $('vm-use');
     use.replaceChildren();
     if (parcel.land_use) {
@@ -361,6 +391,7 @@
       parcel.easements.forEach((e) => {
         const li = document.createElement('li');
         li.textContent = e.line ? `${e.label}: خط حریم از این قطعه عبور می‌کند` : `${e.label}: ${fa(Math.round(e.amount))} م² از قطعه در حریم است`;
+        if (e.rule) { const rule = document.createElement('small'); rule.className = 'vm-rule'; rule.textContent = e.rule; li.appendChild(document.createElement('br')); li.appendChild(rule); }
         ul.appendChild(li);
       });
       viol.append(title, ul);
@@ -492,14 +523,9 @@
   }
 
   document.querySelectorAll('.vm-tab').forEach((tab) => tab.addEventListener('click', () => {
-    document.querySelectorAll('.vm-tab').forEach((t) => t.classList.toggle('is-on', t === tab));
-    ['archive', 'payments', 'locks'].forEach((name) => { document.querySelector(`[data-pane="${name}"]`).hidden = tab.dataset.tab !== name; });
+    showTab(tab.dataset.tab);
   }));
-  document.querySelectorAll('.vm-chip').forEach((chip) => chip.addEventListener('click', () => {
-    filter = chip.dataset.filter;
-    document.querySelectorAll('.vm-chip').forEach((c) => c.classList.toggle('is-on', c === chip));
-    restyleAll();
-  }));
+  $('vm-filter').addEventListener('change', () => { filter = $('vm-filter').value; restyleAll(); });
 
   // ---------- search: code, block, UTM "X Y", or "lat, lng" ----------
   function containing(lat, lng) {
@@ -542,6 +568,11 @@
       if (b > 100000 && a > 1000000) { const [lat, lng] = UTM.toLatLng(b, a); return goTo(lat, lng, `X ${b}، Y ${a}`); }
       if (a > 20 && a < 45 && b > 40 && b < 70) return goTo(a, b, `${a}, ${b}`);
       if (b > 20 && b < 45 && a > 40 && a < 70) return goTo(b, a, `${b}, ${a}`);
+    }
+    const lotMatch = raw.match(/^(?:t|lot|ت|تفکیکی)\s*[-:]?\s*(\d+)$/i);
+    if (lotMatch) {
+      const hit = [...plots.entries()].find(([, { props }]) => props.lt === lotMatch[1]);
+      if (hit) { announce(await select(hit[0], true)); return; }
     }
     const text = raw.replace(/[\s_/\\]+/g, '-');
     let ids = byCode.get(text);

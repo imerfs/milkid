@@ -17,7 +17,7 @@ def parcel_uids(features):
     seen = defaultdict(list)
     for index, feature in enumerate(features):
         props = feature['properties']
-        key = f"{props['block']}-{props['number']}" if props['block'] and props['number'] else ''
+        key = f"{props.get('prefix', '')}{props['block']}-{props['number']}" if props['block'] and props['number'] else ''
         seen[key].append(index)
     uids = {}
     for key, indexes in seen.items():

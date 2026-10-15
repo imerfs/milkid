@@ -17,12 +17,14 @@ from django.views.decorators.http import require_GET, require_POST
 
 from main.access import policy_required
 from main.accounting.parse import digits, jalali_str, parse_amount, parse_jalali
-from main.gis import data as gis_data
+from main.gis import data as gis_data, rules
 from main.gis.access import may_use
 from main.models import MapEasement, MapParcel, ParcelArchive, ParcelFeePayment, ParcelLock, VillageMap
 from main.office.errors import Invalid
 
-ARCHIVE_TEXT = ('permit_number', 'permit_type', 'permit_notes', 'owner_name', 'owner_phone', 'notes')
+ARCHIVE_TEXT = ('permit_number', 'permit_type', 'permit_notes', 'owner_name', 'owner_phone', 'building_owner_name',
+                'building_owner_phone', 'notes')
+NATIONAL_IDS = ('owner_national_id', 'building_owner_national_id')
 
 
 def _map_or_none(request, slug, action='gis.view'):
@@ -66,11 +68,13 @@ def map_page(request, slug):
             'parcel': reverse('main:gis_parcel', args=[village_map.slug, 0]),
         },
         'lockReasons': dict(ParcelLock.REASONS),
-        'easementKinds': dict(MapEasement.KINDS),
+        'easementKinds': {kind: rules.label(kind) for kind, _ in MapEasement.KINDS},
+        'easementRules': {kind: rules.rule(kind) for kind, _ in MapEasement.KINDS},
     }
     return render(request, 'main/gis/village_map.html', {
         'village_map': village_map, 'config': config, 'basemaps': settings.GIS_BASEMAPS,
-        'traffic_url': settings.GIS_TRAFFIC_TILE_URL, 'easement_kinds': MapEasement.KINDS,
+        'traffic_url': settings.GIS_TRAFFIC_TILE_URL,
+        'easement_kinds': [(kind, rules.label(kind), rules.rule(kind)) for kind, _ in MapEasement.KINDS],
         'lock_reasons': ParcelLock.REASONS, 'years': years,
     })
 
@@ -119,6 +123,11 @@ def _archive_dict(parcel):
         'owner_name': archive.owner_name if archive else '',
         'owner_national_id': archive.owner_national_id if archive else '',
         'owner_phone': archive.owner_phone if archive else '',
+        'building_owner_name': archive.building_owner_name if archive else '',
+        'building_owner_national_id': archive.building_owner_national_id if archive else '',
+        'building_owner_phone': archive.building_owner_phone if archive else '',
+        'building_floors': archive.building_floors if archive and archive.building_floors else '',
+        'building_floor_area': archive.building_floor_area if archive and archive.building_floor_area else '',
         'notes': archive.notes if archive else '',
         'updated_at': jalali_str(archive.updated_at.date()) if archive else '',
     }
@@ -140,9 +149,6 @@ def _lock_dict(lock):
             'unlock_notes': lock.unlock_notes}
 
 
-EASEMENT_LABELS = dict(MapEasement.KINDS)
-
-
 def _parcel_dict(parcel):
     payments = list(parcel.payments.all())
     locks = [_lock_dict(lock) for lock in parcel.locks.select_related('locked_by')]
@@ -154,8 +160,9 @@ def _parcel_dict(parcel):
         'building_count': parcel.building_count, 'duplicate': parcel.duplicate_code,
         'other_numbers': parcel.other_numbers,
         'land_use': {'name': land_use.name, 'color': land_use.color} if land_use else None,
-        'easements': [{'kind': h['k'], 'label': EASEMENT_LABELS.get(h['k'], h['k']), 'amount': h['a'],
+        'easements': [{'kind': h['k'], 'label': rules.label(h['k']), 'rule': rules.rule(h['k']), 'amount': h['a'],
                        'line': h.get('line', False)} for h in parcel.easement_hits],
+        'lot_no': parcel.lot_no, 'permit_in_drawing': parcel.permit_in_drawing,
         'archive': _archive_dict(parcel),
         'payments': [_payment_dict(p) for p in payments],
         'payments_total': int(sum(p.amount for p in payments)),
@@ -188,17 +195,30 @@ def parcel_archive_save(request, slug, parcel_id):
     try:
         data = _body(request)
         values = {key: str(data.get(key, '')).strip() for key in ARCHIVE_TEXT}
-        national_id = digits(data.get('owner_national_id', ''))
-        if national_id and not (national_id.isdigit() and len(national_id) == 10):
-            raise Invalid('کد ملی مالک باید ۱۰ رقم باشد.')
-        phone = digits(values['owner_phone'])
-        if phone and not phone.isdigit():
-            raise Invalid('تلفن مالک باید فقط رقم باشد.')
-        values['owner_phone'] = phone
-        values['owner_national_id'] = national_id
+        for key in NATIONAL_IDS:
+            national_id = digits(data.get(key, ''))
+            if national_id and not (national_id.isdigit() and len(national_id) == 10):
+                raise Invalid('کد ملی باید ۱۰ رقم باشد.')
+            values[key] = national_id
+        for key in ('owner_phone', 'building_owner_phone'):
+            phone = digits(values[key])
+            if phone and not phone.isdigit():
+                raise Invalid('تلفن باید فقط رقم باشد.')
+            values[key] = phone
+        floors = digits(data.get('building_floors', ''))
+        if floors and not (floors.isdigit() and 0 < int(floors) <= 100):
+            raise Invalid('تعداد طبقات را به عدد وارد کنید.')
+        values['building_floors'] = int(floors) if floors else None
+        floor_area = digits(data.get('building_floor_area', '')).replace(',', '')
+        try:
+            values['building_floor_area'] = float(floor_area) if floor_area else None
+        except ValueError:
+            raise Invalid('زیربنا را به عدد وارد کنید.')
+        if values['building_floor_area'] is not None and not 0 < values['building_floor_area'] < 1_000_000:
+            raise Invalid('زیربنا نامعتبر است.')
         raw_date = str(data.get('permit_date', '')).strip()
         values['permit_date'] = parse_jalali(raw_date) if raw_date else None
-        for key, limit in (('permit_number', 60), ('permit_type', 60), ('owner_name', 150)):
+        for key, limit in (('permit_number', 60), ('permit_type', 60), ('owner_name', 150), ('building_owner_name', 150)):
             if len(values[key]) > limit:
                 raise Invalid('متن وارد شده بیش از حد طولانی است.')
     except Invalid as exc:
