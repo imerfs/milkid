@@ -1,0 +1,131 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>نقشه‌ی {{ village_map.name }} - ملک آیدی</title>
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/village-map.css' %}">
+</head>
+<body class="vm-body">
+<div class="vm-app" id="vm-app"
+     data-data-url="{% url 'main:gis_data' village_map.slug %}"
+     data-parcel-url="{% url 'main:gis_parcel' village_map.slug 0 %}"
+     data-can-edit="{{ can_edit|yesno:'1,0' }}"
+     data-csrf="{{ csrf_token }}">
+
+    <header class="vm-top">
+        <a class="vm-back" href="{% url 'main:dehyari_expert_dashboard' %}" title="بازگشت به پنل">
+            <i class="fas fa-arrow-right"></i><span>پنل</span>
+        </a>
+        <div class="vm-title">
+            <strong>نقشه‌ی روستای {{ village_map.name }}</strong>
+            <span id="vm-stats" class="vm-stats">در حال بارگذاری…</span>
+        </div>
+        <form class="vm-search" id="vm-search" autocomplete="off" role="search">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input id="vm-search-input" type="text" inputmode="text" dir="ltr" list="vm-codes"
+                   placeholder="کد نوسازی یا شماره بلوک، مثل 69-12" aria-label="جستجوی کد نوسازی یا بلوک">
+            <datalist id="vm-codes"></datalist>
+        </form>
+        <button type="button" class="vm-toggle" id="vm-panel-toggle" aria-controls="vm-panel" aria-expanded="false">
+            <i class="fas fa-file-alt"></i>
+        </button>
+    </header>
+
+    <main class="vm-main">
+        <div class="vm-mapwrap">
+            <div id="vm-map" class="vm-map" aria-label="نقشه"></div>
+
+            <div class="vm-filters" role="group" aria-label="نمایش قطعه‌ها">
+                <button type="button" class="vm-chip is-on" data-filter="all">همه</button>
+                <button type="button" class="vm-chip" data-filter="filed">دارای بایگانی</button>
+                <button type="button" class="vm-chip" data-filter="empty">بدون بایگانی</button>
+                <button type="button" class="vm-chip" data-filter="estimated">مرز تقریبی</button>
+            </div>
+
+            <div class="vm-legend" aria-label="راهنما">
+                <span><i class="vm-sw vm-sw-empty"></i>بدون بایگانی</span>
+                <span><i class="vm-sw vm-sw-filed"></i>دارای بایگانی</span>
+                <span><i class="vm-sw vm-sw-paid"></i>دارای پرداخت</span>
+                <span><i class="vm-sw vm-sw-est"></i>مرز تقریبی</span>
+            </div>
+
+            <label class="vm-basemap">
+                <input type="checkbox" id="vm-basemap"> نقشه‌ی پایه (نیازمند اینترنت)
+            </label>
+            <div id="vm-loading" class="vm-loading" role="status">در حال بارگذاری نقشه…</div>
+        </div>
+
+        <aside class="vm-panel" id="vm-panel" aria-live="polite">
+            <div class="vm-empty" id="vm-empty">
+                <i class="fas fa-hand-pointer"></i>
+                <p>روی یک قطعه در نقشه کلیک کنید تا بایگانی آن باز شود.</p>
+                <p class="vm-note">مرز برخی قطعه‌های جدید در نقشه‌ی برداشت ترسیم نشده بود؛ آن‌ها با خط‌چین و به صورت تقریبی نشان داده می‌شوند.</p>
+            </div>
+
+            <div class="vm-parcel" id="vm-parcel" hidden>
+                <div class="vm-parcel-head">
+                    <div>
+                        <span class="vm-small">کد نوسازی</span>
+                        <h2 id="vm-code" dir="ltr"></h2>
+                    </div>
+                    <button type="button" class="vm-close" id="vm-close" aria-label="بستن"><i class="fas fa-times"></i></button>
+                </div>
+                <dl class="vm-facts">
+                    <div><dt>بلوک</dt><dd id="vm-block"></dd></div>
+                    <div><dt>شماره قطعه</dt><dd id="vm-number"></dd></div>
+                    <div><dt>مساحت</dt><dd id="vm-area"></dd></div>
+                </dl>
+                <p class="vm-warn" id="vm-estimated" hidden>مرز این قطعه در نقشه‌ی برداشت نبود و از روی شماره‌ی قطعه‌ها تقریب زده شده است.</p>
+                <p class="vm-warn" id="vm-duplicate" hidden>این کد نوسازی برای بیش از یک قطعه در نقشه آمده است؛ بایگانی را با دقت ثبت کنید.</p>
+
+                <div class="vm-tabs" role="tablist">
+                    <button type="button" class="vm-tab is-on" role="tab" data-tab="archive">پروانه و مالک</button>
+                    <button type="button" class="vm-tab" role="tab" data-tab="payments">عوارض <span id="vm-pay-count" class="vm-badge"></span></button>
+                </div>
+
+                <form class="vm-form" id="vm-archive" data-pane="archive" novalidate>
+                    <h3>اطلاعات پروانه</h3>
+                    <label>شماره پروانه<input name="permit_number" maxlength="60"></label>
+                    <label>تاریخ پروانه (شمسی)<input name="permit_date" dir="ltr" placeholder="1404/02/11" inputmode="numeric"></label>
+                    <label>نوع پروانه<input name="permit_type" maxlength="60" placeholder="مثلاً ساخت و ساز مسکونی"></label>
+                    <label>توضیحات پروانه<textarea name="permit_notes" rows="2"></textarea></label>
+                    <h3>اطلاعات مالک</h3>
+                    <label>نام مالک<input name="owner_name" maxlength="150"></label>
+                    <label>کد ملی<input name="owner_national_id" dir="ltr" maxlength="10" inputmode="numeric"></label>
+                    <label>تلفن<input name="owner_phone" dir="ltr" maxlength="20" inputmode="tel"></label>
+                    <label>یادداشت<textarea name="notes" rows="2"></textarea></label>
+                    <p class="vm-msg" id="vm-archive-msg" role="status"></p>
+                    <button type="submit" class="vm-btn" data-edit>ذخیره‌ی بایگانی</button>
+                    <p class="vm-small" id="vm-updated"></p>
+                </form>
+
+                <section class="vm-pane" id="vm-payments" data-pane="payments" hidden>
+                    <h3>پرداخت‌های ثبت‌شده</h3>
+                    <ul class="vm-pays" id="vm-pay-list"></ul>
+                    <p class="vm-total" id="vm-pay-total"></p>
+                    <form class="vm-form" id="vm-pay-form" novalidate data-edit-block>
+                        <h3>ثبت پرداخت جدید</h3>
+                        <label>نوع عوارض<input name="fee_type" maxlength="80" placeholder="مثلاً عوارض نوسازی"></label>
+                        <label>مبلغ (ریال)<input name="amount" dir="ltr" inputmode="numeric"></label>
+                        <label>سال (شمسی)<input name="fiscal_year" dir="ltr" maxlength="4" inputmode="numeric" placeholder="1404"></label>
+                        <label>تاریخ پرداخت (شمسی)<input name="paid_on" dir="ltr" placeholder="1404/02/11" inputmode="numeric"></label>
+                        <label>شماره فیش<input name="receipt_no" maxlength="60" dir="ltr"></label>
+                        <label>توضیحات<input name="notes" maxlength="300"></label>
+                        <p class="vm-msg" id="vm-pay-msg" role="status"></p>
+                        <button type="submit" class="vm-btn">ثبت پرداخت</button>
+                    </form>
+                </section>
+            </div>
+        </aside>
+    </main>
+</div>
+
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'js/village-map.js' %}"></script>
+</body>
+</html>

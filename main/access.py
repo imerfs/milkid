@@ -28,6 +28,9 @@ POLICY = {
     'office.provide': {'dehyari', 'engineer', 'inspector', 'accountant', 'council'},
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed
     'admin.manage': set(),
+    # village web-GIS map and plot archives: the village's technical expert (the village match is in main/gis/access.py)
+    'gis.view': {'engineer'},
+    'gis.edit': {'engineer'},
     # technical staff dashboards and tools
     'staff.engineer': {'engineer', 'dehyari'},
     'staff.inspector': {'inspector', 'dehyari'},

@@ -56,6 +56,14 @@ def main():
     # HTMX (dependent dropdowns and partial page updates)
     copy(NM / 'htmx.org/dist/htmx.min.js', 'htmx/htmx.min.js')
 
+    # Leaflet (the village web-GIS map); the controls' sprite images are only used by the layer switcher
+    leaflet = NM / 'leaflet/dist'
+    copy(leaflet / 'leaflet.js', 'leaflet/leaflet.js', strip_map=True)
+    copy(leaflet / 'leaflet.css', 'leaflet/leaflet.css')
+    copy(leaflet / 'images/layers.png', 'leaflet/images/layers.png')
+    copy(leaflet / 'images/layers-2x.png', 'leaflet/images/layers-2x.png')
+    shutil.copyfile(NM / 'leaflet/LICENSE', OUT / 'leaflet' / 'LICENSE')
+
     # Material Icons (one dashboard still uses the ligature font)
     mi = NM / 'material-icons/iconfont'
     copy(mi / 'material-icons.woff2', 'material-icons/material-icons.woff2')

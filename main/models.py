@@ -1572,6 +1572,7 @@ from .models_income import *  # noqa: E402,F401,F403
 from .models_payroll import *  # noqa: E402,F401,F403
 from .models_council import *  # noqa: E402,F401,F403
 from .models_mail import *  # noqa: E402,F401,F403
+from .models_gis import *  # noqa: E402,F401,F403
 
 
 class BlockedIP(models.Model):

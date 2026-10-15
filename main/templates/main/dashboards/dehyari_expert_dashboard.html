@@ -166,6 +166,13 @@
                         <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-mono">{{ stats.approved_count }}</span>
                     </a>
 
+                    {% for gis_map in gis_maps %}
+                    <a href="{% url 'main:gis_map' gis_map.slug %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-map-marked-alt text-teal-400 text-sm"></i>
+                        <span>نقشه‌ی GIS روستای {{ gis_map.name }}</span>
+                    </a>
+                    {% endfor %}
+
                     <div class="pt-4 border-t border-slate-800 my-3"></div>
 
                     <a href="{% url 'main:messaging_dashboard' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">

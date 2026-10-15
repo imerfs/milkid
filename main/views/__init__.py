@@ -25,6 +25,7 @@ from .accounting_income import *
 from .accounting_reports import *
 from .accounting_settings import *
 from .accounting_payroll import *
+from .gis_views import *
 
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 

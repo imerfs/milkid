@@ -1,0 +1,4 @@
+# Only needed to rebuild a village map from a new drawing (never on the server or in the Windows app)
+ezdxf>=1.4.2
+shapely>=2.0
+pyproj>=3.6
