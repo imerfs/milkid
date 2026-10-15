@@ -640,6 +640,7 @@ class HousingAreaIsNeighbourhoodSix(TestCase):
         self.assertGreater(self.housing.exclude(lot_no='').count(), 800)
         self.assertFalse(MapParcel.objects.exclude(zone='6').filter(permit_in_drawing=True).exists())
 
+    @skipUnless(HAVE_SHAPELY, 'shapely is only needed to rebuild the map (scripts/gis/requirements.txt)')
     def test_no_housing_plot_overlaps_a_plot_of_the_village(self):
         from shapely.geometry import shape
         from shapely.strtree import STRtree
