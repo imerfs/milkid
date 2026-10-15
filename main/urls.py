@@ -62,6 +62,13 @@ urlpatterns = [
     path('dashboard/dehyari/', views.dehyari_dashboard, name='dehyari_dashboard'),
     path('dashboard/dehyari/panel/<str:tab>/', views.mayor_panel, name='mayor_panel'),
     path('dashboard/dehyari-expert/', views.dehyari_expert_dashboard, name='dehyari_expert_dashboard'),
+    # village web-GIS (technical expert of the village, admins)
+    path('gis/<slug:slug>/', views.map_page, name='gis_map'),
+    path('gis/<slug:slug>/data/', views.map_data, name='gis_data'),
+    path('gis/<slug:slug>/parcels/<int:parcel_id>/', views.parcel_detail, name='gis_parcel'),
+    path('gis/<slug:slug>/parcels/<int:parcel_id>/archive/', views.parcel_archive_save, name='gis_archive_save'),
+    path('gis/<slug:slug>/parcels/<int:parcel_id>/payments/', views.payment_add, name='gis_payment_add'),
+    path('gis/<slug:slug>/parcels/<int:parcel_id>/payments/<int:payment_id>/delete/', views.payment_delete, name='gis_payment_delete'),
     path('dashboard/engineer/', views.dehyari_expert_dashboard, name='engineer_dashboard'),
     path('dashboard/inspector/', views.inspector_dashboard, name='inspector_dashboard'),
     path('dashboard/accountant/', views.accountant_dashboard, name='accountant_dashboard'),

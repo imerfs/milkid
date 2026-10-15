@@ -18,6 +18,7 @@ from main.models import (
 from .common import role_required
 from main import lifecycle
 from main.access import policy_required
+from main.gis.access import maps_for
 
 
 def _json_body(request):
@@ -129,6 +130,7 @@ def dehyari_expert_dashboard(request):
         'dehyars': dehyars,
         'unread_notifications': unread_notifications,
         'user_village': user_village or 'حوزه دهیاری مرکزی',
+        'gis_maps': maps_for(request.user),     # village maps this user may open (technical expert / admin)
     }
 
     return render(request, 'main/dashboards/dehyari_expert_dashboard.html', context)
