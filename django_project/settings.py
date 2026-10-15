@@ -472,3 +472,16 @@ SECURE_REDIRECT_EXEMPT = [r'^healthz/$']
 # Error reporting: set SENTRY_DSN to turn it on (no personal data is sent)
 from django_project.observability import init_sentry  # noqa: E402
 init_sentry(os.environ.get('SENTRY_DSN', ''))
+
+
+# Village web-GIS base maps (main/gis). Tile providers decide who may use them: Esri and Google refuse requests from
+# Iran, so a village inside Iran usually needs an Iranian provider's tile URL here (or in the environment).
+GIS_BASEMAPS = [
+    {'id': 'osm', 'label': 'نقشه‌ی خیابانی (OpenStreetMap)', 'maxZoom': 19, 'attribution': '© OpenStreetMap',
+     'url': os.environ.get('GIS_OSM_TILE_URL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png')},
+    {'id': 'satellite', 'label': 'ماهواره‌ای', 'maxZoom': 19, 'attribution': 'Tiles © Esri',
+     'url': os.environ.get('GIS_SATELLITE_TILE_URL',
+                           'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')},
+]
+# A live traffic overlay needs a provider key, e.g. TomTom: https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=...
+GIS_TRAFFIC_TILE_URL = os.environ.get('GIS_TRAFFIC_TILE_URL', '')

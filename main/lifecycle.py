@@ -33,6 +33,14 @@ def _ensure_open(sr):
         raise TransitionError('درخواست تکمیل شده است و قابل تغییر نیست.')
 
 
+def _ensure_not_locked(sr):
+    """A request for a locked plot (debt, neighbour's complaint, street occupation) cannot be approved."""
+    from main.gis import locks
+    message = locks.refusal(sr.parcel_number) if sr.parcel_number else ''
+    if message:
+        raise TransitionError(message)
+
+
 def _finish(sr, actor, *, status, stage, action, notes='', to_role='citizen', reviewed=False):
     sr.status = status
     sr.workflow_stage = stage
@@ -44,6 +52,7 @@ def _finish(sr, actor, *, status, stage, action, notes='', to_role='citizen', re
 
 def approve(sr, actor, *, notes='', completed=False, authority='expert'):
     _ensure_open(sr)
+    _ensure_not_locked(sr)
     if authority == 'mayor':
         _finish(sr, actor, status='approved', stage='approved', reviewed=True,
                 action='approved', notes='تایید نهایی توسط دهیار/شهردار انجام شد.')
@@ -131,6 +140,8 @@ def set_status(sr, actor, new_status, notes=''):
     if new_status not in VALID_STATUSES:
         raise TransitionError('وضعیت نامعتبر است.')
     _ensure_open(sr)
+    if new_status in ('approved', 'completed'):
+        _ensure_not_locked(sr)
     sr.status = new_status
     sr.workflow_stage = new_status if new_status in dict(sr.WORKFLOW_STAGES) else sr.workflow_stage
     if notes:
@@ -146,6 +157,7 @@ def record_inspection(sr, inspector, *, approved, reason=''):
     """The inspector's outcome decides the request (approved / rejected)."""
     _ensure_open(sr)
     if approved:
+        _ensure_not_locked(sr)
         _finish(sr, inspector, status='approved', stage='approved', reviewed=True,
                 action='تایید بازرسی توسط ناظر فنی', to_role='citizen')
         notify(sr.user, 'بازرسی تکمیل شد',

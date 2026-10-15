@@ -31,6 +31,7 @@ POLICY = {
     # village web-GIS map and plot archives: the village's technical expert (the village match is in main/gis/access.py)
     'gis.view': {'engineer'},
     'gis.edit': {'engineer'},
+    'gis.lock': {'engineer'},          # lock a plot out of municipal services / release it
     # technical staff dashboards and tools
     'staff.engineer': {'engineer', 'dehyari'},
     'staff.inspector': {'inspector', 'dehyari'},

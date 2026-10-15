@@ -11,11 +11,8 @@
     <link rel="stylesheet" href="{% static 'css/village-map.css' %}">
 </head>
 <body class="vm-body">
-<div class="vm-app" id="vm-app"
-     data-data-url="{% url 'main:gis_data' village_map.slug %}"
-     data-parcel-url="{% url 'main:gis_parcel' village_map.slug 0 %}"
-     data-can-edit="{{ can_edit|yesno:'1,0' }}"
-     data-csrf="{{ csrf_token }}">
+{{ config|json_script:"vm-config" }}
+<div class="vm-app" id="vm-app">
 
     <header class="vm-top">
         <a class="vm-back" href="{% url 'main:dehyari_expert_dashboard' %}" title="بازگشت به پنل">
@@ -27,65 +24,120 @@
         </div>
         <form class="vm-search" id="vm-search" autocomplete="off" role="search">
             <i class="fas fa-search" aria-hidden="true"></i>
-            <input id="vm-search-input" type="text" inputmode="text" dir="ltr" list="vm-codes"
-                   placeholder="کد نوسازی یا شماره بلوک، مثل 69-12" aria-label="جستجوی کد نوسازی یا بلوک">
+            <input id="vm-search-input" type="text" dir="ltr" list="vm-codes"
+                   placeholder="کد نوسازی، بلوک، یا مختصات (X Y یو‌تی‌ام)" aria-label="جستجو">
             <datalist id="vm-codes"></datalist>
         </form>
-        <button type="button" class="vm-toggle" id="vm-panel-toggle" aria-controls="vm-panel" aria-expanded="false">
+        <button type="button" class="vm-toggle" id="vm-layers-toggle" aria-controls="vm-layers" aria-expanded="false" title="لایه‌ها">
+            <i class="fas fa-layer-group"></i>
+        </button>
+        <button type="button" class="vm-toggle" id="vm-panel-toggle" aria-controls="vm-panel" aria-expanded="false" title="بایگانی ملک">
             <i class="fas fa-file-alt"></i>
         </button>
     </header>
+    <p class="vm-notice" id="vm-notice" role="status" hidden></p>
 
     <main class="vm-main">
         <div class="vm-mapwrap">
             <div id="vm-map" class="vm-map" aria-label="نقشه"></div>
 
+            <section class="vm-layers is-open" id="vm-layers" aria-label="لایه‌ها">
+                <button type="button" class="vm-layers-head" id="vm-layers-head" aria-expanded="true">
+                    <i class="fas fa-layer-group"></i> لایه‌ها <i class="fas fa-chevron-down vm-caret"></i>
+                </button>
+                <div class="vm-layers-body">
+                    <fieldset>
+                        <legend>نقشه‌ی پایه</legend>
+                        <label><input type="radio" name="basemap" value="" checked> بدون پس‌زمینه (آفلاین)</label>
+                        {% for b in basemaps %}
+                        <label><input type="radio" name="basemap" value="{{ b.id }}"> {{ b.label }}</label>
+                        {% endfor %}
+                        <label class="{% if not traffic_url %}is-off{% endif %}"
+                               {% if not traffic_url %}title="برای ترافیک زنده باید نشانی لایه‌ی یک سرویس‌دهنده در تنظیمات سرور ثبت شود"{% endif %}>
+                            <input type="checkbox" id="vm-traffic" {% if not traffic_url %}disabled{% endif %}> ترافیک
+                            {% if not traffic_url %}<small>(نیازمند سرویس‌دهنده)</small>{% endif %}
+                        </label>
+                    </fieldset>
+                    <fieldset>
+                        <legend>روکش‌های نقشه</legend>
+                        <label><input type="checkbox" data-layer="plots" checked> عرصه (زمین قطعه‌ها)</label>
+                        <label><input type="checkbox" data-layer="buildings"> اعیان (ساختمان‌ها)</label>
+                        <label><input type="checkbox" data-layer="blocks" checked> مرز بلوک‌ها</label>
+                        <label><input type="checkbox" data-layer="block-labels"> شماره‌ی بلوک‌ها</label>
+                        <label><input type="checkbox" data-layer="zones" checked> محله‌ها (حوزه‌بندی)</label>
+                    </fieldset>
+                    <fieldset>
+                        <legend><label><input type="checkbox" id="vm-easements-all"> حریم‌ها</label></legend>
+                        {% for kind, label in easement_kinds %}
+                        <label class="vm-easement"><input type="checkbox" data-easement="{{ kind }}"> <i class="vm-sw vm-ea-{{ kind }}"></i>{{ label }}</label>
+                        {% endfor %}
+                    </fieldset>
+                    <fieldset>
+                        <legend>رنگ‌آمیزی قطعه‌ها</legend>
+                        <label><input type="radio" name="colormode" value="status" checked> وضعیت بایگانی</label>
+                        <label><input type="radio" name="colormode" value="use"> نوع کاربری</label>
+                        <label><input type="radio" name="colormode" value="zone"> محله</label>
+                        <label><input type="radio" name="colormode" value="easement"> رعایت حریم</label>
+                    </fieldset>
+                </div>
+            </section>
+
             <div class="vm-filters" role="group" aria-label="نمایش قطعه‌ها">
                 <button type="button" class="vm-chip is-on" data-filter="all">همه</button>
                 <button type="button" class="vm-chip" data-filter="filed">دارای بایگانی</button>
                 <button type="button" class="vm-chip" data-filter="empty">بدون بایگانی</button>
+                <button type="button" class="vm-chip" data-filter="locked">قفل‌شده</button>
+                <button type="button" class="vm-chip" data-filter="violation">متخلف از حریم</button>
                 <button type="button" class="vm-chip" data-filter="estimated">مرز تقریبی</button>
             </div>
 
-            <div class="vm-legend" aria-label="راهنما">
-                <span><i class="vm-sw vm-sw-empty"></i>بدون بایگانی</span>
-                <span><i class="vm-sw vm-sw-filed"></i>دارای بایگانی</span>
-                <span><i class="vm-sw vm-sw-paid"></i>دارای پرداخت</span>
-                <span><i class="vm-sw vm-sw-est"></i>مرز تقریبی</span>
+            <div class="vm-legend" id="vm-legend" aria-label="راهنما"></div>
+            <div class="vm-coords" id="vm-coords" dir="ltr" aria-live="off"></div>
+
+            <div class="vm-timeline" id="vm-timeline" aria-label="خط زمانی">
+                <button type="button" class="vm-play" id="vm-play" aria-label="پخش"><i class="fas fa-play"></i></button>
+                <div class="vm-timeline-track">
+                    <input type="range" id="vm-year" min="{{ years.0 }}" max="{{ years|last }}" step="1" value="{{ years|last }}" aria-label="سال">
+                    <div class="vm-ticks" id="vm-ticks"></div>
+                </div>
+                <output class="vm-year-out" id="vm-year-out" for="vm-year"></output>
             </div>
 
-            <label class="vm-basemap">
-                <input type="checkbox" id="vm-basemap"> نقشه‌ی پایه (نیازمند اینترنت)
-            </label>
             <div id="vm-loading" class="vm-loading" role="status">در حال بارگذاری نقشه…</div>
         </div>
 
         <aside class="vm-panel" id="vm-panel" aria-live="polite">
             <div class="vm-empty" id="vm-empty">
                 <i class="fas fa-hand-pointer"></i>
-                <p>روی یک قطعه در نقشه کلیک کنید تا بایگانی آن باز شود.</p>
+                <p>روی یک قطعه در نقشه کلیک کنید، یا کد نوسازی آن را جستجو کنید.</p>
                 <p class="vm-note">مرز برخی قطعه‌های جدید در نقشه‌ی برداشت ترسیم نشده بود؛ آن‌ها با خط‌چین و به صورت تقریبی نشان داده می‌شوند.</p>
             </div>
 
             <div class="vm-parcel" id="vm-parcel" hidden>
                 <div class="vm-parcel-head">
                     <div>
-                        <span class="vm-small">کد نوسازی</span>
+                        <span class="vm-small">کد نوسازی (صنف - آپارتمان - ملک - بلوک - محله)</span>
                         <h2 id="vm-code" dir="ltr"></h2>
                     </div>
                     <button type="button" class="vm-close" id="vm-close" aria-label="بستن"><i class="fas fa-times"></i></button>
                 </div>
                 <dl class="vm-facts">
+                    <div><dt>مساحت عرصه</dt><dd id="vm-area"></dd></div>
+                    <div><dt>مساحت اعیان</dt><dd id="vm-building"></dd></div>
+                    <div><dt>محله</dt><dd id="vm-zone"></dd></div>
                     <div><dt>بلوک</dt><dd id="vm-block"></dd></div>
-                    <div><dt>شماره قطعه</dt><dd id="vm-number"></dd></div>
-                    <div><dt>مساحت</dt><dd id="vm-area"></dd></div>
+                    <div><dt>شماره ملک</dt><dd id="vm-number"></dd></div>
+                    <div><dt>کاربری</dt><dd id="vm-use"></dd></div>
                 </dl>
+                <p class="vm-alert" id="vm-locked" hidden></p>
+                <div class="vm-alert" id="vm-violation" hidden></div>
                 <p class="vm-warn" id="vm-estimated" hidden>مرز این قطعه در نقشه‌ی برداشت نبود و از روی شماره‌ی قطعه‌ها تقریب زده شده است.</p>
                 <p class="vm-warn" id="vm-duplicate" hidden>این کد نوسازی برای بیش از یک قطعه در نقشه آمده است؛ بایگانی را با دقت ثبت کنید.</p>
 
                 <div class="vm-tabs" role="tablist">
                     <button type="button" class="vm-tab is-on" role="tab" data-tab="archive">پروانه و مالک</button>
                     <button type="button" class="vm-tab" role="tab" data-tab="payments">عوارض <span id="vm-pay-count" class="vm-badge"></span></button>
+                    <button type="button" class="vm-tab" role="tab" data-tab="locks">قفل و خدمات <span id="vm-lock-count" class="vm-badge vm-badge-red"></span></button>
                 </div>
 
                 <form class="vm-form" id="vm-archive" data-pane="archive" novalidate>
@@ -118,6 +170,23 @@
                         <label>توضیحات<input name="notes" maxlength="300"></label>
                         <p class="vm-msg" id="vm-pay-msg" role="status"></p>
                         <button type="submit" class="vm-btn">ثبت پرداخت</button>
+                    </form>
+                </section>
+
+                <section class="vm-pane" id="vm-locks" data-pane="locks" hidden>
+                    <p class="vm-small">ملکِ قفل‌شده از خدمات محروم است: تا رفع قفل، برای این کد نوسازی درخواست خدمات ثبت یا تأیید نمی‌شود.</p>
+                    <h3>قفل‌ها</h3>
+                    <ul class="vm-pays" id="vm-lock-list"></ul>
+                    <form class="vm-form" id="vm-lock-form" novalidate data-lock-block>
+                        <h3>قفل کردن ملک</h3>
+                        <label>دلیل
+                            <select name="reason">
+                                {% for value, label in lock_reasons %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                            </select>
+                        </label>
+                        <label>توضیحات<input name="notes" maxlength="500"></label>
+                        <p class="vm-msg" id="vm-lock-msg" role="status"></p>
+                        <button type="submit" class="vm-btn vm-btn-red">قفل کردن و محروم کردن از خدمات</button>
                     </form>
                 </section>
             </div>

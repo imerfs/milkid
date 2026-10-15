@@ -1,22 +1,11 @@
-"""Load the Dastgerd map (blocks and plots) so a deploy needs nothing beyond `migrate`.
+"""Superseded: the map is now loaded by 0056, after the tables it needs (zones, land use, easements ...) exist.
 
-Later drawings are loaded with `manage.py load_village_map dastgerd`; archives already entered are kept.
+This used to load the first version of the Dastgerd map. It does nothing now, so a fresh database gets the whole
+map from 0056, and a database that already ran it keeps its plots, which 0056 updates in place (by uid).
 """
-from types import SimpleNamespace
-
 from django.db import migrations
-
-
-def load(apps, schema_editor):
-    from main import geography
-    from main.gis import loader
-    if not loader.VILLAGES['dastgerd']['file'].exists():
-        return
-    names = ('VillageMap', 'MapBlock', 'MapParcel', 'CityVillage', 'Province', 'County', 'District')
-    models = SimpleNamespace(**{name: apps.get_model('main', name) for name in names})
-    loader.load_village_map('dastgerd', models, geography=geography)
 
 
 class Migration(migrations.Migration):
     dependencies = [('main', '0053_village_gis')]
-    operations = [migrations.RunPython(load, migrations.RunPython.noop)]
+    operations = [migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop)]

@@ -5,16 +5,21 @@ Access: ``gis.view`` / ``gis.edit`` (role engineer; admins always) AND the user 
 """
 import json
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect, render
+from django.middleware.csrf import get_token
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from main.access import policy_required
 from main.accounting.parse import digits, jalali_str, parse_amount, parse_jalali
+from main.gis import data as gis_data
 from main.gis.access import may_use
-from main.models import MapParcel, ParcelArchive, ParcelFeePayment, VillageMap
+from main.models import MapEasement, MapParcel, ParcelArchive, ParcelFeePayment, ParcelLock, VillageMap
 from main.office.errors import Invalid
 
 ARCHIVE_TEXT = ('permit_number', 'permit_type', 'permit_notes', 'owner_name', 'owner_phone', 'notes')
@@ -45,38 +50,63 @@ def map_page(request, slug):
     if village_map is None:
         messages.error(request, 'شما به نقشه‌ی این روستا دسترسی ندارید.')
         return redirect('main:home')
+    years = list(range(1400, gis_data.current_year() + 1))
+    config = {
+        'slug': village_map.slug,
+        'csrf': get_token(request),
+        'canEdit': may_use(request.user, village_map, 'gis.edit'),
+        'canLock': may_use(request.user, village_map, 'gis.lock'),
+        'basemaps': settings.GIS_BASEMAPS,
+        'trafficUrl': settings.GIS_TRAFFIC_TILE_URL,
+        'years': years,
+        'urls': {
+            'data': reverse('main:gis_data', args=[village_map.slug]),
+            'buildings': reverse('main:gis_buildings', args=[village_map.slug]),
+            'easements': reverse('main:gis_easements', args=[village_map.slug]),
+            'parcel': reverse('main:gis_parcel', args=[village_map.slug, 0]),
+        },
+        'lockReasons': dict(ParcelLock.REASONS),
+        'easementKinds': dict(MapEasement.KINDS),
+    }
     return render(request, 'main/gis/village_map.html', {
-        'village_map': village_map,
-        'can_edit': may_use(request.user, village_map, 'gis.edit'),
+        'village_map': village_map, 'config': config, 'basemaps': settings.GIS_BASEMAPS,
+        'traffic_url': settings.GIS_TRAFFIC_TILE_URL, 'easement_kinds': MapEasement.KINDS,
+        'lock_reasons': ParcelLock.REASONS, 'years': years,
     })
 
 
 @require_GET
 @policy_required('gis.view', api=True)
 def map_data(request, slug):
-    """Blocks and plots as one GeoJSON FeatureCollection; plots carry only what the map needs to colour them."""
+    """Plots, blocks, neighbourhoods and land-use classes as GeoJSON; buildings and easements come separately."""
     village_map = _map_or_none(request, slug)
     if village_map is None:
         return _denied()
-    archived = set(ParcelArchive.objects.filter(parcel__village_map=village_map).values_list('parcel_id', flat=True))
-    paid = set(ParcelFeePayment.objects.filter(parcel__village_map=village_map).values_list('parcel_id', flat=True))
-    features = [{
-        'type': 'Feature',
-        'properties': {'t': 'b', 'n': b.number, 'c': b.parcel_count},
-        'geometry': b.geometry,
-    } for b in village_map.blocks.all()]
-    for p in village_map.parcels.only('id', 'block_no', 'number', 'renewal_code', 'kind', 'area_m2', 'geometry'):
-        features.append({
-            'type': 'Feature',
-            'properties': {'t': 'p', 'id': p.pk, 'code': p.renewal_code, 'b': p.block_no, 'n': p.number,
-                           'e': p.kind == 'estimated', 'a': round(p.area_m2), 'f': p.pk in archived,
-                           'p': p.pk in paid},
-            'geometry': p.geometry,
-        })
-    response = JsonResponse({'type': 'FeatureCollection', 'features': features,
-                             'centre': [village_map.centre_lat, village_map.centre_lng]})
+    response = HttpResponse(gis_data.dumps(gis_data.map_collection(village_map)), content_type='application/json')
     response['Cache-Control'] = 'private, no-store'
     return response
+
+
+def _layer(request, slug, features):
+    village_map = _map_or_none(request, slug)
+    if village_map is None:
+        return _denied()
+    response = HttpResponse(gis_data.dumps({'type': 'FeatureCollection', 'features': features(village_map)}),
+                            content_type='application/json')
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@require_GET
+@policy_required('gis.view', api=True)
+def map_buildings(request, slug):
+    return _layer(request, slug, gis_data.static_buildings)
+
+
+@require_GET
+@policy_required('gis.view', api=True)
+def map_easements(request, slug):
+    return _layer(request, slug, gis_data.static_easements)
 
 
 def _archive_dict(parcel):
@@ -100,14 +130,36 @@ def _payment_dict(payment):
             'notes': payment.notes}
 
 
+def _lock_dict(lock):
+    who = lock.locked_by
+    return {'id': lock.pk, 'reason': lock.reason, 'reason_label': lock.get_reason_display(), 'notes': lock.notes,
+            'locked_at': jalali_str(timezone.localtime(lock.locked_at).date()),
+            'locked_by': (who.get_full_name() or who.username) if who else '',
+            'active': lock.active,
+            'unlocked_at': jalali_str(timezone.localtime(lock.unlocked_at).date()) if lock.unlocked_at else '',
+            'unlock_notes': lock.unlock_notes}
+
+
+EASEMENT_LABELS = dict(MapEasement.KINDS)
+
+
 def _parcel_dict(parcel):
     payments = list(parcel.payments.all())
+    locks = [_lock_dict(lock) for lock in parcel.locks.select_related('locked_by')]
+    land_use = parcel.land_use
     return {
         'id': parcel.pk, 'code': parcel.renewal_code, 'block': parcel.block_no, 'number': parcel.number,
-        'kind': parcel.kind, 'area': round(parcel.area_m2, 1), 'duplicate': parcel.duplicate_code,
-        'other_numbers': parcel.other_numbers, 'archive': _archive_dict(parcel),
+        'zone': parcel.zone, 'guild': parcel.guild_no, 'apartment': parcel.apartment_no,
+        'kind': parcel.kind, 'area': round(parcel.area_m2, 1), 'building_area': round(parcel.building_area_m2, 1),
+        'building_count': parcel.building_count, 'duplicate': parcel.duplicate_code,
+        'other_numbers': parcel.other_numbers,
+        'land_use': {'name': land_use.name, 'color': land_use.color} if land_use else None,
+        'easements': [{'kind': h['k'], 'label': EASEMENT_LABELS.get(h['k'], h['k']), 'amount': h['a'],
+                       'line': h.get('line', False)} for h in parcel.easement_hits],
+        'archive': _archive_dict(parcel),
         'payments': [_payment_dict(p) for p in payments],
         'payments_total': int(sum(p.amount for p in payments)),
+        'locks': locks, 'locked': any(lock['active'] for lock in locks),
     }
 
 
@@ -115,7 +167,7 @@ def _parcel(request, slug, parcel_id, action):
     village_map = _map_or_none(request, slug, action)
     if village_map is None:
         return None
-    return get_object_or_404(MapParcel.objects.select_related('archive'), pk=parcel_id, village_map=village_map)
+    return get_object_or_404(MapParcel.objects.select_related('archive', 'land_use'), pk=parcel_id, village_map=village_map)
 
 
 @require_GET
@@ -153,7 +205,7 @@ def parcel_archive_save(request, slug, parcel_id):
         return JsonResponse({'success': False, 'error': str(exc)}, status=400)
     with transaction.atomic():
         ParcelArchive.objects.update_or_create(parcel=parcel, defaults={**values, 'updated_by': request.user})
-    parcel = MapParcel.objects.select_related('archive').get(pk=parcel.pk)
+    parcel = MapParcel.objects.select_related('archive', 'land_use').get(pk=parcel.pk)
     return JsonResponse({'success': True, 'parcel': _parcel_dict(parcel)})
 
 
@@ -181,7 +233,7 @@ def payment_add(request, slug, parcel_id):
             notes=str(data.get('notes', '')).strip()[:300], created_by=request.user)
     except Invalid as exc:
         return JsonResponse({'success': False, 'error': str(exc)}, status=400)
-    parcel = MapParcel.objects.select_related('archive').get(pk=parcel.pk)
+    parcel = MapParcel.objects.select_related('archive', 'land_use').get(pk=parcel.pk)
     return JsonResponse({'success': True, 'parcel': _parcel_dict(parcel)})
 
 
@@ -192,5 +244,46 @@ def payment_delete(request, slug, parcel_id, payment_id):
     if parcel is None:
         return _denied()
     get_object_or_404(ParcelFeePayment, pk=payment_id, parcel=parcel).delete()
-    parcel = MapParcel.objects.select_related('archive').get(pk=parcel.pk)
+    parcel = MapParcel.objects.select_related('archive', 'land_use').get(pk=parcel.pk)
+    return JsonResponse({'success': True, 'parcel': _parcel_dict(parcel)})
+
+
+@require_POST
+@policy_required('gis.lock', api=True)
+def parcel_lock(request, slug, parcel_id):
+    """Lock the plot out of municipal services (debt, a neighbour's complaint, street occupation)."""
+    parcel = _parcel(request, slug, parcel_id, 'gis.lock')
+    if parcel is None:
+        return _denied()
+    try:
+        data = _body(request)
+        reason = str(data.get('reason', ''))
+        if reason not in dict(ParcelLock.REASONS):
+            raise Invalid('دلیل قفل را انتخاب کنید.')
+        notes = str(data.get('notes', '')).strip()[:500]
+        if parcel.locks.filter(reason=reason, unlocked_at__isnull=True).exists():
+            raise Invalid('این ملک به همین دلیل از قبل قفل است.')
+    except Invalid as exc:
+        return JsonResponse({'success': False, 'error': str(exc)}, status=400)
+    ParcelLock.objects.create(parcel=parcel, reason=reason, notes=notes, locked_by=request.user)
+    parcel = MapParcel.objects.select_related('archive', 'land_use').get(pk=parcel.pk)
+    return JsonResponse({'success': True, 'parcel': _parcel_dict(parcel)})
+
+
+@require_POST
+@policy_required('gis.lock', api=True)
+def parcel_unlock(request, slug, parcel_id, lock_id):
+    parcel = _parcel(request, slug, parcel_id, 'gis.lock')
+    if parcel is None:
+        return _denied()
+    lock = get_object_or_404(ParcelLock, pk=lock_id, parcel=parcel, unlocked_at__isnull=True)
+    try:
+        notes = str(_body(request).get('notes', '')).strip()[:500]
+        if not notes:
+            raise Invalid('دلیل رفع قفل را بنویسید.')
+    except Invalid as exc:
+        return JsonResponse({'success': False, 'error': str(exc)}, status=400)
+    lock.unlocked_at, lock.unlocked_by, lock.unlock_notes = timezone.now(), request.user, notes
+    lock.save(update_fields=['unlocked_at', 'unlocked_by', 'unlock_notes'])
+    parcel = MapParcel.objects.select_related('archive', 'land_use').get(pk=parcel.pk)
     return JsonResponse({'success': True, 'parcel': _parcel_dict(parcel)})
