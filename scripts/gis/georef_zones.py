@@ -25,7 +25,7 @@ FRAME = (20, 20, 1400, 1520)                    # the map box inside the picture
 ZONE_COLOURS = {'1': (247, 142, 56), '2': (250, 250, 100), '3': (161, 194, 152), '4': (40, 145, 200), '5': (232, 20, 26)}
 COLOUR_TOLERANCE = 45                           # summed RGB distance
 VOTE_OFFSETS = (-3, 0, 3)                       # pixels around a plot's centre that are sampled
-NEAREST_BLOCK_LIMIT = 150.0                     # metres: a block with no coloured plot copies a neighbour this close
+NEAREST_BLOCK_LIMIT = 400.0                     # metres: a block with no coloured plot copies a neighbour this close
 
 
 def classify(picture):

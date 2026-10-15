@@ -474,9 +474,9 @@ def build(survey_doc, epsg, detail_doc=None, zones=None, survey_year=1404, detai
     # neighbourhoods (حوزه / محله): the blocks of each, with the streets between them closed up
     by_zone = collections.defaultdict(list)
     for number, polygon in blocks:
-        if zones['blocks'].get(number) and plots_per_block.get(number):
+        if zones['blocks'].get(number):                  # empty blocks belong to a neighbourhood too
             by_zone[zones['blocks'][number]].append(polygon)
-    zone_parcels = {zone: sum(plots_per_block[n] for n, _ in blocks if zones['blocks'].get(n) == zone) for zone in by_zone}
+    zone_parcels = {zone: sum(plots_per_block.get(n, 0) for n, _ in blocks if zones['blocks'].get(n) == zone) for zone in by_zone}
     if housing_blocks:
         by_zone['6'] = [polygon for _, polygon in housing_blocks]
         zone_parcels['6'] = sum(housing_per_block.values())
