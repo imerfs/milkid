@@ -18,13 +18,20 @@ VILLAGES = {
     'dastgerd': {
         'name': 'دستگرد', 'province': 'خراسان جنوبی', 'county': 'بیرجند', 'district': 'مرکزی',
         'file': DATA_DIR / 'dastgerd.geojson',
-        'source_note': 'نقشه‌ی برداشت روستای دستگرد (join14040110) و نقشه‌ی ۱۴۰۵ (Pish-Dastgerd)',
+        'source_note': 'نقشه‌ی برداشت دستگرد (join14040110)، نقشه‌ی ۱۴۰۵ (Pish-Dastgerd) و طرح نهضت ملی (محله‌ی ۶)',
     },
 }
 
 PARCEL_FIELDS = ['block_no', 'number', 'renewal_code', 'kind', 'area_m2', 'other_numbers', 'duplicate_code', 'zone',
                  'land_use', 'building_area_m2', 'building_count', 'easement_hits', 'first_year', 'last_year',
-                 'geometry']
+                 'lot_no', 'permit_in_drawing', 'geometry']
+
+
+def outer_points(geometry):
+    """The points of the outer ring(s) of a Polygon or MultiPolygon."""
+    if geometry['type'] == 'MultiPolygon':
+        return [point for polygon in geometry['coordinates'] for point in polygon[0]]
+    return geometry['coordinates'][0]
 
 
 def _has_other_links(parcel):
@@ -42,7 +49,7 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
     by_type = {name: [f for f in features if f['properties']['type'] == name]
                for name in ('parcel', 'block', 'zone', 'easement', 'building')}
 
-    ring = [p for f in by_type['block'] for p in f['geometry']['coordinates'][0]]
+    ring = [p for f in by_type['block'] for p in outer_points(f['geometry'])]
     centre = (sum(p[1] for p in ring) / len(ring), sum(p[0] for p in ring) / len(ring)) if ring else (0, 0)
     link = geography.resolve(province=spec['province'], county=spec['county'], district=spec['district'],
                              city_village=spec['name'], models=models) if geography else {}
@@ -82,6 +89,7 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
                       land_use=classes.get(props.get('lu')), building_area_m2=props.get('bld_area', 0),
                       building_count=props.get('bld_count', 0), easement_hits=props.get('easements', []),
                       first_year=props.get('first_year'), last_year=props.get('last_year'),
+                      lot_no=props.get('lot_no', ''), permit_in_drawing=bool(props.get('permit')),
                       geometry=feature['geometry'])
         if row is not None:
             for key, value in values.items():
@@ -100,7 +108,7 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
 
     models.MapBlock.objects.filter(village_map=village_map).delete()
     models.MapBlock.objects.bulk_create([
-        models.MapBlock(village_map=village_map, number=f['properties']['number'],
+        models.MapBlock(village_map=village_map, number=f['properties']['number'], zone=f['properties'].get('zone', ''),
                         parcel_count=f['properties']['parcels'], area_m2=f['properties']['area'],
                         geometry=f['geometry']) for f in by_type['block']], batch_size=200)
 

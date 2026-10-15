@@ -34,6 +34,8 @@ class VillageMap(models.Model):
 class MapBlock(models.Model):
     village_map = models.ForeignKey(VillageMap, on_delete=models.CASCADE, related_name='blocks')
     number = models.CharField(max_length=10, verbose_name='شماره بلوک')
+    zone = models.CharField(max_length=3, blank=True, verbose_name='محله',
+                            help_text='بلوک‌های محله‌ی ۶ از ۱ شماره‌گذاری می‌شوند و با بلوک‌های دیگر یکی نیستند')
     parcel_count = models.PositiveIntegerField(default=0)
     area_m2 = models.FloatField(default=0)
     geometry = models.JSONField(verbose_name='هندسه (GeoJSON)')
@@ -41,7 +43,7 @@ class MapBlock(models.Model):
     class Meta:
         verbose_name = 'بلوک'
         verbose_name_plural = 'بلوک‌ها'
-        constraints = [models.UniqueConstraint(fields=['village_map', 'number'], name='map_block_unique')]
+        constraints = [models.UniqueConstraint(fields=['village_map', 'zone', 'number'], name='map_block_zone_unique')]
 
     def __str__(self):
         return f'بلوک {self.number}'
@@ -118,6 +120,8 @@ class MapParcel(models.Model):
     area_m2 = models.FloatField(default=0, verbose_name='مساحت (مترمربع)')
     other_numbers = models.JSONField(default=list, blank=True)
     duplicate_code = models.BooleanField(default=False)
+    lot_no = models.CharField(max_length=10, blank=True, verbose_name='شماره قطعه‌ی تفکیکی')
+    permit_in_drawing = models.BooleanField(default=False, verbose_name='طبق نقشه پروانه صادر شده')
     # the renewal code is guild - apartment - plot - block - neighbourhood (صنف - آپارتمان - ملک - بلوک - محله)
     zone = models.CharField(max_length=3, blank=True, db_index=True, verbose_name='محله')
     guild_no = models.PositiveSmallIntegerField(default=0, verbose_name='صنف')
@@ -147,9 +151,15 @@ class ParcelArchive(models.Model):
     permit_date = models.DateField(null=True, blank=True, verbose_name='تاریخ پروانه')
     permit_type = models.CharField(max_length=60, blank=True, verbose_name='نوع پروانه')
     permit_notes = models.TextField(blank=True, verbose_name='توضیحات پروانه')
-    owner_name = models.CharField(max_length=150, blank=True, verbose_name='نام مالک')
-    owner_national_id = models.CharField(max_length=10, blank=True, verbose_name='کد ملی مالک')
-    owner_phone = models.CharField(max_length=20, blank=True, verbose_name='تلفن مالک')
+    # عرصه (the land) and اعیان (what stands on it) can belong to different people: the owner_* fields are the land's
+    owner_name = models.CharField(max_length=150, blank=True, verbose_name='نام مالک عرصه')
+    owner_national_id = models.CharField(max_length=10, blank=True, verbose_name='کد ملی مالک عرصه')
+    owner_phone = models.CharField(max_length=20, blank=True, verbose_name='تلفن مالک عرصه')
+    building_owner_name = models.CharField(max_length=150, blank=True, verbose_name='نام مالک اعیان')
+    building_owner_national_id = models.CharField(max_length=10, blank=True, verbose_name='کد ملی مالک اعیان')
+    building_owner_phone = models.CharField(max_length=20, blank=True, verbose_name='تلفن مالک اعیان')
+    building_floors = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name='تعداد طبقات')
+    building_floor_area = models.FloatField(null=True, blank=True, verbose_name='زیربنا (مترمربع)')
     notes = models.TextField(blank=True, verbose_name='یادداشت')
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name='+')

@@ -25,7 +25,7 @@
         <form class="vm-search" id="vm-search" autocomplete="off" role="search">
             <i class="fas fa-search" aria-hidden="true"></i>
             <input id="vm-search-input" type="text" dir="ltr" list="vm-codes"
-                   placeholder="کد نوسازی، بلوک، یا مختصات (X Y یو‌تی‌ام)" aria-label="جستجو">
+                   placeholder="کد نوسازی، بلوک، قطعه‌ی تفکیکی (t432) یا مختصات UTM" aria-label="جستجو">
             <datalist id="vm-codes"></datalist>
         </form>
         <button type="button" class="vm-toggle" id="vm-layers-toggle" aria-controls="vm-layers" aria-expanded="false" title="لایه‌ها">
@@ -59,39 +59,45 @@
                         </label>
                     </fieldset>
                     <fieldset>
-                        <legend>روکش‌های نقشه</legend>
+                        <legend>محله‌ها و ملک‌ها</legend>
+                        <label class="vm-main-tick"><input type="checkbox" data-layer="zones" checked> نمایش محله‌ها (حوزه‌بندی)</label>
                         <label><input type="checkbox" data-layer="plots" checked> عرصه (زمین قطعه‌ها)</label>
-                        <label><input type="checkbox" data-layer="buildings"> اعیان (ساختمان‌ها)</label>
+                        <label><input type="checkbox" data-layer="buildings" checked> اعیان (ساختمان‌ها)</label>
                         <label><input type="checkbox" data-layer="blocks" checked> مرز بلوک‌ها</label>
                         <label><input type="checkbox" data-layer="block-labels"> شماره‌ی بلوک‌ها</label>
-                        <label><input type="checkbox" data-layer="zones" checked> محله‌ها (حوزه‌بندی)</label>
                     </fieldset>
                     <fieldset>
                         <legend><label><input type="checkbox" id="vm-easements-all"> حریم‌ها</label></legend>
-                        {% for kind, label in easement_kinds %}
-                        <label class="vm-easement"><input type="checkbox" data-easement="{{ kind }}"> <i class="vm-sw vm-ea-{{ kind }}"></i>{{ label }}</label>
+                        {% for kind, label, rule in easement_kinds %}
+                        <label class="vm-easement" {% if rule %}title="{{ rule }}"{% endif %}><input type="checkbox" data-easement="{{ kind }}"> <i class="vm-sw vm-ea-{{ kind }}"></i>{{ label }}</label>
                         {% endfor %}
                     </fieldset>
                     <fieldset>
                         <legend>رنگ‌آمیزی قطعه‌ها</legend>
-                        <label><input type="radio" name="colormode" value="status" checked> وضعیت بایگانی</label>
-                        <label><input type="radio" name="colormode" value="use"> نوع کاربری</label>
+                        <label><input type="radio" name="colormode" value="use" checked> نوع کاربری</label>
                         <label><input type="radio" name="colormode" value="zone"> محله</label>
                         <label><input type="radio" name="colormode" value="easement"> رعایت حریم</label>
+                        <label><input type="radio" name="colormode" value="status"> وضعیت بایگانی</label>
+                    </fieldset>
+                    <fieldset>
+                        <legend>فیلتر قطعه‌ها</legend>
+                        <select id="vm-filter" aria-label="فیلتر قطعه‌ها">
+                            <option value="all">همه‌ی قطعه‌ها</option>
+                            <option value="filed">دارای بایگانی</option>
+                            <option value="empty">بدون بایگانی</option>
+                            <option value="permit">پروانه‌دار (طبق نقشه یا بایگانی)</option>
+                            <option value="locked">قفل‌شده</option>
+                            <option value="violation">متخلف از حریم</option>
+                            <option value="estimated">مرز تقریبی</option>
+                        </select>
+                    </fieldset>
+                    <fieldset>
+                        <legend>راهنمای رنگ‌ها</legend>
+                        <div class="vm-legend" id="vm-legend" aria-label="راهنما"></div>
                     </fieldset>
                 </div>
             </section>
 
-            <div class="vm-filters" role="group" aria-label="نمایش قطعه‌ها">
-                <button type="button" class="vm-chip is-on" data-filter="all">همه</button>
-                <button type="button" class="vm-chip" data-filter="filed">دارای بایگانی</button>
-                <button type="button" class="vm-chip" data-filter="empty">بدون بایگانی</button>
-                <button type="button" class="vm-chip" data-filter="locked">قفل‌شده</button>
-                <button type="button" class="vm-chip" data-filter="violation">متخلف از حریم</button>
-                <button type="button" class="vm-chip" data-filter="estimated">مرز تقریبی</button>
-            </div>
-
-            <div class="vm-legend" id="vm-legend" aria-label="راهنما"></div>
             <div class="vm-coords" id="vm-coords" dir="ltr" aria-live="off"></div>
 
             <div class="vm-timeline" id="vm-timeline" aria-label="خط زمانی">
@@ -109,7 +115,7 @@
         <aside class="vm-panel" id="vm-panel" aria-live="polite">
             <div class="vm-empty" id="vm-empty">
                 <i class="fas fa-hand-pointer"></i>
-                <p>روی یک قطعه در نقشه کلیک کنید، یا کد نوسازی آن را جستجو کنید.</p>
+                <p>روی یک قطعه یا ساختمان در نقشه کلیک کنید، یا کد نوسازی آن را جستجو کنید.</p>
                 <p class="vm-note">مرز برخی قطعه‌های جدید در نقشه‌ی برداشت ترسیم نشده بود؛ آن‌ها با خط‌چین و به صورت تقریبی نشان داده می‌شوند.</p>
             </div>
 
@@ -122,38 +128,64 @@
                     <button type="button" class="vm-close" id="vm-close" aria-label="بستن"><i class="fas fa-times"></i></button>
                 </div>
                 <dl class="vm-facts">
-                    <div><dt>مساحت عرصه</dt><dd id="vm-area"></dd></div>
-                    <div><dt>مساحت اعیان</dt><dd id="vm-building"></dd></div>
                     <div><dt>محله</dt><dd id="vm-zone"></dd></div>
                     <div><dt>بلوک</dt><dd id="vm-block"></dd></div>
                     <div><dt>شماره ملک</dt><dd id="vm-number"></dd></div>
-                    <div><dt>کاربری</dt><dd id="vm-use"></dd></div>
+                    <div class="vm-fact-wide"><dt>کاربری</dt><dd id="vm-use"></dd></div>
+                    <div><dt>قطعه‌ی تفکیکی</dt><dd id="vm-lot"></dd></div>
                 </dl>
+                <div class="vm-halves">
+                    <section class="vm-half vm-half-land">
+                        <h3><i class="fas fa-vector-square"></i> عرصه (زمین)</h3>
+                        <p class="vm-big" id="vm-area"></p>
+                        <p class="vm-small" id="vm-land-owner"></p>
+                    </section>
+                    <section class="vm-half vm-half-building">
+                        <h3><i class="fas fa-building"></i> اعیان (ساختمان)</h3>
+                        <p class="vm-big" id="vm-building"></p>
+                        <p class="vm-small" id="vm-building-owner"></p>
+                    </section>
+                </div>
+                <p class="vm-ok" id="vm-permit-mark" hidden><i class="fas fa-stamp"></i> طبق نقشه برای این ملک پروانه‌ی ساختمان صادر شده است.</p>
                 <p class="vm-alert" id="vm-locked" hidden></p>
                 <div class="vm-alert" id="vm-violation" hidden></div>
                 <p class="vm-warn" id="vm-estimated" hidden>مرز این قطعه در نقشه‌ی برداشت نبود و از روی شماره‌ی قطعه‌ها تقریب زده شده است.</p>
                 <p class="vm-warn" id="vm-duplicate" hidden>این کد نوسازی برای بیش از یک قطعه در نقشه آمده است؛ بایگانی را با دقت ثبت کنید.</p>
 
                 <div class="vm-tabs" role="tablist">
-                    <button type="button" class="vm-tab is-on" role="tab" data-tab="archive">پروانه و مالک</button>
+                    <button type="button" class="vm-tab is-on" role="tab" data-tab="land">عرصه</button>
+                    <button type="button" class="vm-tab" role="tab" data-tab="building">اعیان و پروانه</button>
                     <button type="button" class="vm-tab" role="tab" data-tab="payments">عوارض <span id="vm-pay-count" class="vm-badge"></span></button>
-                    <button type="button" class="vm-tab" role="tab" data-tab="locks">قفل و خدمات <span id="vm-lock-count" class="vm-badge vm-badge-red"></span></button>
+                    <button type="button" class="vm-tab" role="tab" data-tab="locks">قفل <span id="vm-lock-count" class="vm-badge vm-badge-red"></span></button>
                 </div>
 
-                <form class="vm-form" id="vm-archive" data-pane="archive" novalidate>
-                    <h3>اطلاعات پروانه</h3>
-                    <label>شماره پروانه<input name="permit_number" maxlength="60"></label>
-                    <label>تاریخ پروانه (شمسی)<input name="permit_date" dir="ltr" placeholder="1404/02/11" inputmode="numeric"></label>
-                    <label>نوع پروانه<input name="permit_type" maxlength="60" placeholder="مثلاً ساخت و ساز مسکونی"></label>
-                    <label>توضیحات پروانه<textarea name="permit_notes" rows="2"></textarea></label>
-                    <h3>اطلاعات مالک</h3>
-                    <label>نام مالک<input name="owner_name" maxlength="150"></label>
-                    <label>کد ملی<input name="owner_national_id" dir="ltr" maxlength="10" inputmode="numeric"></label>
-                    <label>تلفن<input name="owner_phone" dir="ltr" maxlength="20" inputmode="tel"></label>
-                    <label>یادداشت<textarea name="notes" rows="2"></textarea></label>
-                    <p class="vm-msg" id="vm-archive-msg" role="status"></p>
-                    <button type="submit" class="vm-btn" data-edit>ذخیره‌ی بایگانی</button>
-                    <p class="vm-small" id="vm-updated"></p>
+                <form class="vm-form" id="vm-archive" novalidate>
+                    <div data-pane="land">
+                        <h3>مالک عرصه</h3>
+                        <label>نام مالک<input name="owner_name" maxlength="150"></label>
+                        <label>کد ملی<input name="owner_national_id" dir="ltr" maxlength="10" inputmode="numeric"></label>
+                        <label>تلفن<input name="owner_phone" dir="ltr" maxlength="20" inputmode="tel"></label>
+                        <label>یادداشت<textarea name="notes" rows="2"></textarea></label>
+                    </div>
+                    <div data-pane="building" hidden>
+                        <h3>اطلاعات اعیان</h3>
+                        <label>تعداد طبقات<input name="building_floors" dir="ltr" maxlength="3" inputmode="numeric"></label>
+                        <label>زیربنا (مترمربع)<input name="building_floor_area" dir="ltr" inputmode="decimal"></label>
+                        <h3>مالک اعیان</h3>
+                        <label>نام مالک<input name="building_owner_name" maxlength="150"></label>
+                        <label>کد ملی<input name="building_owner_national_id" dir="ltr" maxlength="10" inputmode="numeric"></label>
+                        <label>تلفن<input name="building_owner_phone" dir="ltr" maxlength="20" inputmode="tel"></label>
+                        <h3>پروانه‌ی ساختمان</h3>
+                        <label>شماره پروانه<input name="permit_number" maxlength="60"></label>
+                        <label>تاریخ پروانه (شمسی)<input name="permit_date" dir="ltr" placeholder="1404/02/11" inputmode="numeric"></label>
+                        <label>نوع پروانه<input name="permit_type" maxlength="60" placeholder="مثلاً ساخت و ساز مسکونی"></label>
+                        <label>توضیحات پروانه<textarea name="permit_notes" rows="2"></textarea></label>
+                    </div>
+                    <div data-pane-shared>
+                        <p class="vm-msg" id="vm-archive-msg" role="status"></p>
+                        <button type="submit" class="vm-btn" data-edit>ذخیره‌ی بایگانی</button>
+                        <p class="vm-small" id="vm-updated"></p>
+                    </div>
                 </form>
 
                 <section class="vm-pane" id="vm-payments" data-pane="payments" hidden>

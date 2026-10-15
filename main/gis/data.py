@@ -30,13 +30,14 @@ def static_parcels(village_map):
         rows = []
         for p in village_map.parcels.only('id', 'renewal_code', 'block_no', 'number', 'zone', 'kind', 'area_m2',
                                           'land_use_id', 'building_area_m2', 'easement_hits', 'first_year',
-                                          'last_year', 'duplicate_code', 'geometry'):
+                                          'last_year', 'duplicate_code', 'lot_no', 'permit_in_drawing', 'geometry'):
             rows.append({
                 'type': 'Feature',
                 'properties': {'id': p.pk, 'code': p.renewal_code, 'b': p.block_no, 'n': p.number, 'z': p.zone,
                                'e': p.kind == 'estimated', 'a': round(p.area_m2), 'lu': p.land_use_id or 0,
                                'ba': round(p.building_area_m2), 'h': sorted({h['k'] for h in p.easement_hits}),
-                               'fy': p.first_year, 'ly': p.last_year, 'd': p.duplicate_code},
+                               'fy': p.first_year, 'ly': p.last_year, 'd': p.duplicate_code, 'lt': p.lot_no,
+                               'pm': p.permit_in_drawing},
                 'geometry': p.geometry,
             })
         return rows
@@ -45,7 +46,7 @@ def static_parcels(village_map):
 
 def static_blocks(village_map):
     return _cached((village_map.slug, 'blocks'), village_map.loaded_at, lambda: [
-        {'type': 'Feature', 'properties': {'n': b.number, 'c': b.parcel_count}, 'geometry': b.geometry}
+        {'type': 'Feature', 'properties': {'n': b.number, 'c': b.parcel_count, 'z': b.zone}, 'geometry': b.geometry}
         for b in MapBlock.objects.filter(village_map=village_map)])
 
 

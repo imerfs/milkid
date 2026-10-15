@@ -1,24 +1,11 @@
-"""Load (or refresh in place) the Dastgerd map: plots, blocks, neighbourhoods, land use, easements, buildings.
+"""Superseded by 0058, which loads the map once all the tables and fields it fills exist.
 
-Plots are matched by uid, so archives, payments and locks entered earlier stay attached. Later drawings are loaded
-with `manage.py load_village_map dastgerd`.
+This used to load the second version of the Dastgerd map. It does nothing now: a fresh database gets the map from 0058,
+and a database that already ran it keeps its plots, which 0058 updates in place (by uid).
 """
-from types import SimpleNamespace
-
 from django.db import migrations
-
-
-def load(apps, schema_editor):
-    from main import geography
-    from main.gis import loader
-    if not loader.VILLAGES['dastgerd']['file'].exists():
-        return
-    names = ('VillageMap', 'MapBlock', 'MapParcel', 'MapZone', 'MapEasement', 'MapBuilding', 'LandUseClass',
-             'CityVillage', 'Province', 'County', 'District')
-    models = SimpleNamespace(**{name: apps.get_model('main', name) for name in names})
-    loader.load_village_map('dastgerd', models, geography=geography)
 
 
 class Migration(migrations.Migration):
     dependencies = [('main', '0055_gis_layers_zones_locks')]
-    operations = [migrations.RunPython(load, migrations.RunPython.noop)]
+    operations = [migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop)]
