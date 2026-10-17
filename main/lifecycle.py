@@ -1,6 +1,6 @@
-"""ServiceRequest lifecycle: the only place that changes a request's status.
+"""ServiceRequest lifecycle: the only place that creates a request or changes its status.
 
-Views call a verb (``approve``, ``reject``, ...) and render the outcome. Each
+Views call a verb (``submit``, ``approve``, ``reject``, ...) and render the outcome. Each
 verb checks the transition is allowed, updates status / workflow stage, writes
 the workflow history entry and notifies the people involved.
 
@@ -9,7 +9,7 @@ for the municipal expert ('expert').
 """
 from django.utils import timezone
 
-from main.models import Inspection, ServiceRequest
+from main.models import CityVillage, County, Inspection, Province, ServiceRequest
 from main.notifications import notify
 
 FINAL_STATUSES = {'completed'}
@@ -39,6 +39,44 @@ def _ensure_not_locked(sr):
     message = locks.refusal(sr.parcel_number) if sr.parcel_number else ''
     if message:
         raise TransitionError(message)
+
+
+def _profile_geography(user):
+    """Province, county and village of the user's profile as model instances (None where unknown)."""
+    prof = getattr(user, 'profile', None)
+    if not prof:
+        return {}
+    village = CityVillage.objects.filter(name=prof.city_village).first() if prof.city_village else None
+    if not village and prof.city_village_name:
+        village = CityVillage.objects.filter(name=prof.city_village_name).first()
+    return {
+        'province': Province.objects.filter(name=prof.province).first() if prof.province else None,
+        'county': County.objects.filter(name=prof.county).first() if prof.county else None,
+        'city_village': village,
+    }
+
+
+def submit(user, *, action, instance=None, **fields):
+    """A citizen files a request: the one way a ServiceRequest is created.
+
+    Refuses a locked plot, fills the province / county / village the caller left empty from the user's
+    profile, starts the workflow at the municipal expert and writes the first history entry.
+    ``instance`` is an unsaved request (a ModelForm's ``save(commit=False)``); ``fields`` are set on it.
+    """
+    sr = instance if instance is not None else ServiceRequest()
+    for name, value in fields.items():
+        setattr(sr, name, value)
+    _ensure_not_locked(sr)
+    sr.user = user
+    sr.status = 'pending'
+    sr.workflow_stage = 'expert_review'
+    sr.referral_target = 'engineer'
+    for name, value in _profile_geography(user).items():
+        if value is not None and getattr(sr, f'{name}_id') is None:
+            setattr(sr, name, value)
+    sr.add_workflow_step(action=action, from_user=user, to_role='engineer')
+    sr.save()
+    return sr
 
 
 def _finish(sr, actor, *, status, stage, action, notes='', to_role='citizen', reviewed=False):

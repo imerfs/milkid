@@ -78,25 +78,9 @@ def create_request(request):
     if request.method == 'POST':
         form = ServiceRequestForm(request.POST, request.FILES)
         if form.is_valid():
-            service_request = form.save(commit=False)
-            service_request.user = request.user
-            service_request.workflow_stage = 'expert_review'
-            service_request.referral_target = 'engineer'
-            prof = getattr(request.user, 'profile', None)
-            if prof:
-                if not service_request.province and prof.province:
-                    service_request.province = Province.objects.filter(name=prof.province).first()
-                if not service_request.county and prof.county:
-                    service_request.county = County.objects.filter(name=prof.county).first()
-                if not service_request.city_village and prof.city_village:
-                    service_request.city_village = CityVillage.objects.filter(name=prof.city_village).first()
-            service_request.save()
-            service_request.add_workflow_step(
-                action='ثبت درخواست توسط متقاضی - ارجاع اولیه به کارشناس دهیاری',
-                from_user=request.user,
-                to_role='engineer'
-            )
-            service_request.save()
+            service_request = lifecycle.submit(
+                request.user, action='ثبت درخواست توسط متقاضی - ارجاع اولیه به کارشناس دهیاری',
+                instance=form.save(commit=False))
 
             # Create notification
             Notification.objects.create(
@@ -209,30 +193,14 @@ def construction_permit_request(request):
     if request.method == 'POST':
         form = ConstructionPermitForm(request.POST, request.FILES)
         if form.is_valid():
-            prof = getattr(request.user, 'profile', None)
-            prov_obj = Province.objects.filter(name=prof.province).first() if (prof and prof.province) else None
-            county_obj = County.objects.filter(name=prof.county).first() if (prof and prof.county) else None
-            village_obj = CityVillage.objects.filter(name=prof.city_village).first() if (prof and prof.city_village) else None
-
-            service_request = ServiceRequest.objects.create(
-                user=request.user,
-                request_type='building_permit',
-                title='درخواست صدور پروانه ساختمان',
-                description=form.cleaned_data.get('description', ''),
-                property_address=form.cleaned_data.get('property_address', ''),
-                province=prov_obj,
-                county=county_obj,
-                city_village=village_obj,
-                status='pending',
-                workflow_stage='expert_review',
-                referral_target='engineer'
-            )
-            service_request.add_workflow_step(
-                action='ثبت درخواست پروانه ساختمان توسط متقاضی - ارجاع به کارشناس دهیاری',
-                from_user=request.user,
-                to_role='engineer'
-            )
-            service_request.save()
+            data = form.cleaned_data
+            lifecycle.submit(
+                request.user, action='ثبت درخواست پروانه ساختمان توسط متقاضی - ارجاع به کارشناس دهیاری',
+                request_type='building_permit', title='درخواست صدور پروانه ساختمان',
+                **{name: data.get(name) for name in (
+                    'description', 'property_address', 'property_area', 'property_usage', 'deed_number',
+                    'parcel_number', 'province', 'county', 'district', 'city_village')
+                   if data.get(name) not in (None, '')})
 
             messages.success(request, 'درخواست صدور پروانه ساختمان با موفقیت ثبت شد.')
             return redirect('main:my_requests')

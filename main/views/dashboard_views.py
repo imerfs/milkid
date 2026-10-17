@@ -17,7 +17,7 @@ from functools import wraps
 import json
 import os
 
-from main.gis import locks
+from main import lifecycle
 from main.access import role_of
 from .common import role_required
 from main.messaging_views import (
@@ -165,9 +165,6 @@ def dashboard_submit_request(request):
         property_address = request.POST.get('property_address', '')
         parcel_number = request.POST.get('parcel_number', '').strip()[:50]
 
-        if parcel_number and (refusal := locks.refusal(parcel_number)):      # a locked plot gets no services
-            messages.error(request, refusal)
-            return redirect('main:user_dashboard')
         if not service_id or not title or not description:
             messages.error(request, 'لطفا تمامی فیلدهای ضروری را پر کنید.')
             return redirect('main:user_dashboard')
@@ -179,35 +176,15 @@ def dashboard_submit_request(request):
                 messages.error(request, 'این خدمت در حال حاضر غیرفعال است و امکان ثبت درخواست وجود ندارد.')
                 return redirect('main:user_dashboard')
             
-            prof = getattr(request.user, 'profile', None)
-            prov_obj = Province.objects.filter(name=prof.province).first() if (prof and prof.province) else None
-            county_obj = County.objects.filter(name=prof.county).first() if (prof and prof.county) else None
-            village_obj = CityVillage.objects.filter(name=prof.city_village).first() if (prof and prof.city_village) else None
-            if not village_obj and prof and prof.city_village_name:
-                village_obj = CityVillage.objects.filter(name=prof.city_village_name).first()
+            try:
+                service_request = lifecycle.submit(
+                    request.user, action='ثبت اولیه توسط متقاضی - ارجاع به کارشناس دهیاری',
+                    service=service, request_type='other', title=title, description=description,
+                    property_address=property_address, parcel_number=parcel_number)
+            except lifecycle.TransitionError as error:
+                messages.error(request, str(error))
+                return redirect('main:user_dashboard')
 
-            service_request = ServiceRequest.objects.create(
-                user=request.user,
-                service=service,
-                request_type='other',
-                title=title,
-                description=description,
-                property_address=property_address,
-                parcel_number=parcel_number,
-                province=prov_obj,
-                county=county_obj,
-                city_village=village_obj,
-                status='pending',
-                workflow_stage='expert_review',
-                referral_target='engineer'
-            )
-            service_request.add_workflow_step(
-                action='ثبت اولیه توسط متقاضی - ارجاع به کارشناس دهیاری',
-                from_user=request.user,
-                to_role='engineer'
-            )
-            service_request.save()
-            
             if request.FILES:
                 for file_key in request.FILES:
                     uploaded_file = request.FILES[file_key]

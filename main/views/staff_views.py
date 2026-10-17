@@ -536,17 +536,7 @@ def assign_request_to_engineer(request, request_id):
         
         if engineer_id:
             engineer = get_object_or_404(User, id=engineer_id, profile__role='engineer')
-            service_request.assigned_to = engineer
-            service_request.status = 'in_review'
-            service_request.save()
-            
-            Notification.objects.create(
-                user=engineer,
-                notification_type='request_status',
-                title='درخواست جدید',
-                message=f'درخواست {service_request.title} به شما ارجاع شد.',
-                related_request=service_request
-            )
+            lifecycle.assign(service_request, request.user, engineer)
             
             messages.success(request, f'درخواست به {engineer.get_full_name()} ارجاع شد.')
             return redirect('main:manage_requests')

@@ -149,3 +149,35 @@ class InspectionOutcome(LifecycleCase):
         self.assertEqual(r.status_code, 404)
         self.sr.refresh_from_db()
         self.assertEqual(self.sr.status, 'in_review')
+
+
+class Submit(TestCase):
+    """lifecycle.submit is the one way a request is created."""
+
+    def setUp(self):
+        self.citizen = make_user('citizen')
+
+    def test_a_new_request_starts_at_the_expert_with_a_history_entry(self):
+        from main import lifecycle
+        sr = lifecycle.submit(self.citizen, action='ثبت', request_type='other', title='t', description='d')
+        sr.refresh_from_db()
+        self.assertEqual((sr.status, sr.workflow_stage, sr.referral_target), ('pending', 'expert_review', 'engineer'))
+        self.assertEqual(sr.user, self.citizen)
+        self.assertEqual(len(sr.workflow_history), 1)
+        self.assertEqual(sr.workflow_history[0]['to_role'], 'engineer')
+
+    def test_the_address_the_caller_left_empty_comes_from_the_profile(self):
+        from main import lifecycle
+        from main.models import CityVillage, County, District, Province
+        province = Province.objects.create(name='استان آزمون')
+        county = County.objects.create(name='شهرستان آزمون', province=province)
+        district = District.objects.create(name='بخش آزمون', county=county)
+        village = CityVillage.objects.create(name='روستای آزمون', district=district)
+        profile = self.citizen.profile
+        profile.province, profile.county, profile.city_village = province.name, county.name, village.name
+        profile.save()
+        sr = lifecycle.submit(self.citizen, action='ثبت', request_type='other', title='t', description='d')
+        self.assertEqual((sr.province, sr.county, sr.city_village), (province, county, village))
+        other = Province.objects.create(name='استان دیگر')
+        sr = lifecycle.submit(self.citizen, action='ثبت', request_type='other', title='t', description='d', province=other)
+        self.assertEqual(sr.province, other)               # what the caller gave is kept
