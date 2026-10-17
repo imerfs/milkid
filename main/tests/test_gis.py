@@ -576,6 +576,30 @@ class LockedPlotsGetNoServices(TestCase):
         self.assertEqual(ServiceRequest.objects.filter(user=self.citizen).count(), 2)
         self.assertEqual(ServiceRequest.objects.filter(user=self.citizen, parcel_number=self.code).count(), 1)
 
+    def test_submit_refuses_a_locked_plot_whichever_door_is_used(self):
+        from main import lifecycle
+        from main.models import ServiceRequest
+        self.lock()
+        with self.assertRaises(lifecycle.TransitionError):
+            lifecycle.submit(self.citizen, action='ثبت', request_type='other', title='t', description='d',
+                             parcel_number=self.code)
+        self.assertFalse(ServiceRequest.objects.exists())
+
+    def test_the_permit_form_keeps_the_plot_it_was_given(self):
+        from main.models import ServiceRequest
+        response = client_for(self.citizen).post(reverse('main:construction_permit_request'), {
+            'title': 'درخواست پروانه ساختمان', 'description': 'ساخت', 'property_address': 'آدرس', 'parcel_number': self.code})
+        created = ServiceRequest.objects.filter(user=self.citizen, request_type='building_permit')
+        self.assertEqual(created.count(), 1, response.content[:300])
+        self.assertEqual(created.get().parcel_number, self.code)       # the request now names the plot, so the lock can see it
+
+    def test_the_permit_form_refuses_a_locked_plot(self):
+        from main.models import ServiceRequest
+        self.lock()
+        client_for(self.citizen).post(reverse('main:construction_permit_request'), {
+            'title': 'درخواست پروانه ساختمان', 'description': 'ساخت', 'property_address': 'آدرس', 'parcel_number': self.code})
+        self.assertFalse(ServiceRequest.objects.filter(request_type='building_permit').exists())
+
     def test_staff_cannot_approve_a_request_for_a_locked_plot(self):
         from main import lifecycle
         from main.models import ServiceRequest

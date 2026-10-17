@@ -1,19 +1,8 @@
+{% extends 'main/dashboards/_base.html' %}
 {% load static %}
 {% load jalali_tags %}
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل مدیریت شورا - نسخه بهبودیافته</title>
-
-    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-    
-    
-    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
-    
-    
-    <style>
+{% block title %}پنل مدیریت شورا - نسخه بهبودیافته{% endblock %}
+{% block style %}
         :root {
             --primary: #2563eb;
             --primary-dark: #1d4ed8;
@@ -166,12 +155,9 @@
             background-color: var(--danger);
             box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
         }
-    </style>
-    {% include 'partials/seo_head.html' %}
-    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-</head>
-<body class="text-gray-800 mk-tw">
+{% endblock %}
+{% block body_class %}text-gray-800 mk-tw{% endblock %}
+{% block content %}
     <!-- Mobile Menu Overlay -->
     <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleMobileMenu()"></div>
 
@@ -877,5 +863,4 @@
         showTab('{{ initial_tab }}', null);
     </script>
     {% include 'partials/office_dock.html' %}
-</body>
-</html>
+{% endblock %}

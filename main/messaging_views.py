@@ -15,6 +15,7 @@ from django.utils import timezone
 from functools import wraps
 import json
 
+from .roles import ALL_STAFF_ROLES, CITIZEN_ROLES, MUNICIPAL_STAFF_ROLES
 from .models import (
     UserProfile, Conversation, Message, MessageRecipient, 
     Notification, ServiceRequest, Announcement, ConversationState
@@ -283,15 +284,15 @@ def start_conversation(request):
     user_profile = request.user.profile
     
     # کاربران قابل پیام بر اساس نقش
-    if user_profile.role in ['citizen', 'owner', 'resident']:
+    if user_profile.role in CITIZEN_ROLES:
         # شهروندان می‌توانند به کارمندان پیام بدهند
         available_users = User.objects.filter(
-            profile__role__in=['dehyari', 'engineer', 'inspector', 'accountant', 'council', 'admin'],
+            profile__role__in=ALL_STAFF_ROLES,
             profile__city_village=user_profile.city_village,
             is_active=True
         ).select_related('profile')
     
-    elif user_profile.role in ['dehyari', 'engineer', 'inspector', 'accountant', 'council']:
+    elif user_profile.role in MUNICIPAL_STAFF_ROLES:
         # کارمندان می‌توانند به همه پیام بدهند
         available_users = User.objects.filter(
             profile__city_village=user_profile.city_village,

@@ -1,17 +1,7 @@
+{% extends 'main/dashboards/_base.html' %}
 {% load static %}
-<!doctype html>
-<html lang="fa" dir="rtl">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>پنل کاربری - ملک آیدی</title>
-
-        <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-        
-        
-        <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
-
-        <style>
+{% block title %}پنل کاربری - ملک آیدی{% endblock %}
+{% block style %}
             body { font-family: "Vazirmatn", sans-serif; background-color: #f3f4f6; }
             .main-content > div.tab-content { display: none; }
             .main-content > div.tab-content.active { display: block; }
@@ -40,12 +30,9 @@
             .panel-frame { width: 100%; height: calc(100vh - 12rem); min-height: 520px; border: 0; background: #fff; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
             .frame-wrap[hidden], .option-grid[hidden] { display: none; }
             .seg-btn.active { background: #16a34a; color: #fff; }
-        </style>
-        {% include 'partials/seo_head.html' %}
-    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-</head>
-        <body class="text-gray-800 mk-tw">
+{% endblock %}
+{% block body_class %}text-gray-800 mk-tw{% endblock %}
+{% block content %}
         <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleMobileMenu()"></div>
 
         <div class="flex min-h-screen">
@@ -310,5 +297,4 @@
             showTab('{{ initial_tab }}');
         </script>
         {% include 'partials/office_dock.html' %}
-</body>
-</html>
+{% endblock %}

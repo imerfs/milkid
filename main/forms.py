@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from . import geo_cascade
 from .validators import validate_file_size, validate_file_extension, validate_file_content
+from .roles import CITIZEN_ROLES
 from .models import UserProfile, ServiceRequest, RequestDocument, Service, ServiceStep, Municipality, Property, PropertyAdvertisement, PropertyImage, Province, County, District, CityVillage
 from .widgets import JalaliSelectDateWidget, JalaliDateInput, JalaliDateTimeInput, JalaliDateField, JalaliDateTimeField
 
@@ -361,7 +362,7 @@ class CustomUserCreationForm(UserCreationForm):
                 profile.city_village_name = district.name
 
             # Set approval status and user activity based on role
-            if profile.role in ['citizen', 'owner', 'resident']:
+            if profile.role in CITIZEN_ROLES:
                 # Ordinary roles are verified automatically
                 profile.is_verified = True
                 profile.approval_status = 'approved'

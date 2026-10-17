@@ -19,9 +19,10 @@ import json
 import os
 
 from .common import role_required
-from main import municipality_approval
+from main import ad_review, municipality_approval
 from main.accounts import soft_delete_user
 from main.access import policy_required
+from main.roles import ALL_STAFF_ROLES
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
     start_conversation, create_announcement, announcement_list, 
@@ -63,31 +64,11 @@ def admin_dashboard(request, server_panel=None):
             try:
                 ad = PropertyAdvertisement.objects.get(id=ad_id)
                 if action == 'approve':
-                    ad.status = 'approved'
-                    ad.approved_at = timezone.now()
-                    ad.approved_by = request.user
-                    ad.admin_notes = admin_notes or 'آگهی توسط مدیر سیستم تایید شد.'
-                    ad.save()
-
-                    Notification.objects.create(
-                        user=ad.user,
-                        notification_type='system_update',
-                        title='آگهی ملک شما تایید شد',
-                        message=f'آگهی ملک {ad.get_property_type_display()} شما در {ad.city_village or ad.county or "سیستم"} تایید و منتشر شد.'
-                    )
+                    ad_review.approve_ad(ad, request.user, admin_notes)
                     messages.success(request, f'آگهی {ad.get_property_type_display()} با موفقیت تایید و منتشر شد.')
 
                 elif action == 'reject':
-                    ad.status = 'rejected'
-                    ad.admin_notes = admin_notes or 'آگهی توسط مدیر رد شد.'
-                    ad.save()
-
-                    Notification.objects.create(
-                        user=ad.user,
-                        notification_type='system_update',
-                        title='آگهی ملک شما رد شد',
-                        message=f'آگهی ملک {ad.get_property_type_display()} شما رد شد. علت: {ad.admin_notes}'
-                    )
+                    ad_review.reject_ad(ad, request.user, admin_notes)
                     messages.warning(request, f'آگهی {ad.get_property_type_display()} رد شد.')
 
                 elif action == 'delete':
@@ -274,7 +255,7 @@ def admin_dashboard(request, server_panel=None):
     pending_dehyari = sum(1 for item in all_users_list if item['profile'].approval_status == 'pending' and item['profile'].role == 'dehyari')
     pending_council = sum(1 for item in all_users_list if item['profile'].approval_status == 'pending' and item['profile'].role == 'council')
     total_users = len(all_users_list)
-    staff_count = sum(1 for item in all_users_list if item['profile'].role in ['dehyari', 'admin', 'engineer', 'council', 'inspector', 'accountant'])
+    staff_count = sum(1 for item in all_users_list if item['profile'].role in ALL_STAFF_ROLES)
     frozen_users = blocked_users_count
 
     # Municipality statistics & data
@@ -393,19 +374,13 @@ def manage_property_ads(request):
                 ad = PropertyAdvertisement.objects.get(id=ad_id)
                 
                 if action == 'approve':
-                    ad.status = 'approved'
-                    ad.admin_notes = admin_notes or 'آگهی توسط مدیر تایید شد.'
-                    ad.approved_at = timezone.now()
-                    ad.approved_by = request.user
-                    ad.save()
+                    ad_review.approve_ad(ad, request.user, admin_notes)
                     messages.success(request, f'آگهی {ad.get_property_type_display()} تایید شد.')
-                    
+
                 elif action == 'reject':
-                    ad.status = 'rejected'
-                    ad.admin_notes = admin_notes or 'آگهی توسط مدیر رد شد.'
-                    ad.save()
+                    ad_review.reject_ad(ad, request.user, admin_notes)
                     messages.warning(request, f'آگهی {ad.get_property_type_display()} رد شد.')
-                    
+
             except PropertyAdvertisement.DoesNotExist:
                 messages.error(request, 'آگهی یافت نشد.')
         
@@ -416,43 +391,15 @@ def manage_property_ads(request):
                 edit_log = PropertyAdvertisementEditLog.objects.get(id=edit_id)
                 
                 if action == 'approve':
-                    # Apply the changes to the original advertisement
-                    if edit_log.apply_changes():
-                        edit_log.status = 'approved'
-                        edit_log.admin_notes = admin_notes or 'تغییرات توسط مدیر تایید شد.'
-                        edit_log.reviewed_by = request.user
-                        edit_log.reviewed_at = timezone.now()
-                        edit_log.save()
-                        
-                        # Create notification for user
-                        Notification.objects.create(
-                            user=edit_log.user,
-                            notification_type='request_status',
-                            title='درخواست ویرایش تایید شد',
-                            message=f'درخواست ویرایش آگهی {edit_log.advertisement.get_property_type_display()} شما تایید شد.',
-                        )
-                        
+                    if ad_review.approve_edit(edit_log, request.user, admin_notes):
                         messages.success(request, 'درخواست ویرایش تایید شد و تغییرات اعمال گردید.')
                     else:
                         messages.error(request, 'خطا در اعمال تغییرات.')
-                        
+
                 elif action == 'reject':
-                    edit_log.status = 'rejected'
-                    edit_log.admin_notes = admin_notes or 'درخواست ویرایش توسط مدیر رد شد.'
-                    edit_log.reviewed_by = request.user
-                    edit_log.reviewed_at = timezone.now()
-                    edit_log.save()
-                    
-                    # Create notification for user
-                    Notification.objects.create(
-                        user=edit_log.user,
-                        notification_type='request_status',
-                        title='درخواست ویرایش رد شد',
-                        message=f'درخواست ویرایش آگهی {edit_log.advertisement.get_property_type_display()} شما رد شد.',
-                    )
-                    
+                    ad_review.reject_edit(edit_log, request.user, admin_notes)
                     messages.warning(request, 'درخواست ویرایش رد شد.')
-                    
+
             except PropertyAdvertisementEditLog.DoesNotExist:
                 messages.error(request, 'درخواست ویرایش یافت نشد.')
             
@@ -1199,23 +1146,8 @@ def municipality_history(request, municipality_id):
 @login_required
 def api_approve_property_ad(request, ad_id):
     """API to approve a property advertisement"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
-        return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
-    
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
-    admin_notes = request.POST.get('admin_notes', '') or 'آگهی توسط مدیر سیستم تایید شد.'
-    ad.status = 'approved'
-    ad.approved_at = timezone.now()
-    ad.approved_by = request.user
-    ad.admin_notes = admin_notes
-    ad.save()
-
-    Notification.objects.create(
-        user=ad.user,
-        notification_type='system_update',
-        title='آگهی ملک شما تایید شد',
-        message=f'آگهی ملک {ad.get_property_type_display()} شما در {ad.city_village or ad.county or "سیستم"} تایید و منتشر شد.'
-    )
+    ad_review.approve_ad(ad, request.user, request.POST.get('admin_notes', ''))
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
         return JsonResponse({'success': True, 'message': 'آگهی با موفقیت تایید و منتشر شد.'})
@@ -1227,21 +1159,8 @@ def api_approve_property_ad(request, ad_id):
 @login_required
 def api_reject_property_ad(request, ad_id):
     """API to reject a property advertisement"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
-        return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
-
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
-    admin_notes = request.POST.get('admin_notes', '') or 'آگهی رد شد.'
-    ad.status = 'rejected'
-    ad.admin_notes = admin_notes
-    ad.save()
-
-    Notification.objects.create(
-        user=ad.user,
-        notification_type='system_update',
-        title='آگهی ملک شما رد شد',
-        message=f'آگهی ملک {ad.get_property_type_display()} شما رد شد. علت: {admin_notes}'
-    )
+    ad_review.reject_ad(ad, request.user, request.POST.get('admin_notes', ''))
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
         return JsonResponse({'success': True, 'message': 'آگهی با موفقیت رد شد.'})
@@ -1253,9 +1172,6 @@ def api_reject_property_ad(request, ad_id):
 @login_required
 def api_delete_property_ad(request, ad_id):
     """API to delete a property advertisement"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
-        return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
-
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
     ad.delete()
 
@@ -1269,9 +1185,6 @@ def api_delete_property_ad(request, ad_id):
 @login_required
 def api_get_property_ad_detail(request, ad_id):
     """API to get full details and images of an ad for admin modal"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
-        return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
-
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
     
     images_data = []
@@ -1324,23 +1237,8 @@ def api_get_property_ad_detail(request, ad_id):
 @login_required
 def api_approve_ad_edit(request, edit_id):
     """API to approve a property ad edit request"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
-        return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
-
     edit_log = get_object_or_404(PropertyAdvertisementEditLog, id=edit_id)
-    if edit_log.apply_changes():
-        edit_log.status = 'approved'
-        edit_log.reviewed_by = request.user
-        edit_log.reviewed_at = timezone.now()
-        edit_log.admin_notes = request.POST.get('admin_notes', '') or 'تغییرات توسط مدیر تایید شد.'
-        edit_log.save()
-
-        Notification.objects.create(
-            user=edit_log.user,
-            notification_type='system_update',
-            title='درخواست ویرایش آگهی تایید شد',
-            message=f'درخواست ویرایش آگهی {edit_log.advertisement.get_property_type_display()} شما تایید و اعمال شد.'
-        )
+    if ad_review.approve_edit(edit_log, request.user, request.POST.get('admin_notes', '')):
         return JsonResponse({'success': True, 'message': 'درخواست ویرایش با موفقیت تایید و اعمال گردید.'})
     return JsonResponse({'success': False, 'message': 'خطا در اعمال تغییرات ویرایش.'}, status=400)
 
@@ -1349,22 +1247,8 @@ def api_approve_ad_edit(request, edit_id):
 @login_required
 def api_reject_ad_edit(request, edit_id):
     """API to reject a property ad edit request"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
-        return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
-
     edit_log = get_object_or_404(PropertyAdvertisementEditLog, id=edit_id)
-    edit_log.status = 'rejected'
-    edit_log.reviewed_by = request.user
-    edit_log.reviewed_at = timezone.now()
-    edit_log.admin_notes = request.POST.get('admin_notes', '') or 'درخواست ویرایش رد شد.'
-    edit_log.save()
-
-    Notification.objects.create(
-        user=edit_log.user,
-        notification_type='system_update',
-        title='درخواست ویرایش آگهی رد شد',
-        message=f'درخواست ویرایش آگهی {edit_log.advertisement.get_property_type_display()} شما رد شد.'
-    )
+    ad_review.reject_edit(edit_log, request.user, request.POST.get('admin_notes', ''))
     return JsonResponse({'success': True, 'message': 'درخواست ویرایش رد شد.'})
 
 
@@ -1373,9 +1257,6 @@ def api_reject_ad_edit(request, edit_id):
 @require_http_methods(["POST"])
 def api_toggle_user_access(request, user_id):
     """API endpoint to toggle user account access (block/unblock)"""
-    if not (request.user.is_staff or request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.role == 'admin')):
-        return JsonResponse({'success': False, 'message': 'شما دسترسی لازم برای این عملیات را ندارید.'}, status=403)
-
     try:
         user_target = User.objects.get(id=user_id)
         if user_target == request.user or user_target.is_superuser:
@@ -1417,9 +1298,6 @@ def api_toggle_user_access(request, user_id):
 @login_required
 def api_users_monitoring_stats(request):
     """API endpoint to fetch live user monitoring statistics and statuses"""
-    if not (request.user.is_staff or request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.role == 'admin')):
-        return JsonResponse({'success': False, 'message': 'عدم دسترسی مجاز.'}, status=403)
-
     from django.core.cache import cache
     now = timezone.now()
     online_count = 0
@@ -1463,9 +1341,6 @@ def api_users_monitoring_stats(request):
 @require_http_methods(["POST"])
 def api_delete_user(request, user_id):
     """API endpoint to permanently delete a user account"""
-    if not (request.user.is_staff or request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.role == 'admin')):
-        return JsonResponse({'success': False, 'message': 'شما دسترسی لازم برای حذف کاربر را ندارید.'}, status=403)
-
     try:
         user_target = User.objects.get(id=user_id)
         if user_target == request.user:
