@@ -21,7 +21,8 @@ import os
 from .common import role_required
 from main import municipality_approval
 from main.accounts import soft_delete_user
-from main.access import policy_required
+from main.access import can, policy_required
+from main.roles import ALL_STAFF_ROLES
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
     start_conversation, create_announcement, announcement_list, 
@@ -274,7 +275,7 @@ def admin_dashboard(request, server_panel=None):
     pending_dehyari = sum(1 for item in all_users_list if item['profile'].approval_status == 'pending' and item['profile'].role == 'dehyari')
     pending_council = sum(1 for item in all_users_list if item['profile'].approval_status == 'pending' and item['profile'].role == 'council')
     total_users = len(all_users_list)
-    staff_count = sum(1 for item in all_users_list if item['profile'].role in ['dehyari', 'admin', 'engineer', 'council', 'inspector', 'accountant'])
+    staff_count = sum(1 for item in all_users_list if item['profile'].role in ALL_STAFF_ROLES)
     frozen_users = blocked_users_count
 
     # Municipality statistics & data
@@ -1199,7 +1200,7 @@ def municipality_history(request, municipality_id):
 @login_required
 def api_approve_property_ad(request, ad_id):
     """API to approve a property advertisement"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
     
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
@@ -1227,7 +1228,7 @@ def api_approve_property_ad(request, ad_id):
 @login_required
 def api_reject_property_ad(request, ad_id):
     """API to reject a property advertisement"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
 
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
@@ -1253,7 +1254,7 @@ def api_reject_property_ad(request, ad_id):
 @login_required
 def api_delete_property_ad(request, ad_id):
     """API to delete a property advertisement"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
 
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
@@ -1269,7 +1270,7 @@ def api_delete_property_ad(request, ad_id):
 @login_required
 def api_get_property_ad_detail(request, ad_id):
     """API to get full details and images of an ad for admin modal"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
 
     ad = get_object_or_404(PropertyAdvertisement, id=ad_id)
@@ -1324,7 +1325,7 @@ def api_get_property_ad_detail(request, ad_id):
 @login_required
 def api_approve_ad_edit(request, edit_id):
     """API to approve a property ad edit request"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
 
     edit_log = get_object_or_404(PropertyAdvertisementEditLog, id=edit_id)
@@ -1349,7 +1350,7 @@ def api_approve_ad_edit(request, edit_id):
 @login_required
 def api_reject_ad_edit(request, edit_id):
     """API to reject a property ad edit request"""
-    if not (request.user.is_staff or getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'دسترسی غیرمجاز است.'}, status=403)
 
     edit_log = get_object_or_404(PropertyAdvertisementEditLog, id=edit_id)
@@ -1373,7 +1374,7 @@ def api_reject_ad_edit(request, edit_id):
 @require_http_methods(["POST"])
 def api_toggle_user_access(request, user_id):
     """API endpoint to toggle user account access (block/unblock)"""
-    if not (request.user.is_staff or request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.role == 'admin')):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'شما دسترسی لازم برای این عملیات را ندارید.'}, status=403)
 
     try:
@@ -1417,7 +1418,7 @@ def api_toggle_user_access(request, user_id):
 @login_required
 def api_users_monitoring_stats(request):
     """API endpoint to fetch live user monitoring statistics and statuses"""
-    if not (request.user.is_staff or request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.role == 'admin')):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'عدم دسترسی مجاز.'}, status=403)
 
     from django.core.cache import cache
@@ -1463,7 +1464,7 @@ def api_users_monitoring_stats(request):
 @require_http_methods(["POST"])
 def api_delete_user(request, user_id):
     """API endpoint to permanently delete a user account"""
-    if not (request.user.is_staff or request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.role == 'admin')):
+    if not can(request.user, 'admin.manage'):
         return JsonResponse({'success': False, 'message': 'شما دسترسی لازم برای حذف کاربر را ندارید.'}, status=403)
 
     try:

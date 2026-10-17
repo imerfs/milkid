@@ -10,9 +10,10 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import redirect
 
+from main import roles
 from main.models import UserProfile
 
-ADMIN_ROLES = {'admin'}
+ADMIN_ROLES = set(roles.ADMIN_ROLES)
 
 POLICY = {
     # money

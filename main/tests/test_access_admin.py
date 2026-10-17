@@ -52,3 +52,29 @@ class AdminSurfaceIsAdminOnly(TestCase):
                                  data='{"role": "admin"}', content_type='application/json')
         citizen.profile.refresh_from_db()
         self.assertEqual(citizen.profile.role, 'citizen')
+
+
+class AdminApiGuards(TestCase):
+    """The admin JSON endpoints use the access policy: Django's is_staff flag alone is not enough."""
+
+    URLS = ('api_admin_approve_property_ad', 'api_admin_toggle_user_access')
+
+    def call(self, user, name):
+        from django.urls import reverse
+        return client_for(user).post(reverse(f'main:{name}', args=[999999]))
+
+    def test_a_staff_flag_without_the_admin_role_is_refused(self):
+        user = make_user('citizen')
+        user.is_staff = True
+        user.save()
+        for name in self.URLS:
+            with self.subTest(name=name):
+                self.assertEqual(self.call(user, name).status_code, 403)
+
+    def test_admins_and_superusers_get_past_the_guard(self):
+        from django.contrib.auth.models import User
+        superuser = User.objects.create_superuser('root-guard', password='pw-test-12345')
+        for who in (make_user('admin'), superuser):
+            for name in self.URLS:
+                with self.subTest(name=name):
+                    self.assertEqual(self.call(who, name).status_code, 404)      # allowed in; the object does not exist
