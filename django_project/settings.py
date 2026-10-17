@@ -449,7 +449,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') or ''
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT') or '10')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'webmaster@localhost'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'support@amirl.ir'
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL') or DEFAULT_FROM_EMAIL
 # Incoming mail for the admin mailbox (optional; without IMAP_HOST the inbox holds only support-form messages).
 IMAP_HOST = os.environ.get('IMAP_HOST') or ''
