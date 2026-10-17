@@ -1,17 +1,7 @@
+{% extends 'main/dashboards/_base.html' %}
 {% load static %}
-<!doctype html>
-<html lang="fa" dir="rtl">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>پنل کاربری - ملک آیدی</title>
-
-        <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-        
-        
-        <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
-
-        <style>
+{% block title %}پنل کاربری - ملک آیدی{% endblock %}
+{% block style %}
             body {
                 font-family: "Vazirmatn", sans-serif;
                 background-color: #f3f4f6;
@@ -52,12 +42,9 @@
                 transform: translateY(-5px);
                 box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             }
-        </style>
-        {% include 'partials/seo_head.html' %}
-    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-</head>
-    <body class="text-gray-800 mk-tw">
+{% endblock %}
+{% block body_class %}text-gray-800 mk-tw{% endblock %}
+{% block content %}
         {% if messages %}
         <div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-96">
             {% for message in messages %}
@@ -441,5 +428,4 @@
             }, 5000);
         </script>
         {% include 'partials/office_dock.html' %}
-</body>
-</html>
+{% endblock %}

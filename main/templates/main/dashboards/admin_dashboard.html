@@ -1,21 +1,11 @@
+{% extends 'main/dashboards/_base.html' %}
 {% load static %}
-<!doctype html>
-<html lang="fa" dir="rtl">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>پنل مدیر سیستم - ملک آیدی</title>
-
-        <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-        
-        
-        <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
-        <!-- Chart.js for interactive charts -->
-        <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
-        <!-- Sortable.js for drag and drop functionality -->
+{% block title %}پنل مدیر سیستم - ملک آیدی{% endblock %}
+{% block head_extra %}
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
         <script src="{% static 'vendor/sortablejs/Sortable.min.js' %}"></script>
-
-        <style>
+{% endblock %}
+{% block style %}
             :root {
                 --primary-color: #dc2626;
                 --secondary-color: #1e40af;
@@ -611,12 +601,9 @@
             .dark-mode .srv-panel .card, .dark-mode .srv-panel .form-control, .dark-mode .srv-panel .form-select, .dark-mode .srv-panel pre { background: var(--dark-card); color: #e2e8f0; border-color: #475569; }
             .dark-mode .srv-panel .nav-link, .dark-mode .srv-panel .btn-outline-secondary { color: #e2e8f0; }
             .dark-mode .srv-panel th, .dark-mode .srv-panel td, .dark-mode .srv-panel .nav { border-color: #475569; }
-        </style>
-        {% include 'partials/seo_head.html' %}
-    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-</head>
-    <body class="text-gray-800 mk-tw">
+{% endblock %}
+{% block body_class %}text-gray-800 mk-tw{% endblock %}
+{% block content %}
         <!-- Progress bar -->
         <div class="progress-bar">
             <div class="progress" id="progress-bar"></div>
@@ -3928,5 +3915,4 @@
     </script>
 
     {% include 'partials/office_dock.html' %}
-</body>
-</html>
+{% endblock %}

@@ -82,59 +82,6 @@ def staff_dashboard(request):
     return render(request, 'main/dashboards/staff_dashboard.html', context)
 
 
-@policy_required('staff.engineer')
-def engineer_dashboard(request):
-    """Dashboard for engineer (کارشناس فنی)"""
-    user_profile = request.user.profile
-    
-    # Get requests assigned to this engineer
-    my_assignments = ServiceRequest.objects.filter(assigned_to=request.user).exclude(status='completed').order_by('-created_at')
-    
-    # Get all pending technical requests
-    pending_technical = ServiceRequest.objects.filter(
-        request_type__in=['building_permit', 'no_permit', 'land_use_change'],
-        status__in=['pending', 'in_review']
-    ).order_by('-created_at')[:10]
-    
-    # Get inspections created by this engineer
-    my_inspections = Inspection.objects.filter(inspector=request.user).order_by('-created_at')[:5]
-    
-    # Get violations assigned to this engineer
-    my_violations = ViolationReport.objects.filter(assigned_to=request.user).exclude(status='resolved').order_by('-created_at')[:5]
-    
-    # Get technical reports created by this engineer
-    my_reports = TechnicalReport.objects.filter(engineer=request.user).order_by('-created_at')[:5]
-    
-    # Recent notifications
-    recent_notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5]
-    
-    # Statistics
-    stats = {
-        'my_assignments': my_assignments.count(),
-        'pending_review': ServiceRequest.objects.filter(status='in_review').count(),
-        'completed_this_month': ServiceRequest.objects.filter(
-            status='completed',
-            updated_at__month=timezone.now().month
-        ).count(),
-        'total_requests': ServiceRequest.objects.count(),
-        'pending_inspections': Inspection.objects.filter(inspector=request.user, status='pending').count(),
-        'my_violations': ViolationReport.objects.filter(assigned_to=request.user).exclude(status='resolved').count(),
-        'total_reports': TechnicalReport.objects.filter(engineer=request.user).count(),
-    }
-    
-    context = {
-        'user_profile': user_profile,
-        'my_assignments': my_assignments,
-        'pending_technical': pending_technical,
-        'my_inspections': my_inspections,
-        'my_violations': my_violations,
-        'my_reports': my_reports,
-        'recent_notifications': recent_notifications,
-        'stats': stats,
-    }
-    return render(request, 'main/dashboards/Municipal technical experts.html', context)
-
-
 @policy_required('staff.inspector')
 def inspector_dashboard(request):
     """Dashboard for inspector (ناظر فنی)"""

@@ -1,15 +1,7 @@
+{% extends 'main/dashboards/_base.html' %}
 {% load static %}
-<!doctype html>
-<html lang="fa" dir="rtl">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>پنل پیشرفته ناظر فنی - ملک آیدی</title>
-        <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-        
-        
-        <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
-        <style>
+{% block title %}پنل پیشرفته ناظر فنی - ملک آیدی{% endblock %}
+{% block style %}
             body {
                 font-family: "Vazirmatn", sans-serif;
                 background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -119,12 +111,9 @@
                 position: relative;
                 height: 300px;
             }
-        </style>
-        {% include 'partials/seo_head.html' %}
-    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-</head>
-    <body class="text-gray-800 mk-tw">
+{% endblock %}
+{% block body_class %}text-gray-800 mk-tw{% endblock %}
+{% block content %}
         <!-- Mobile Menu Overlay -->
         <div
             id="mobile-overlay"
@@ -1939,5 +1928,4 @@
             }
         </script>
         {% include 'partials/office_dock.html' %}
-</body>
-</html>
+{% endblock %}

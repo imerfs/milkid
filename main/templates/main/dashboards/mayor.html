@@ -1,22 +1,7 @@
+{% extends 'main/dashboards/_base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل مدیریت شهردار - ملک آیدی</title>
-    
-    <!-- Tailwind CSS -->
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-    
-    <!-- Google Fonts: Vazirmatn -->
-    
-    
-    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
-    
-    <style>
+{% block title %}پنل مدیریت شهردار - ملک آیدی{% endblock %}
+{% block style %}
         body {
             font-family: 'Vazirmatn', sans-serif;
             background-color: #f1f5f9; /* bg-slate-100 */
@@ -369,13 +354,12 @@
             border-radius: 3px;
             margin-left: 5px;
         }
-    </style>
-    {% include 'partials/seo_head.html' %}
-    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+{% endblock %}
+{% block head_late %}
     <link rel="stylesheet" href="{% static 'css/mayor-panel.css' %}">
-</head>
-<body class="font-vazir bg-slate-100 text-gray-800 mk-tw">
+{% endblock %}
+{% block body_class %}font-vazir bg-slate-100 text-gray-800 mk-tw{% endblock %}
+{% block content %}
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-white shadow-lg z-10">
@@ -2266,5 +2250,4 @@
     {% csrf_token %}
     <script src="{% static 'js/mayor-panel.js' %}" defer></script>
     {% include 'partials/office_dock.html' %}
-</body>
-</html>
+{% endblock %}
