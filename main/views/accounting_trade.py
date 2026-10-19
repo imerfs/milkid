@@ -1,5 +1,6 @@
 """Trade screens of the accountant workspace: products, invoices, point of sale, stock, stock documents, production,
 consignment and profit. Presentation only: every rule is in main/accounting/trade."""
+from decimal import Decimal
 from datetime import date
 
 from django.http import Http404
@@ -157,7 +158,7 @@ def acc_p_trade_warehouses(request):
     if request.method == 'POST':
         try:
             data = formspec.parse(muni, fields, request.POST)
-            inventory.create_warehouse(request.user, **data)
+            inventory.create_warehouse(request.user, code=data['code'], name=data['name'], is_default=bool(data.get('is_default')))
         except OfficeError as exc:
             return _modal(request, 'trade_warehouses.html', {**ctx, 'p': request.POST, 'error': str(exc)}, exc.status)
         ctx['warehouses'] = inventory.warehouses_for(request.user)
@@ -332,7 +333,7 @@ def acc_p_trade_settings(request):
               subtitle='حساب‌هایی که فاکتور هنگام «ثبت در دفتر» از آن‌ها استفاده می‌کند. خالی بگذارید تا فاکتورها فقط در همین بخش بمانند.')
     if request.method != 'POST':
         values = formspec.initial(INVOICE_SETTINGS_FIELDS, config)
-        values['vat_percent'] = f'{config.vat_percent.normalize():f}'
+        values['vat_percent'] = f'{Decimal(config.vat_percent).normalize():f}'
         return _form_modal(request, values=values, **kw)
     try:
         data = formspec.parse(muni, INVOICE_SETTINGS_FIELDS, request.POST)

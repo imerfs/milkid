@@ -1,3 +1,4 @@
+{% load accounting_tags %}
 <tr class="line">
     {% for name, label, kind in columns %}
     <td>{% if kind == 'product' %}<select name="{{ name }}" class="ac-in" style="min-width:14rem" aria-label="{{ label }}" data-trade-product><option value="">—</option>{% for pr in products %}<option value="{{ pr.id }}" data-price="{{ pr.price }}" data-buy="{{ pr.buy }}" {% if r|get:name|stringformat:'s' == pr.id|stringformat:'s' %}selected{% endif %}>{{ pr.label }}</option>{% endfor %}</select>

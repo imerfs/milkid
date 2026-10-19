@@ -152,3 +152,17 @@ Compared with the desktop accounting app HesabYar, the workspace gained (all in 
 
 Known limits: restore does not bring back scanned files (records only); access levels apply to the accountant role only; the
 fixed-asset chart accounts (211, 212, 6010401001) are created on demand from the assets tab.
+
+## 8. Trade module (access area `trade`, migration 0063)
+
+Code: `main/models_trade.py`, `main/accounting/trade/` (inventory, stockdocs, invoices, posting, production, consignment), screens in `main/views/accounting_trade*.py`.
+
+- **Stock log is the single source of truth.** `StockMove` rows carry a signed quantity (in positive, out negative). Weighted-average cost is derived by walking the moves in (date, id) order; nothing stores a running balance.
+- **Invoices**: sale, purchase, sale return, purchase return, proforma, order. Proforma and order never move stock and never post; converting one creates the sale. Payments are recorded per invoice (cash, bank).
+- **Ledger posting** is explicit («ثبت در دفتر») and makes a temporary voucher from the accounts chosen in the trade settings; un-posting removes it. Date lock and closed years apply to every write.
+- **Quick sale (POS)** is a sale plus a payment in one step for a cash customer; barcode Enter adds to the cart.
+- **Stock documents**: receipt, issue, transfer, adjustment, stocktake (only the difference is written). Cancelling reverses the moves.
+- **Production**: a formula (raw materials per batch) and runs that consume materials and receive the product at the derived cost.
+- **Consignment**: given out leaves stock; goods taken in are a memo only. Returns and settlement are tracked per line.
+- **Profit by product**: net sales minus weighted-average cost, returns subtracted; the visitor is a free-text field on the invoice, reported in the profit tab and the report builder.
+- Also wired: report-builder datasets `invoices`, `invoice_lines`, `stock_moves`; global search for products and invoices; audit trail and backup/restore cover the trade models.
