@@ -1,27 +1,44 @@
 {% load accounting_tags %}
 <div class="ac-card">
-    <div class="ac-tools">
-        <div class="ac-seg" role="group" aria-label="دامنهٔ اسناد">
-            <button type="button" class="{% if not final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=trial">همه اسناد</button>
-            <button type="button" class="{% if final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=trial&final=1">فقط قطعی</button>
-        </div>
-    </div>
+    <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit, change from:select" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="trial">
+        <label class="ac-select"><span class="ac-sr">سطح تراز</span><select name="level">
+            <option value="all" {% if level == 'all' %}selected{% endif %}>تراز تفصیلی (حساب‌های قابل ثبت)</option>
+            <option value="1" {% if level == '1' %}selected{% endif %}>سطح ۱ (گروه‌های کل)</option>
+            <option value="2" {% if level == '2' %}selected{% endif %}>سطح ۲ (معین)</option>
+            <option value="3" {% if level == '3' %}selected{% endif %}>سطح ۳</option>
+            <option value="4" {% if level == '4' %}selected{% endif %}>سطح ۴</option>
+        </select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">از تاریخ</span><input class="ac-in" name="date_from" dir="ltr" placeholder="از ۱۴۰۴/۰۱/۰۱" value="{{ g.date_from }}" style="width:130px"></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="date_to" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ g.date_to }}" style="width:130px"></label>
+        <label class="muted" style="font-size:12px"><input type="checkbox" name="final" value="1" {% if final_only %}checked{% endif %}> فقط اسناد قطعی</label>
+        <label class="muted" style="font-size:12px"><input type="checkbox" name="closing" value="1" {% if with_closing %}checked{% endif %}> با اسناد اختتامیه</label>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>اعمال</button>
+    </form>
+    {% if trial_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ trial_error }}</div>{% endif %}
     <div class="ac-table-wrap">
         <table>
-            <thead><tr><th>کد</th><th>شرح حساب</th><th>بدهکار</th><th>بستانکار</th><th>مانده</th></tr></thead>
+            <thead>
+                <tr><th rowspan="2">کد</th><th rowspan="2">شرح حساب</th><th colspan="2">مانده ابتدا</th><th colspan="2">گردش</th><th colspan="2">مانده انتها</th></tr>
+                <tr><th>بدهکار</th><th>بستانکار</th><th>بدهکار</th><th>بستانکار</th><th>بدهکار</th><th>بستانکار</th></tr>
+            </thead>
             <tbody>
             {% for r in rows %}
                 <tr>
                     <td class="muted nw" dir="ltr">{{ r.code }}</td>
-                    <td><button type="button" class="ac-link" hx-get="{% url 'main:acc_p_ledger' year.id r.account_id %}{% if final_only %}?final=1{% endif %}" hx-target="#acc-modal-body">{{ r.title }}</button></td>
-                    <td class="num-cell">{{ r.debit|rial }}</td><td class="num-cell">{{ r.credit|rial }}</td>
-                    <td class="num-cell">{{ r.balance|rial }}{% if r.balance > 0 %} بدهکار{% elif r.balance < 0 %} بستانکار{% endif %}</td>
+                    <td style="padding-right:{{ r.depth }}rem"><button type="button" class="ac-link" hx-get="{% url 'main:acc_p_ledger' year.id r.account_id %}{% if final_only %}?final=1{% endif %}" hx-target="#acc-modal-body">{{ r.title }}</button></td>
+                    <td class="num-cell">{{ r.open_d|rial }}</td><td class="num-cell">{{ r.open_c|rial }}</td>
+                    <td class="num-cell">{{ r.turn_d|rial }}</td><td class="num-cell">{{ r.turn_c|rial }}</td>
+                    <td class="num-cell">{{ r.end_d|rial }}</td><td class="num-cell">{{ r.end_c|rial }}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5"><div class="ac-empty"><span class="eic"><i class="fas fa-scale-balanced" aria-hidden="true"></i></span><h4>هنوز گردشی ثبت نشده است</h4></div></td></tr>
+                <tr><td colspan="8"><div class="ac-empty"><span class="eic"><i class="fas fa-scale-balanced" aria-hidden="true"></i></span><h4>هنوز گردشی ثبت نشده است</h4></div></td></tr>
             {% endfor %}
             </tbody>
-            <tfoot><tr><td></td><td>جمع</td><td class="num-cell">{{ totals.debit|rial }}</td><td class="num-cell">{{ totals.credit|rial }}</td><td></td></tr></tfoot>
+            <tfoot><tr><td></td><td>جمع</td>
+                <td class="num-cell">{{ totals.open_d|rial }}</td><td class="num-cell">{{ totals.open_c|rial }}</td>
+                <td class="num-cell">{{ totals.turn_d|rial }}</td><td class="num-cell">{{ totals.turn_c|rial }}</td>
+                <td class="num-cell">{{ totals.end_d|rial }}</td><td class="num-cell">{{ totals.end_c|rial }}</td></tr></tfoot>
         </table>
     </div>
 </div>

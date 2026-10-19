@@ -261,17 +261,35 @@ def trial_balance(actor, year, include_temporary=True):
     return rows, totals
 
 
-def account_ledger(actor, year, account, include_temporary=True):
+def account_ledger(actor, year, account, include_temporary=True, date_from=None, date_to=None):
+    """Turnover of one account; a group account (one that cannot be posted to) shows its descendants' lines.
+
+    With ``date_from`` the first row is the balance carried in from before that date (it has no voucher).
+    """
     muni = municipality_of(actor)
     _own(muni, year)
     _own(muni, account)
-    lines = (_lines(muni, year, include_temporary).filter(account=account).select_related('voucher')
-             .order_by('voucher__date', 'voucher__number', 'row'))
+    ids = {account.id}
+    if not account.is_postable:
+        children = list(Account.objects.filter(municipality=muni, parent_id__in=ids))
+        while children:
+            ids |= {c.id for c in children}
+            children = list(Account.objects.filter(municipality=muni, parent_id__in=[c.id for c in children]).exclude(pk__in=ids))
+    base = _lines(muni, year, include_temporary).filter(account_id__in=ids)
     rows, balance = [], Decimal(0)
-    for ln in lines:
+    if date_from:
+        carried = base.filter(voucher__date__lt=date_from).aggregate(d=Sum('debit'), c=Sum('credit'))
+        balance = (carried['d'] or 0) - (carried['c'] or 0)
+        rows.append({'voucher': None, 'row': 0, 'description': 'مانده از قبل', 'debit': 0, 'credit': 0, 'balance': balance,
+                     'account': None})
+        base = base.filter(voucher__date__gte=date_from)
+    if date_to:
+        base = base.filter(voucher__date__lte=date_to)
+    for ln in base.select_related('voucher', 'account').order_by('voucher__date', 'voucher__number', 'row'):
         balance += ln.debit - ln.credit
         rows.append({'voucher': ln.voucher, 'row': ln.row, 'description': ln.description or ln.voucher.description,
-                     'debit': ln.debit, 'credit': ln.credit, 'balance': balance})
+                     'debit': ln.debit, 'credit': ln.credit, 'balance': balance,
+                     'account': ln.account if len(ids) > 1 else None})
     return rows
 
 

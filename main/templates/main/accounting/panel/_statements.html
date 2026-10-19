@@ -1,0 +1,46 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit, change from:select" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="statements">
+        <label class="ac-select"><span class="ac-sr">صورت مالی</span><select name="statement">{% for k, label in statement_list %}<option value="{{ k }}" {% if k == statement_key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="upto" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ upto }}" style="width:130px"></label>
+        <label class="muted" style="font-size:12px"><input type="checkbox" name="final" value="1" {% if final_only %}checked{% endif %}> فقط اسناد قطعی</label>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>اعمال</button>
+        <a class="ac-btn ac-spaced" href="{% url 'main:acc_p_statement_export' year.id statement_key %}?{{ export_query }}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
+        <button type="button" class="ac-btn" onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i>چاپ</button>
+    </form>
+    {% if statement_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ statement_error }}</div>
+    {% elif statement_key == 'resources_uses' %}
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>کد</th><th>شرح</th><th>بودجه مصوب</th><th>عملکرد</th></tr></thead>
+        <tbody>
+            <tr><td colspan="4"><b>منابع</b></td></tr>
+            {% for r in statement.resources.rows %}<tr{% if not r.leaf %} style="font-weight:700"{% endif %}><td class="muted nw" dir="ltr">{{ r.code }}</td><td style="padding-right:{{ r.depth }}rem">{{ r.title }}</td><td class="num-cell">{{ r.budget|rial }}</td><td class="num-cell">{{ r.amount|rial }}</td></tr>
+            {% empty %}<tr><td colspan="4" class="muted" style="text-align:center">منبعی ثبت نشده است.</td></tr>{% endfor %}
+            <tr style="font-weight:700"><td></td><td>جمع منابع</td><td class="num-cell">{{ statement.resources.budget|rial }}</td><td class="num-cell">{{ statement.resources.total|rial }}</td></tr>
+            <tr><td colspan="4"><b>مصارف</b></td></tr>
+            {% for r in statement.uses.rows %}<tr{% if not r.leaf %} style="font-weight:700"{% endif %}><td class="muted nw" dir="ltr">{{ r.code }}</td><td style="padding-right:{{ r.depth }}rem">{{ r.title }}</td><td class="num-cell">{{ r.budget|rial }}</td><td class="num-cell">{{ r.amount|rial }}</td></tr>
+            {% empty %}<tr><td colspan="4" class="muted" style="text-align:center">مصرفی ثبت نشده است.</td></tr>{% endfor %}
+            <tr style="font-weight:700"><td></td><td>جمع مصارف</td><td class="num-cell">{{ statement.uses.budget|rial }}</td><td class="num-cell">{{ statement.uses.total|rial }}</td></tr>
+        </tbody>
+        <tfoot><tr><td></td><td>{% if statement.surplus < 0 %}کسری{% else %}مازاد{% endif %} سال</td><td class="num-cell">{{ statement.budget_surplus|rial }}</td><td class="num-cell">{{ statement.surplus|rial }}</td></tr></tfoot>
+    </table></div>
+    {% else %}
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>کد</th><th>شرح</th><th>مبلغ</th></tr></thead>
+        <tbody>
+            <tr><td colspan="3"><b>دارایی‌ها</b></td></tr>
+            {% for r in statement.assets %}<tr{% if not r.leaf %} style="font-weight:700"{% endif %}><td class="muted nw" dir="ltr">{{ r.code }}</td><td style="padding-right:{{ r.depth }}rem">{{ r.title }}</td><td class="num-cell">{{ r.amount|rial }}</td></tr>
+            {% empty %}<tr><td colspan="3" class="muted" style="text-align:center">دارایی‌ای ثبت نشده است.</td></tr>{% endfor %}
+            <tr style="font-weight:700"><td></td><td>جمع دارایی‌ها</td><td class="num-cell">{{ statement.total_assets|rial }}</td></tr>
+            <tr><td colspan="3"><b>بدهی‌ها و حقوق صاحبان سرمایه</b></td></tr>
+            {% for r in statement.claims %}<tr{% if not r.leaf %} style="font-weight:700"{% endif %}><td class="muted nw" dir="ltr">{{ r.code }}</td><td style="padding-right:{{ r.depth }}rem">{{ r.title }}</td><td class="num-cell">{{ r.amount|rial }}</td></tr>
+            {% empty %}<tr><td colspan="3" class="muted" style="text-align:center">بدهی‌ای ثبت نشده است.</td></tr>{% endfor %}
+            <tr><td></td><td>{% if statement.surplus < 0 %}کسری{% else %}مازاد{% endif %} سال جاری (بسته‌نشده)</td><td class="num-cell">{{ statement.surplus|rial }}</td></tr>
+            <tr style="font-weight:700"><td></td><td>جمع بدهی‌ها و حقوق صاحبان سرمایه</td><td class="num-cell">{{ statement.total_claims|rial }}</td></tr>
+        </tbody>
+        <tfoot><tr><td></td><td>اختلاف دارایی‌ها و بدهی‌ها</td><td class="num-cell">{{ statement.difference|rial }}</td></tr></tfoot>
+    </table></div>
+    {% if statement.difference or statement.clearing %}<div class="ac-notice warn" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>{% if statement.difference %}ترازنامه بالانس نیست؛ حساب‌های واسط افتتاحیه/اختتامیه یا سند بی‌حساب را بررسی کنید. {% endif %}{% for c in statement.clearing %}حساب «{{ c.title }}» مانده {{ c.amount|rial }} دارد. {% endfor %}</span></div>{% endif %}
+    {% endif %}
+</div>

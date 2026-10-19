@@ -1,0 +1,24 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-notice" role="status"><i class="fas fa-circle-info" aria-hidden="true" style="margin-top:5px"></i><span>ترتیب کار در پایان سال: ۱) سند بستن حساب‌های موقت، ۲) سند اختتامیه، ۳) قطعی‌کردن اسناد، ۴) بستن سال. سند افتتاحیه را در سال بعد از مانده‌های همین سال صادر کنید. هر سند ابتدا پیش‌نمایش می‌شود و موقت صادر می‌شود.</span></div>
+{% if unbalanced %}<div class="ac-notice warn" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>{{ unbalanced|length|fa }} سند بی‌حساب هست؛ تا اصلاح آن‌ها صدور سند ممکن نیست.</span></div>{% endif %}
+<div class="ac-grid2">
+    {% for key, title, hint, icon, voucher in operations %}
+    <section class="ac-card">
+        <div class="ac-card-head"><h2 class="ac-card-title"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ title }}</h2></div>
+        <p class="muted" style="margin:0 0 12px">{{ hint }}</p>
+        {% if voucher %}<p style="margin:0 0 12px">صادرشده: <button type="button" class="ac-link" hx-get="{% url 'main:acc_p_voucher_detail' voucher.id %}" hx-target="#acc-modal-body">سند {{ voucher.number|fa }}</button> <span class="ac-st">{{ voucher.get_status_display }}</span></p>{% endif %}
+        {% if key == 'opening' and not has_previous %}<p class="muted">سال مالی قبل وجود ندارد.</p>
+        {% else %}<button type="button" class="ac-btn ac-btn-brand" {% if year.is_closed %}disabled{% endif %} hx-get="{% url 'main:acc_p_yearend_preview' year.id key %}" hx-target="#acc-modal-body"><i class="fas fa-eye" aria-hidden="true"></i>پیش‌نمایش و صدور</button>{% endif %}
+    </section>
+    {% endfor %}
+    <section class="ac-card">
+        <div class="ac-card-head"><h2 class="ac-card-title"><i class="fas fa-lock" aria-hidden="true"></i> بستن سال مالی</h2></div>
+        {% if year.is_closed %}
+        <p class="muted" style="margin:0 0 12px">این سال بسته است؛ سندی اضافه یا ویرایش نمی‌شود.</p>
+        <form hx-post="{% url 'main:acc_p_year_reopen' year.id %}" hx-swap="none" hx-confirm="سال دوباره باز شود؟ فقط دهیار اجازه دارد.">{% csrf_token %}<button type="submit" class="ac-btn"><i class="fas fa-lock-open" aria-hidden="true"></i>باز کردن دوباره</button></form>
+        {% else %}
+        <p class="muted" style="margin:0 0 12px">{% if temporary_count %}هنوز {{ temporary_count|fa }} سند موقت هست؛ همه باید قطعی شوند.{% else %}همه اسناد قطعی‌اند.{% endif %}</p>
+        <form hx-post="{% url 'main:acc_p_year_close' year.id %}" hx-swap="none" hx-confirm="سال مالی بسته شود؟ بعد از آن هیچ سندی اضافه یا ویرایش نمی‌شود.">{% csrf_token %}<button type="submit" class="ac-btn ac-btn-bad" {% if temporary_count %}disabled{% endif %}><i class="fas fa-lock" aria-hidden="true"></i>بستن سال {{ year.year|fa }}</button></form>
+        {% endif %}
+    </section>
+</div>
