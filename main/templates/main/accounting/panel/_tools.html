@@ -1,0 +1,43 @@
+{% load accounting_tags %}
+<div class="ac-grid2">
+    <section class="ac-card" aria-labelledby="tl-calc">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="tl-calc"><i class="fas fa-calculator" aria-hidden="true"></i> ماشین‌حساب</h2></div>
+        <p class="muted" style="margin:0 0 12px">در هر صفحه با Alt+C باز می‌شود.</p>
+        <button type="button" class="ac-btn ac-btn-brand" hx-get="{% url 'main:acc_p_calculator' %}" hx-target="#acc-modal-body"><i class="fas fa-calculator" aria-hidden="true"></i>باز کردن ماشین‌حساب</button>
+    </section>
+    <section class="ac-card" aria-labelledby="tl-words">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="tl-words"><i class="fas fa-spell-check" aria-hidden="true"></i> عدد به حروف</h2></div>
+        <form data-tool="words" data-url="{% url 'main:acc_p_tools_words' %}" class="ac-box" novalidate>
+            <label class="ac-lab" for="tw-n">مبلغ یا عدد</label>
+            <div style="display:flex;gap:8px"><input class="ac-in" id="tw-n" name="n" inputmode="numeric" dir="ltr" placeholder="۱۲٬۳۴۵٬۰۰۰"><button type="submit" class="ac-btn ac-btn-brand">بنویس</button></div>
+            <p data-tool-out class="ac-hint" role="status" aria-live="polite" style="font-size:14px"></p>
+        </form>
+    </section>
+    <section class="ac-card" aria-labelledby="tl-date">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="tl-date"><i class="fas fa-calendar-days" aria-hidden="true"></i> تبدیل تاریخ</h2></div>
+        <form data-tool="date" data-url="{% url 'main:acc_p_tools_date' %}" class="ac-box" novalidate>
+            <div class="ac-fgrid">
+                <div class="ac-field s2"><label for="td-j">شمسی</label><input class="ac-in" id="td-j" name="jalali" dir="ltr" placeholder="۱۴۰۴/۰۵/۰۱"></div>
+                <div class="ac-field s2"><label for="td-g">میلادی</label><input class="ac-in" id="td-g" name="gregorian" dir="ltr" placeholder="2025-07-23" value="{{ today }}"></div>
+            </div>
+            <button type="submit" class="ac-btn ac-btn-brand">تبدیل</button>
+            <p data-tool-out class="ac-hint" role="status" aria-live="polite" style="font-size:14px"></p>
+        </form>
+    </section>
+    <section class="ac-card" aria-labelledby="tl-loan">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="tl-loan"><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i> محاسبه اقساط وام</h2></div>
+        <form data-tool="loan" data-url="{% url 'main:acc_p_tools_loan' %}" class="ac-box" novalidate>
+            <div class="ac-fgrid">
+                <div class="ac-field s2"><label for="tl-a">مبلغ وام (ریال)</label><input class="ac-in" id="tl-a" name="amount" inputmode="numeric" dir="ltr" placeholder="۱۲٬۰۰۰٬۰۰۰"></div>
+                <div class="ac-field s1"><label for="tl-r">نرخ سالانه (٪)</label><input class="ac-in" id="tl-r" name="rate" inputmode="decimal" dir="ltr" value="۱۸"></div>
+                <div class="ac-field s1"><label for="tl-m">ماه</label><input class="ac-in" id="tl-m" name="months" inputmode="numeric" dir="ltr" value="۱۲"></div>
+            </div>
+            <button type="submit" class="ac-btn ac-btn-brand">محاسبه</button>
+            <div data-tool-out class="ac-hint" role="status" aria-live="polite" style="font-size:14px"></div>
+        </form>
+    </section>
+</div>
+<div class="ac-card" style="margin-top:14px">
+    <div class="ac-card-head"><h2 class="ac-card-title"><i class="fas fa-keyboard" aria-hidden="true"></i> میانبرهای صفحه‌کلید</h2></div>
+    <div class="ac-mb">{% include 'main/accounting/panel/_shortcut_list.html' %}</div>
+</div>

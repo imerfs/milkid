@@ -27,3 +27,13 @@ def get(mapping, key):
     except AttributeError:
         return ''
     return '' if value is None else value
+
+
+@register.filter
+def words(value):
+    """12345 -> the amount in Persian words (for cheques and receipts); empty when it is not a whole number."""
+    from main.accounting import tools
+    try:
+        return tools.number_to_words(int(value))
+    except (TypeError, ValueError, Exception):
+        return ''

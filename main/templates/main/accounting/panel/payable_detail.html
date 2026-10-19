@@ -9,6 +9,7 @@
         <div><dt>سررسید</dt><dd>{{ d.due_date|jalali_date|fa }}</dd></div>
         <div><dt>مبلغ</dt><dd>{{ d.amount|rial }} ریال</dd></div>
     </dl>
+    <p><a class="ac-btn" href="{% url 'main:acc_p_print_cheque' d.id %}" target="_blank" rel="noopener"><i class="fas fa-print" aria-hidden="true"></i>چاپ {{ d.get_kind_display }}</a></p>
     <h3 class="ac-sec-title">سابقه</h3>
     <div class="ac-lines" style="margin-bottom:16px"><table>
         <thead><tr><th>تاریخ</th><th>وضعیت</th><th>توضیح</th><th>کاربر</th></tr></thead>

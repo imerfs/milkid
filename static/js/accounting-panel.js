@@ -139,7 +139,7 @@
     var pal = document.getElementById('ac-pal');
     var palInput = document.getElementById('ac-pal-q');
     var palList = document.getElementById('ac-pal-list');
-    var items = [], shown = [], sel = 0;
+    var items = [], shown = [], sel = 0, remote = [], remoteTimer;
     function buildItems() {
         var v = view() || { dataset: {} };
         items = [];
@@ -155,7 +155,7 @@
     }
     function paintPal() {
         var q = palInput.value.trim();
-        shown = items.filter(function (it) { return !q || it.label.indexOf(q) !== -1; });
+        shown = items.filter(function (it) { return !q || it.label.indexOf(q) !== -1; }).concat(remote);
         sel = Math.min(sel, Math.max(shown.length - 1, 0));
         palList.innerHTML = '';
         if (!shown.length) { palList.innerHTML = '<div class="ac-pal-empty">موردی پیدا نشد.</div>'; return; }
@@ -172,21 +172,41 @@
         });
     }
     function pick(it) { pal.close(); it.run(); }
+    // Records from the server (vouchers, parties, accounts, bills, plans, contracts) join the menu entries.
+    function searchRemote(q) {
+        clearTimeout(remoteTimer);
+        var v = view();
+        if (q.length < 2 || !v || !v.dataset.searchUrl) { remote = []; paintPal(); return; }
+        remoteTimer = setTimeout(function () {
+            fetch(v.dataset.searchUrl + '?q=' + encodeURIComponent(q), { credentials: 'same-origin' })
+                .then(function (r) { return r.ok ? r.json() : { results: [] }; })
+                .then(function (data) {
+                    if (palInput.value.trim() !== q) return;
+                    remote = (data.results || []).map(function (r) {
+                        return { label: r.label, hint: r.kind + (r.sub ? ' · ' + r.sub : ''), icon: 'fas fa-magnifying-glass',
+                                 run: function () { if (r.action === 'modal') openModal(r.url); else openTab(r.tab, r.query); } };
+                    });
+                    paintPal();
+                });
+        }, 250);
+    }
     function openPal() {
         buildItems();
         palInput.value = '';
+        remote = [];
         sel = 0;
         paintPal();
         if (!pal.open) pal.showModal();
         palInput.focus();
     }
     if (pal && palInput) {
+        palInput.placeholder = 'صفحه، سند، طرف حساب، حساب، فیش، تقسیط یا قرارداد را جستجو کنید...';
         var openBtn = document.getElementById('ac-pal-open');
         if (openBtn) openBtn.addEventListener('click', openPal);
         document.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); pal.open ? pal.close() : openPal(); }
         });
-        palInput.addEventListener('input', function () { sel = 0; paintPal(); });
+        palInput.addEventListener('input', function () { sel = 0; paintPal(); searchRemote(palInput.value.trim()); });
         palInput.addEventListener('keydown', function (e) {
             if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, shown.length - 1); paintPal(); }
             else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); paintPal(); }
@@ -194,4 +214,121 @@
         });
         pal.addEventListener('click', function (e) { if (e.target === pal) pal.close(); });
     }
+
+    // ---------- calculator (safe expression parser, no eval) ----------
+    var FA = '۰۱۲۳۴۵۶۷۸۹';
+    function toLatin(text) {
+        return String(text).replace(/[۰-۹]/g, function (d) { return FA.indexOf(d); }).replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 1632; })
+            .replace(/[٬,،\s]/g, '').replace(/٫/g, '.').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/٪/g, '%');
+    }
+    function toFa(text) { return String(text).replace(/\d/g, function (d) { return FA[d]; }); }
+    function evaluate(source) {
+        var src = toLatin(source), i = 0;
+        function peek() { return src[i]; }
+        function number() {
+            var m = /^\d+(\.\d+)?|^\.\d+/.exec(src.slice(i));
+            if (!m) throw new Error('عبارت نامعتبر است.');
+            i += m[0].length;
+            return parseFloat(m[0]);
+        }
+        function factor() {
+            var value;
+            if (peek() === '-') { i++; return -factor(); }
+            if (peek() === '+') { i++; return factor(); }
+            if (peek() === '(') { i++; value = expr(); if (peek() !== ')') throw new Error('پرانتز بسته نشده است.'); i++; }
+            else value = number();
+            while (peek() === '%') { i++; value = value / 100; }
+            return value;
+        }
+        function term() {
+            var value = factor();
+            while (peek() === '*' || peek() === '/') {
+                var op = src[i++], right = factor();
+                if (op === '/' && right === 0) throw new Error('تقسیم بر صفر ممکن نیست.');
+                value = op === '*' ? value * right : value / right;
+            }
+            return value;
+        }
+        function expr() {
+            var value = term();
+            while (peek() === '+' || peek() === '-') { var op = src[i++], right = term(); value = op === '+' ? value + right : value - right; }
+            return value;
+        }
+        if (!src) return null;
+        var result = expr();
+        if (i < src.length) throw new Error('عبارت نامعتبر است.');
+        return result;
+    }
+    function showCalc(root) {
+        var input = root.querySelector('[data-calc-input]'), out = root.querySelector('[data-calc-result]');
+        try {
+            var value = evaluate(input.value);
+            out.className = '';
+            out.textContent = value === null ? '' : toFa((Math.round(value * 1e6) / 1e6).toLocaleString('en', { maximumFractionDigits: 6 }));
+        } catch (err) { out.className = 'ac-bad-text'; out.textContent = err.message; }
+    }
+    document.addEventListener('click', function (e) {
+        var key = e.target.closest('[data-calc]');
+        if (!key) return;
+        var root = key.closest('[data-calc-root]'), input = root.querySelector('[data-calc-input]'), k = key.dataset.calc;
+        if (k === 'C') input.value = '';
+        else if (k === '=') { showCalc(root); return; }
+        else input.value += k;
+        showCalc(root);
+        input.focus();
+    });
+    document.addEventListener('input', function (e) {
+        var input = e.target.closest && e.target.closest('[data-calc-input]');
+        if (input) showCalc(input.closest('[data-calc-root]'));
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && e.target.closest && e.target.closest('[data-calc-input]')) { e.preventDefault(); showCalc(e.target.closest('[data-calc-root]')); }
+    });
+
+    // ---------- tools tab: words, dates, loan ----------
+    function money(n) { return toFa(Number(n).toLocaleString('en')); }
+    document.addEventListener('submit', function (e) {
+        var form = e.target.closest('[data-tool]');
+        if (!form) return;
+        e.preventDefault();
+        var out = form.querySelector('[data-tool-out]'), params = new URLSearchParams(new FormData(form));
+        out.textContent = '...';
+        fetch(form.dataset.url + '?' + params.toString(), { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+            if (d.error) { out.textContent = d.error; return; }
+            if (form.dataset.tool === 'words') out.textContent = d.rial;
+            else if (form.dataset.tool === 'date') out.textContent = toFa(d.jalali) + ' شمسی = ' + d.gregorian + ' میلادی (' + d.weekday + ')';
+            else {
+                var rows = d.schedule.map(function (r) { return '<tr><td>' + toFa(r.n) + '</td><td>' + money(r.payment) + '</td><td>' + money(r.interest) + '</td><td>' + money(r.balance) + '</td></tr>'; }).join('');
+                out.innerHTML = '<p>قسط ماهانه: <b>' + money(d.payment) + '</b> ریال · جمع پرداخت: ' + money(d.total) + ' · سود کل: ' + money(d.interest) + '</p>' +
+                    '<div class="ac-table-wrap"><table><thead><tr><th>قسط</th><th>مبلغ</th><th>سود</th><th>مانده</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+            }
+        }).catch(function () { out.textContent = 'اتصال به سرور برقرار نشد.'; });
+    }, true);
+
+    // ---------- keyboard shortcuts ----------
+    var TAB_KEYS = { Digit1: 'overview', Digit2: 'vouchers', Digit3: 'bills', Digit4: 'budget', Digit5: 'trial', Digit6: 'statements',
+                     Digit7: 'reports', Digit8: 'builder', Digit9: 'charts' };
+    function typing(e) {
+        var t = e.target;
+        return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+    }
+    document.addEventListener('keydown', function (e) {
+        var v = view();
+        if (!v || dialog.open || (pal && pal.open)) return;
+        var hit = null;
+        if (e.altKey && !e.ctrlKey && !e.metaKey) {
+            if (TAB_KEYS[e.code]) hit = function () { openTab(TAB_KEYS[e.code]); };
+            else if (e.code === 'KeyN') hit = function () { openModal(v.dataset.newVoucher); };
+            else if (e.code === 'KeyM') hit = function () { openModal(v.dataset.newBill); };
+            else if (e.code === 'KeyC') hit = function () { openModal(v.dataset.calcUrl); };
+            else if (e.code === 'KeyT') hit = function () { openTab('tools'); };
+            else if (e.code === 'KeyH') hit = function () { openModal(v.dataset.helpUrl); };
+        } else if (!e.altKey && !e.ctrlKey && !e.metaKey && !typing(e)) {
+            if (e.key === 'F2') hit = function () { openModal(v.dataset.newVoucher); };
+            else if (e.key === 'F3') hit = function () { openModal(v.dataset.newBill); };
+            else if (e.key === 'F4') hit = function () { openTab('vouchers'); };
+            else if (e.key === 'F1') hit = function () { openModal(v.dataset.helpUrl); };
+        }
+        if (hit) { e.preventDefault(); hit(); }
+    });
 })();

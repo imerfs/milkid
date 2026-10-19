@@ -1,0 +1,38 @@
+{% load accounting_tags jalali_tags %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>فیش خوابانده چک {{ i.serial }}</title>
+    <style>
+        @page { size: {{ paper_size }}; margin: 8mm; }
+        body { font-family: Vazirmatn, Tahoma, sans-serif; margin: 0; padding: 16px; color: #111; }
+        .bar { margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .sheet { border: 1px solid #444; border-radius: 6px; padding: 14px 18px; max-width: 180mm; line-height: 2.1; }
+        h1 { font-size: 17px; margin: 0 0 8px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border: 1px solid #999; padding: 4px 8px; font-size: 13px; text-align: right; }
+        .big { font-size: 18px; font-weight: 700; }
+        .sign { margin-top: 24px; display: flex; justify-content: space-between; font-size: 12px; color: #555; }
+        @media print { .bar { display: none; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <button type="button" onclick="window.print()">چاپ</button>
+        <form method="get"><label>اندازه کاغذ <select name="paper" onchange="this.form.submit()">{% for k, label in papers %}<option value="{{ k }}" {% if k == paper %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></form>
+    </div>
+    <div class="sheet">
+        <h1>فیش خوابانده چک · {{ muni.name }}</h1>
+        <table>
+            <tr><th>صاحب حساب</th><td>{{ i.owner_name|default:'—' }} {{ i.owner_national_id|fa }}</td><th>بانک / حساب</th><td>{{ i.bank|default:'—' }} {{ i.account_no|fa }}</td></tr>
+            <tr><th>سری / سریال</th><td dir="ltr">{{ i.series|fa }} / {{ i.serial|fa }}</td><th>تاریخ چک</th><td>{% if i.cheque_date %}{{ i.cheque_date|jalali_date|fa }}{% else %}—{% endif %}</td></tr>
+            <tr><th>پرونده تقسیط</th><td>{{ i.plan.number|fa }} · {{ i.plan.party.name }}</td><th>قسط</th><td>{{ i.seq|fa }} از {{ i.plan.count|fa }}</td></tr>
+        </table>
+        <p class="big">مبلغ: {{ i.amount|rial }} ریال</p>
+        <p>به حروف: {{ i.amount|words }} ریال</p>
+        <div class="sign"><span>تحویل‌دهنده</span><span>تحویل‌گیرنده (بانک)</span></div>
+    </div>
+</body>
+</html>

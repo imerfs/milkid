@@ -25,7 +25,7 @@ YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'statements', '
              'statuschange', 'plans', 'received', 'transport', 'planimages', 'reports')
 PAYROLL_TABS = ('pstaff', 'pcalc', 'pattendance', 'pmission', 'pspecialallow', 'pspecialdebt', 'pmisc', 'pworkers', 'peidi', 'prun',
                 'psettings')
-TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings') + PAYROLL_TABS
+TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings', 'tools') + PAYROLL_TABS
 # Tabs drawn by the generic register template (see main/views/accounting_finance.py)
 REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages') + PAYROLL_TABS
 PANEL = 'main/accounting/panel/'
@@ -44,6 +44,7 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('builder', 'گزارش‌ساز و تحلیل‌گر', 'table-cells', True, 'گزارش دلخواه از اسناد، فیش‌ها و اقساط، به‌صورت جدول یا ماتریس، با خروجی اکسل.'),
             ('charts', 'نمودارها', 'chart-column', True, 'منابع و مصارف ماهانه، بزرگ‌ترین حساب‌ها و بودجه در برابر عملکرد.'),
             ('assets', 'دارایی‌های ثابت', 'building', True, 'ثبت دارایی، استهلاک سالانه با سند حسابداری و خروج یا فروش.'),
+            ('tools', 'ابزارها', 'screwdriver-wrench', False, 'ماشین‌حساب، عدد به حروف، تبدیل تاریخ و اقساط وام.'),
             ('credit', 'تامین اعتبار', 'hand-holding-dollar', True, 'رزرو اعتبار بودجه برای حساب‌های مصرف، بدون عبور از بودجه مصوب.'),
             ('contracts', 'قراردادها', 'file-signature', True, 'قراردادها، صورت‌وضعیت‌ها و کسورات پیمانکار.'),
             ('guarantees', 'ضمانت‌نامه‌ها', 'shield-halved', False, 'ضمانت‌نامه‌ها، چک و سفته‌های دریافتی و سررسید آن‌ها.'),
@@ -272,11 +273,12 @@ def render_panel(request, year, status=200):
         TAB_BUILDERS[tab](request, year, ctx)
     else:
         from main.views import (accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings,
-                                accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets)   # late: they import this module
+                                accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets, accounting_tools)   # late: they import this module
         {**accounting_finance.BUILDERS, **accounting_income.BUILDERS, **accounting_reports.BUILDERS,
          **accounting_settings.BUILDERS, **accounting_payroll.BUILDERS, **accounting_statements.BUILDERS,
          **accounting_controls.BUILDERS, **accounting_audit.BUILDERS,
-         **accounting_analysis.BUILDERS, **accounting_assets.BUILDERS}[tab](request, year, ctx)
+         **accounting_analysis.BUILDERS, **accounting_assets.BUILDERS,
+         **accounting_tools.BUILDERS}[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 

@@ -41,7 +41,7 @@ _PREFIXES = [
     ('acc_p_payment', 'bills'), ('acc_p_budget', 'budget'), ('acc_budget', 'budget'), ('acc_p_credit', 'budget'),
     ('acc_p_ledger', 'reports'), ('acc_ledger', 'reports'), ('acc_trial', 'reports'), ('acc_p_report', 'reports'),
     ('acc_p_statement_export', 'reports'), ('acc_p_builder', 'reports'), ('acc_p_chart', 'reports'),
-    ('acc_p_contract', 'contracts'), ('acc_p_statement', 'contracts'), ('acc_p_guarantee', 'contracts'),
+    ('acc_p_print_cheque', 'contracts'), ('acc_p_print_slip', 'income'), ('acc_p_contract', 'contracts'), ('acc_p_statement', 'contracts'), ('acc_p_guarantee', 'contracts'),
     ('acc_p_payable', 'contracts'), ('acc_p_plan', 'income'), ('acc_p_installment', 'income'), ('acc_p_cheque', 'income'),
     ('acc_p_transport', 'income'), ('acc_p_planimage', 'income'),
     ('acc_p_emp', 'payroll'), ('acc_p_debt', 'payroll'), ('acc_p_attendance', 'payroll'), ('acc_p_misc', 'payroll'),
@@ -53,7 +53,8 @@ _PREFIXES = [
     ('acc_p_lock', 'controls'), ('acc_p_integrity', 'controls'),
 ]
 # Names that are not an area at all: the tab dispatcher (checks the tab itself) and the pages the role checks itself
-EXEMPT = ('acc_panel', 'acc_p_search', 'acc_p_access_save', 'acc_p_audit_export', 'acc_p_backup')
+EXEMPT = ('acc_panel', 'acc_p_search', 'acc_p_access_save', 'acc_p_audit_export', 'acc_p_backup', 'acc_p_calculator',
+          'acc_p_shortcuts', 'acc_p_tools_words', 'acc_p_tools_date', 'acc_p_tools_loan')
 
 
 def area_of(name):

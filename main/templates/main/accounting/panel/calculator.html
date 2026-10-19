@@ -1,0 +1,13 @@
+{% include 'main/accounting/panel/_modal_head.html' with title='ماشین‌حساب' subtitle='جمع، تفریق، ضرب، تقسیم، پرانتز و درصد؛ ارقام فارسی هم پذیرفته می‌شود.' %}
+<div class="ac-mb" data-calc-root>
+    <input class="ac-in" type="text" data-calc-input dir="ltr" inputmode="decimal" autocomplete="off" aria-label="عبارت" placeholder="مثلاً (۱٬۲۰۰٬۰۰۰ + ۳۰۰٬۰۰۰) × ۹٪" style="font-size:18px;text-align:left">
+    <div data-calc-result style="min-height:28px;margin:8px 0;font-size:20px;font-weight:700" role="status" aria-live="polite"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" dir="ltr">
+        <button type="button" class="ac-btn" data-calc="C">C</button><button type="button" class="ac-btn" data-calc="(">(</button><button type="button" class="ac-btn" data-calc=")">)</button><button type="button" class="ac-btn" data-calc="/">÷</button>
+        <button type="button" class="ac-btn" data-calc="7">۷</button><button type="button" class="ac-btn" data-calc="8">۸</button><button type="button" class="ac-btn" data-calc="9">۹</button><button type="button" class="ac-btn" data-calc="*">×</button>
+        <button type="button" class="ac-btn" data-calc="4">۴</button><button type="button" class="ac-btn" data-calc="5">۵</button><button type="button" class="ac-btn" data-calc="6">۶</button><button type="button" class="ac-btn" data-calc="-">−</button>
+        <button type="button" class="ac-btn" data-calc="1">۱</button><button type="button" class="ac-btn" data-calc="2">۲</button><button type="button" class="ac-btn" data-calc="3">۳</button><button type="button" class="ac-btn" data-calc="+">+</button>
+        <button type="button" class="ac-btn" data-calc="0">۰</button><button type="button" class="ac-btn" data-calc=".">٫</button><button type="button" class="ac-btn" data-calc="%">٪</button><button type="button" class="ac-btn ac-btn-brand" data-calc="=">=</button>
+    </div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>بستن</button></div>
+</div>
