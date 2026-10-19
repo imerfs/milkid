@@ -1,0 +1,22 @@
+{
+  "_about": "One table for both languages: main/templatetags/accounting_tags.py (rial) and parse.parse_amount are tested against it in Python (main/tests/test_rial_cases.py), accounting-money.js (fmtRial, num) in Node (money.test.js).",
+  "show": [
+    {"amount": 0, "shown": "۰"},
+    {"amount": 7, "shown": "۷"},
+    {"amount": 999, "shown": "۹۹۹"},
+    {"amount": 1000, "shown": "۱٬۰۰۰"},
+    {"amount": 1250000, "shown": "۱٬۲۵۰٬۰۰۰"},
+    {"amount": 123456789, "shown": "۱۲۳٬۴۵۶٬۷۸۹"},
+    {"amount": 1000000000000, "shown": "۱٬۰۰۰٬۰۰۰٬۰۰۰٬۰۰۰"}
+  ],
+  "read": [
+    {"typed": "", "amount": 0},
+    {"typed": "0", "amount": 0},
+    {"typed": "1250000", "amount": 1250000},
+    {"typed": "۱۲۵۰۰۰۰", "amount": 1250000},
+    {"typed": "۱٬۲۵۰٬۰۰۰", "amount": 1250000},
+    {"typed": "1,250,000", "amount": 1250000},
+    {"typed": " ۱ ۲۵۰ ۰۰۰ ", "amount": 1250000},
+    {"typed": "١٢٥٠", "amount": 1250}
+  ]
+}

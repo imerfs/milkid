@@ -3,7 +3,8 @@
   "private": true,
   "description": "Builds static/css/tailwind.css (replaces the Tailwind CDN script).",
   "scripts": {
-    "build:css": "tailwindcss -c tailwind.config.js -i static/src/tailwind.input.css -o static/css/tailwind.css --minify"
+    "build:css": "tailwindcss -c tailwind.config.js -i static/src/tailwind.input.css -o static/css/tailwind.css --minify",
+    "test:js": "node --test static/js/tests/money.test.js"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "6.4.0",

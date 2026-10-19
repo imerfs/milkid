@@ -34,6 +34,8 @@ jobs:
           npm ci
           npm run build:css
           git diff --exit-code static/css/tailwind.css
+      - name: Browser script tests (money, product search)
+        run: npm run test:js
 
   test-postgres:
     # The whole test suite on PostgreSQL, the database production runs on (the `test` job uses SQLite).
