@@ -1,0 +1,19 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='دارایی ثابت جدید' %}
+<form method="post" hx-post="{% url 'main:acc_p_asset_new' %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
+    {% csrf_token %}
+    <div class="ac-fgrid">
+        <div class="ac-field s2"><label for="as-code">کد دارایی</label><input class="ac-in" id="as-code" name="code" maxlength="30" dir="ltr" value="{{ p.code }}" required></div>
+        <div class="ac-field s4"><label for="as-title">عنوان</label><input class="ac-in" id="as-title" name="title" maxlength="200" value="{{ p.title }}" required></div>
+        <div class="ac-field s2"><label for="as-date">تاریخ تحصیل</label><input class="ac-in" id="as-date" name="acquisition_date" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ p.acquisition_date }}" required></div>
+        <div class="ac-field s2"><label for="as-cost">بهای تمام‌شده (ریال)</label><input class="ac-in" id="as-cost" name="cost" inputmode="numeric" dir="ltr" value="{{ p.cost }}" required></div>
+        <div class="ac-field s2"><label for="as-salvage">ارزش اسقاط (ریال)</label><input class="ac-in" id="as-salvage" name="salvage" inputmode="numeric" dir="ltr" value="{{ p.salvage|default:'0' }}"></div>
+        <div class="ac-field s2"><label for="as-life">عمر مفید (سال)</label><input class="ac-in" id="as-life" name="life_years" inputmode="numeric" dir="ltr" maxlength="3" value="{{ p.life_years }}" required></div>
+        <div class="ac-field s2"><label for="as-method">روش استهلاک</label><select class="ac-in" id="as-method" name="method">{% for k, label in methods %}<option value="{{ k }}" {% if p.method == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        <div class="ac-field s2"><label for="as-acc">حساب دارایی</label><select class="ac-in" id="as-acc" name="account" required><option value="">انتخاب...</option>{% for a in asset_accounts %}<option value="{{ a.id }}" {% if p.account|stringformat:'s' == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code }} - {{ a.title }}</option>{% endfor %}</select></div>
+        <div class="ac-field s2"><label for="as-accum">حساب استهلاک انباشته</label><select class="ac-in" id="as-accum" name="accumulated_account" required><option value="">انتخاب...</option>{% for a in asset_accounts %}<option value="{{ a.id }}" {% if p.accumulated_account|stringformat:'s' == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code }} - {{ a.title }}</option>{% endfor %}</select></div>
+        <div class="ac-field s2"><label for="as-exp">حساب هزینه استهلاک</label><select class="ac-in" id="as-exp" name="expense_account" required><option value="">انتخاب...</option>{% for a in expense_accounts %}<option value="{{ a.id }}" {% if p.expense_account|stringformat:'s' == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code }} - {{ a.title }}</option>{% endfor %}</select></div>
+        <div class="ac-field s4"><label for="as-desc">توضیحات</label><input class="ac-in" id="as-desc" name="description" maxlength="500" value="{{ p.description }}"></div>
+    </div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>انصراف</button><button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button></div>
+</form>
