@@ -11,65 +11,20 @@ from main.accounting import formspec, ledger, tools as paper_tools
 from main.accounting.formspec import Field
 from main.accounting.parse import digits, jalali_str, parse_amount, parse_int_or_none, parse_jalali
 from main.accounting.trade import inventory, invoices, posting
-from main.models import Account, Invoice, InvoicePayment, Party, Product, Warehouse
-from main.office.errors import Invalid, OfficeError
+from main.models import Account, Invoice, InvoicePayment, Party, Warehouse
+from main.office.errors import OfficeError
 from main.views.accounting_finance import _act, _form_modal, _modal, _reg, _url
-from main.views.accounting_panel import PANEL, _date_param, _done, _failed, _paged, _today_in
+from main.views.accounting_panel import _date_param, _done, _failed, _paged, _today_in
 from main.views.accounting_views import _guard
+from main.views.trade_lineform import LineForm, num as _num
 
 INVOICE_KINDS = [k for k, _ in Invoice.KINDS]
 STATUS_CHIPS = {'issued': ('صادر شده', 'ok'), 'converted': ('تبدیل‌شده', 'brand'), 'canceled': ('ابطال‌شده', 'bad')}
 LOCK_NOTE = 'سندی که تاریخ آن در بازه قفل یا سال بسته باشد تغییر نمی‌کند.'
 
 
-def _num(text):
-    """Quantity or money text typed by a person -> plain ASCII digits and a dot."""
-    return digits(text).replace('٫', '.').replace('٬', '').replace(',', '').replace(' ', '')
-
-
 def _party_name(o):
     return o.name
-
-
-def _post_lines(request, muni, names, *, money=(), texts=(), dates=()):
-    """Rows of a line table: the posted columns ``names`` (the first is the product id), skipping blank rows."""
-    post = request.POST
-    products = {str(p.id): p for p in Product.objects.filter(municipality=muni)}
-    columns = {n: post.getlist(n) for n in names}
-    rows = []
-    for i in range(max((len(v) for v in columns.values()), default=0)):
-        raw = {n: (columns[n][i].strip() if i < len(columns[n]) else '') for n in names}
-        if not any(raw.values()):
-            continue
-        if raw[names[0]] not in products:
-            raise Invalid(f'ردیف {i + 1}: کالا را انتخاب کنید.')
-        item = {names[0]: products[raw[names[0]]]}
-        for n in names[1:]:
-            if n in texts:
-                item[n] = raw[n]
-            elif n in dates:
-                item[n] = parse_jalali(raw[n]) if raw[n] else None
-            else:
-                item[n] = parse_amount(raw[n]) if n in money else _num(raw[n])
-        rows.append(item)
-    return rows
-
-
-def _posted_rows(post, names):
-    columns = {n: post.getlist(n) for n in names}
-    return [{n: (columns[n][i] if i < len(columns[n]) else '') for n in names}
-            for i in range(max((len(v) for v in columns.values()), default=0))]
-
-
-def _trade_form(request, *, title, action, fields, columns, values=None, rows=None, error=None, status=200, submit='ذخیره',
-                show_totals=False, hint='', subtitle='', price_kind='sell'):
-    muni = ledger.municipality_of(request.user)
-    products = [{'id': p.id, 'label': f'{p.code} - {p.name}', 'price': int(p.sell_price), 'buy': int(p.buy_price)}
-                for p in Product.objects.filter(municipality=muni, is_active=True)]
-    ctx = {'title': title, 'subtitle': subtitle, 'action': action, 'fields': [(f, f.options(muni)) for f in fields], 'columns': columns,
-           'p': values or {}, 'rows': rows or [{}], 'error': error, 'submit': submit, 'products': products, 'show_totals': show_totals,
-           'hint': hint, 'price_kind': price_kind}
-    return render(request, PANEL + 'trade_form.html', ctx, status=status)
 
 
 # =====================================================================================================================
@@ -181,12 +136,10 @@ INVOICE_COLUMNS = [('product', 'کالا', 'product'), ('qty', 'تعداد', 'qt
 PURCHASE_COLUMNS = [('product', 'کالا', 'product'), ('qty', 'تعداد', 'qty'), ('unit_price', 'قیمت خرید واحد (ریال)', 'money'),
                     ('margin', 'درصد سود', 'pct'), ('sell_price', 'قیمت فروش (ریال)', 'money'), ('lot', 'سری ساخت', 'text'),
                     ('expiry', 'تاریخ انقضا', 'date'), ('discount', 'تخفیف (ریال)', 'money')]
-INVOICE_NAMES = [c[0] for c in INVOICE_COLUMNS]
-PURCHASE_NAMES = [c[0] for c in PURCHASE_COLUMNS]
 
 
 def _invoice_columns(kind):
-    return (PURCHASE_COLUMNS, PURCHASE_NAMES) if kind == 'purchase' else (INVOICE_COLUMNS, INVOICE_NAMES)
+    return PURCHASE_COLUMNS if kind == 'purchase' else INVOICE_COLUMNS
 
 
 def _invoice_fields(kind):
@@ -235,19 +188,14 @@ def acc_p_trade_invoice_new(request, year_id, kind):
         raise Http404()
     year = ledger.get_year(request.user, year_id)
     muni = ledger.municipality_of(request.user)
-    fields = _invoice_fields(kind)
-    columns, names = _invoice_columns(kind)
-    title = f'{dict(Invoice.KINDS)[kind]} جدید'
-    action = _url('acc_p_trade_invoice_new', year.id, kind)
-    price_kind = 'buy' if kind in ('purchase', 'purchase_return') else 'sell'
+    form = LineForm(title=f'{dict(Invoice.KINDS)[kind]} جدید', action=_url('acc_p_trade_invoice_new', year.id, kind), fields=_invoice_fields(kind),
+                    columns=_invoice_columns(kind), hint=LOCK_NOTE, show_totals=True,
+                    price_kind='buy' if kind in ('purchase', 'purchase_return') else 'sell')
     if request.method != 'POST':
-        return _trade_form(request, title=title, action=action, fields=fields, columns=columns, show_totals=True,
-                           values={'on': _today_in(year), 'warehouse': inventory.default_warehouse(muni).id}, hint=LOCK_NOTE,
-                           price_kind=price_kind)
-    rows = _posted_rows(request.POST, names)
+        return form.show(request, values={'on': _today_in(year), 'warehouse': inventory.default_warehouse(muni).id})
     try:
-        data = formspec.parse(muni, fields, request.POST)
-        lines = _post_lines(request, muni, names, money=('unit_price', 'discount', 'sell_price'), texts=('lot',), dates=('expiry',))
+        data = formspec.parse(muni, form.fields, request.POST)
+        lines = form.lines(request, muni)
         invoice = invoices.create_invoice(
             request.user, year, kind, data['on'], data['party'], lines, warehouse=data.get('warehouse'), discount=data.get('discount') or 0,
             tax=data.get('tax') or None, visitor=data.get('visitor') or '', note=data.get('note') or '',
@@ -255,8 +203,7 @@ def acc_p_trade_invoice_new(request, year_id, kind):
         if kind == 'purchase' and data.get('update_prices'):
             inventory.update_prices(request.user, [(l['product'], l['unit_price'], l.get('sell_price')) for l in lines])
     except OfficeError as exc:
-        return _trade_form(request, title=title, action=action, fields=fields, columns=columns, values=request.POST, rows=rows,
-                           error=str(exc), status=exc.status, show_totals=True, hint=LOCK_NOTE, price_kind=price_kind)
+        return form.fail(request, exc)
     return _done(f'{invoice.get_kind_display()} شماره {invoice.number} ثبت شد.')
 
 

@@ -1,15 +1,13 @@
 """Stock documents: receipt, issue, transfer between warehouses, adjustment and stocktake. Each writes moves in the log."""
-from collections import defaultdict
 from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 
-from main.accounting import ledger
 from main.accounting.ledger import _locked, _own, _own_or_invalid, _text, check_unlocked, municipality_of
-from main.accounting.trade import inventory
+from main.accounting.trade import inventory, movements
 from main.accounting.trade.inventory import ZERO, qty_of
-from main.models import FiscalYear, Municipality, Product, StockDoc, StockDocLine, StockMove
+from main.models import FiscalYear, Municipality, StockDoc, StockDocLine
 from main.office.errors import Conflict, Invalid
 
 KINDS = dict(StockDoc.KINDS)
@@ -27,16 +25,6 @@ def check_year_open(muni, year, on):
     if not (year.start_date <= on <= year.end_date):
         raise Invalid('تاریخ باید داخل سال مالی باشد.')
     check_unlocked(muni, on)
-
-
-def ensure_not_negative(muni, product_ids):
-    """After removing moves, no warehouse may have had a negative balance at any point."""
-    for product_id in set(product_ids):
-        balance = defaultdict(lambda: ZERO)
-        for move in StockMove.objects.filter(municipality=muni, product_id=product_id).order_by('date', 'id').select_related('product', 'warehouse'):
-            balance[move.warehouse_id] += move.qty
-            if balance[move.warehouse_id] < 0:
-                raise Conflict(f'با این کار موجودی «{move.product.name}» در انبار «{move.warehouse.name}» در تاریخ‌های بعد منفی می‌شود.')
 
 
 def docs_for(actor, year, *, kind=None):
@@ -95,32 +83,27 @@ def create_doc(actor, year, kind, on, warehouse, lines, *, to_warehouse=None, no
             if kind == 'stocktake':
                 book = inventory.stock_in(muni, product, warehouse, upto=on)
                 diff = item['counted'] - book
-                line = StockDocLine.objects.create(doc=doc, row=row, product=product, qty=diff, unit_cost=avg, counted=item['counted'])
+                StockDocLine.objects.create(doc=doc, row=row, product=product, qty=diff, unit_cost=avg, counted=item['counted'])
                 if diff > 0:
-                    inventory.add_move(muni, product, warehouse, on, diff, 'doc', unit_cost=avg, doc=doc)
+                    movements.receive(muni, product, warehouse, on, diff, 'doc', unit_cost=avg, doc=doc)
                 elif diff < 0:
-                    inventory.add_move(muni, product, warehouse, on, diff, 'doc', doc=doc)
+                    movements.issue(muni, product, warehouse, on, -diff, 'doc', allow_shortage=True, doc=doc)
                 continue
             qty, cost = item['qty'], item['unit_cost']
             lot, expiry = item.get('lot', ''), item.get('expiry')
             StockDocLine.objects.create(doc=doc, row=row, product=product, qty=qty, unit_cost=cost, lot=lot, expiry=expiry)
             if kind == 'receipt':
-                inventory.add_move(muni, product, warehouse, on, qty, 'doc', unit_cost=cost, doc=doc, lot=lot, expiry=expiry)
+                movements.receive(muni, product, warehouse, on, qty, 'doc', unit_cost=cost, doc=doc, lot=lot, expiry=expiry)
             elif kind == 'issue':
-                inventory.check_available(muni, product, warehouse, qty)
-                inventory.add_move(muni, product, warehouse, on, -qty, 'doc', doc=doc)
+                movements.issue(muni, product, warehouse, on, qty, 'doc', doc=doc)
             elif kind == 'transfer':
-                inventory.check_available(muni, product, warehouse, qty)
-                for taken in inventory.add_move(muni, product, warehouse, on, -qty, 'doc', doc=doc):
-                    inventory.add_move(muni, product, to_warehouse, on, -taken.qty, 'doc', unit_cost=avg, doc=doc, lot=taken.lot,
-                                       expiry=taken.expiry)
+                movements.transfer(muni, product, warehouse, to_warehouse, on, qty, 'doc', unit_cost=avg, doc=doc)
             else:                                                                  # adjust: signed
                 if qty > 0:
-                    inventory.add_move(muni, product, warehouse, on, qty, 'doc', unit_cost=cost or avg, doc=doc, lot=lot, expiry=expiry)
+                    movements.receive(muni, product, warehouse, on, qty, 'doc', unit_cost=cost or avg, doc=doc, lot=lot, expiry=expiry)
                 else:
-                    inventory.check_available(muni, product, warehouse, -qty)
-                    inventory.add_move(muni, product, warehouse, on, qty, 'doc', doc=doc)
-        ensure_not_negative(muni, [i['product'].id for i in cleaned])
+                    movements.issue(muni, product, warehouse, on, -qty, 'doc', doc=doc)
+        movements.guard_not_negative(muni, [i['product'].id for i in cleaned])
     return doc
 
 
@@ -134,11 +117,9 @@ def cancel_doc(actor, doc):
         if doc.fiscal_year.is_closed:
             raise Conflict('سال مالی بسته شده است.')
         check_unlocked(muni, doc.date)
-        products = list(doc.moves.values_list('product_id', flat=True))
-        doc.moves.all().delete()
+        movements.reverse(muni, doc.moves.all())
         doc.canceled_at = timezone.now()
         doc.save(update_fields=['canceled_at'])
-        ensure_not_negative(muni, products)
     return doc
 
 

@@ -2,7 +2,7 @@
 from django.db import transaction
 
 from main.accounting.ledger import _locked, _own, _own_or_invalid, _text, check_unlocked, municipality_of
-from main.accounting.trade import inventory, stockdocs
+from main.accounting.trade import inventory, movements
 from main.accounting.trade.inventory import ZERO, qty_of
 from main.models import Consignment, ConsignmentLine
 from main.office.errors import Conflict, Invalid
@@ -45,9 +45,8 @@ def create_consignment(actor, kind, on, party, lines, *, warehouse=None, note=''
         for product, qty in cleaned:
             ConsignmentLine.objects.create(consignment=consignment, product=product, qty=qty)
             if kind == 'given':
-                inventory.check_available(muni, product, warehouse, qty)
-                inventory.add_move(muni, product, warehouse, on, -qty, 'consignment', consignment=consignment)
-        stockdocs.ensure_not_negative(muni, [p.id for p, _ in cleaned])
+                movements.issue(muni, product, warehouse, on, qty, 'consignment', consignment=consignment)
+        movements.guard_not_negative(muni, [p.id for p, _ in cleaned])
     return consignment
 
 
@@ -74,8 +73,8 @@ def give_back(actor, consignment, on, returns):
             line.save(update_fields=['returned'])
             any_return = True
             if consignment.kind == 'given':
-                inventory.add_move(muni, line.product, consignment.warehouse, on, qty, 'consignment',
-                                   unit_cost=inventory.current_avg(muni, line.product, upto=on), consignment=consignment)
+                movements.receive(muni, line.product, consignment.warehouse, on, qty, 'consignment',
+                                  unit_cost=inventory.current_avg(muni, line.product, upto=on), consignment=consignment)
         if not any_return:
             raise Invalid('مقدار برگشتی را وارد کنید.')
         if all(open_quantity(l) == ZERO for l in consignment.lines.all()):
@@ -103,9 +102,7 @@ def cancel(actor, consignment):
             raise Conflict('این امانی قبلاً ابطال شده است.')
         if any(l.returned for l in consignment.lines.all()):
             raise Conflict('از این امانی کالا برگشت خورده است؛ ابطال ممکن نیست.')
-        products = list(consignment.moves.values_list('product_id', flat=True))
-        consignment.moves.all().delete()
+        movements.reverse(muni, consignment.moves.all())
         consignment.status = 'canceled'
         consignment.save(update_fields=['status'])
-        stockdocs.ensure_not_negative(muni, products)
     return consignment

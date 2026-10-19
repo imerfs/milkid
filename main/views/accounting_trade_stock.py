@@ -14,13 +14,17 @@ from main.models import Account, Consignment, Invoice, InvoicePayment, Party, Pr
 from main.office.errors import Invalid, OfficeError
 from main.views.accounting_finance import _act, _modal, _reg, _url
 from main.views.accounting_panel import _date_param, _done, _failed, _paged, _today_in
-from main.views.accounting_trade import (LOCK_NOTE, _num, _party_name, _post_lines, _posted_rows, _trade_form)
+from main.views.accounting_trade import LOCK_NOTE, _num, _party_name
 from main.views.accounting_views import _cell, _guard
+from main.views.trade_lineform import LineForm, read_lines
 
 
 # =====================================================================================================================
 # point of sale
 # =====================================================================================================================
+
+POS_COLUMNS = [('product', '', 'product'), ('qty', '', 'qty'), ('unit_price', '', 'money')]
+
 
 def tab_trade_pos(request, year, ctx):
     muni = ctx['muni']
@@ -45,7 +49,7 @@ def acc_p_trade_pos_sale(request, year_id):
     muni = ledger.municipality_of(request.user)
     p = request.POST
     try:
-        lines = _post_lines(request, muni, ['product', 'qty', 'unit_price'], money=('unit_price',))
+        lines = read_lines(p, muni, POS_COLUMNS)
         if not lines:
             raise Invalid('سبد فروش خالی است.')
         on = parse_jalali(p.get('date')) if p.get('date') else date.today()
@@ -152,22 +156,17 @@ def acc_p_trade_doc_new(request, year_id, kind):
         raise Http404()
     year = ledger.get_year(request.user, year_id)
     muni = ledger.municipality_of(request.user)
-    fields, columns = _doc_fields(kind), DOC_COLUMNS[kind]
-    names = [c[0] for c in columns]
-    title, action = f'{dict(StockDoc.KINDS)[kind]} جدید', _url('acc_p_trade_doc_new', year.id, kind)
-    hint = 'مقدار شمارش‌شده با موجودی دفتری مقایسه می‌شود و فقط تفاوت ثبت می‌شود.' if kind == 'stocktake' else LOCK_NOTE
+    form = LineForm(title=f'{dict(StockDoc.KINDS)[kind]} جدید', action=_url('acc_p_trade_doc_new', year.id, kind), fields=_doc_fields(kind),
+                    columns=DOC_COLUMNS[kind],
+                    hint='مقدار شمارش‌شده با موجودی دفتری مقایسه می‌شود و فقط تفاوت ثبت می‌شود.' if kind == 'stocktake' else LOCK_NOTE)
     if request.method != 'POST':
-        return _trade_form(request, title=title, action=action, fields=fields, columns=columns, hint=hint,
-                           values={'on': _today_in(year), 'warehouse': inventory.default_warehouse(muni).id})
-    rows = _posted_rows(request.POST, names)
+        return form.show(request, values={'on': _today_in(year), 'warehouse': inventory.default_warehouse(muni).id})
     try:
-        data = formspec.parse(muni, fields, request.POST)
-        lines = _post_lines(request, muni, names, money=('unit_cost',), texts=('lot',), dates=('expiry',))
-        doc = stockdocs.create_doc(request.user, year, kind, data['on'], data['warehouse'], lines, to_warehouse=data.get('to_warehouse'),
-                                   note=data.get('note') or '')
+        data = formspec.parse(muni, form.fields, request.POST)
+        doc = stockdocs.create_doc(request.user, year, kind, data['on'], data['warehouse'], form.lines(request, muni),
+                                   to_warehouse=data.get('to_warehouse'), note=data.get('note') or '')
     except OfficeError as exc:
-        return _trade_form(request, title=title, action=action, fields=fields, columns=columns, values=request.POST, rows=rows,
-                           error=str(exc), status=exc.status, hint=hint)
+        return form.fail(request, exc)
     return _done(f'{doc.get_kind_display()} شماره {doc.number} ثبت شد.')
 
 
@@ -202,20 +201,18 @@ def tab_trade_production(request, year, ctx):
 @_guard()
 def acc_p_trade_formula_new(request):
     muni = ledger.municipality_of(request.user)
-    fields = [Field('product', 'محصول', 'fk', model=Product, size=2, label_of=str), Field('output_qty', 'مقدار تولید در هر نوبت', 'pct', size=2),
-              Field('note', 'توضیحات', 'text', required=False, size=4, maxlength=300)]
-    names = [c[0] for c in FORMULA_COLUMNS]
-    kw = dict(title='فرمول ساخت جدید', action=_url('acc_p_trade_formula_new'), fields=fields, columns=FORMULA_COLUMNS,
-              hint='مواد اولیه‌ای که برای یک نوبت تولید لازم است.')
+    form = LineForm(title='فرمول ساخت جدید', action=_url('acc_p_trade_formula_new'), columns=FORMULA_COLUMNS,
+                    hint='مواد اولیه‌ای که برای یک نوبت تولید لازم است.',
+                    fields=[Field('product', 'محصول', 'fk', model=Product, size=2, label_of=str),
+                            Field('output_qty', 'مقدار تولید در هر نوبت', 'pct', size=2),
+                            Field('note', 'توضیحات', 'text', required=False, size=4, maxlength=300)])
     if request.method != 'POST':
-        return _trade_form(request, values={'output_qty': '1'}, **kw)
-    rows = _posted_rows(request.POST, names)
+        return form.show(request, values={'output_qty': '1'})
     try:
-        data = formspec.parse(muni, fields, request.POST)
-        components = _post_lines(request, muni, names)
-        production.create_formula(request.user, data['product'], _num(data['output_qty']), components, data.get('note') or '')
+        data = formspec.parse(muni, form.fields, request.POST)
+        production.create_formula(request.user, data['product'], _num(data['output_qty']), form.lines(request, muni), data.get('note') or '')
     except OfficeError as exc:
-        return _trade_form(request, values=request.POST, rows=rows, error=str(exc), status=exc.status, **kw)
+        return form.fail(request, exc)
     return _done('فرمول ساخت ثبت شد.')
 
 
@@ -306,22 +303,19 @@ def acc_p_trade_consign_new(request, kind):
     if kind not in dict(Consignment.KINDS):
         raise Http404()
     muni = ledger.municipality_of(request.user)
-    fields = [Field('on', 'تاریخ', 'date', size=1), Field('party', 'طرف حساب', 'fk', model=Party, size=2, label_of=_party_name),
-              Field('warehouse', 'انبار', 'fk', model=Warehouse, size=1, label_of=str, required=False),
-              Field('note', 'توضیحات', 'text', required=False, size=4, maxlength=300)]
-    names = [c[0] for c in CONSIGN_COLUMNS]
-    kw = dict(title=dict(Consignment.KINDS)[kind], action=_url('acc_p_trade_consign_new', kind), fields=fields, columns=CONSIGN_COLUMNS,
-              hint='کالای امانی‌گرفته‌شده فقط یادداشت است و جزو موجودی شما حساب نمی‌شود.' if kind == 'taken' else LOCK_NOTE)
+    form = LineForm(title=dict(Consignment.KINDS)[kind], action=_url('acc_p_trade_consign_new', kind), columns=CONSIGN_COLUMNS,
+                    hint='کالای امانی‌گرفته‌شده فقط یادداشت است و جزو موجودی شما حساب نمی‌شود.' if kind == 'taken' else LOCK_NOTE,
+                    fields=[Field('on', 'تاریخ', 'date', size=1), Field('party', 'طرف حساب', 'fk', model=Party, size=2, label_of=_party_name),
+                            Field('warehouse', 'انبار', 'fk', model=Warehouse, size=1, label_of=str, required=False),
+                            Field('note', 'توضیحات', 'text', required=False, size=4, maxlength=300)])
     if request.method != 'POST':
-        return _trade_form(request, values={'on': jalali_str(date.today()), 'warehouse': inventory.default_warehouse(muni).id}, **kw)
-    rows = _posted_rows(request.POST, names)
+        return form.show(request, values={'on': jalali_str(date.today()), 'warehouse': inventory.default_warehouse(muni).id})
     try:
-        data = formspec.parse(muni, fields, request.POST)
-        lines = _post_lines(request, muni, names)
-        c = consignment.create_consignment(request.user, kind, data['on'], data['party'], lines, warehouse=data.get('warehouse'),
-                                           note=data.get('note') or '')
+        data = formspec.parse(muni, form.fields, request.POST)
+        c = consignment.create_consignment(request.user, kind, data['on'], data['party'], form.lines(request, muni),
+                                           warehouse=data.get('warehouse'), note=data.get('note') or '')
     except OfficeError as exc:
-        return _trade_form(request, values=request.POST, rows=rows, error=str(exc), status=exc.status, **kw)
+        return form.fail(request, exc)
     return _done(f'{c.get_kind_display()} ثبت شد.')
 
 

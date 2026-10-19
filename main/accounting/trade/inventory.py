@@ -8,11 +8,10 @@ from collections import defaultdict
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
-from django.db.models import Sum
 
-from main.accounting import ledger
-from main.accounting.ledger import _amount, _own, _own_or_invalid, _text, check_unlocked, municipality_of
-from main.models import Product, StockDoc, StockDocLine, StockMove, Warehouse
+from main.accounting.ledger import _amount, _own, _text, municipality_of
+from main.accounting.trade.movements import lot_balances, stock_in   # noqa: F401  (stock_in is re-exported: callers and tests read it here)
+from main.models import Product, StockMove, Warehouse
 from main.office.errors import Conflict, Invalid
 
 ZERO = Decimal(0)
@@ -203,62 +202,6 @@ def valuation(muni, product, *, upto=None):
 
 def current_avg(muni, product, *, upto=None):
     return valuation(muni, product, upto=upto)['avg']
-
-
-def stock_in(muni, product, warehouse, *, upto=None):
-    """Quantity of a product in one warehouse."""
-    qs = StockMove.objects.filter(municipality=muni, product=product, warehouse=warehouse)
-    if upto:
-        qs = qs.filter(date__lte=upto)
-    return qs.aggregate(s=Sum('qty'))['s'] or ZERO
-
-
-def check_available(muni, product, warehouse, qty):
-    have = stock_in(muni, product, warehouse)
-    if have < qty:
-        raise Conflict(f'موجودی «{product.name}» در انبار «{warehouse.name}» کافی نیست (موجود {have.normalize():f}، لازم {qty.normalize():f}).')
-
-
-def lot_balances(muni, product=None, *, warehouse=None, upto=None):
-    """Quantity per (product, warehouse, series, expiry), positive balances only; ``untracked`` stock has a blank series."""
-    qs = StockMove.objects.filter(municipality=muni)
-    if product is not None:
-        qs = qs.filter(product=product)
-    if warehouse is not None:
-        qs = qs.filter(warehouse=warehouse)
-    if upto:
-        qs = qs.filter(date__lte=upto)
-    rows = qs.values('product_id', 'warehouse_id', 'lot', 'expiry').annotate(q=Sum('qty'))
-    return {(r['product_id'], r['warehouse_id'], r['lot'], r['expiry']): r['q'] for r in rows if r['q'] and r['q'] > 0}
-
-
-def allocate_out(muni, product, warehouse, qty, on):
-    """Which series an outflow takes from: those expiring first (expired ones last), then untracked stock.
-    Returns ``[(lot, expiry, qty)]``; whatever the series cannot cover goes out untracked (a permitted shortage)."""
-    balances = [(lot, expiry, q) for (_, _, lot, expiry), q in lot_balances(muni, product, warehouse=warehouse).items() if lot or expiry]
-    balances.sort(key=lambda b: (b[1] is not None and b[1] < on, b[1] is None, b[1] or on, b[0]))
-    left, out = qty, []
-    for lot, expiry, have in balances:
-        take = min(have, left)
-        if take > 0:
-            out.append((lot, expiry, take))
-            left -= take
-        if left <= 0:
-            break
-    if left > 0:
-        out.append(('', None, left))
-    return out
-
-
-def add_move(muni, product, warehouse, date, qty, kind, *, unit_cost=ZERO, lot='', expiry=None, **links):
-    """Write the move(s) for a quantity (signed). An inflow keeps its series and expiry; an outflow is split over the series
-    it takes from. Callers have already checked ownership, dates and shortages. Returns the moves written."""
-    if qty > 0:
-        return [StockMove.objects.create(municipality=muni, product=product, warehouse=warehouse, date=date, qty=qty, unit_cost=unit_cost,
-                                         kind=kind, lot=lot or '', expiry=expiry, **links)]
-    return [StockMove.objects.create(municipality=muni, product=product, warehouse=warehouse, date=date, qty=-part, unit_cost=unit_cost,
-                                     kind=kind, lot=part_lot, expiry=part_expiry, **links)
-            for part_lot, part_expiry, part in allocate_out(muni, product, warehouse, -qty, date)]
 
 
 def lot_report(actor, *, warehouse=None, soon_days=30, today=None):

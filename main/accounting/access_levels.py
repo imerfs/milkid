@@ -9,31 +9,32 @@ from functools import wraps
 
 from django.http import HttpResponse, HttpResponseForbidden
 
+from main.accounting.tabs import TAB_LIST
 from main.models import AccessRule
 from main.office.errors import Invalid
 
 ROLE = 'accountant'          # the role these levels apply to
 LEVELS = ('none', 'view', 'edit')
 
-# area key, label, workspace tabs that belong to it
-AREAS = [
-    ('vouchers', 'اسناد حسابداری', ('vouchers', 'statuschange', 'images')),
-    ('bills', 'فیش‌های نقدی و پرداخت‌های آنلاین', ('bills', 'online')),
-    ('budget', 'بودجه و تامین اعتبار', ('budget', 'credit')),
-    ('reports', 'تراز، صورت‌های مالی و گزارش‌ها', ('trial', 'statements', 'reports', 'builder', 'charts')),
-    ('contracts', 'قراردادها، ضمانت‌نامه‌ها و اسناد پرداختی', ('contracts', 'guarantees', 'payables')),
-    ('income', 'تقسیط، خزانه دریافتی و حمل و نقل', ('plans', 'received', 'transport', 'planimages')),
-    ('payroll', 'حقوق و دستمزد', ('pstaff', 'pcalc', 'pattendance', 'pmission', 'pspecialallow', 'pspecialdebt', 'pmisc', 'pworkers',
-                                  'peidi', 'prun', 'psettings')),
-    ('master', 'طرف‌حساب‌ها، سرفصل‌ها و تنظیمات مالی', ('parties', 'accounts', 'settings')),
-    ('assets', 'دارایی‌های ثابت', ('assets',)),
-    ('trade', 'بازرگانی: کالا، فاکتور، انبار، تولید و امانی', ('trade_products', 'trade_invoices', 'trade_pos', 'trade_stock', 'trade_docs', 'trade_production', 'trade_consign', 'trade_profit')),
-    ('yearend', 'سال مالی، عملیات پایان سال و مغایرت‌گیری', ('setup', 'yearend', 'recon')),
-    ('controls', 'قفل تاریخ، کنترل داده و پشتیبان', ('controls', 'backup')),
+# area key, label; the tabs of an area are the ones that name it in main/accounting/tabs.py
+AREA_LABELS = [
+    ('vouchers', 'اسناد حسابداری'),
+    ('bills', 'فیش\u200cهای نقدی و پرداخت\u200cهای آنلاین'),
+    ('budget', 'بودجه و تامین اعتبار'),
+    ('reports', 'تراز، صورت\u200cهای مالی و گزارش\u200cها'),
+    ('contracts', 'قراردادها، ضمانت\u200cنامه\u200cها و اسناد پرداختی'),
+    ('income', 'تقسیط، خزانه دریافتی و حمل و نقل'),
+    ('payroll', 'حقوق و دستمزد'),
+    ('master', 'طرف\u200cحساب\u200cها، سرفصل\u200cها و تنظیمات مالی'),
+    ('assets', 'دارایی\u200cهای ثابت'),
+    ('trade', 'بازرگانی: کالا، فاکتور، انبار، تولید و امانی'),
+    ('yearend', 'سال مالی، عملیات پایان سال و مغایرت\u200cگیری'),
+    ('controls', 'قفل تاریخ، کنترل داده و پشتیبان'),
 ]
-AREA_KEYS = tuple(k for k, _, _ in AREAS)
-TAB_AREA = {tab: key for key, _, tabs in AREAS for tab in tabs}
-ALWAYS = ('overview', 'tools', 'access', 'audit')          # tabs every accounting user may open (the last two check the role themselves)
+AREAS = [(key, label, tuple(t.key for t in TAB_LIST if t.area == key)) for key, label in AREA_LABELS]
+AREA_KEYS = tuple(k for k, _ in AREA_LABELS)
+TAB_AREA = {t.key: t.area for t in TAB_LIST if t.area}
+ALWAYS = tuple(t.key for t in TAB_LIST if not t.area)   # tabs every accounting user may open (access and audit check the role themselves)
 
 # URL name -> area; the first matching prefix wins
 _PREFIXES = [

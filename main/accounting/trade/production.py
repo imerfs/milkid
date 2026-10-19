@@ -3,13 +3,11 @@
 A run consumes the components of the formula (at their weighted-average cost) and produces the output product at the cost of
 those components, so the output enters stock already valued.
 """
-from decimal import Decimal
-
 from django.db import transaction
 from django.utils import timezone
 
 from main.accounting.ledger import _locked, _own, _own_or_invalid, _text, check_unlocked, municipality_of
-from main.accounting.trade import inventory, stockdocs
+from main.accounting.trade import inventory, movements, stockdocs
 from main.accounting.trade.inventory import ZERO, qty_of
 from main.models import Formula, FormulaLine, Municipality, ProductionRun
 from main.office.errors import Conflict, Invalid
@@ -104,7 +102,8 @@ def run_production(actor, year, formula, batches, on, *, warehouse=None, note=''
         lines = list(formula.lines.select_related('product'))
         cost = ZERO
         for line in lines:
-            inventory.check_available(muni, line.product, warehouse, line.qty * batches)
+            if inventory.stock_in(muni, line.product, warehouse) < line.qty * batches:
+                movements.issue(muni, line.product, warehouse, on, line.qty * batches, 'production_out')   # raises the shortage
             cost += line.qty * batches * inventory.current_avg(muni, line.product, upto=on)
         output = formula.output_qty * batches
         unit_cost = cost / output
@@ -115,9 +114,9 @@ def run_production(actor, year, formula, batches, on, *, warehouse=None, note=''
         run.lot = _text(lot or '', 'سری ساخت', required=False)[:40] or f'{year.year}-{run.number}'
         run.save(update_fields=['lot'])
         for line in lines:
-            inventory.add_move(muni, line.product, warehouse, on, -(line.qty * batches), 'production_out', production=run)
-        inventory.add_move(muni, formula.product, warehouse, on, output, 'production_in', unit_cost=unit_cost, production=run, lot=run.lot,
-                           expiry=run.expiry)
+            movements.issue(muni, line.product, warehouse, on, line.qty * batches, 'production_out', production=run)
+        movements.receive(muni, formula.product, warehouse, on, output, 'production_in', unit_cost=unit_cost, production=run, lot=run.lot,
+                          expiry=run.expiry)
     return run
 
 
@@ -131,9 +130,7 @@ def cancel_run(actor, run):
         if run.fiscal_year.is_closed:
             raise Conflict('سال مالی بسته شده است.')
         check_unlocked(muni, run.date)
-        products = list(run.moves.values_list('product_id', flat=True))
-        run.moves.all().delete()
+        movements.reverse(muni, run.moves.all())
         run.canceled_at = timezone.now()
         run.save(update_fields=['canceled_at'])
-        stockdocs.ensure_not_negative(muni, products)
     return run

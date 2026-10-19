@@ -1,126 +1,21 @@
-{# Sidebar / phone navigation of the accountant workspace; each link opens a page of the same workspace. #}
+{# Sidebar / phone navigation of the accountant workspace, drawn from main/accounting/tabs.py; each link opens a page of the same workspace. #}
+{% load accounting_tags %}{% acc_menu as menu %}
 {% if mobile %}
-<a href="#acc-workspace" class="ac-item" data-acc-tab="overview"><i class="fas fa-gauge-high ic" aria-hidden="true"></i>نمای کلی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="vouchers"><i class="fas fa-file-invoice ic" aria-hidden="true"></i>اسناد</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="bills"><i class="fas fa-receipt ic" aria-hidden="true"></i>فیش‌های نقدی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="credit"><i class="fas fa-hand-holding-dollar ic" aria-hidden="true"></i>تامین اعتبار</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="contracts"><i class="fas fa-file-signature ic" aria-hidden="true"></i>قراردادها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="guarantees"><i class="fas fa-shield-halved ic" aria-hidden="true"></i>ضمانت‌نامه‌ها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="payables"><i class="fas fa-money-check-dollar ic" aria-hidden="true"></i>خزانه پرداختی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="plans"><i class="fas fa-calendar-check ic" aria-hidden="true"></i>تقسیط</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="received"><i class="fas fa-money-check ic" aria-hidden="true"></i>خزانه دریافتی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="transport"><i class="fas fa-truck ic" aria-hidden="true"></i>حمل و نقل</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="reports"><i class="fas fa-file-lines ic" aria-hidden="true"></i>گزارش‌ها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="builder"><i class="fas fa-table-cells ic" aria-hidden="true"></i>گزارش‌ساز</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="charts"><i class="fas fa-chart-column ic" aria-hidden="true"></i>نمودارها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="assets"><i class="fas fa-building ic" aria-hidden="true"></i>دارایی‌های ثابت</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_products"><i class="fas fa-boxes-stacked ic" aria-hidden="true"></i>کالاها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_invoices"><i class="fas fa-file-invoice ic" aria-hidden="true"></i>فاکتورها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_pos"><i class="fas fa-cash-register ic" aria-hidden="true"></i>فروش سریع</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_stock"><i class="fas fa-warehouse ic" aria-hidden="true"></i>موجودی انبار</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_docs"><i class="fas fa-dolly ic" aria-hidden="true"></i>اسناد انبار</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_production"><i class="fas fa-industry ic" aria-hidden="true"></i>تولید</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_consign"><i class="fas fa-handshake ic" aria-hidden="true"></i>امانی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trade_profit"><i class="fas fa-chart-line ic" aria-hidden="true"></i>سود کالا</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="tools"><i class="fas fa-screwdriver-wrench ic" aria-hidden="true"></i>ابزارها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="backup"><i class="fas fa-database ic" aria-hidden="true"></i>پشتیبان‌گیری</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="pstaff"><i class="fas fa-users ic" aria-hidden="true"></i>پرسنل</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="pattendance"><i class="fas fa-clock ic" aria-hidden="true"></i>کارکرد</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="prun"><i class="fas fa-money-bill-wave ic" aria-hidden="true"></i>حقوق</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="budget"><i class="fas fa-chart-pie ic" aria-hidden="true"></i>بودجه</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="trial"><i class="fas fa-scale-balanced ic" aria-hidden="true"></i>تراز آزمایشی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="statements"><i class="fas fa-file-invoice-dollar ic" aria-hidden="true"></i>صورت‌های مالی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="yearend"><i class="fas fa-flag-checkered ic" aria-hidden="true"></i>عملیات سال مالی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="recon"><i class="fas fa-building-columns ic" aria-hidden="true"></i>مغایرت‌گیری بانک</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="controls"><i class="fas fa-shield-heart ic" aria-hidden="true"></i>قفل و کنترل داده</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="audit"><i class="fas fa-clock-rotate-left ic" aria-hidden="true"></i>لاگ ممیزی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="access"><i class="fas fa-user-lock ic" aria-hidden="true"></i>سطوح دسترسی</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="parties"><i class="fas fa-address-book ic" aria-hidden="true"></i>طرف‌حساب‌ها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="accounts"><i class="fas fa-sitemap ic" aria-hidden="true"></i>سرفصل‌ها</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="online"><i class="fas fa-credit-card ic" aria-hidden="true"></i>پرداخت‌های آنلاین</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="settings"><i class="fas fa-sliders ic" aria-hidden="true"></i>تنظیمات</a>
-<a href="#acc-workspace" class="ac-item" data-acc-tab="setup"><i class="fas fa-calendar-days ic" aria-hidden="true"></i>سال مالی</a>
+{% for e in menu.mobile %}<a href="#acc-workspace" class="ac-item" data-acc-tab="{{ e.key }}"><i class="fas fa-{{ e.icon }} ic" aria-hidden="true"></i>{{ e.label }}</a>
+{% endfor %}
 {% else %}
 <nav class="ac-nav ac-top" aria-label="نمای کلی">
-    <a href="#acc-workspace" class="ac-item" data-acc-tab="overview"><i class="fas fa-gauge-high ic" aria-hidden="true"></i>نمای کلی</a>
+    {% for e in menu.top %}<a href="#acc-workspace" class="ac-item" data-acc-tab="{{ e.key }}"><i class="fas fa-{{ e.icon }} ic" aria-hidden="true"></i>{{ e.label }}</a>{% endfor %}
 </nav>
-<details class="ac-grp" name="ac-nav">
-    <summary><i class="fas fa-book gic" aria-hidden="true"></i><span>حسابداری</span><i class="fas fa-chevron-down chev" aria-hidden="true"></i></summary>
-    <nav class="ac-nav" aria-label="حسابداری">
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="vouchers"><i class="fas fa-file-invoice ic" aria-hidden="true"></i>اسناد حسابداری</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="vouchers" data-acc-query="status=temporary"><i class="fas fa-pen-ruler ic" aria-hidden="true"></i>پیش‌نویس سند</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="statuschange"><i class="fas fa-check-double ic" aria-hidden="true"></i>تغییر وضعیت اسناد</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="images"><i class="fas fa-images ic" aria-hidden="true"></i>تصاویر اسناد</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="bills"><i class="fas fa-receipt ic" aria-hidden="true"></i>فیش‌های نقدی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="parties"><i class="fas fa-address-book ic" aria-hidden="true"></i>طرف‌حساب‌ها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="accounts"><i class="fas fa-sitemap ic" aria-hidden="true"></i>سرفصل حساب‌ها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="credit"><i class="fas fa-hand-holding-dollar ic" aria-hidden="true"></i>تامین اعتبار</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="contracts"><i class="fas fa-file-signature ic" aria-hidden="true"></i>قراردادها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="guarantees"><i class="fas fa-shield-halved ic" aria-hidden="true"></i>ضمانت‌نامه‌ها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="assets"><i class="fas fa-building ic" aria-hidden="true"></i>دارایی‌های ثابت</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="recon"><i class="fas fa-building-columns ic" aria-hidden="true"></i>مغایرت‌گیری بانک</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="yearend"><i class="fas fa-flag-checkered ic" aria-hidden="true"></i>عملیات سال مالی</a>
+{% for g in menu.groups %}<details class="ac-grp" name="ac-nav">
+    <summary><i class="fas fa-{{ g.icon }} gic" aria-hidden="true"></i><span>{{ g.label }}</span><i class="fas fa-chevron-down chev" aria-hidden="true"></i></summary>
+    <nav class="ac-nav" aria-label="{{ g.label }}">
+        {% for e in g.items %}{% if e.heading %}<div class="ac-label-s">{{ e.heading }}</div>
+        {% endif %}<a href="#acc-workspace" class="ac-item" data-acc-tab="{{ e.key }}"{% if e.query %} data-acc-query="{{ e.query }}"{% endif %}><i class="fas fa-{{ e.icon }} ic" aria-hidden="true"></i>{{ e.label }}</a>
+        {% endfor %}
     </nav>
 </details>
-<details class="ac-grp" name="ac-nav">
-    <summary><i class="fas fa-chart-pie gic" aria-hidden="true"></i><span>گزارش‌ها</span><i class="fas fa-chevron-down chev" aria-hidden="true"></i></summary>
-    <nav class="ac-nav" aria-label="گزارش‌ها">
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="reports"><i class="fas fa-file-lines ic" aria-hidden="true"></i>گزارش‌گیری</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="builder"><i class="fas fa-table-cells ic" aria-hidden="true"></i>گزارش‌ساز</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="charts"><i class="fas fa-chart-column ic" aria-hidden="true"></i>نمودارها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trial"><i class="fas fa-scale-balanced ic" aria-hidden="true"></i>تراز آزمایشی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="budget"><i class="fas fa-chart-pie ic" aria-hidden="true"></i>بودجه و عملکرد</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="statements"><i class="fas fa-file-invoice-dollar ic" aria-hidden="true"></i>صورت‌های مالی</a>
-    </nav>
-</details>
-<details class="ac-grp" name="ac-nav">
-    <summary><i class="fas fa-coins gic" aria-hidden="true"></i><span>درآمد</span><i class="fas fa-chevron-down chev" aria-hidden="true"></i></summary>
-    <nav class="ac-nav" aria-label="درآمد">
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="plans"><i class="fas fa-calendar-check ic" aria-hidden="true"></i>تقسیط</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="received"><i class="fas fa-money-check ic" aria-hidden="true"></i>خزانه اسناد دریافتی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="transport"><i class="fas fa-truck ic" aria-hidden="true"></i>درآمد حمل و نقل</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="planimages"><i class="fas fa-images ic" aria-hidden="true"></i>تصاویر پرونده تقسیط</a>
-        <div class="ac-label-s">بازرگانی و انبار</div>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_products"><i class="fas fa-boxes-stacked ic" aria-hidden="true"></i>کالاها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_invoices"><i class="fas fa-file-invoice ic" aria-hidden="true"></i>فاکتورها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_pos"><i class="fas fa-cash-register ic" aria-hidden="true"></i>فروش سریع</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_stock"><i class="fas fa-warehouse ic" aria-hidden="true"></i>موجودی انبار</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_docs"><i class="fas fa-dolly ic" aria-hidden="true"></i>اسناد انبار</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_production"><i class="fas fa-industry ic" aria-hidden="true"></i>تولید</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_consign"><i class="fas fa-handshake ic" aria-hidden="true"></i>امانی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="trade_profit"><i class="fas fa-chart-line ic" aria-hidden="true"></i>سود کالا</a>
-    </nav>
-</details>
-<details class="ac-grp" name="ac-nav">
-    <summary><i class="fas fa-users gic" aria-hidden="true"></i><span>حقوق و دستمزد</span><i class="fas fa-chevron-down chev" aria-hidden="true"></i></summary>
-    <nav class="ac-nav" aria-label="حقوق و دستمزد">
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pstaff"><i class="fas fa-users ic" aria-hidden="true"></i>اطلاعات پرسنل</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pattendance"><i class="fas fa-clock ic" aria-hidden="true"></i>کارکرد</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pmission"><i class="fas fa-plane ic" aria-hidden="true"></i>ماموریت</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pspecialallow"><i class="fas fa-gift ic" aria-hidden="true"></i>مزایای مخصوص</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pspecialdebt"><i class="fas fa-file-invoice-dollar ic" aria-hidden="true"></i>بدهی مخصوص</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pmisc"><i class="fas fa-wallet ic" aria-hidden="true"></i>پرداخت‌های متفرقه</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pworkers"><i class="fas fa-helmet-safe ic" aria-hidden="true"></i>کارگران روزمزد</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="peidi"><i class="fas fa-gift ic" aria-hidden="true"></i>اطلاعات عیدی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="pcalc"><i class="fas fa-sliders ic" aria-hidden="true"></i>محاسبات فردی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="prun"><i class="fas fa-money-bill-wave ic" aria-hidden="true"></i>محاسبه و فیش حقوق</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="psettings"><i class="fas fa-gear ic" aria-hidden="true"></i>تنظیمات حقوق</a>
-    </nav>
-</details>
-<details class="ac-grp" name="ac-nav">
-    <summary><i class="fas fa-gear gic" aria-hidden="true"></i><span>پرداخت‌ها و تنظیمات</span><i class="fas fa-chevron-down chev" aria-hidden="true"></i></summary>
-    <nav class="ac-nav" aria-label="پرداخت‌ها و تنظیمات">
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="payables"><i class="fas fa-money-check-dollar ic" aria-hidden="true"></i>خزانه اسناد پرداختی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="online"><i class="fas fa-credit-card ic" aria-hidden="true"></i>پرداخت‌های آنلاین</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="settings"><i class="fas fa-sliders ic" aria-hidden="true"></i>تنظیمات مالی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="setup"><i class="fas fa-calendar-days ic" aria-hidden="true"></i>سال مالی و شروع کار</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="tools"><i class="fas fa-screwdriver-wrench ic" aria-hidden="true"></i>ابزارها</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="backup"><i class="fas fa-database ic" aria-hidden="true"></i>پشتیبان‌گیری</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="controls"><i class="fas fa-shield-heart ic" aria-hidden="true"></i>قفل و کنترل داده</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="audit"><i class="fas fa-clock-rotate-left ic" aria-hidden="true"></i>لاگ ممیزی</a>
-        <a href="#acc-workspace" class="ac-item" data-acc-tab="access"><i class="fas fa-user-lock ic" aria-hidden="true"></i>سطوح دسترسی</a>
-    </nav>
-</details>
+{% endfor %}
 {% if soon %}<details class="ac-fold">
     <summary><div class="ac-label-s">به‌زودی <i class="fas fa-chevron-down" aria-hidden="true" style="font-size:10px"></i></div></summary>
     <nav class="ac-nav" aria-label="بخش‌های به‌زودی">
