@@ -1,0 +1,25 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='تولید' subtitle=formula.product.name %}
+<form method="post" hx-post="{% url 'main:acc_p_trade_run_new' year.id formula.id %}" hx-target="#acc-modal-body" class="ac-mb" novalidate>
+    {% csrf_token %}
+    <div class="ac-fgrid">
+        <div class="ac-field s1"><label for="pr-date">تاریخ</label><input class="ac-in" id="pr-date" name="date" dir="ltr" value="{{ p|get:'date' }}"></div>
+        <div class="ac-field s1"><label for="pr-batches">تعداد نوبت</label><input class="ac-in" id="pr-batches" name="batches" inputmode="decimal" dir="ltr" value="{{ p|get:'batches' }}"></div>
+        <div class="ac-field s2"><label for="pr-wh">انبار</label><select class="ac-in" id="pr-wh" name="warehouse">{% for w in warehouses %}<option value="{{ w.id }}" {% if p|get:'warehouse'|stringformat:'s' == w.id|stringformat:'s' %}selected{% endif %}>{{ w.name }}</option>{% endfor %}</select></div>
+        <div class="ac-field s4"><label for="pr-note">توضیحات <span class="muted">(اختیاری)</span></label><input class="ac-in" id="pr-note" name="note" maxlength="300" value="{{ p|get:'note' }}"></div>
+    </div>
+    {% if error %}<div class="ac-merr" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}
+    {% if estimate %}
+    <h3 class="ac-sec-title">برآورد</h3>
+    <div class="ac-lines"><table>
+        <thead><tr><th>ماده اولیه</th><th>لازم</th><th>موجود</th><th>کمبود</th><th>میانگین بها</th></tr></thead>
+        <tbody>{% for r in estimate.rows %}<tr{% if r.short %} class="over"{% endif %}><td>{{ r.product.name }}</td><td class="num-cell">{{ r.need|floatformat:"-3"|fa }}</td><td class="num-cell">{{ r.have|floatformat:"-3"|fa }}</td><td class="num-cell">{% if r.short %}{{ r.short|floatformat:"-3"|fa }}{% endif %}</td><td class="num-cell">{{ r.avg|floatformat:0|fa }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    <p class="muted" style="margin:8px 0">تولید: <b>{{ estimate.output|floatformat:"-3"|fa }}</b> {{ formula.product.unit }} · بهای مواد: <b>{{ estimate.cost|rial }}</b> ریال · بهای هر واحد: <b>{{ estimate.unit_cost|floatformat:0|fa }}</b> ریال · با موجودی فعلی حداکثر <b>{{ estimate.possible_batches|fa }}</b> نوبت ممکن است.</p>
+    {% endif %}
+    <div class="ac-foot">
+        <button type="button" class="ac-btn" data-acc-close>انصراف</button>
+        <button type="submit" name="preview" value="1" class="ac-btn"><i class="fas fa-calculator" aria-hidden="true"></i>برآورد</button>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-industry" aria-hidden="true"></i>ثبت تولید</button>
+    </div>
+</form>

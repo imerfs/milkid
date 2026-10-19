@@ -1,0 +1,35 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' %}
+<form method="post" hx-post="{{ action }}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" data-trade-form data-price="{{ price_kind }}" novalidate>
+    {% csrf_token %}
+    <div class="ac-fgrid">
+        {% for f, opts in fields %}
+        {% if f.kind == 'bool' %}
+        <div class="ac-field s{{ f.size }}"><label><input type="checkbox" name="{{ f.name }}" {% if p|get:f.name %}checked{% endif %}> {{ f.label }}</label></div>
+        {% else %}
+        <div class="ac-field s{{ f.size }}"><label for="tf-{{ f.name }}">{{ f.label }}{% if not f.required %} <span class="muted">(اختیاری)</span>{% endif %}</label>
+            {% if f.kind == 'select' or f.kind == 'fk' %}
+            <select class="ac-in" id="tf-{{ f.name }}" name="{{ f.name }}">{% if not f.required %}<option value="">—</option>{% else %}<option value="">انتخاب کنید</option>{% endif %}{% for k, label in opts %}<option value="{{ k }}" {% if p|get:f.name|stringformat:'s' == k|stringformat:'s' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            {% elif f.kind == 'date' %}<input class="ac-in" id="tf-{{ f.name }}" name="{{ f.name }}" dir="ltr" placeholder="۱۴۰۴/۰۲/۱۱" value="{{ p|get:f.name }}">
+            {% elif f.kind == 'amount' or f.kind == 'pct' %}<input class="ac-in" id="tf-{{ f.name }}" name="{{ f.name }}" inputmode="decimal" dir="ltr" value="{{ p|get:f.name }}" {% if f.name == 'discount' %}data-trade-discount{% elif f.name == 'tax' %}data-trade-tax{% endif %}>
+            {% else %}<input class="ac-in" id="tf-{{ f.name }}" name="{{ f.name }}" maxlength="{{ f.maxlength }}" value="{{ p|get:f.name }}">{% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <div class="ac-lines">
+        <table data-trade-lines>
+            <thead><tr>{% for name, label, kind in columns %}<th>{{ label }}</th>{% endfor %}{% if show_totals %}<th>جمع ردیف</th>{% endif %}<th></th></tr></thead>
+            <tbody>{% for r in rows %}{% include 'main/accounting/panel/_trade_line.html' %}{% endfor %}</tbody>
+            {% if show_totals %}<tfoot><tr><td colspan="{{ columns|length }}">جمع ردیف‌ها</td><td class="num-cell" data-trade-subtotal>۰</td><td></td></tr></tfoot>{% endif %}
+        </table>
+    </div>
+    <template data-trade-template>{% include 'main/accounting/panel/_trade_line.html' with r=empty %}</template>
+    <div class="ac-foot" style="justify-content:flex-start">
+        <button type="button" class="ac-btn ac-btn-sm" data-trade-add><i class="fas fa-plus" aria-hidden="true"></i>ردیف جدید</button>
+        {% if hint %}<span class="ac-hint" style="margin:0">{{ hint }}</span>{% endif %}
+        <span style="flex:1"></span>
+        <button type="button" class="ac-btn" data-acc-close>انصراف</button>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-floppy-disk" aria-hidden="true"></i>{{ submit }}</button>
+    </div>
+</form>

@@ -9,8 +9,8 @@ from decimal import Decimal
 import jdatetime
 
 from main.accounting import ledger
-from main.models import (Bill, BillPayment, Contract, ContractStatement, Installment, InstallmentPlan, PayableDocument,
-                         PayrollSlip, TransportIncome, Voucher, VoucherLine)
+from main.models import (Bill, BillPayment, Contract, ContractStatement, Installment, InstallmentPlan, Invoice, InvoiceLine,
+                         PayableDocument, PayrollSlip, StockMove, TransportIncome, Voucher, VoucherLine)
 from main.models_payroll import CALC_GROUPS
 from main.office.errors import Invalid
 
@@ -171,6 +171,48 @@ DATASETS = {
             'month': ('ماه', ['date'], lambda r: jalali_month(r['date'])),
         },
         'measures': {'amount': ('مبلغ', 'amount', True), 'count': ('تعداد', None, False)},
+    },
+    'invoices': {
+        'label': 'فاکتورها',
+        'queryset': lambda muni, year, final: Invoice.objects.filter(municipality=muni, fiscal_year=year, status='issued'),
+        'date': 'date',
+        'dimensions': {
+            'kind': ('نوع فاکتور', ['kind'], lambda r: _choice(Invoice.KINDS)(r['kind'])),
+            'party': ('طرف حساب', ['party__name'], _text('party__name')),
+            'visitor': ('ویزیتور', ['visitor'], lambda r: r['visitor'] or 'بدون ویزیتور'),
+            'warehouse': ('انبار', ['warehouse__name'], _text('warehouse__name')),
+            'month': ('ماه', ['date'], lambda r: jalali_month(r['date'])),
+        },
+        'measures': {'total': ('مبلغ فاکتور', 'total', True), 'subtotal': ('جمع ردیف‌ها', 'subtotal', True), 'discount': ('تخفیف', 'discount', True),
+                     'tax': ('مالیات', 'tax', True), 'count': ('تعداد فاکتور', None, False)},
+    },
+    'invoice_lines': {
+        'label': 'ردیف‌های فاکتور',
+        'queryset': lambda muni, year, final: InvoiceLine.objects.filter(invoice__municipality=muni, invoice__fiscal_year=year,
+                                                                         invoice__status='issued'),
+        'date': 'invoice__date',
+        'dimensions': {
+            'product': ('کالا', ['product__code', 'product__name'], _text('product__code', 'product__name')),
+            'category': ('دسته کالا', ['product__category'], lambda r: r['product__category'] or 'بدون دسته'),
+            'kind': ('نوع فاکتور', ['invoice__kind'], lambda r: _choice(Invoice.KINDS)(r['invoice__kind'])),
+            'party': ('طرف حساب', ['invoice__party__name'], _text('invoice__party__name')),
+            'visitor': ('ویزیتور', ['invoice__visitor'], lambda r: r['invoice__visitor'] or 'بدون ویزیتور'),
+            'month': ('ماه', ['invoice__date'], lambda r: jalali_month(r['invoice__date'])),
+        },
+        'measures': {'total': ('مبلغ ردیف', 'total', True), 'qty': ('تعداد', 'qty', False), 'discount': ('تخفیف ردیف', 'discount', True),
+                     'count': ('تعداد ردیف', None, False)},
+    },
+    'stock_moves': {
+        'label': 'گردش انبار',
+        'queryset': lambda muni, year, final: StockMove.objects.filter(municipality=muni, date__gte=year.start_date, date__lte=year.end_date),
+        'date': 'date',
+        'dimensions': {
+            'product': ('کالا', ['product__code', 'product__name'], _text('product__code', 'product__name')),
+            'warehouse': ('انبار', ['warehouse__name'], _text('warehouse__name')),
+            'kind': ('نوع گردش', ['kind'], lambda r: _choice(StockMove.KINDS)(r['kind'])),
+            'month': ('ماه', ['date'], lambda r: jalali_month(r['date'])),
+        },
+        'measures': {'qty': ('مقدار (ورود مثبت، خروج منفی)', 'qty', False), 'count': ('تعداد گردش', None, False)},
     },
     'payroll': {
         'label': 'فیش‌های حقوق',

@@ -1,0 +1,46 @@
+{% load accounting_tags jalali_tags %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>چاپ {{ inv.get_kind_display }} {{ inv.number }}</title>
+    <style>
+        @page { size: {{ paper_size }}; margin: 8mm; }
+        body { font-family: Vazirmatn, Tahoma, sans-serif; margin: 0; padding: 16px; color: #111; font-size: 13px; }
+        .bar { margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .sheet { max-width: 190mm; }
+        h1 { font-size: 17px; margin: 0 0 4px; }
+        table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+        th, td { border: 1px solid #999; padding: 3px 6px; text-align: right; }
+        td.n { text-align: left; direction: ltr; }
+        .row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .big { font-size: 16px; font-weight: 700; }
+        @media print { .bar { display: none; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <button type="button" onclick="window.print()">چاپ</button>
+        <form method="get"><label>اندازه کاغذ <select name="paper" onchange="this.form.submit()">{% for k, label in papers %}<option value="{{ k }}" {% if k == paper %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></form>
+    </div>
+    <div class="sheet">
+        <h1>{{ inv.get_kind_display }} شماره {{ inv.number|fa }}</h1>
+        <div class="row"><span>{{ muni.name }}</span><span>تاریخ: {{ inv.date|jalali_date|fa }}</span></div>
+        <div class="row"><span>طرف حساب: <b>{{ inv.party.name }}</b></span>{% if inv.visitor %}<span>ویزیتور: {{ inv.visitor }}</span>{% endif %}</div>
+        <table>
+            <thead><tr><th>#</th><th>کالا</th><th>تعداد</th><th>قیمت واحد</th><th>تخفیف</th><th>جمع</th></tr></thead>
+            <tbody>{% for l in lines %}<tr><td>{{ l.row|fa }}</td><td>{{ l.product.name }}</td><td class="n">{{ l.qty|floatformat:"-3"|fa }}</td><td class="n">{{ l.unit_price|rial }}</td><td class="n">{{ l.discount|rial }}</td><td class="n">{{ l.total|rial }}</td></tr>{% endfor %}</tbody>
+            <tfoot>
+                <tr><td colspan="5">جمع ردیف‌ها</td><td class="n">{{ inv.subtotal|rial }}</td></tr>
+                {% if inv.discount %}<tr><td colspan="5">تخفیف</td><td class="n">{{ inv.discount|rial }}</td></tr>{% endif %}
+                {% if inv.tax %}<tr><td colspan="5">مالیات بر ارزش افزوده</td><td class="n">{{ inv.tax|rial }}</td></tr>{% endif %}
+                <tr><td colspan="5" class="big">مبلغ قابل پرداخت (ریال)</td><td class="n big">{{ inv.total|rial }}</td></tr>
+            </tfoot>
+        </table>
+        <p>به حروف: {{ inv.total|words }} ریال</p>
+        {% if paid %}<p>پرداخت‌شده: {{ paid|rial }} ریال</p>{% endif %}
+        {% if inv.note %}<p class="muted">{{ inv.note }}</p>{% endif %}
+    </div>
+</body>
+</html>

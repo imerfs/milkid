@@ -27,6 +27,7 @@ AREAS = [
                                   'peidi', 'prun', 'psettings')),
     ('master', 'طرف‌حساب‌ها، سرفصل‌ها و تنظیمات مالی', ('parties', 'accounts', 'settings')),
     ('assets', 'دارایی‌های ثابت', ('assets',)),
+    ('trade', 'بازرگانی: کالا، فاکتور، انبار، تولید و امانی', ('trade_products', 'trade_invoices', 'trade_pos', 'trade_stock', 'trade_docs', 'trade_production', 'trade_consign', 'trade_profit')),
     ('yearend', 'سال مالی، عملیات پایان سال و مغایرت‌گیری', ('setup', 'yearend', 'recon')),
     ('controls', 'قفل تاریخ، کنترل داده و پشتیبان', ('controls', 'backup')),
 ]
@@ -48,7 +49,7 @@ _PREFIXES = [
     ('acc_p_mission', 'payroll'), ('acc_p_special', 'payroll'), ('acc_p_run', 'payroll'), ('acc_p_slip', 'payroll'),
     ('acc_p_worker', 'payroll'), ('acc_p_eidi', 'payroll'), ('acc_p_paysettings', 'payroll'), ('acc_p_paytitles', 'payroll'),
     ('acc_p_party', 'master'), ('acc_p_account', 'master'), ('acc_p_setting', 'master'), ('acc_parties', 'master'),
-    ('acc_accounts', 'master'), ('acc_p_asset', 'assets'), ('acc_p_seed', 'yearend'), ('acc_seed', 'yearend'),
+    ('acc_accounts', 'master'), ('acc_p_asset', 'assets'), ('acc_p_trade', 'trade'), ('acc_p_seed', 'yearend'), ('acc_seed', 'yearend'),
     ('acc_p_year', 'yearend'), ('acc_p_yearend', 'yearend'), ('acc_home', 'yearend'), ('acc_p_recon', 'yearend'),
     ('acc_p_lock', 'controls'), ('acc_p_integrity', 'controls'), ('acc_p_backup', 'controls'), ('acc_p_letter', 'vouchers'),
 ]

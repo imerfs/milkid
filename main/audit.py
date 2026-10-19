@@ -18,7 +18,8 @@ _muted = contextvars.ContextVar('audit_muted', default=False)
 # Models whose changes are recorded (accounting, income, finance and payroll data, plus the controls themselves)
 AUDITED = ('FiscalYear', 'Account', 'Party', 'CostCenter', 'Voucher', 'BudgetLine', 'Bill', 'BillPayment', 'CreditProvision',
            'Contract', 'ContractStatement', 'Guarantee', 'PayableDocument', 'InstallmentPlan', 'Installment', 'TransportIncome',
-           'Employee', 'EmployeeDebt', 'PayrollRun', 'DailyWorker', 'PayrollSettings', 'AccountingLock', 'AccessRule', 'Asset')
+           'Employee', 'EmployeeDebt', 'PayrollRun', 'DailyWorker', 'PayrollSettings', 'AccountingLock', 'AccessRule', 'Asset', 'Product', 'Warehouse', 'Invoice', 'InvoicePayment', 'StockDoc',
+           'ProductionRun', 'Consignment', 'TradeSettings')
 SKIP_FIELDS = {'updated_at', 'set_at', 'modified_at'}
 MAX_VALUE = 120
 

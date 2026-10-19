@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from main.accounting import access_levels, ledger
 from main.accounting.parse import digits, jalali_str
-from main.models import Account, Bill, Contract, Installment, InstallmentPlan, PayableDocument, Party, Voucher
+from main.models import Account, Bill, Contract, Installment, InstallmentPlan, Invoice, PayableDocument, Party, Product, Voucher
 
 LIMIT = 5
 MIN_LENGTH = 2
@@ -76,4 +76,14 @@ def run(actor, query):
             out.append({'kind': 'چک دریافتی', 'label': f'{i.series} {i.serial} · {i.owner_name or i.plan.party.name}'.strip(),
                         'sub': f'{i.amount:,} ریال · {i.get_position_display() or "—"}', 'action': 'modal',
                         'url': reverse('main:acc_p_cheque_detail', args=[i.id])})
+    if allowed('trade'):
+        for p in Product.objects.filter(Q(name__icontains=text) | Q(code__icontains=text) | Q(barcode__startswith=text), municipality=muni)[:LIMIT]:
+            out.append({'kind': 'کالا', 'label': f'{p.code} - {p.name}', 'sub': f'{p.sell_price:,} ریال', 'action': 'modal',
+                        'url': reverse('main:acc_p_trade_kardex', args=[p.id])})
+        match = Q(party__name__icontains=text)
+        if numeric:
+            match |= Q(number=int(number))
+        for inv in Invoice.objects.filter(match, municipality=muni).select_related('party').order_by('-fiscal_year__year', '-number')[:LIMIT]:
+            out.append({'kind': inv.get_kind_display(), 'label': f'{inv.get_kind_display()} {inv.number} · {inv.party.name}',
+                        'sub': f'{inv.total:,} ریال', 'action': 'modal', 'url': reverse('main:acc_p_trade_invoice', args=[inv.id])})
     return out

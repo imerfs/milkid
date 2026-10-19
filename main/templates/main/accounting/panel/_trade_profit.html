@@ -1,0 +1,32 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="trade_profit">
+        <label class="ac-field" style="margin:0"><span class="ac-sr">از تاریخ</span><input class="ac-in" name="date_from" dir="ltr" placeholder="از ۱۴۰۴/۰۱/۰۱" value="{{ g.date_from }}" style="width:130px"></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="date_to" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ g.date_to }}" style="width:130px"></label>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>اعمال</button>
+        <a class="ac-btn ac-spaced" href="{% url 'main:acc_p_trade_profit_export' year.id %}?{{ export_query }}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
+        {% include 'main/accounting/panel/_print_button.html' %}
+    </form>
+    {% if profit_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ profit_error }}</div>{% else %}
+    <p class="muted" style="padding:8px 16px;margin:0;font-size:12.5px">سود ناخالص هر کالا: فروش خالص (پس از تخفیف) منهای بهای تمام‌شده به روش میانگین موزون؛ برگشت از فروش کم می‌شود.</p>
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>کد</th><th>کالا</th><th>تعداد فروش</th><th>فروش خالص</th><th>بهای تمام‌شده</th><th>سود ناخالص</th><th>حاشیه سود</th></tr></thead>
+        <tbody>
+        {% for r in profit_rows %}
+            <tr><td class="muted nw" dir="ltr">{{ r.product.code }}</td><td>{{ r.product.name }}</td><td class="num-cell">{{ r.qty|floatformat:"-3"|fa }}</td><td class="num-cell">{{ r.revenue|rial }}</td><td class="num-cell">{{ r.cost|rial }}</td>
+                <td class="num-cell {% if r.profit < 0 %}ac-bad-text{% endif %}">{{ r.profit|rial }}</td><td class="num-cell">{% if r.margin is not None %}{{ r.margin|fa }}٪{% else %}—{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="7"><div class="ac-empty"><span class="eic"><i class="fas fa-chart-line" aria-hidden="true"></i></span><h4>فروشی در این بازه ثبت نشده است</h4></div></td></tr>{% endfor %}
+        </tbody>
+        <tfoot><tr><td></td><td>جمع</td><td></td><td class="num-cell">{{ profit_totals.revenue|rial }}</td><td class="num-cell">{{ profit_totals.cost|rial }}</td><td class="num-cell">{{ profit_totals.profit|rial }}</td><td></td></tr></tfoot>
+    </table></div>
+    {% endif %}
+</div>
+{% if not profit_error %}
+<div class="ac-grid2" style="margin-top:14px">
+    <div class="ac-card"><div class="ac-card-head"><h2 class="ac-card-title">فروش به تفکیک ویزیتور</h2></div>
+        <ul class="ac-list">{% for name, total in by_visitor %}<li><span>{{ name|default:'—' }}</span><b>{{ total|rial }}</b></li>{% empty %}<li class="muted" style="justify-content:center">داده‌ای نیست.</li>{% endfor %}</ul></div>
+    <div class="ac-card"><div class="ac-card-head"><h2 class="ac-card-title">فاکتور به تفکیک طرف حساب</h2></div>
+        <ul class="ac-list">{% for name, total in by_party %}<li><span>{{ name }}</span><b>{{ total|rial }}</b></li>{% empty %}<li class="muted" style="justify-content:center">داده‌ای نیست.</li>{% endfor %}</ul></div>
+</div>
+{% endif %}

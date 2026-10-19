@@ -32,7 +32,7 @@ from main.office.roles import is_admin
 
 FORMAT, VERSION = 'melkid-accounting-backup', 1
 MODULES = {'main.models_accounting', 'main.models_finance', 'main.models_income', 'main.models_payroll', 'main.models_controls',
-           'main.models_assets', 'main.models_audit', 'main.models_archive'}
+           'main.models_assets', 'main.models_audit', 'main.models_archive', 'main.models_trade'}
 EXCLUDED = {'AuditEvent', 'BackupFile'}
 AUTO_KEEP = getattr(settings, 'ACCOUNTING_BACKUP_KEEP', 20)
 MAX_UPLOAD = 60 * 1024 * 1024
