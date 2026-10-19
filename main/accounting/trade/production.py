@@ -91,7 +91,7 @@ def get_run(actor, pk):
     return _own(muni, ProductionRun.objects.filter(pk=pk).select_related('formula__product', 'warehouse', 'fiscal_year').first())
 
 
-def run_production(actor, year, formula, batches, on, *, warehouse=None, note=''):
+def run_production(actor, year, formula, batches, on, *, warehouse=None, note='', lot='', expiry=None):
     muni = municipality_of(actor)
     stockdocs.check_year_open(muni, year, on)
     _own(muni, formula)
@@ -110,10 +110,14 @@ def run_production(actor, year, formula, batches, on, *, warehouse=None, note=''
         unit_cost = cost / output
         run = ProductionRun.objects.create(
             municipality=muni, fiscal_year=year, number=stockdocs.next_number(ProductionRun, muni, year), formula=formula, batches=batches,
-            date=on, warehouse=warehouse, unit_cost=unit_cost, note=_text(note, 'توضیحات', required=False), created_by=actor)
+            date=on, warehouse=warehouse, unit_cost=unit_cost, note=_text(note, 'توضیحات', required=False), created_by=actor,
+            expiry=expiry or None)
+        run.lot = _text(lot or '', 'سری ساخت', required=False)[:40] or f'{year.year}-{run.number}'
+        run.save(update_fields=['lot'])
         for line in lines:
             inventory.add_move(muni, line.product, warehouse, on, -(line.qty * batches), 'production_out', production=run)
-        inventory.add_move(muni, formula.product, warehouse, on, output, 'production_in', unit_cost=unit_cost, production=run)
+        inventory.add_move(muni, formula.product, warehouse, on, output, 'production_in', unit_cost=unit_cost, production=run, lot=run.lot,
+                           expiry=run.expiry)
     return run
 
 

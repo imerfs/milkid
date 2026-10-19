@@ -1,4 +1,4 @@
-{% load accounting_tags %}
+{% load accounting_tags jalali_tags %}
 <div class="ac-card">
     <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit, change from:select, change from:input[type=checkbox]" style="flex-wrap:wrap;gap:10px" novalidate>
         <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="trade_stock">
@@ -26,3 +26,14 @@
         <tfoot><tr><td></td><td>جمع ارزش موجودی</td><td colspan="3"></td><td class="num-cell">{{ stock_total|rial }}</td><td></td></tr></tfoot>
     </table></div>
 </div>
+{% if lot_rows %}
+<div class="ac-card" style="margin-top:14px">
+    <div class="ac-card-head"><h2 class="ac-card-title">سری ساخت و تاریخ انقضا</h2><span class="muted" style="font-size:12px">نزدیک‌ترین انقضا اول؛ فروش و مصرف از همین ترتیب کم می‌شود.</span></div>
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>کالا</th><th>سری ساخت</th><th>تاریخ انقضا</th><th>موجودی</th><th>وضعیت</th></tr></thead>
+        <tbody>{% for r in lot_rows %}<tr{% if r.state == 'expired' %} class="over"{% endif %}><td>{{ r.product.name }}</td><td dir="ltr" class="nw">{{ r.lot|default:'—' }}</td>
+            <td class="nw">{% if r.expiry %}{{ r.expiry|jalali_date|fa }}{% else %}—{% endif %}</td><td class="num-cell">{{ r.qty|floatformat:"-3"|fa }} {{ r.product.unit }}</td>
+            <td>{% if r.state == 'expired' %}<span class="ac-st bad">منقضی‌شده</span>{% elif r.state == 'soon' %}<span class="ac-st warn">نزدیک انقضا</span>{% else %}<span class="ac-st ok">سالم</span>{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endif %}

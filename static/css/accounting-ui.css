@@ -329,3 +329,13 @@ select.ac-in { cursor: pointer; }
     .ac-table-wrap { overflow: visible !important; }
     table { font-size: 11px; }
 }
+
+/* point of sale: the products to pick from */
+.ac-pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; padding: 4px 16px 12px; max-height: 240px; overflow-y: auto; }
+.ac-pos-item { display: flex; flex-direction: column; gap: 2px; text-align: start; padding: 9px 12px; border-radius: 14px; background: var(--paper); box-shadow: var(--sh-card); font-size: 12.5px; color: var(--slate); cursor: pointer; border: 0; transition: background .15s; }
+.ac-pos-item:hover { background: var(--mist); }
+.ac-pos-item b { color: var(--ink); font-size: 13px; font-weight: 600; }
+.ac-pos-item.out { opacity: .55; }
+.ac-pos-item em { font-style: normal; font-size: 11px; color: var(--slate); }
+.ac-pos-item em.soon { color: #b45309; }
+.ac-pos-item em.expired { color: #b91c1c; font-weight: 600; }

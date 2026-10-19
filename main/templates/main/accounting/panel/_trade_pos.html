@@ -2,8 +2,10 @@
 <div class="ac-card" data-pos data-vat="{{ vat_percent }}">
     <div class="ac-tools">
         <label class="ac-searchbox" style="flex:1;max-width:520px"><span class="ac-sr">بارکد یا نام کالا</span><i class="fas fa-barcode" aria-hidden="true"></i><input type="search" data-pos-search placeholder="بارکد را اسکن کنید یا نام کالا را بنویسید و Enter بزنید..." autocomplete="off" autofocus></label>
-        <span class="muted" style="font-size:12px">{{ pos_products|length|fa }} کالای فعال</span>
+        <label class="muted" style="font-size:12px"><input type="checkbox" data-pos-all> نمایش کالاهای ناموجود</label>
+        <span class="muted" style="font-size:12px" data-pos-count></span>
     </div>
+    <div class="ac-pos-grid" data-pos-grid aria-label="کالاهای موجود"></div>
     <div class="ac-lines">
         <table>
             <thead><tr><th>کالا</th><th>موجودی</th><th>تعداد</th><th>قیمت واحد (ریال)</th><th>جمع</th><th></th></tr></thead>

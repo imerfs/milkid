@@ -21,7 +21,8 @@
         <table data-trade-lines>
             <thead><tr>{% for name, label, kind in columns %}<th>{{ label }}</th>{% endfor %}{% if show_totals %}<th>جمع ردیف</th>{% endif %}<th></th></tr></thead>
             <tbody>{% for r in rows %}{% include 'main/accounting/panel/_trade_line.html' %}{% endfor %}</tbody>
-            {% if show_totals %}<tfoot><tr><td colspan="{{ columns|length }}">جمع ردیف‌ها</td><td class="num-cell" data-trade-subtotal>۰</td><td></td></tr></tfoot>{% endif %}
+            {% if show_totals %}<tfoot><tr><td colspan="{{ columns|length }}">جمع ردیف‌ها</td><td class="num-cell" data-trade-subtotal>۰</td><td></td></tr>
+            {% if price_kind == 'buy' and columns.3.0 == 'margin' %}<tr><td colspan="{{ columns|length }}">سود پیش‌بینی‌شده با فروش همه‌ی اقلام به قیمت فروش (ریال)</td><td class="num-cell" data-trade-profit>۰</td><td></td></tr>{% endif %}</tfoot>{% endif %}
         </table>
     </div>
     <template data-trade-template>{% include 'main/accounting/panel/_trade_line.html' with r=empty %}</template>

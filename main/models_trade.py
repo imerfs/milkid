@@ -103,6 +103,8 @@ class InvoiceLine(models.Model):
     unit_price = models.DecimalField(**MONEY)
     discount = models.DecimalField(default=0, **MONEY)
     total = models.DecimalField(**MONEY)
+    lot = models.CharField(max_length=40, blank=True, verbose_name='سری ساخت')
+    expiry = models.DateField(null=True, blank=True, verbose_name='تاریخ انقضا')
 
     class Meta:
         ordering = ['invoice', 'row']
@@ -158,6 +160,8 @@ class StockDocLine(models.Model):
     qty = models.DecimalField(**QTY)                       # receipt/issue/transfer: positive; adjust: signed; stocktake: difference
     unit_cost = models.DecimalField(default=0, **COST)     # receipt cost; outflows use the weighted average
     counted = models.DecimalField(null=True, blank=True, **QTY)   # stocktake: what was counted (qty = counted - book)
+    lot = models.CharField(max_length=40, blank=True, verbose_name='سری ساخت')
+    expiry = models.DateField(null=True, blank=True, verbose_name='تاریخ انقضا')
 
     class Meta:
         ordering = ['doc', 'row']
@@ -198,6 +202,8 @@ class ProductionRun(models.Model):
     date = models.DateField()
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='production_runs')
     unit_cost = models.DecimalField(default=0, **COST)    # cost of one unit of output, from the components' weighted averages
+    lot = models.CharField(max_length=40, blank=True, verbose_name='سری ساخت')
+    expiry = models.DateField(null=True, blank=True, verbose_name='تاریخ انقضا')
     note = models.CharField(max_length=300, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -255,6 +261,8 @@ class StockMove(models.Model):
     qty = models.DecimalField(**QTY)                       # signed: + in, - out
     unit_cost = models.DecimalField(default=0, **COST)     # inflows only; outflows leave at the weighted average
     kind = models.CharField(max_length=16, choices=KINDS)
+    lot = models.CharField(max_length=40, blank=True)     # production series; blank = untracked
+    expiry = models.DateField(null=True, blank=True)
     invoice_line = models.ForeignKey(InvoiceLine, on_delete=models.CASCADE, null=True, blank=True, related_name='moves')
     doc = models.ForeignKey(StockDoc, on_delete=models.CASCADE, null=True, blank=True, related_name='moves')
     production = models.ForeignKey(ProductionRun, on_delete=models.CASCADE, null=True, blank=True, related_name='moves')

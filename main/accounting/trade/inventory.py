@@ -139,6 +139,18 @@ def update_product(actor, product, **values):
     return product
 
 
+def update_prices(actor, items):
+    """After a purchase: the new buying price and, when given, the selling price of each product ``(product, buy, sell)``."""
+    muni = municipality_of(actor)
+    for product, buy, sell in items:
+        _own(muni, product)
+        if buy:
+            product.buy_price = buy
+        if sell:
+            product.sell_price = sell
+        product.save(update_fields=['buy_price', 'sell_price'])
+
+
 def delete_product(actor, product):
     muni = municipality_of(actor)
     _own(muni, product)
@@ -207,10 +219,78 @@ def check_available(muni, product, warehouse, qty):
         raise Conflict(f'موجودی «{product.name}» در انبار «{warehouse.name}» کافی نیست (موجود {have.normalize():f}، لازم {qty.normalize():f}).')
 
 
-def add_move(muni, product, warehouse, date, qty, kind, *, unit_cost=ZERO, **links):
-    """Write one move (qty signed). Callers have already checked ownership, dates and shortages."""
-    return StockMove.objects.create(municipality=muni, product=product, warehouse=warehouse, date=date, qty=qty, unit_cost=unit_cost,
-                                    kind=kind, **links)
+def lot_balances(muni, product=None, *, warehouse=None, upto=None):
+    """Quantity per (product, warehouse, series, expiry), positive balances only; ``untracked`` stock has a blank series."""
+    qs = StockMove.objects.filter(municipality=muni)
+    if product is not None:
+        qs = qs.filter(product=product)
+    if warehouse is not None:
+        qs = qs.filter(warehouse=warehouse)
+    if upto:
+        qs = qs.filter(date__lte=upto)
+    rows = qs.values('product_id', 'warehouse_id', 'lot', 'expiry').annotate(q=Sum('qty'))
+    return {(r['product_id'], r['warehouse_id'], r['lot'], r['expiry']): r['q'] for r in rows if r['q'] and r['q'] > 0}
+
+
+def allocate_out(muni, product, warehouse, qty, on):
+    """Which series an outflow takes from: those expiring first (expired ones last), then untracked stock.
+    Returns ``[(lot, expiry, qty)]``; whatever the series cannot cover goes out untracked (a permitted shortage)."""
+    balances = [(lot, expiry, q) for (_, _, lot, expiry), q in lot_balances(muni, product, warehouse=warehouse).items() if lot or expiry]
+    balances.sort(key=lambda b: (b[1] is not None and b[1] < on, b[1] is None, b[1] or on, b[0]))
+    left, out = qty, []
+    for lot, expiry, have in balances:
+        take = min(have, left)
+        if take > 0:
+            out.append((lot, expiry, take))
+            left -= take
+        if left <= 0:
+            break
+    if left > 0:
+        out.append(('', None, left))
+    return out
+
+
+def add_move(muni, product, warehouse, date, qty, kind, *, unit_cost=ZERO, lot='', expiry=None, **links):
+    """Write the move(s) for a quantity (signed). An inflow keeps its series and expiry; an outflow is split over the series
+    it takes from. Callers have already checked ownership, dates and shortages. Returns the moves written."""
+    if qty > 0:
+        return [StockMove.objects.create(municipality=muni, product=product, warehouse=warehouse, date=date, qty=qty, unit_cost=unit_cost,
+                                         kind=kind, lot=lot or '', expiry=expiry, **links)]
+    return [StockMove.objects.create(municipality=muni, product=product, warehouse=warehouse, date=date, qty=-part, unit_cost=unit_cost,
+                                     kind=kind, lot=part_lot, expiry=part_expiry, **links)
+            for part_lot, part_expiry, part in allocate_out(muni, product, warehouse, -qty, date)]
+
+
+def lot_report(actor, *, warehouse=None, soon_days=30, today=None):
+    """Series in stock, soonest expiry first: product, series, expiry, quantity and an expired / expiring-soon flag."""
+    from datetime import timedelta
+    from django.utils import timezone
+    muni = municipality_of(actor)
+    if warehouse is not None:
+        _own(muni, warehouse)
+    today = today or timezone.localdate()
+    products = {p.id: p for p in Product.objects.filter(municipality=muni)}
+    merged = defaultdict(lambda: ZERO)
+    for (pid, _, lot, expiry), q in lot_balances(muni, warehouse=warehouse).items():
+        if lot or expiry:
+            merged[(pid, lot, expiry)] += q
+    rows = []
+    for (pid, lot, expiry), q in merged.items():
+        state = None
+        if expiry is not None:
+            state = 'expired' if expiry < today else ('soon' if expiry <= today + timedelta(days=soon_days) else None)
+        rows.append({'product': products[pid], 'lot': lot, 'expiry': expiry, 'qty': q, 'state': state})
+    rows.sort(key=lambda r: (r['expiry'] is None, r['expiry'] or today, r['product'].code, r['lot']))
+    return rows
+
+
+def nearest_expiry(muni, warehouse=None):
+    """Earliest expiry among the series of each product that still have stock: ``{product_id: date}``."""
+    out = {}
+    for (pid, _, _, expiry) in lot_balances(muni, warehouse=warehouse):
+        if expiry is not None and (pid not in out or expiry < out[pid]):
+            out[pid] = expiry
+    return out
 
 
 def stock_report(actor, *, warehouse=None, upto=None, low_only=False):
