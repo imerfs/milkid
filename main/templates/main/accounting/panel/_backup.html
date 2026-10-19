@@ -1,0 +1,40 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-notice" role="status"><i class="fas fa-circle-info" aria-hidden="true" style="margin-top:5px"></i><span>نسخه پشتیبان شامل همه اطلاعات حسابداری همین دهیاری (سرفصل‌ها، اسناد، فیش‌ها، تقسیط، قراردادها، حقوق، دارایی‌ها و ...) است. لاگ ممیزی و پیوند نامه‌ها در آن نیست و تصویر اسناد فقط به‌صورت رکورد می‌آید. نسخه خودکار هم می‌تواند با دستور <code dir="ltr">manage.py backup_accounting</code> ساخته شود؛ {{ backup_keep|fa }} نسخه آخر خودکار نگه داشته می‌شود.</span></div>
+<div class="ac-card">
+    <div class="ac-tools">
+        <form hx-post="{% url 'main:acc_p_backup_create' %}" hx-swap="none" style="display:flex;gap:8px;flex:1">{% csrf_token %}
+            <label class="ac-field" style="margin:0;flex:1"><span class="ac-sr">توضیح</span><input class="ac-in" name="note" maxlength="200" placeholder="توضیح (اختیاری)"></label>
+            <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-database" aria-hidden="true"></i>ساخت نسخه پشتیبان</button>
+        </form>
+    </div>
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>زمان</th><th>نوع</th><th>ردیف‌ها</th><th>حجم</th><th>توضیح</th><th></th></tr></thead>
+        <tbody>
+        {% for b in backups %}
+            <tr><td class="nw">{{ b.created_at|jalali_date|fa }} <span class="muted" dir="ltr">{{ b.created_at|time:"H:i" }}</span></td>
+                <td><span class="ac-tag">{{ b.get_kind_display }}</span></td><td class="num-cell">{{ b.rows|rial }}</td>
+                <td class="num-cell">{{ b.size|filesizeformat }}</td><td class="muted">{{ b.note|default:"—" }}</td>
+                <td class="nw"><a class="ac-link" href="{% url 'main:acc_p_backup_download' b.id %}">دانلود</a>
+                {% if can_restore %}
+                    <form hx-post="{% url 'main:acc_p_backup_restore' %}" hx-swap="none" style="display:inline" hx-confirm="داده‌های فعلی حسابداری با این نسخه جایگزین می‌شود. ادامه می‌دهید؟">{% csrf_token %}<input type="hidden" name="backup_id" value="{{ b.id }}"><input type="hidden" name="confirm" value="{{ confirm_word }}"><button type="submit" class="ac-link">بازیابی</button></form>
+                    <form hx-post="{% url 'main:acc_p_backup_delete' b.id %}" hx-swap="none" style="display:inline" hx-confirm="این نسخه پشتیبان حذف شود؟">{% csrf_token %}<button type="submit" class="ac-link">حذف</button></form>
+                {% endif %}</td></tr>
+        {% empty %}
+            <tr><td colspan="6"><div class="ac-empty"><span class="eic"><i class="fas fa-database" aria-hidden="true"></i></span><h4>هنوز نسخه پشتیبانی ساخته نشده است</h4></div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% if can_restore %}
+<div class="ac-card" style="margin-top:14px">
+    <div class="ac-card-head"><h2 class="ac-card-title"><i class="fas fa-upload" aria-hidden="true"></i> بازیابی از فایل</h2></div>
+    <form hx-post="{% url 'main:acc_p_backup_restore' %}" hx-swap="none" hx-encoding="multipart/form-data" class="ac-box" hx-confirm="داده‌های فعلی حسابداری با فایل جایگزین می‌شود. ادامه می‌دهید؟">{% csrf_token %}
+        <p class="muted" style="margin:0 0 10px">فقط فایل پشتیبان همین دهیاری پذیرفته می‌شود. پیش از بازیابی یک نسخه ایمنی ساخته می‌شود.</p>
+        <div class="ac-fgrid">
+            <div class="ac-field s3"><label for="bk-file">فایل پشتیبان (.json.gz)</label><input class="ac-in" id="bk-file" type="file" name="file" accept=".gz,.json" required></div>
+            <div class="ac-field s1"><label for="bk-word">برای تایید بنویسید «{{ confirm_word }}»</label><input class="ac-in" id="bk-word" name="confirm" autocomplete="off" required></div>
+        </div>
+        <button type="submit" class="ac-btn ac-btn-bad"><i class="fas fa-rotate-left" aria-hidden="true"></i>بازیابی</button>
+    </form>
+</div>
+{% endif %}

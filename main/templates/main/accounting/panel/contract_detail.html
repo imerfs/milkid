@@ -49,4 +49,5 @@
         <button type="submit" class="ac-btn">اعمال</button>
     </form>
     {% endif %}
+    <div hx-get="{% url 'main:acc_p_letter_links' 'contract' c.id %}" hx-trigger="load" hx-swap="innerHTML" aria-live="polite"></div>
 </div>

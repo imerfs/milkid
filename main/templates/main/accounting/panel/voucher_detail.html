@@ -29,4 +29,5 @@
         <span style="flex:1"></span>
         <a class="ac-btn" href="{% url 'main:acc_voucher_detail' voucher.id %}"><i class="fas fa-up-right-from-square" aria-hidden="true"></i>صفحه کامل</a>
     </div>
+    <div hx-get="{% url 'main:acc_p_letter_links' 'voucher' voucher.id %}" hx-trigger="load" hx-swap="innerHTML" aria-live="polite"></div>
 </div>

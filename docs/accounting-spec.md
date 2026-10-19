@@ -127,3 +127,28 @@ Not built: credit provision (تامین اعتبار).
 Payroll, contracts, guarantees, treasury cheques, bank reconciliation, tax-system submission, voucher images: each is a module of
 its own and none is needed to answer «what came in, what went out, what is left of the budget». They stay documented above so the
 data model can grow into them without changing vouchers.
+
+## 7. Workspace features added from HesabYar
+
+Compared with the desktop accounting app HesabYar, the workspace gained (all in `main/accounting/`, one module each, tests in
+`main/tests/test_accounting_*.py`). Business-only parts of HesabYar (sales invoices, stock, production) were left out on purpose.
+
+| Feature | Module | Notes |
+|---|---|---|
+| Statement of resources and uses, balance sheet | `statements.py` | up to any date, final vouchers only on request, Excel export; clearing accounts 111/411 are not shown |
+| Trial balance by level (opening / turnover / ending) | `statements.py` | level = depth in the chart (1 = main groups); group accounts have a ledger of their descendants |
+| Year-end operations | `yearend.py` | temporary-accounts closing (against 410), closing voucher (against 411), opening voucher (against 111) with preview; replace-while-temporary; close/reopen year |
+| Date lock | `ledger.check_unlocked`, `controls.py` | no voucher on or before the date can be created, edited, finalized, reverted or deleted; mayor only |
+| Data integrity check | `integrity.py` | 11 read-only checks (unbalanced vouchers, group accounts with lines, bill/payment mismatch, year-end duplicates ...) |
+| Bank/cash reconciliation | `controls.py` | tick lines, compare ticked balance with the bank statement |
+| Configurable access levels | `access_levels.py` | none/view/edit per area for the accountant role; enforced by wrapping every URL of `url_groups/accounting.py` |
+| Audit trail | `main/audit.py` | signals + request middleware; creates, changes (field diff), deletes, sign-ins; mayor sees it |
+| Report builder / pivot analyser, charts | `builder.py`, `charts.py` | five datasets, Jalali months, Excel export |
+| Fixed assets | `assets.py` | straight-line or declining balance, yearly depreciation voucher, disposal voucher with gain/loss |
+| Tools, search, shortcuts | `tools.py`, `search.py`, `static/js/accounting-panel.js` | number in words, date conversion, loan table, calculator, global search (Ctrl+K), Alt/F-key shortcuts |
+| Printing | `print_cheque.html`, `print_slip.html` | cheque and deposit slip on A4/A5/cheque/80 mm; statements print with a chosen paper size |
+| Backups | `backup.py` | see docs/operations.md; includes letter links |
+| Letters linked to vouchers, contracts and plans | `letter_links.py` | only letters the user can open |
+
+Known limits: restore does not bring back scanned files (records only); access levels apply to the accountant role only; the
+fixed-asset chart accounts (211, 212, 6010401001) are created on demand from the assets tab.

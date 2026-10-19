@@ -26,6 +26,7 @@ from .accounting_audit import *
 from .accounting_analysis import *
 from .accounting_assets import *
 from .accounting_tools import *
+from .accounting_archive import *
 from .accounting_finance import *
 from .accounting_income import *
 from .accounting_reports import *

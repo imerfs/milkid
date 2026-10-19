@@ -13,6 +13,7 @@ from django.db.models.signals import post_delete, post_save, pre_save
 
 logger = logging.getLogger(__name__)
 _current = contextvars.ContextVar('audit_actor', default=None)
+_muted = contextvars.ContextVar('audit_muted', default=False)
 
 # Models whose changes are recorded (accounting, income, finance and payroll data, plus the controls themselves)
 AUDITED = ('FiscalYear', 'Account', 'Party', 'CostCenter', 'Voucher', 'BudgetLine', 'Bill', 'BillPayment', 'CreditProvision',
@@ -20,6 +21,16 @@ AUDITED = ('FiscalYear', 'Account', 'Party', 'CostCenter', 'Voucher', 'BudgetLin
            'Employee', 'EmployeeDebt', 'PayrollRun', 'DailyWorker', 'PayrollSettings', 'AccountingLock', 'AccessRule', 'Asset')
 SKIP_FIELDS = {'updated_at', 'set_at', 'modified_at'}
 MAX_VALUE = 120
+
+
+class muted:  # pylint: disable=invalid-name
+    """``with audit.muted():`` leaves out the per-row events of a bulk operation (restore); the caller records one summary."""
+
+    def __enter__(self):
+        self._token = _muted.set(True)
+
+    def __exit__(self, *exc):
+        _muted.reset(self._token)
 
 
 class AuditMiddleware:
@@ -94,7 +105,7 @@ def record(action, *, instance=None, user=None, username='', summary='', changes
 def _before_save(sender, instance, **kwargs):
     """Remember the stored values so ``_after_save`` can say what changed."""
     instance._audit_old = None
-    if instance.pk is None or kwargs.get('raw'):
+    if instance.pk is None or kwargs.get('raw') or _muted.get():
         return
     try:
         instance._audit_old = sender._base_manager.filter(pk=instance.pk).values().first()
@@ -103,7 +114,7 @@ def _before_save(sender, instance, **kwargs):
 
 
 def _after_save(sender, instance, created, **kwargs):
-    if kwargs.get('raw'):
+    if kwargs.get('raw') or _muted.get():
         return
     changes = {}
     old = getattr(instance, '_audit_old', None)
@@ -120,7 +131,8 @@ def _after_save(sender, instance, created, **kwargs):
 
 
 def _after_delete(sender, instance, **kwargs):
-    record('delete', instance=instance)
+    if not _muted.get():
+        record('delete', instance=instance)
 
 
 def _login(sender, request, user, **kwargs):

@@ -1,0 +1,19 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-box" data-letter-links>
+    <h3 class="ac-sec-title">نامه‌های مرتبط</h3>
+    <ul class="ac-list">
+        {% for l in links %}
+        <li><a class="ac-link" href="{% url 'main:letter_detail' l.letter_id %}" target="_blank" rel="noopener">{{ l.letter.number|default:'—'|fa }} · {{ l.letter.subject|truncatechars:60 }}</a>
+            <span class="muted" style="font-size:12px">{{ l.letter.sent_at|jalali_date|fa }}</span>
+            <form hx-post="{% url 'main:acc_p_letter_unlink' l.id %}" hx-target="closest [data-letter-links]" hx-swap="outerHTML" style="display:inline">{% csrf_token %}<button type="submit" class="ac-link" aria-label="حذف پیوند نامه">حذف پیوند</button></form></li>
+        {% empty %}
+        <li class="muted" style="justify-content:center">نامه‌ای پیوست نشده است.</li>
+        {% endfor %}
+    </ul>
+    {% if letters %}
+    <form hx-post="{% url 'main:acc_p_letter_link' kind obj.id %}" hx-target="closest [data-letter-links]" hx-swap="outerHTML" style="display:flex;gap:8px;margin-top:8px">{% csrf_token %}
+        <label class="ac-select" style="flex:1"><span class="ac-sr">نامه</span><select name="letter" required><option value="">پیوست یک نامه...</option>{% for letter in letters %}<option value="{{ letter.id }}">{{ letter.number|default:'—' }} · {{ letter.subject|truncatechars:50 }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <button type="submit" class="ac-btn">پیوست</button>
+    </form>
+    {% else %}<p class="muted" style="font-size:12px">نامه‌ای در دسترس شما برای پیوست نیست.</p>{% endif %}
+</div>

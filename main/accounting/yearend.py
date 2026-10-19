@@ -17,7 +17,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from main.accounting import ledger
+from main.accounting import backup, ledger
 from main.models import Account, FiscalYear, Voucher, VoucherLine
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.roles import is_admin
@@ -150,6 +150,8 @@ def issue(actor, year, kind):
     bad = _unbalanced(year)
     if bad:
         raise Conflict('اسناد بی‌حساب در این سال هست (' + '، '.join(str(v.number) for v in bad[:5]) + ')؛ ابتدا آن‌ها را اصلاح کنید.')
+    plan(actor, year, kind)                                   # fail early, before the safety backup is written
+    backup.create_for(muni, kind='before_yearend', note=f'پیش از صدور {TITLES[kind]} سال {year.year}', actor=actor)
     with transaction.atomic():
         data = plan(actor, year, kind)
         existing = data['existing']
@@ -170,6 +172,7 @@ def close_year(actor, year):
         raise Conflict('این سال قبلاً بسته شده است.')
     if Voucher.objects.filter(fiscal_year=year, deleted_at__isnull=True, status='temporary').exists():
         raise Conflict('هنوز سند موقت وجود دارد؛ همه اسناد باید قطعی شوند.')
+    backup.create_for(muni, kind='before_yearend', note=f'پیش از بستن سال {year.year}', actor=actor)
     year.is_closed = True
     year.save(update_fields=['is_closed'])
     return year

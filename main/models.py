@@ -867,6 +867,7 @@ from .models_property import *  # noqa: E402,F401,F403
 from .models_controls import *  # noqa: E402,F401,F403
 from .models_audit import *  # noqa: E402,F401,F403
 from .models_assets import *  # noqa: E402,F401,F403
+from .models_archive import *  # noqa: E402,F401,F403
 
 
 class BlockedIP(models.Model):

@@ -305,6 +305,19 @@
         }).catch(function () { out.textContent = 'اتصال به سرور برقرار نشد.'; });
     }, true);
 
+    // ---------- printing: the chosen paper size becomes the page size, the workspace chrome is hidden by print CSS ----------
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-print]');
+        if (!btn) return;
+        var holder = btn.closest('.ac-printer'), select = holder && holder.querySelector('[data-print-paper]');
+        var size = select ? select.value : 'A4';
+        if (['A4', 'A5', '80mm auto'].indexOf(size) === -1) size = 'A4';
+        var style = document.getElementById('ac-page-style');
+        if (!style) { style = document.createElement('style'); style.id = 'ac-page-style'; document.head.appendChild(style); }
+        style.textContent = '@page { size: ' + size + '; margin: 8mm; }';
+        window.print();
+    });
+
     // ---------- keyboard shortcuts ----------
     var TAB_KEYS = { Digit1: 'overview', Digit2: 'vouchers', Digit3: 'bills', Digit4: 'budget', Digit5: 'trial', Digit6: 'statements',
                      Digit7: 'reports', Digit8: 'builder', Digit9: 'charts' };

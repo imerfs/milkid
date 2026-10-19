@@ -9,17 +9,22 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from main.validators import validate_file_content, validate_file_extension, validate_file_size
 
 
 class UploadValidationMiddleware:
+    # Uploads that are only parsed, never stored or served: the accounting backup to restore (a .json.gz the mayor
+    # produced). The view checks the role, the envelope and every row itself (main/accounting/backup.py).
+    PARSE_ONLY = ('main:acc_p_backup_restore',)
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.method in ('POST', 'PUT', 'PATCH') and (request.content_type or '').startswith('multipart/'):
+        if request.method in ('POST', 'PUT', 'PATCH') and (request.content_type or '').startswith('multipart/')                 and request.path not in {reverse(name) for name in self.PARSE_ONLY}:
             for uploaded in self._files(request):
                 if not uploaded.name:
                     continue
