@@ -37,3 +37,10 @@ def words(value):
         return tools.number_to_words(int(value))
     except (TypeError, ValueError, Exception):
         return ''
+
+
+@register.simple_tag
+def acc_menu():
+    """The workspace menu (sidebar groups and phone chips), from the tab registry."""
+    from main.accounting import tabs
+    return tabs.menu()

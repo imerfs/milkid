@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from main.accounting import access_levels, bills, budget, chart, ledger, statements
+from main.accounting.tabs import TAB_LIST
 from main.accounting.parse import jalali_str, parse_amount, parse_jalali
 from main.models import Account, BillPayment, FiscalYear, Party, Payment, Voucher
 from main.office.errors import Invalid, OfficeError
@@ -21,66 +22,11 @@ from main.views.accounting_views import (
     PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines, new_account,
     new_party)
 
-YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'statements', 'yearend', 'recon', 'controls', 'access', 'audit', 'builder', 'charts', 'assets', 'backup', 'trade_products', 'trade_invoices', 'trade_pos', 'trade_stock', 'trade_docs', 'trade_production', 'trade_consign', 'trade_profit', 'credit', 'contracts', 'payables', 'images',
-             'statuschange', 'plans', 'received', 'transport', 'planimages', 'reports')
-PAYROLL_TABS = ('pstaff', 'pcalc', 'pattendance', 'pmission', 'pspecialallow', 'pspecialdebt', 'pmisc', 'pworkers', 'peidi', 'prun',
-                'psettings')
-TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings', 'tools') + PAYROLL_TABS
-# Tabs drawn by the generic register template (see main/views/accounting_finance.py)
-REGISTER_TABS = ('trade_products', 'trade_invoices', 'trade_docs', 'trade_consign', 'credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages') + PAYROLL_TABS
+TABS = tuple(t.key for t in TAB_LIST)
+YEAR_TABS = tuple(t.key for t in TAB_LIST if t.needs_year)
+REGISTER_TABS = tuple(t.key for t in TAB_LIST if t.register)     # drawn by the generic register template (main/views/accounting_finance.py)
 PANEL = 'main/accounting/panel/'
-# (key, label, icon, needs a fiscal year, page subtitle) in menu order
-TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت مالی سال جاری و کارهای باز، یک‌جا.'),
-            ('vouchers', 'اسناد حسابداری', 'file-invoice', True, 'ثبت، ویرایش و قطعی‌کردن اسناد.'),
-            ('bills', 'فیش‌های نقدی', 'receipt', True, 'صدور فیش و ثبت پرداخت‌ها.'),
-            ('budget', 'بودجه و عملکرد', 'chart-pie', True, 'بودجه مصوب در برابر عملکرد هر حساب.'),
-            ('trial', 'تراز آزمایشی', 'scale-balanced', True, 'جمع بدهکار و بستانکار همه حساب‌ها.'),
-            ('statements', 'صورت‌های مالی', 'file-invoice-dollar', True, 'صورت منابع و مصارف و ترازنامه تا تاریخ دلخواه.'),
-            ('yearend', 'عملیات سال مالی', 'flag-checkered', True, 'سند بستن حساب‌های موقت، اختتامیه، افتتاحیه و بستن سال.'),
-            ('recon', 'مغایرت‌گیری بانک', 'building-columns', True, 'تیک‌زدن گردش بانک و صندوق و مقایسه با صورت‌حساب بانک.'),
-            ('controls', 'قفل تاریخ و کنترل داده', 'shield-heart', True, 'قفل اسناد تا یک تاریخ و بررسی سلامت دفتر.'),
-            ('audit', 'لاگ ممیزی', 'clock-rotate-left', True, 'چه کسی چه چیزی را کی تغییر داده؛ ورود و خروج کاربران.'),
-            ('access', 'سطوح دسترسی حسابدار', 'user-lock', True, 'تعیین کنید حسابدار هر بخش را ببیند یا ویرایش کند.'),
-            ('builder', 'گزارش‌ساز و تحلیل‌گر', 'table-cells', True, 'گزارش دلخواه از اسناد، فیش‌ها و اقساط، به‌صورت جدول یا ماتریس، با خروجی اکسل.'),
-            ('charts', 'نمودارها', 'chart-column', True, 'منابع و مصارف ماهانه، بزرگ‌ترین حساب‌ها و بودجه در برابر عملکرد.'),
-            ('assets', 'دارایی‌های ثابت', 'building', True, 'ثبت دارایی، استهلاک سالانه با سند حسابداری و خروج یا فروش.'),
-            ('tools', 'ابزارها', 'screwdriver-wrench', False, 'ماشین‌حساب، عدد به حروف، تبدیل تاریخ و اقساط وام.'),
-            ('backup', 'پشتیبان‌گیری', 'database', True, 'نسخه پشتیبان از اطلاعات حسابداری دهیاری و بازیابی آن.'),
-            ('trade_products', 'کالاها', 'boxes-stacked', True, 'کالاها، قیمت‌ها و موجودی.'),
-            ('trade_invoices', 'فاکتورها', 'file-invoice', True, 'فروش، خرید، برگشت‌ها، پیش‌فاکتور و سفارش.'),
-            ('trade_pos', 'فروش سریع', 'cash-register', True, 'صندوق فروش: بارکد، سبد، دریافت و صدور فاکتور.'),
-            ('trade_stock', 'موجودی انبار', 'warehouse', True, 'موجودی و ارزش هر کالا به تفکیک انبار و کاردکس.'),
-            ('trade_docs', 'اسناد انبار', 'dolly', True, 'رسید، حواله، انتقال، تعدیل و انبارگردانی.'),
-            ('trade_production', 'تولید', 'industry', True, 'فرمول ساخت، برآورد و ثبت تولید.'),
-            ('trade_consign', 'امانی', 'handshake', True, 'کالای امانی داده‌شده و گرفته‌شده.'),
-            ('trade_profit', 'سود کالا', 'chart-line', True, 'سود ناخالص هر کالا، فروش به تفکیک ویزیتور و طرف حساب.'),
-            ('credit', 'تامین اعتبار', 'hand-holding-dollar', True, 'رزرو اعتبار بودجه برای حساب‌های مصرف، بدون عبور از بودجه مصوب.'),
-            ('contracts', 'قراردادها', 'file-signature', True, 'قراردادها، صورت‌وضعیت‌ها و کسورات پیمانکار.'),
-            ('guarantees', 'ضمانت‌نامه‌ها', 'shield-halved', False, 'ضمانت‌نامه‌ها، چک و سفته‌های دریافتی و سررسید آن‌ها.'),
-            ('payables', 'خزانه اسناد پرداختی', 'money-check-dollar', True, 'چک‌ها و سفته‌های صادرشده تا زمان پاس‌شدن.'),
-            ('images', 'تصاویر اسناد', 'images', True, 'اسکن و تصویر مدارک پشتوانه اسناد.'),
-            ('statuschange', 'تغییر وضعیت اسناد', 'check-double', True, 'قطعی یا موقت‌کردن گروهی اسناد بر اساس بازه شماره.'),
-            ('plans', 'تقسیط', 'calendar-check', True, 'پرونده‌های تقسیط بدهی، اقساط و پرداخت‌ها.'),
-            ('received', 'خزانه اسناد دریافتی', 'money-check', True, 'چک و سفته‌های دریافتی: ارسال به خزانه، وصول یا برگشت.'),
-            ('transport', 'درآمد حمل و نقل', 'truck', True, 'عوارض و بهای خدمات حمل و نقل.'),
-            ('planimages', 'تصاویر پرونده تقسیط', 'images', True, 'مدارک و نامه‌های پرونده‌های تقسیط.'),
-            ('reports', 'گزارش‌گیری', 'file-lines', True, 'گزارش اسناد، دفاتر، فیش‌ها، تقسیط، ضمانت‌نامه‌ها و ... با خروجی اکسل.'),
-            ('pstaff', 'اطلاعات پرسنل', 'users', False, 'پرسنل، مزایای ماهانه و بدهی‌های هر نفر.'),
-            ('pattendance', 'کارکرد ماهانه', 'clock', False, 'کارکرد، غیبت، اضافه کار و شب کاری هر ماه.'),
-            ('pmission', 'ماموریت', 'plane', False, 'ماموریت‌های پرسنل و هزینه‌های آن‌ها.'),
-            ('pspecialallow', 'مزایای مخصوص', 'gift', False, 'مزایایی که به همه پرسنل یک گروه محاسباتی داده می‌شود.'),
-            ('pspecialdebt', 'بدهی مخصوص', 'file-invoice-dollar', False, 'کسوراتی که از همه پرسنل یک گروه محاسباتی کم می‌شود.'),
-            ('pmisc', 'پرداخت‌های متفرقه', 'wallet', False, 'واریزی‌های غیرحقوقی و علی‌الحساب هر ماه.'),
-            ('pworkers', 'کارگران روزمزد', 'helmet-safe', False, 'کارگران روزمزد و کارکرد ماهانه آن‌ها.'),
-            ('peidi', 'اطلاعات عیدی', 'gift', False, 'تنظیم و محاسبه عیدی سالانه پرسنل.'),
-            ('pcalc', 'نحوه محاسبات فردی', 'sliders', False, 'نرخ‌ها و مبالغ اختصاصی هر فرد که جایگزین تنظیمات عمومی می‌شود.'),
-            ('prun', 'محاسبه و فیش حقوق', 'money-bill-wave', False, 'محاسبه ماهانه حقوق، فیش هر فرد، قطعی‌کردن و خروجی اکسل.'),
-            ('psettings', 'تنظیمات حقوق', 'gear', False, 'نرخ بیمه، ضریب اضافه کار و سایر پارامترهای محاسبه.'),
-            ('settings', 'تنظیمات مالی', 'sliders', False, 'مراکز هزینه، شرح‌های استاندارد و امضاکنندگان.'),
-            ('parties', 'طرف‌حساب‌ها', 'address-book', False, 'اشخاص و سازمان‌هایی که با دهیاری حساب دارند.'),
-            ('accounts', 'سرفصل حساب‌ها', 'sitemap', False, 'درخت حساب‌های دهیاری.'),
-            ('online', 'پرداخت‌های آنلاین', 'credit-card', False, 'پرداخت‌های شهروندان: تایید، رد و سابقه.'),
-            ('setup', 'سال مالی و شروع کار', 'calendar-days', False, 'باز کردن سال مالی و ساخت سرفصل‌های پیش‌فرض.')]
+
 
 
 def _trigger(response, **events):
@@ -257,6 +203,19 @@ TAB_BUILDERS = {'overview': _tab_overview, 'vouchers': _tab_vouchers, 'bills': _
                 'parties': _tab_parties, 'accounts': _tab_accounts, 'online': _tab_online, 'setup': _tab_setup}
 
 
+def all_builders():
+    """Builder of every tab: the ones above plus those the other view modules register (late import: they import this module)."""
+    from main.views import (accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings,
+                            accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets,
+                            accounting_tools, accounting_archive, accounting_trade, accounting_trade_stock)
+    merged = dict(TAB_BUILDERS)
+    for module in (accounting_finance, accounting_income, accounting_reports, accounting_settings, accounting_payroll,
+                   accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets,
+                   accounting_tools, accounting_archive, accounting_trade, accounting_trade_stock):
+        merged.update(module.BUILDERS)
+    return merged
+
+
 def render_panel(request, year, status=200):
     """Tab bar plus one tab; `year` is None until a fiscal year exists (only the year-free tabs then work)."""
     user, g = request.user, request.GET
@@ -266,7 +225,7 @@ def render_panel(request, year, status=200):
     denied = access_levels.tab_level(user, tab) == 'none'
     ctx = {'year': year, 'years': years_for(user), 'tab': tab, 'g': g, 'kinds': Voucher.KINDS,
            'muni': ledger.municipality_of(user), 'tab_list': TAB_LIST,
-           'tab_meta': next(t for t in TAB_LIST if t[0] == tab), 'tab_template': (f'{PANEL}_denied.html' if denied else f'{PANEL}_register.html' if tab in REGISTER_TABS else f'{PANEL}_{tab}.html'),
+           'tab_meta': next(t for t in TAB_LIST if t.key == tab), 'tab_template': (f'{PANEL}_denied.html' if denied else f'{PANEL}_register.html' if tab in REGISTER_TABS else f'{PANEL}_{tab}.html'),
            'hidden_tabs': ','.join(access_levels.hidden_tabs(user)), 'read_only': access_levels.tab_level(user, tab) == 'view',
            'filtered': any(g.get(k) for k in ('q', 'status', 'kind', 'bill_status', 'pay_status'))}
     keep = g.copy()
@@ -281,14 +240,7 @@ def render_panel(request, year, status=200):
     elif tab in TAB_BUILDERS:
         TAB_BUILDERS[tab](request, year, ctx)
     else:
-        from main.views import (accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings,
-                                accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets, accounting_tools, accounting_archive, accounting_trade, accounting_trade_stock)   # late: they import this module
-        {**accounting_finance.BUILDERS, **accounting_income.BUILDERS, **accounting_reports.BUILDERS,
-         **accounting_settings.BUILDERS, **accounting_payroll.BUILDERS, **accounting_statements.BUILDERS,
-         **accounting_controls.BUILDERS, **accounting_audit.BUILDERS,
-         **accounting_analysis.BUILDERS, **accounting_assets.BUILDERS,
-         **accounting_tools.BUILDERS, **accounting_archive.BUILDERS,
-         **accounting_trade.BUILDERS, **accounting_trade_stock.BUILDERS}[tab](request, year, ctx)
+        all_builders()[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 
