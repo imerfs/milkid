@@ -16,7 +16,7 @@ import jdatetime
 from django.db import transaction
 from django.db.models import Count, F, Q
 
-from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, municipality_of
+from main.accounting.ledger import check_unlocked, _amount, _locked, _own, _own_or_invalid, _text, municipality_of
 from main.models import Installment, InstallmentEvent, InstallmentPerson, InstallmentPlan, Municipality
 from main.office.errors import Conflict, Invalid
 
@@ -78,6 +78,7 @@ def create_plan(actor, year, *, party, total_debt, cash_paid=0, count, first_due
     _own(muni, year)
     if year.is_closed:
         raise Conflict('سال مالی بسته شده است.')
+    check_unlocked(muni, on)
     party = _own_or_invalid(muni, party, 'مودی')
     total_debt, cash_paid = _amount(total_debt), _amount(cash_paid)
     if total_debt <= 0:
@@ -128,6 +129,8 @@ def _refresh_status(plan):
 def cancel_plan(actor, plan, on):
     muni = municipality_of(actor)
     _own(muni, plan)
+    check_unlocked(muni, plan.date)
+    check_unlocked(muni, on)
     with transaction.atomic():
         plan = _locked(InstallmentPlan, plan.pk)
         if plan.status != 'active':
@@ -146,6 +149,7 @@ def pay(actor, installment, on, amount, method, *, series='', serial='', bank=''
     """Record a payment of one instalment (see the module docstring for cash versus cheque)."""
     muni = municipality_of(actor)
     _own(muni, installment.plan)
+    check_unlocked(muni, on)
     if method not in dict(Installment.METHODS):
         raise Invalid('روش پرداخت نامعتبر است.')
     amount = _amount(amount)
@@ -189,6 +193,7 @@ def move_cheque(actor, installment, position, on, note=''):
     """Treasury step for a received cheque/note; 'collected' makes the instalment paid, 'bounced' reopens it."""
     muni = municipality_of(actor)
     _own(muni, installment.plan)
+    check_unlocked(muni, on)
     if position not in dict(Installment.POSITIONS):
         raise Invalid('موقعیت نامعتبر است.')
     with transaction.atomic():
@@ -228,6 +233,7 @@ def received_documents(actor, year, *, position='', q=''):
 def add_person(actor, plan, party, relation):
     muni = municipality_of(actor)
     _own(muni, plan)
+    check_unlocked(muni, plan.date)
     party = _own_or_invalid(muni, party, 'شخص')
     if relation not in dict(InstallmentPerson.RELATIONS):
         raise Invalid('نوع ارتباط نامعتبر است.')

@@ -100,6 +100,13 @@ def check_unlocked(muni, on):
         raise Conflict('اسناد تا تاریخ قفل (' + jdatetime.date.fromgregorian(date=lock).strftime('%Y/%m/%d') + ') قفل شده‌اند.')
 
 
+def check_month_unlocked(muni, jalali_year, jalali_month):
+    """Payroll rows belong to a Jalali month: the month is locked once its last day is on or before the lock date."""
+    nxt_year, nxt_month = (jalali_year + 1, 1) if jalali_month == 12 else (jalali_year, jalali_month + 1)
+    last_day = jdatetime.date(nxt_year, nxt_month, 1).togregorian() - timedelta(days=1)
+    check_unlocked(muni, last_day)
+
+
 def _check_header(year, on, kind):
     if kind not in KINDS:
         raise Invalid('نوع سند نامعتبر است.')

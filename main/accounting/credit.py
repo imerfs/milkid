@@ -6,7 +6,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, municipality_of
+from main.accounting.ledger import check_unlocked, _amount, _locked, _own, _own_or_invalid, _text, municipality_of
 from main.models import Account, BudgetLine, CreditProvision, CreditProvisionLine, Municipality
 from main.office.errors import Conflict, Invalid
 
@@ -79,6 +79,7 @@ def create_provision(actor, year, on, lines, *, allocation_no='', allocation_dat
     _own(muni, year)
     if year.is_closed:
         raise Conflict('سال مالی بسته شده است.')
+    check_unlocked(muni, on)
     _check_dates(year, on, allocation_date, expires_on)
     cleaned, wanted, budgets = _clean(muni, year, lines)
     allocation_no = _text(allocation_no, 'شماره تخصیص', required=False)[:30]
@@ -103,6 +104,7 @@ def create_provision(actor, year, on, lines, *, allocation_no='', allocation_dat
 def cancel_provision(actor, provision):
     muni = municipality_of(actor)
     _own(muni, provision)
+    check_unlocked(muni, provision.date)
     with transaction.atomic():
         provision = _locked(CreditProvision, provision.pk)
         if provision.fiscal_year.is_closed:

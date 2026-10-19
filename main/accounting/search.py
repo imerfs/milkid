@@ -1,4 +1,4 @@
-"""Global search of the accountant workspace: vouchers, parties, accounts, bills, instalment plans and contracts.
+"""Global search of the accountant workspace: vouchers, parties, accounts, bills, instalment plans, contracts and cheques.
 
 Scoped to the actor's municipality; kinds the accountant has no access to (see access_levels) are left out.
 Each hit says how to open it: a modal URL, or a workspace tab with a query.
@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from main.accounting import access_levels, ledger
 from main.accounting.parse import digits, jalali_str
-from main.models import Account, Bill, Contract, InstallmentPlan, Party, Voucher
+from main.models import Account, Bill, Contract, Installment, InstallmentPlan, PayableDocument, Party, Voucher
 
 LIMIT = 5
 MIN_LENGTH = 2
@@ -63,4 +63,17 @@ def run(actor, query):
         for c in Contract.objects.filter(match, municipality=muni)[:LIMIT]:
             out.append({'kind': 'قرارداد', 'label': f'قرارداد {c.number} · {c.subject[:40]}', 'sub': f'{c.amount:,} ریال', 'action': 'modal',
                         'url': reverse('main:acc_p_contract_detail', args=[c.id])})
+    if allowed('contracts'):
+        for d in PayableDocument.objects.filter(Q(serial__icontains=number if numeric else text), municipality=muni).select_related(
+                'party')[:LIMIT]:
+            out.append({'kind': 'چک پرداختی' if d.kind == 'cheque' else 'سفته پرداختی', 'label': f'{d.serial} · {d.party.name}',
+                        'sub': f'{d.amount:,} ریال · {d.get_status_display()}', 'action': 'modal',
+                        'url': reverse('main:acc_p_payable_detail', args=[d.id])})
+    if allowed('income'):
+        match = Q(serial__icontains=number if numeric else text) | Q(series__icontains=number if numeric else text)
+        for i in Installment.objects.filter(match, plan__municipality=muni, method__in=('cheque', 'promissory')).select_related(
+                'plan__party')[:LIMIT]:
+            out.append({'kind': 'چک دریافتی', 'label': f'{i.series} {i.serial} · {i.owner_name or i.plan.party.name}'.strip(),
+                        'sub': f'{i.amount:,} ریال · {i.get_position_display() or "—"}', 'action': 'modal',
+                        'url': reverse('main:acc_p_cheque_detail', args=[i.id])})
     return out

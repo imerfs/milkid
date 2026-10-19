@@ -1,7 +1,7 @@
 """Transport income (درآمد حمل و نقل): fees collected for vehicles or transport services, numbered per fiscal year."""
 from django.db import transaction
 
-from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, municipality_of
+from main.accounting.ledger import check_unlocked, _amount, _locked, _own, _own_or_invalid, _text, municipality_of
 from main.models import Municipality, TransportIncome
 from main.office.errors import Conflict, Invalid
 
@@ -24,6 +24,7 @@ def record(actor, year, *, on, plate, service, amount, party=None, receipt_no=''
         raise Conflict('سال مالی بسته شده است.')
     if not (year.start_date <= on <= year.end_date):
         raise Invalid('تاریخ باید داخل سال مالی باشد.')
+    check_unlocked(muni, on)
     if party is not None:
         _own_or_invalid(muni, party, 'پرداخت‌کننده')
     amount = _amount(amount)
@@ -43,6 +44,7 @@ def record(actor, year, *, on, plate, service, amount, party=None, receipt_no=''
 def cancel(actor, income):
     muni = municipality_of(actor)
     _own(muni, income)
+    check_unlocked(muni, income.date)
     with transaction.atomic():
         income = _locked(TransportIncome, income.pk)
         if income.fiscal_year.is_closed:

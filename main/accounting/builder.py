@@ -9,7 +9,9 @@ from decimal import Decimal
 import jdatetime
 
 from main.accounting import ledger
-from main.models import Bill, BillPayment, Installment, InstallmentPlan, Voucher, VoucherLine
+from main.models import (Bill, BillPayment, Contract, ContractStatement, Installment, InstallmentPlan, PayableDocument,
+                         PayrollSlip, TransportIncome, Voucher, VoucherLine)
+from main.models_payroll import CALC_GROUPS
 from main.office.errors import Invalid
 
 MAX_ROWS = 100_000
@@ -32,6 +34,21 @@ def _choice(choices):
 def _text(*fields):
     """Join the given row fields (e.g. account code and title) into one label."""
     return lambda row: ' - '.join(str(row[f]) for f in fields if row.get(f) not in (None, '')) or '—'
+
+
+def _months_in_range(year_number, date_from, date_to):
+    """Jalali months (1-12) of ``year_number`` that overlap the date range; the whole year when no range is given."""
+    months = []
+    for month in range(1, 13):
+        first = jdatetime.date(year_number, month, 1).togregorian()
+        after = (jdatetime.date(year_number + 1, 1, 1) if month == 12 else jdatetime.date(year_number, month + 1, 1)).togregorian()
+        if (date_from is None or after > date_from) and (date_to is None or first <= date_to):
+            months.append(month)
+    return months
+
+
+def _slip_month(row):
+    return f"{row['run__year']}/{row['run__month']:02d} {JALALI_MONTHS[row['run__month'] - 1]}"
 
 
 # dataset -> {label, queryset(muni, year, final_only), date field, dimensions, measures}
@@ -103,6 +120,77 @@ DATASETS = {
         'measures': {'amount': ('مبلغ قسط', 'amount', True), 'paid_amount': ('پرداخت‌شده', 'paid_amount', True),
                      'count': ('تعداد اقساط', None, False)},
     },
+    'contracts': {
+        'label': 'قراردادها',
+        'queryset': lambda muni, year, final: Contract.objects.filter(municipality=muni, fiscal_year=year),
+        'date': 'date',
+        'dimensions': {
+            'contractor': ('پیمانکار', ['contractor__name'], _text('contractor__name')),
+            'status': ('وضعیت', ['status'], lambda r: _choice(Contract.STATUSES)(r['status'])),
+            'cost_center': ('مرکز هزینه', ['cost_center__title'], _text('cost_center__title')),
+            'month': ('ماه', ['date'], lambda r: jalali_month(r['date'])),
+        },
+        'measures': {'amount': ('مبلغ قرارداد', 'amount', True), 'ceiling': ('سقف مبلغ', 'ceiling', True),
+                     'count': ('تعداد قرارداد', None, False)},
+    },
+    'statements': {
+        'label': 'صورت‌وضعیت‌های قراردادها',
+        'queryset': lambda muni, year, final: ContractStatement.objects.filter(
+            contract__municipality=muni, contract__fiscal_year=year, canceled_at__isnull=True),
+        'date': 'date',
+        'dimensions': {
+            'contractor': ('پیمانکار', ['contract__contractor__name'], _text('contract__contractor__name')),
+            'contract': ('قرارداد', ['contract__number', 'contract__subject'], _text('contract__number', 'contract__subject')),
+            'month': ('ماه', ['date'], lambda r: jalali_month(r['date'])),
+        },
+        'measures': {'gross': ('کارکرد ناخالص', 'gross', True), 'vat': ('ارزش افزوده', 'vat', True), 'tax': ('مالیات', 'tax', True),
+                     'good_performance': ('حسن انجام کار', 'good_performance', True),
+                     'contractor_insurance': ('بیمه پیمانکار', 'contractor_insurance', True),
+                     'employer_insurance': ('بیمه کارفرما', 'employer_insurance', True), 'net': ('خالص پرداختنی', 'net', True),
+                     'count': ('تعداد صورت‌وضعیت', None, False)},
+    },
+    'payables': {
+        'label': 'اسناد پرداختی (چک و سفته)',
+        'queryset': lambda muni, year, final: PayableDocument.objects.filter(municipality=muni, fiscal_year=year),
+        'date': 'due_date',
+        'dimensions': {
+            'party': ('در وجه', ['party__name'], _text('party__name')),
+            'kind': ('نوع', ['kind'], lambda r: _choice(PayableDocument.KINDS)(r['kind'])),
+            'status': ('وضعیت', ['status'], lambda r: _choice(PayableDocument.STATUSES)(r['status'])),
+            'month': ('ماه سررسید', ['due_date'], lambda r: jalali_month(r['due_date'])),
+        },
+        'measures': {'amount': ('مبلغ', 'amount', True), 'count': ('تعداد', None, False)},
+    },
+    'transport': {
+        'label': 'درآمد حمل و نقل',
+        'queryset': lambda muni, year, final: TransportIncome.objects.filter(municipality=muni, fiscal_year=year, status='received'),
+        'date': 'date',
+        'dimensions': {
+            'service': ('نوع خدمت', ['service'], _text('service')),
+            'party': ('پرداخت‌کننده', ['party__name'], _text('party__name')),
+            'month': ('ماه', ['date'], lambda r: jalali_month(r['date'])),
+        },
+        'measures': {'amount': ('مبلغ', 'amount', True), 'count': ('تعداد', None, False)},
+    },
+    'payroll': {
+        'label': 'فیش‌های حقوق',
+        'queryset': lambda muni, year, final: PayrollSlip.objects.filter(
+            run__municipality=muni, run__year=year.year, **({'run__status': 'final'} if final else {})),
+        'date': None,
+        'period': lambda qs, year, date_from, date_to: qs.filter(run__month__in=_months_in_range(year.year, date_from, date_to)),
+        'dimensions': {
+            'employee': ('پرسنل', ['employee__first_name', 'employee__last_name'],
+                         lambda r: f"{r['employee__first_name']} {r['employee__last_name']}"),
+            'group': ('گروه محاسباتی', ['employee__calc_group'], lambda r: _choice(CALC_GROUPS)(r['employee__calc_group'])),
+            'list_title': ('عنوان لیست', ['employee__list_title'], _text('employee__list_title')),
+            'month': ('ماه حقوق', ['run__year', 'run__month'], _slip_month),
+        },
+        'measures': {'net': ('خالص پرداختی', 'net', True), 'gross': ('ناخالص', 'gross', True), 'tax': ('مالیات', 'tax', True),
+                     'insurance_employee': ('بیمه سهم کارمند', 'insurance_employee', True),
+                     'insurance_org': ('بیمه سهم دهیاری', 'insurance_org', True), 'allowances': ('مزایا', 'allowances', True),
+                     'overtime': ('اضافه کار', 'overtime', True), 'deductions': ('کسورات', 'deductions', True),
+                     'count': ('تعداد فیش', None, False)},
+    },
 }
 
 
@@ -131,10 +219,14 @@ def build(actor, year, dataset, group, *, measure=None, column=None, date_from=N
     muni = ledger.municipality_of(actor)
     ledger._own(muni, year)
     qs = spec['queryset'](muni, year, final_only)
-    if date_from:
-        qs = qs.filter(**{f"{spec['date']}__gte": date_from})
-    if date_to:
-        qs = qs.filter(**{f"{spec['date']}__lte": date_to})
+    if spec['date'] is None:                                  # payroll rows belong to a Jalali month, not to a day
+        if date_from or date_to:
+            qs = spec['period'](qs, year, date_from, date_to)
+    else:
+        if date_from:
+            qs = qs.filter(**{f"{spec['date']}__gte": date_from})
+        if date_to:
+            qs = qs.filter(**{f"{spec['date']}__lte": date_to})
     if qs.count() > MAX_ROWS:
         raise Invalid('تعداد ردیف‌ها بیش از حد است؛ بازه تاریخ را کوچک‌تر کنید.')
     dim_group, dim_col = spec['dimensions'][group], spec['dimensions'].get(column) if column else None

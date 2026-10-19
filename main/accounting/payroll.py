@@ -19,7 +19,7 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
-from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, municipality_of
+from main.accounting.ledger import check_month_unlocked, _amount, _locked, _own, _own_or_invalid, _text, municipality_of
 from main.models import (AllowanceTitle, DailyWorker, DailyWorkerMonth, EidiRecord, EidiSetting, Employee,
                          EmployeeAllowance, EmployeeDebt, MiscPayment, Mission, MonthlyAttendance, Municipality,
                          PayrollRun, PayrollSettings, PayrollSlip, PersonalCalc, SpecialAllowance, SpecialDebt)
@@ -270,6 +270,7 @@ def _run_final(muni, year, month):
 
 
 def _guard_month(muni, year, month):
+    check_month_unlocked(muni, year, month)
     if _run_final(muni, year, month):
         raise Conflict('حقوق این ماه قطعی شده و ورودی آن تغییر نمی‌کند.')
 
@@ -322,6 +323,7 @@ def add_mission(actor, emp, *, order_no, order_date, start_date, end_date, origi
         raise Invalid('مدت ماموریت بیش از یک سال است.')
     if not (emp.start_date <= start_date) or (emp.end_date and start_date > emp.end_date):
         raise Invalid('ماموریت باید در دوره خدمت فرد باشد.')
+    check_month_unlocked(muni, *_jalali_ym(start_date))
     return Mission.objects.create(
         employee=emp, order_no=_text(order_no, 'شماره حکم')[:40], order_date=order_date, start_date=start_date,
         end_date=end_date, origin=_text(origin, 'شهر مبدا')[:80], destination=_text(destination, 'شهر مقصد')[:80],
@@ -499,6 +501,7 @@ def run_payroll(actor, year, month):
     """Compute (or recompute) the draft payroll of a month for every active employee in service."""
     muni = municipality_of(actor)
     year, month = _period(year, month)
+    check_month_unlocked(muni, year, month)
     cfg = settings_of(actor)
     with transaction.atomic():
         _locked(Municipality, muni.id)
@@ -520,6 +523,7 @@ def run_payroll(actor, year, month):
 def finalize_run(actor, run):
     muni = municipality_of(actor)
     _own(muni, run)
+    check_month_unlocked(muni, run.year, run.month)
     with transaction.atomic():
         _locked(Municipality, muni.id)
         run = _locked(PayrollRun, run.pk)
@@ -539,6 +543,7 @@ def finalize_run(actor, run):
 
 def delete_run(actor, run):
     _own(municipality_of(actor), run)
+    check_month_unlocked(municipality_of(actor), run.year, run.month)
     run.refresh_from_db()
     if run.status == 'final':
         raise Conflict('محاسبه قطعی حذف نمی‌شود.')
@@ -589,6 +594,7 @@ def record_worker_month(actor, worker, year, month, *, daily_wage, days, overtim
     muni = municipality_of(actor)
     _own(muni, worker)
     year, month = _period(year, month)
+    check_month_unlocked(muni, year, month)
     cfg = settings_of(actor)
     daily_wage = _amount(daily_wage)
     days, overtime_hours, tax_pct = (_num(days, 'روز کارکرد', maximum=31), _num(overtime_hours, 'اضافه کار', maximum=744),
@@ -615,6 +621,7 @@ def record_worker_month(actor, worker, year, month, *, daily_wage, days, overtim
 
 def delete_worker_month(actor, row):
     _own(municipality_of(actor), row.worker)
+    check_month_unlocked(municipality_of(actor), row.year, row.month)
     row.delete()
 
 
@@ -648,6 +655,7 @@ def compute_eidi(actor, year, worked=None, only=None):
     overrides the default of a full year; `only` limits it to one employee. amount = min(cap, fixed x (worked - absent) / annual days) - advance, never below 0."""
     muni = municipality_of(actor)
     year, _ = _period(year, 1)
+    check_month_unlocked(muni, year, 12)
     worked = worked or {}
     settings = {s.calc_group: s for s in EidiSetting.objects.filter(municipality=muni, year=year)}
     if not settings:
