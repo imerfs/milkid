@@ -1,0 +1,32 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-card" data-pos data-vat="{{ vat_percent }}">
+    <div class="ac-tools">
+        <label class="ac-searchbox" style="flex:1;max-width:520px"><span class="ac-sr">بارکد یا نام کالا</span><i class="fas fa-barcode" aria-hidden="true"></i><input type="search" data-pos-search placeholder="بارکد را اسکن کنید یا نام کالا را بنویسید و Enter بزنید..." autocomplete="off" autofocus></label>
+        <span class="muted" style="font-size:12px">{{ pos_products|length|fa }} کالای فعال</span>
+    </div>
+    <div class="ac-lines">
+        <table>
+            <thead><tr><th>کالا</th><th>موجودی</th><th>تعداد</th><th>قیمت واحد (ریال)</th><th>جمع</th><th></th></tr></thead>
+            <tbody data-pos-cart><tr data-pos-empty><td colspan="6" class="muted" style="text-align:center;padding:24px">سبد خالی است؛ کالا را اسکن یا جستجو کنید.</td></tr></tbody>
+        </table>
+    </div>
+    <form hx-post="{% url 'main:acc_p_trade_pos_sale' year.id %}" hx-swap="none" class="ac-box" data-pos-form novalidate>{% csrf_token %}
+        <div data-pos-hidden></div>
+        <div class="ac-fgrid">
+            <div class="ac-field s1"><label for="pos-date">تاریخ</label><input class="ac-in" id="pos-date" name="date" dir="ltr" value="{{ today }}"></div>
+            <div class="ac-field s1"><label for="pos-method">روش پرداخت</label><select class="ac-in" id="pos-method" name="method">{% for k, label in methods %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select></div>
+            <div class="ac-field s1"><label for="pos-bank">حساب بانک/صندوق <span class="muted">(برای ثبت در دفتر)</span></label><select class="ac-in" id="pos-bank" name="bank_account"><option value="">—</option>{% for a in bank_accounts %}<option value="{{ a.id }}">{{ a.code }} - {{ a.title }}</option>{% endfor %}</select></div>
+            <div class="ac-field s1"><label for="pos-visitor">ویزیتور <span class="muted">(اختیاری)</span></label><input class="ac-in" id="pos-visitor" name="visitor" maxlength="100"></div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+            <label class="muted" style="font-size:12px"><input type="checkbox" name="allow_shortage"> ثبت با وجود کمبود موجودی</label>
+            <span style="flex:1"></span>
+            <span>جمع: <b data-pos-subtotal>۰</b> ریال</span>
+            {% if vat_percent %}<span>مالیات {{ vat_percent|floatformat:"-2"|fa }}٪: <b data-pos-tax>۰</b></span>{% endif %}
+            <span style="font-size:18px">قابل پرداخت: <b data-pos-total>۰</b> ریال</span>
+            <button type="submit" class="ac-btn ac-btn-ok" data-pos-pay disabled><i class="fas fa-cash-register" aria-hidden="true"></i>دریافت و صدور فاکتور</button>
+        </div>
+    </form>
+    {{ pos_products|json_script:"pos-products" }}
+</div>
+{% if last_sale %}<p class="muted" style="margin-top:10px">آخرین فروش شما: فاکتور {{ last_sale.number|fa }} به مبلغ {{ last_sale.total|rial }} ریال · <a class="ac-link" href="{% url 'main:acc_p_trade_print' last_sale.id %}?paper=pos80" target="_blank" rel="noopener">چاپ رسید</a></p>{% endif %}

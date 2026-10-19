@@ -1,0 +1,19 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title=doc.get_kind_display subtitle=doc.note %}
+<div class="ac-mb">
+    <dl class="ac-dl">
+        <div><dt>شماره</dt><dd>{{ doc.number|fa }}</dd></div>
+        <div><dt>تاریخ</dt><dd>{{ doc.date|jalali_date|fa }}</dd></div>
+        <div><dt>انبار</dt><dd>{{ doc.warehouse.name }}{% if doc.to_warehouse %} ← {{ doc.to_warehouse.name }}{% endif %}</dd></div>
+        <div><dt>وضعیت</dt><dd>{% if doc.canceled_at %}ابطال‌شده{% else %}ثبت‌شده{% endif %}</dd></div>
+    </dl>
+    <div class="ac-lines"><table>
+        <thead><tr><th>کالا</th><th>{% if doc.kind == 'stocktake' %}شمارش‌شده{% else %}تعداد{% endif %}</th>{% if doc.kind == 'stocktake' %}<th>تفاوت</th>{% else %}<th>بهای واحد</th>{% endif %}</tr></thead>
+        <tbody>{% for l in lines %}<tr><td>{{ l.product.name }}</td><td class="num-cell">{% if doc.kind == 'stocktake' %}{{ l.counted|floatformat:"-3"|fa }}{% else %}{{ l.qty|floatformat:"-3"|fa }}{% endif %}</td>
+            <td class="num-cell">{% if doc.kind == 'stocktake' %}{{ l.qty|floatformat:"-3"|fa }}{% else %}{{ l.unit_cost|floatformat:0|fa }}{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    <div class="ac-foot">
+        {% if not doc.canceled_at %}<form hx-post="{% url 'main:acc_p_trade_doc_cancel' doc.id %}" hx-swap="none" hx-confirm="این سند ابطال شود؟ گردش انبار آن برمی‌گردد.">{% csrf_token %}<button class="ac-btn ac-btn-bad" type="submit"><i class="fas fa-ban" aria-hidden="true"></i>ابطال سند</button></form>{% endif %}
+        <span style="flex:1"></span><button type="button" class="ac-btn" data-acc-close>بستن</button>
+    </div>
+</div>

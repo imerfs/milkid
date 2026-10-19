@@ -1,0 +1,32 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-card">
+    <div class="ac-tools"><h2 class="ac-card-title" style="margin:0">فرمول‌های ساخت</h2><span class="ac-spaced"></span>
+        <button type="button" class="ac-btn ac-btn-brand" hx-get="{% url 'main:acc_p_trade_formula_new' %}" hx-target="#acc-modal-body"><i class="fas fa-plus" aria-hidden="true"></i>فرمول جدید</button></div>
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>محصول</th><th>مقدار هر نوبت</th><th>مواد اولیه</th><th>وضعیت</th><th></th></tr></thead>
+        <tbody>
+        {% for f in formulas %}
+            <tr><td>{{ f.product.name }}</td><td class="num-cell">{{ f.output_qty|floatformat:"-3"|fa }} {{ f.product.unit }}</td>
+                <td class="muted">{% for l in f.lines.all %}{{ l.product.name }} ({{ l.qty|floatformat:"-3"|fa }}){% if not forloop.last %}، {% endif %}{% endfor %}</td>
+                <td><span class="ac-st {% if f.is_active %}ok{% endif %}">{% if f.is_active %}فعال{% else %}غیرفعال{% endif %}</span></td>
+                <td class="nw">{% if f.is_active and not year.is_closed %}<button type="button" class="ac-link" hx-get="{% url 'main:acc_p_trade_run_new' year.id f.id %}" hx-target="#acc-modal-body"><i class="fas fa-industry" aria-hidden="true"></i>تولید و برآورد</button>{% endif %}
+                    {% if f.is_active %}<form hx-post="{% url 'main:acc_p_trade_formula_action' f.id 'off' %}" hx-swap="none" style="display:inline">{% csrf_token %}<button class="ac-link" type="submit">غیرفعال</button></form>
+                    {% else %}<form hx-post="{% url 'main:acc_p_trade_formula_action' f.id 'on' %}" hx-swap="none" style="display:inline">{% csrf_token %}<button class="ac-link" type="submit">فعال‌سازی</button></form>{% endif %}
+                    <form hx-post="{% url 'main:acc_p_trade_formula_action' f.id 'delete' %}" hx-swap="none" hx-confirm="این فرمول حذف شود؟" style="display:inline">{% csrf_token %}<button class="ac-link ac-bad-text" type="submit">حذف</button></form></td></tr>
+        {% empty %}<tr><td colspan="5"><div class="ac-empty"><span class="eic"><i class="fas fa-industry" aria-hidden="true"></i></span><h4>فرمولی ثبت نشده است</h4></div></td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</div>
+<div class="ac-card" style="margin-top:14px">
+    <div class="ac-tools"><h2 class="ac-card-title" style="margin:0">تولیدهای سال {{ year.year|fa }}</h2></div>
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>شماره</th><th>تاریخ</th><th>محصول</th><th>نوبت</th><th>بهای هر واحد</th><th>وضعیت</th><th></th></tr></thead>
+        <tbody>
+        {% for r in runs %}
+            <tr><td>{{ r.number|fa }}</td><td class="nw">{{ r.date|jalali_date|fa }}</td><td>{{ r.formula.product.name }}</td><td class="num-cell">{{ r.batches|floatformat:"-3"|fa }}</td><td class="num-cell">{{ r.unit_cost|floatformat:0|fa }}</td>
+                <td><span class="ac-st {% if r.canceled_at %}bad{% else %}ok{% endif %}">{% if r.canceled_at %}ابطال‌شده{% else %}ثبت‌شده{% endif %}</span></td>
+                <td>{% if not r.canceled_at and not year.is_closed %}<form hx-post="{% url 'main:acc_p_trade_run_cancel' r.id %}" hx-swap="none" hx-confirm="این تولید ابطال شود؟" style="display:inline">{% csrf_token %}<button class="ac-link ac-bad-text" type="submit">ابطال</button></form>{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="7" class="muted" style="text-align:center;padding:16px">تولیدی ثبت نشده است.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</div>

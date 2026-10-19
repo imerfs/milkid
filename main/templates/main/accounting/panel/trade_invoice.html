@@ -1,0 +1,52 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title=title %}
+<div class="ac-mb">
+    {% if notice %}<div class="ac-notice" role="status"><i class="fas fa-circle-check" aria-hidden="true"></i><span>{{ notice }}</span></div>{% endif %}
+    <dl class="ac-dl">
+        <div><dt>تاریخ</dt><dd>{{ inv.date|jalali_date|fa }}</dd></div>
+        <div><dt>طرف حساب</dt><dd>{{ inv.party.name }}</dd></div>
+        <div><dt>انبار</dt><dd>{{ inv.warehouse.name }}</dd></div>
+        <div><dt>ویزیتور</dt><dd>{{ inv.visitor|default:'—' }}</dd></div>
+        <div><dt>وضعیت</dt><dd>{{ inv.get_status_display }}{% if inv.voucher_id %} · ثبت‌شده در دفتر{% endif %}{% if inv.source %} · از پیش‌فاکتور {{ inv.source.number|fa }}{% endif %}</dd></div>
+        <div><dt>توضیحات</dt><dd>{{ inv.note|default:'—' }}</dd></div>
+    </dl>
+    <div class="ac-lines" style="margin-bottom:12px"><table>
+        <thead><tr><th>کالا</th><th>تعداد</th><th>قیمت واحد</th><th>تخفیف</th><th>جمع</th></tr></thead>
+        <tbody>{% for l in lines %}<tr><td>{{ l.product.name }}</td><td class="num-cell">{{ l.qty|floatformat:"-3"|fa }}</td><td class="num-cell">{{ l.unit_price|rial }}</td><td class="num-cell">{{ l.discount|rial }}</td><td class="num-cell">{{ l.total|rial }}</td></tr>{% endfor %}</tbody>
+        <tfoot>
+            <tr><td colspan="4">جمع ردیف‌ها</td><td class="num-cell">{{ inv.subtotal|rial }}</td></tr>
+            <tr><td colspan="4">تخفیف کل</td><td class="num-cell">{{ inv.discount|rial }}</td></tr>
+            <tr><td colspan="4">مالیات بر ارزش افزوده</td><td class="num-cell">{{ inv.tax|rial }}</td></tr>
+            <tr><td colspan="4"><b>مبلغ فاکتور</b></td><td class="num-cell"><b>{{ inv.total|rial }}</b></td></tr>
+        </tfoot>
+    </table></div>
+    {% if error %}<div class="ac-merr" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}
+    {% if inv.kind == 'sale' or inv.kind == 'purchase' %}
+    <h3 class="ac-sec-title">پرداخت‌ها <span class="muted" style="font-weight:400">· پرداخت‌شده {{ paid|rial }} · باقی‌مانده {{ left|rial }}</span></h3>
+    <div class="ac-lines" style="margin-bottom:10px"><table>
+        <tbody>{% for pay in payments %}<tr><td class="nw">{{ pay.date|jalali_date|fa }}</td><td>{{ pay.get_method_display }}</td><td>{{ pay.bank_account.title|default:'—' }}</td><td class="num-cell">{{ pay.amount|rial }}</td>
+            <td>{% if inv.status == 'issued' %}<form hx-post="{% url 'main:acc_p_trade_payment_delete' pay.id %}" hx-target="#acc-modal-body" hx-confirm="این پرداخت حذف شود؟" style="display:inline">{% csrf_token %}<button class="ac-link" type="submit">حذف</button></form>{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="5" class="muted" style="text-align:center">پرداختی ثبت نشده است.</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% if can_pay and left > 0 %}
+    <form hx-post="{% url 'main:acc_p_trade_invoice_pay' inv.id %}" hx-target="#acc-modal-body" class="ac-box" novalidate>{% csrf_token %}
+        <div class="ac-fgrid">
+            <div class="ac-field s1"><label for="ip-date">تاریخ</label><input class="ac-in" id="ip-date" name="date" dir="ltr" value="{{ p.date }}"></div>
+            <div class="ac-field s1"><label for="ip-amount">مبلغ (ریال)</label><input class="ac-in" id="ip-amount" name="amount" inputmode="numeric" dir="ltr" value="{{ p.amount|default:left|floatformat:0 }}"></div>
+            <div class="ac-field s1"><label for="ip-method">روش</label><select class="ac-in" id="ip-method" name="method">{% for k, label in methods %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select></div>
+            <div class="ac-field s1"><label for="ip-bank">حساب بانک/صندوق <span class="muted">(برای ثبت در دفتر)</span></label><select class="ac-in" id="ip-bank" name="bank_account"><option value="">—</option>{% for a in bank_accounts %}<option value="{{ a.id }}">{{ a.code }} - {{ a.title }}</option>{% endfor %}</select></div>
+        </div>
+        <button type="submit" class="ac-btn ac-btn-ok"><i class="fas fa-coins" aria-hidden="true"></i>ثبت پرداخت</button>
+    </form>
+    {% endif %}
+    {% endif %}
+    <div class="ac-foot" style="flex-wrap:wrap">
+        <a class="ac-btn" href="{% url 'main:acc_p_trade_print' inv.id %}" target="_blank" rel="noopener"><i class="fas fa-print" aria-hidden="true"></i>چاپ</a>
+        {% if can_post and not inv.voucher_id %}<form hx-post="{% url 'main:acc_p_trade_invoice_action' inv.id 'post' %}" hx-swap="none">{% csrf_token %}<button class="ac-btn" type="submit"><i class="fas fa-book" aria-hidden="true"></i>ثبت در دفتر</button></form>{% endif %}
+        {% if can_post and inv.voucher_id %}<form hx-post="{% url 'main:acc_p_trade_invoice_action' inv.id 'unpost' %}" hx-swap="none" hx-confirm="سند موقت این فاکتور حذف شود؟">{% csrf_token %}<button class="ac-btn" type="submit">برداشتن ثبت دفتری</button></form>{% endif %}
+        {% if can_convert %}<form hx-post="{% url 'main:acc_p_trade_invoice_action' inv.id 'convert' %}" hx-swap="none" hx-confirm="به فاکتور فروش تبدیل شود؟">{% csrf_token %}<label class="muted" style="font-size:12px"><input type="checkbox" name="allow_shortage"> با وجود کمبود</label> <button class="ac-btn ac-btn-ok" type="submit"><i class="fas fa-right-left" aria-hidden="true"></i>تبدیل به فاکتور فروش</button></form>{% endif %}
+        <span style="flex:1"></span>
+        {% if inv.status == 'issued' %}<form hx-post="{% url 'main:acc_p_trade_invoice_action' inv.id 'cancel' %}" hx-swap="none" hx-confirm="این فاکتور ابطال شود؟ موجودی انبار برمی‌گردد.">{% csrf_token %}<button class="ac-btn ac-btn-bad" type="submit"><i class="fas fa-ban" aria-hidden="true"></i>ابطال</button></form>{% endif %}
+        <button type="button" class="ac-btn" data-acc-close>بستن</button>
+    </div>
+</div>

@@ -12,7 +12,7 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
-from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, municipality_of
+from main.accounting.ledger import check_unlocked, _amount, _locked, _own, _own_or_invalid, _text, municipality_of
 from main.models import Contract, ContractStatement, Guarantee, Municipality
 from main.office.errors import Conflict, Invalid
 
@@ -59,6 +59,7 @@ def create_contract(actor, year, *, subject, contractor, date, start_date, end_d
     _own(muni, year)
     if year.is_closed:
         raise Conflict('سال مالی بسته شده است.')
+    check_unlocked(muni, date)
     contractor = _own_or_invalid(muni, contractor, 'پیمانکار')
     if cost_center is not None:
         _own_or_invalid(muni, cost_center, 'مرکز هزینه')
@@ -86,6 +87,7 @@ def create_contract(actor, year, *, subject, contractor, date, start_date, end_d
 def set_status(actor, contract, status):
     muni = municipality_of(actor)
     _own(muni, contract)
+    check_unlocked(muni, contract.date)
     if status not in dict(Contract.STATUSES):
         raise Invalid('وضعیت نامعتبر است.')
     with transaction.atomic():
@@ -109,6 +111,7 @@ def compute_deductions(contract, gross):
 def add_statement(actor, contract, on, gross, description=''):
     muni = municipality_of(actor)
     _own(muni, contract)
+    check_unlocked(muni, on)
     gross = _amount(gross)
     if gross <= 0:
         raise Invalid('مبلغ کارکرد باید بیشتر از صفر باشد.')
@@ -132,6 +135,7 @@ def add_statement(actor, contract, on, gross, description=''):
 def cancel_statement(actor, statement):
     muni = municipality_of(actor)
     _own(muni, statement.contract)
+    check_unlocked(muni, statement.date)
     with transaction.atomic():
         statement = ContractStatement.objects.select_related('contract__fiscal_year').get(pk=statement.pk)
         _locked(Contract, statement.contract_id)
@@ -166,6 +170,7 @@ def expiry_state(guarantee, today):
 def create_guarantee(actor, *, party, kind, doc_kind, serial, date, expires_on, amount, contract=None, plan=None,
                      bank='', description=''):
     muni = municipality_of(actor)
+    check_unlocked(muni, date)
     party = _own_or_invalid(muni, party, 'صاحب ضمانت‌نامه')
     if contract is not None:
         _own_or_invalid(muni, contract, 'قرارداد')
@@ -194,6 +199,7 @@ def create_guarantee(actor, *, party, kind, doc_kind, serial, date, expires_on, 
 def set_guarantee_status(actor, guarantee, status, on):
     muni = municipality_of(actor)
     _own(muni, guarantee)
+    check_unlocked(muni, on)
     if status not in ('returned', 'seized'):
         raise Invalid('وضعیت نامعتبر است.')
     with transaction.atomic():

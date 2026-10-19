@@ -178,3 +178,36 @@ class PrintTests(LedgerBase):
         self.assertContains(page, 'سیصد هزار ریال')
         self.assertContains(page, 'size: 148mm 210mm')
         self.assertContains(self.client.get(reverse('main:acc_p_cheque_detail', args=[inst.id])), reverse('main:acc_p_print_slip', args=[inst.id]))
+
+
+class ChequeSearchTests(LedgerBase):
+    def setUp(self):
+        super().setUp()
+        from datetime import timedelta
+        from main.models import Installment
+        self.party = Party.objects.create(municipality=self.muni, name='پیمانکار')
+        self.doc = PayableDocument.objects.create(
+            municipality=self.muni, fiscal_year=self.year, kind='cheque', serial='765432', party=self.party, bank_account=self.bank,
+            issue_date=self.d, due_date=self.d + timedelta(days=30), amount=2_000_000)
+        plan = InstallmentPlan.objects.create(municipality=self.muni, fiscal_year=self.year, number=1, date=self.d, party=self.party,
+                                              total_debt=900_000, cash_paid=0, plan_amount=900_000, count=3)
+        self.cheque = Installment.objects.create(plan=plan, seq=1, due_date=self.d, amount=300_000, method='cheque', serial='998877',
+                                                 series='12/ب', owner_name='صاحب حساب')
+
+    def test_issued_and_received_cheques_are_found_by_their_number(self):
+        issued = [r for r in search.run(self.dehyar, '765432') if r['kind'] == 'چک پرداختی']
+        self.assertEqual(issued[0]['url'], reverse('main:acc_p_payable_detail', args=[self.doc.id]))
+        received = [r for r in search.run(self.dehyar, '998877') if r['kind'] == 'چک دریافتی']
+        self.assertEqual(received[0]['url'], reverse('main:acc_p_cheque_detail', args=[self.cheque.id]))
+        persian = '۹۹۸۸۷۷'
+        self.assertTrue([r for r in search.run(self.dehyar, persian) if r['kind'] == 'چک دریافتی'])
+
+    def test_other_municipalities_and_closed_areas_do_not_leak_cheques(self):
+        other = make_user('dehyari')
+        from main.tests.helpers import make_municipality
+        make_municipality(other)
+        self.assertEqual(search.run(other, '765432'), [])
+        accountant = make_user('accountant', city_village=self.muni.city_village)
+        access_levels.save_rules(self.dehyar, {'contracts': 'none'})
+        kinds = {r['kind'] for r in search.run(accountant, '765432')}
+        self.assertNotIn('چک پرداختی', kinds)

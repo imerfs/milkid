@@ -1,0 +1,28 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title=c.get_kind_display subtitle=c.party.name %}
+<div class="ac-mb">
+    {% if notice %}<div class="ac-notice" role="status"><i class="fas fa-circle-check" aria-hidden="true"></i><span>{{ notice }}</span></div>{% endif %}
+    {% if error %}<div class="ac-merr" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}
+    <dl class="ac-dl">
+        <div><dt>تاریخ</dt><dd>{{ c.date|jalali_date|fa }}</dd></div>
+        <div><dt>انبار</dt><dd>{{ c.warehouse.name }}</dd></div>
+        <div><dt>وضعیت</dt><dd>{{ c.get_status_display }}</dd></div>
+        <div><dt>توضیحات</dt><dd>{{ c.note|default:'—' }}</dd></div>
+    </dl>
+    <form method="post" hx-post="{% url 'main:acc_p_trade_consign_action' c.id 'return' %}" hx-target="#acc-modal-body" novalidate>{% csrf_token %}
+        <div class="ac-lines"><table>
+            <thead><tr><th>کالا</th><th>تعداد</th><th>برگشت‌شده</th><th>باقی‌مانده</th>{% if c.status == 'open' %}<th>برگشت جدید</th>{% endif %}</tr></thead>
+            <tbody>{% for l, left in lines %}<tr><td>{{ l.product.name }}</td><td class="num-cell">{{ l.qty|floatformat:"-3"|fa }}</td><td class="num-cell">{{ l.returned|floatformat:"-3"|fa }}</td><td class="num-cell">{{ left|floatformat:"-3"|fa }}</td>
+                {% if c.status == 'open' %}<td><input class="ac-in" name="ret_{{ l.id }}" inputmode="decimal" dir="ltr" style="width:6rem" aria-label="برگشت {{ l.product.name }}"></td>{% endif %}</tr>{% endfor %}</tbody>
+        </table></div>
+        {% if c.status == 'open' %}
+        <div class="ac-fgrid" style="margin-top:8px"><div class="ac-field s2"><label for="cn-date">تاریخ برگشت</label><input class="ac-in" id="cn-date" name="date" dir="ltr" value="{{ p|get:'date' }}"></div></div>
+        <button type="submit" class="ac-btn ac-btn-ok"><i class="fas fa-rotate-left" aria-hidden="true"></i>ثبت برگشت</button>
+        {% endif %}
+    </form>
+    <div class="ac-foot">
+        {% if c.status == 'open' %}<form hx-post="{% url 'main:acc_p_trade_consign_action' c.id 'close' %}" hx-target="#acc-modal-body" hx-confirm="امانی تسویه شود؟ باقی‌مانده، فروخته‌شده حساب می‌شود (فاکتور فروش را جدا ثبت کنید).">{% csrf_token %}<button class="ac-btn" type="submit">تسویه</button></form>{% endif %}
+        {% if c.status != 'canceled' %}<form hx-post="{% url 'main:acc_p_trade_consign_action' c.id 'cancel' %}" hx-target="#acc-modal-body" hx-confirm="این امانی ابطال شود؟">{% csrf_token %}<button class="ac-btn ac-btn-bad" type="submit">ابطال</button></form>{% endif %}
+        <span style="flex:1"></span><button type="button" class="ac-btn" data-acc-close>بستن</button>
+    </div>
+</div>

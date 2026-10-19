@@ -1,0 +1,17 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='انبارها' %}
+<div class="ac-mb">
+    {% if notice %}<div class="ac-notice" role="status"><i class="fas fa-circle-check" aria-hidden="true"></i><span>{{ notice }}</span></div>{% endif %}
+    <ul class="ac-list" style="margin-bottom:12px">{% for w in warehouses %}<li>{{ w.code }} - {{ w.name }}{% if w.is_default %} <span class="ac-tag">پیش‌فرض</span>{% endif %}</li>{% endfor %}</ul>
+    <form method="post" hx-post="{% url 'main:acc_p_trade_warehouses' %}" hx-target="#acc-modal-body" class="ac-box" novalidate>{% csrf_token %}
+        <h3 class="ac-sec-title">انبار جدید</h3>
+        {% if error %}<div class="ac-merr" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}
+        <div class="ac-fgrid">
+            <div class="ac-field s1"><label for="wh-code">کد</label><input class="ac-in" id="wh-code" name="code" maxlength="20" dir="ltr" value="{{ p|get:'code' }}"></div>
+            <div class="ac-field s2"><label for="wh-name">نام انبار</label><input class="ac-in" id="wh-name" name="name" maxlength="100" value="{{ p|get:'name' }}"></div>
+            <div class="ac-field s1"><label><input type="checkbox" name="is_default"> انبار پیش‌فرض</label></div>
+        </div>
+        <button type="submit" class="ac-btn ac-btn-brand">افزودن</button>
+    </form>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>بستن</button></div>
+</div>

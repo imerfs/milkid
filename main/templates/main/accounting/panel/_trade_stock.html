@@ -1,0 +1,28 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit, change from:select, change from:input[type=checkbox]" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="trade_stock">
+        <label class="ac-select"><span class="ac-sr">انبار</span><select name="warehouse"><option value="">همه انبارها</option>{% for w in warehouses %}<option value="{{ w.id }}" {% if warehouse and w.id == warehouse.id %}selected{% endif %}>{{ w.name }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="upto" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ g.upto }}" style="width:130px"></label>
+        <label class="muted" style="font-size:12px"><input type="checkbox" name="low" value="1" {% if low_only %}checked{% endif %}> فقط کمبود موجودی</label>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>اعمال</button>
+        <a class="ac-btn ac-spaced" href="{% url 'main:acc_p_trade_stock_export' year.id %}?{{ export_query }}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
+        {% include 'main/accounting/panel/_print_button.html' %}
+        <button type="button" class="ac-btn" hx-get="{% url 'main:acc_p_trade_warehouses' %}" hx-target="#acc-modal-body"><i class="fas fa-warehouse" aria-hidden="true"></i>انبارها</button>
+    </form>
+    {% if stock_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ stock_error }}</div>{% endif %}
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>کد</th><th>کالا</th><th>موجودی</th><th>حداقل</th><th>میانگین بها</th><th>ارزش (ریال)</th><th></th></tr></thead>
+        <tbody>
+        {% for r in stock_rows %}
+            <tr{% if r.low %} class="over"{% endif %}><td class="muted nw" dir="ltr">{{ r.product.code }}</td><td>{{ r.product.name }}{% if r.low %} <span class="ac-st bad">کمبود</span>{% endif %}</td>
+                <td class="num-cell">{{ r.qty|floatformat:"-3"|fa }} {{ r.product.unit }}</td><td class="num-cell">{{ r.min_stock|floatformat:"-3"|fa }}</td>
+                <td class="num-cell">{{ r.avg|floatformat:0|fa }}</td><td class="num-cell">{{ r.value|rial }}</td>
+                <td><button type="button" class="ac-link" hx-get="{% url 'main:acc_p_trade_kardex' r.product.id %}" hx-target="#acc-modal-body"><i class="fas fa-list-ol" aria-hidden="true"></i>کاردکس</button></td></tr>
+        {% empty %}
+            <tr><td colspan="7"><div class="ac-empty"><span class="eic"><i class="fas fa-warehouse" aria-hidden="true"></i></span><h4>کالایی برای نمایش نیست</h4></div></td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot><tr><td></td><td>جمع ارزش موجودی</td><td colspan="3"></td><td class="num-cell">{{ stock_total|rial }}</td><td></td></tr></tfoot>
+    </table></div>
+</div>

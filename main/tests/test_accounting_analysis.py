@@ -110,3 +110,43 @@ class ChartTests(BuilderBase):
         data = client.get(reverse('main:acc_p_chart_data', args=[self.year.id]))
         self.assertEqual(data.json()['resources'][1], 1500)
         self.assertEqual(client.get(reverse('main:acc_p_builder_export', args=[self.year.id]), {'date_to': 'x'}).status_code, 400)
+
+
+class MoreDatasetTests(BuilderBase):
+    def test_contracts_statements_payables_and_transport(self):
+        from datetime import timedelta
+        from main.accounting import contracts, transport, treasury
+        contract = contracts.create_contract(
+            self.dehyar, self.year, subject='آسفالت', contractor=self.party, date=self.d, start_date=self.d,
+            end_date=self.d + timedelta(days=200), amount=1_000_000, vat_pct=10, good_performance_pct=5,
+            contractor_insurance_pct=7, employer_insurance_pct=16, tax_pct=3)
+        contracts.add_statement(self.dehyar, contract, self.d + timedelta(days=10), 200_000)
+        treasury.issue(self.dehyar, self.year, kind='cheque', serial='11', party=self.party, bank_account=self.bank,
+                       issue_date=self.d, due_date=self.d + timedelta(days=30), amount=4000)
+        transport.record(self.dehyar, self.year, on=self.d, plate='11ب111', service='عوارض خودرو', amount=700)
+        self.assertEqual(builder.build(self.dehyar, self.year, 'contracts', 'contractor', measure='amount')['rows'],
+                         [['آقای الف', 1_000_000]])
+        statements = builder.build(self.dehyar, self.year, 'statements', 'contractor', measure='gross')
+        self.assertEqual(statements['rows'], [['آقای الف', 200_000]])
+        self.assertEqual(builder.build(self.dehyar, self.year, 'payables', 'status')['rows'], [['صادر شده', 4000]])
+        self.assertEqual(builder.build(self.dehyar, self.year, 'transport', 'service')['rows'], [['عوارض خودرو', 700]])
+
+    def test_payroll_slips_by_employee_group_and_month(self):
+        from main.accounting import payroll
+        from main.tests.test_accounting_payroll import NID
+        employee = payroll.add_employee(self.dehyar, first_name='علی', last_name='رضایی', national_id=NID[0],
+                                        calc_group='official_worker', list_title='کارگران رسمی', job_title='کارگر',
+                                        start_date=date(2024, 1, 1))
+        payroll.set_allowances(self.dehyar, employee, {1: 30_000_000})
+        payroll.run_payroll(self.dehyar, 1404, 3)
+        payroll.run_payroll(self.dehyar, 1404, 4)
+        by_employee = builder.build(self.dehyar, self.year, 'payroll', 'employee', measure='net')
+        self.assertEqual([r[0] for r in by_employee['rows']], ['علی رضایی'])
+        self.assertGreater(by_employee['totals'][1], 0)
+        by_month = builder.build(self.dehyar, self.year, 'payroll', 'month', measure='count')
+        self.assertEqual([r[0] for r in by_month['rows']], ['1404/03 خرداد', '1404/04 تیر'])
+        pivot = builder.build(self.dehyar, self.year, 'payroll', 'group', column='month', measure='gross')
+        self.assertEqual(pivot['columns'], ['گروه محاسباتی', '1404/03 خرداد', '1404/04 تیر', 'جمع'])
+        only_tir = builder.build(self.dehyar, self.year, 'payroll', 'month', measure='count', date_from=date(2025, 6, 25))
+        self.assertEqual([r[0] for r in only_tir['rows']], ['1404/04 تیر'])
+        self.assertEqual(builder.build(self.dehyar, self.year, 'payroll', 'month', measure='count', final_only=True)['rows'], [])

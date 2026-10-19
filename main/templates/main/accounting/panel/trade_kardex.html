@@ -1,0 +1,14 @@
+{% load accounting_tags jalali_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='کاردکس کالا' subtitle=product.name %}
+<div class="ac-mb">
+    <p class="muted" style="margin:0 0 8px">موجودی کل: <b>{{ value.qty|floatformat:"-3"|fa }}</b> {{ product.unit }} · میانگین بها: <b>{{ value.avg|floatformat:0|fa }}</b> ریال · ارزش: <b>{{ value.value|rial }}</b> ریال</p>
+    {% if error %}<div class="ac-merr" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}
+    <div class="ac-lines"><table>
+        <thead><tr><th>تاریخ</th><th>انبار</th><th>نوع</th><th>ورود</th><th>خروج</th><th>مانده</th><th>میانگین بها</th><th>ارزش</th></tr></thead>
+        <tbody>{% for r in rows %}<tr><td class="nw">{{ r.move.date|jalali_date|fa }}</td><td>{{ r.move.warehouse.name }}</td><td>{{ r.move.get_kind_display }}</td>
+            <td class="num-cell">{% if r.in %}{{ r.in|floatformat:"-3"|fa }}{% endif %}</td><td class="num-cell">{% if r.out %}{{ r.out|floatformat:"-3"|fa }}{% endif %}</td>
+            <td class="num-cell">{{ r.balance|floatformat:"-3"|fa }}</td><td class="num-cell">{{ r.avg|floatformat:0|fa }}</td><td class="num-cell">{{ r.value|rial }}</td></tr>
+        {% empty %}<tr><td colspan="8" class="muted" style="text-align:center;padding:16px">گردشی ثبت نشده است.</td></tr>{% endfor %}</tbody>
+    </table></div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>بستن</button></div>
+</div>

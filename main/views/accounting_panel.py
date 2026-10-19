@@ -21,13 +21,13 @@ from main.views.accounting_views import (
     PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines, new_account,
     new_party)
 
-YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'statements', 'yearend', 'recon', 'controls', 'access', 'audit', 'builder', 'charts', 'assets', 'backup', 'credit', 'contracts', 'payables', 'images',
+YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'statements', 'yearend', 'recon', 'controls', 'access', 'audit', 'builder', 'charts', 'assets', 'backup', 'trade_products', 'trade_invoices', 'trade_pos', 'trade_stock', 'trade_docs', 'trade_production', 'trade_consign', 'trade_profit', 'credit', 'contracts', 'payables', 'images',
              'statuschange', 'plans', 'received', 'transport', 'planimages', 'reports')
 PAYROLL_TABS = ('pstaff', 'pcalc', 'pattendance', 'pmission', 'pspecialallow', 'pspecialdebt', 'pmisc', 'pworkers', 'peidi', 'prun',
                 'psettings')
 TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings', 'tools') + PAYROLL_TABS
 # Tabs drawn by the generic register template (see main/views/accounting_finance.py)
-REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages') + PAYROLL_TABS
+REGISTER_TABS = ('trade_products', 'trade_invoices', 'trade_docs', 'trade_consign', 'credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages') + PAYROLL_TABS
 PANEL = 'main/accounting/panel/'
 # (key, label, icon, needs a fiscal year, page subtitle) in menu order
 TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت مالی سال جاری و کارهای باز، یک‌جا.'),
@@ -46,6 +46,14 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('assets', 'دارایی‌های ثابت', 'building', True, 'ثبت دارایی، استهلاک سالانه با سند حسابداری و خروج یا فروش.'),
             ('tools', 'ابزارها', 'screwdriver-wrench', False, 'ماشین‌حساب، عدد به حروف، تبدیل تاریخ و اقساط وام.'),
             ('backup', 'پشتیبان‌گیری', 'database', True, 'نسخه پشتیبان از اطلاعات حسابداری دهیاری و بازیابی آن.'),
+            ('trade_products', 'کالاها', 'boxes-stacked', True, 'کالاها، قیمت‌ها و موجودی.'),
+            ('trade_invoices', 'فاکتورها', 'file-invoice', True, 'فروش، خرید، برگشت‌ها، پیش‌فاکتور و سفارش.'),
+            ('trade_pos', 'فروش سریع', 'cash-register', True, 'صندوق فروش: بارکد، سبد، دریافت و صدور فاکتور.'),
+            ('trade_stock', 'موجودی انبار', 'warehouse', True, 'موجودی و ارزش هر کالا به تفکیک انبار و کاردکس.'),
+            ('trade_docs', 'اسناد انبار', 'dolly', True, 'رسید، حواله، انتقال، تعدیل و انبارگردانی.'),
+            ('trade_production', 'تولید', 'industry', True, 'فرمول ساخت، برآورد و ثبت تولید.'),
+            ('trade_consign', 'امانی', 'handshake', True, 'کالای امانی داده‌شده و گرفته‌شده.'),
+            ('trade_profit', 'سود کالا', 'chart-line', True, 'سود ناخالص هر کالا، فروش به تفکیک ویزیتور و طرف حساب.'),
             ('credit', 'تامین اعتبار', 'hand-holding-dollar', True, 'رزرو اعتبار بودجه برای حساب‌های مصرف، بدون عبور از بودجه مصوب.'),
             ('contracts', 'قراردادها', 'file-signature', True, 'قراردادها، صورت‌وضعیت‌ها و کسورات پیمانکار.'),
             ('guarantees', 'ضمانت‌نامه‌ها', 'shield-halved', False, 'ضمانت‌نامه‌ها، چک و سفته‌های دریافتی و سررسید آن‌ها.'),
@@ -274,12 +282,13 @@ def render_panel(request, year, status=200):
         TAB_BUILDERS[tab](request, year, ctx)
     else:
         from main.views import (accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings,
-                                accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets, accounting_tools, accounting_archive)   # late: they import this module
+                                accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets, accounting_tools, accounting_archive, accounting_trade, accounting_trade_stock)   # late: they import this module
         {**accounting_finance.BUILDERS, **accounting_income.BUILDERS, **accounting_reports.BUILDERS,
          **accounting_settings.BUILDERS, **accounting_payroll.BUILDERS, **accounting_statements.BUILDERS,
          **accounting_controls.BUILDERS, **accounting_audit.BUILDERS,
          **accounting_analysis.BUILDERS, **accounting_assets.BUILDERS,
-         **accounting_tools.BUILDERS, **accounting_archive.BUILDERS}[tab](request, year, ctx)
+         **accounting_tools.BUILDERS, **accounting_archive.BUILDERS,
+         **accounting_trade.BUILDERS, **accounting_trade_stock.BUILDERS}[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 

@@ -1,7 +1,7 @@
 """Payable-document treasury (خزانه اسناد پرداختی): cheques and notes the municipality issued, until cleared."""
 from django.db import transaction
 
-from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, municipality_of
+from main.accounting.ledger import check_unlocked, _amount, _locked, _own, _own_or_invalid, _text, municipality_of
 from main.models import Municipality, PayableDocument, PayableEvent
 from main.office.errors import Conflict, Invalid
 
@@ -27,6 +27,7 @@ def issue(actor, year, *, kind, serial, party, bank_account, issue_date, due_dat
     _own(muni, year)
     if year.is_closed:
         raise Conflict('سال مالی بسته شده است.')
+    check_unlocked(muni, issue_date)
     if kind not in dict(PayableDocument.KINDS):
         raise Invalid('نوع سند نامعتبر است.')
     party = _own_or_invalid(muni, party, 'در وجه')
@@ -56,6 +57,7 @@ def issue(actor, year, *, kind, serial, party, bank_account, issue_date, due_dat
 def change_status(actor, doc, status, on, note=''):
     muni = municipality_of(actor)
     _own(muni, doc)
+    check_unlocked(muni, on)
     if status not in dict(PayableDocument.STATUSES):
         raise Invalid('وضعیت نامعتبر است.')
     with transaction.atomic():
