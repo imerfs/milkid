@@ -20,6 +20,12 @@ from .twofactor_views import *
 from .mail_views import *
 from .accounting_views import *
 from .accounting_panel import *
+from .accounting_statements import *
+from .accounting_controls import *
+from .accounting_audit import *
+from .accounting_analysis import *
+from .accounting_assets import *
+from .accounting_tools import *
 from .accounting_finance import *
 from .accounting_income import *
 from .accounting_reports import *

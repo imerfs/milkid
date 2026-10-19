@@ -82,6 +82,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'main.audit.AuditMiddleware',  # who is acting, for the accounting audit trail
     'django.contrib.messages.middleware.MessageMiddleware',
     'main.upload_guard.UploadValidationMiddleware',  # extension/size/content checks on every upload
     'main.middleware.ForcePasswordChangeMiddleware',  # first-login password change

@@ -1,0 +1,34 @@
+{% load accounting_tags jalali_tags %}
+{% if not audit_allowed %}
+<div class="ac-notice warn" role="alert"><i class="fas fa-lock" aria-hidden="true"></i><span>لاگ ممیزی فقط برای دهیار قابل مشاهده است.</span></div>
+{% else %}
+<div class="ac-card">
+    <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit, change from:select" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="audit">
+        <label class="ac-searchbox"><span class="ac-sr">کاربر</span><i class="fas fa-user" aria-hidden="true"></i><input type="search" name="user" value="{{ g.user }}" placeholder="نام کاربری..."></label>
+        <label class="ac-select"><span class="ac-sr">نوع رکورد</span><select name="model"><option value="">همه رکوردها</option>{% for m in audit_models %}<option value="{{ m }}" {% if g.model == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-select"><span class="ac-sr">عملیات</span><select name="action"><option value="">همه عملیات</option>{% for k, label in audit_actions %}<option value="{{ k }}" {% if g.action == k %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">از تاریخ</span><input class="ac-in" name="date_from" dir="ltr" placeholder="از ۱۴۰۴/۰۱/۰۱" value="{{ g.date_from }}" style="width:130px"></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="date_to" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ g.date_to }}" style="width:130px"></label>
+        <label class="ac-searchbox"><span class="ac-sr">جستجو</span><i class="fas fa-search" aria-hidden="true"></i><input type="search" name="q" value="{{ g.q }}" placeholder="شرح..."></label>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>اعمال</button>
+        <a class="ac-btn ac-spaced" href="{% url 'main:acc_p_audit_export' %}?{{ export_query }}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
+    </form>
+    {% if audit_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ audit_error }}</div>{% endif %}
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>رکورد</th><th>شرح</th><th>تغییرات</th></tr></thead>
+        <tbody>
+        {% for e in page %}
+            <tr><td class="nw">{{ e.at|jalali_date|fa }} <span class="muted" dir="ltr">{{ e.at|time:"H:i" }}</span></td>
+                <td>{{ e.username|default:"—" }}</td><td><span class="ac-tag">{{ e.get_action_display }}</span></td>
+                <td class="muted">{{ e.model }}{% if e.object_id %} #{{ e.object_id }}{% endif %}</td>
+                <td>{{ e.summary|truncatechars:80 }}</td>
+                <td class="muted" style="font-size:12px">{% for field, pair in e.changes.items %}<div><b>{{ field }}</b>: {{ pair.0 }} ← {{ pair.1 }}</div>{% endfor %}</td></tr>
+        {% empty %}
+            <tr><td colspan="6"><div class="ac-empty"><span class="eic"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><h4>رویدادی ثبت نشده است</h4></div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+    {% include 'main/accounting/panel/_pager.html' %}
+</div>
+{% endif %}

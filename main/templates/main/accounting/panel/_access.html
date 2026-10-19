@@ -1,0 +1,21 @@
+{% load accounting_tags %}
+{% if not access_allowed %}
+<div class="ac-notice warn" role="alert"><i class="fas fa-lock" aria-hidden="true"></i><span>فقط دهیار می‌تواند سطوح دسترسی را تنظیم کند.</span></div>
+{% else %}
+<div class="ac-card">
+    <div class="ac-card-head"><h2 class="ac-card-title">سطح دسترسی حسابدار</h2></div>
+    <p class="muted" style="margin:0 16px 12px">برای هر بخش مشخص کنید حسابدار دهیاری چه کاری می‌تواند بکند. دهیار و مدیر سامانه همیشه به همه‌چیز دسترسی کامل دارند.</p>
+    <form hx-post="{% url 'main:acc_p_access_save' %}" hx-swap="none">{% csrf_token %}
+        <div class="ac-table-wrap"><table>
+            <thead><tr><th>بخش</th><th>سطح دسترسی</th></tr></thead>
+            <tbody>
+            {% for key, label, level in access_rows %}
+                <tr><td>{{ label }}</td>
+                    <td><label class="ac-select"><span class="ac-sr">{{ label }}</span><select name="area_{{ key }}">{% for v, text in level_options %}<option value="{{ v }}" {% if v == level %}selected{% endif %}>{{ text }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label></td></tr>
+            {% endfor %}
+            </tbody>
+        </table></div>
+        <div class="ac-foot" style="padding:12px 16px"><button type="submit" class="ac-btn ac-btn-ok"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button></div>
+    </form>
+</div>
+{% endif %}

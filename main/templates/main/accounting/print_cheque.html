@@ -1,0 +1,35 @@
+{% load accounting_tags jalali_tags %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>چاپ {{ doc.get_kind_display }} {{ doc.serial }}</title>
+    <style>
+        @page { size: {{ paper_size }}; margin: 6mm; }
+        body { font-family: Vazirmatn, Tahoma, sans-serif; margin: 0; padding: 16px; color: #111; }
+        .bar { margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .sheet { border: 1px solid #444; border-radius: 6px; padding: 14px 18px; max-width: 175mm; position: relative; line-height: 2.1; }
+        .row { display: flex; justify-content: space-between; gap: 12px; }
+        .big { font-size: 20px; font-weight: 700; }
+        .small { font-size: 12px; color: #444; }
+        .sign { margin-top: 18px; height: 44px; border-top: 1px dashed #777; text-align: left; font-size: 12px; color: #666; }
+        @media print { .bar { display: none; } body { padding: 0; } .sheet { border-color: #000; } }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <button type="button" onclick="window.print()">چاپ</button>
+        <form method="get"><label>اندازه کاغذ <select name="paper" onchange="this.form.submit()">{% for k, label in papers %}<option value="{{ k }}" {% if k == paper %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></form>
+    </div>
+    <div class="sheet">
+        <div class="row"><span class="small">{{ muni.name }}</span><span>تاریخ: <b>{{ doc.due_date|jalali_date|fa }}</b></span></div>
+        <div class="row"><span>{{ doc.get_kind_display }} شماره <b dir="ltr">{{ doc.serial|fa }}</b></span><span>بانک: {{ doc.bank_account.title }}</span></div>
+        <div>در وجه: <b>{{ doc.party.name }}</b></div>
+        <div class="big">مبلغ: {{ doc.amount|rial }} ریال</div>
+        <div>به حروف: {{ doc.amount|words }} ریال</div>
+        {% if doc.description %}<div class="small">بابت: {{ doc.description }}</div>{% endif %}
+        <div class="sign">محل مهر و امضا</div>
+    </div>
+</body>
+</html>

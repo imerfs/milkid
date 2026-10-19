@@ -12,7 +12,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from main.access import can, role_of
-from main.models import Account, BillPayment, FiscalYear, Municipality, Voucher, VoucherLine
+from main.models import Account, AccountingLock, BillPayment, FiscalYear, Municipality, Voucher, VoucherLine
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.roles import is_admin, municipality_for
 
@@ -93,6 +93,13 @@ def _own_or_invalid(muni, obj, label):
     return obj
 
 
+def check_unlocked(muni, on):
+    """Raise Conflict if ``on`` falls on or before the municipality's date lock (قفل تاریخ)."""
+    lock = AccountingLock.objects.filter(municipality=muni).values_list('lock_date', flat=True).first()
+    if lock and on <= lock:
+        raise Conflict('اسناد تا تاریخ قفل (' + jdatetime.date.fromgregorian(date=lock).strftime('%Y/%m/%d') + ') قفل شده‌اند.')
+
+
 def _check_header(year, on, kind):
     if kind not in KINDS:
         raise Invalid('نوع سند نامعتبر است.')
@@ -167,6 +174,7 @@ def create_voucher(actor, year, on, kind, description, lines, *, number_hint=Non
     if year.is_closed:
         raise Conflict('سال مالی بسته شده است.')
     _check_header(year, on, kind)
+    check_unlocked(muni, on)
     description = _text(description, 'شرح سند')
     cleaned = _clean_lines(muni, lines)
     with transaction.atomic():
@@ -191,6 +199,8 @@ def update_voucher(actor, voucher, *, description, lines, on=None, kind=None):
         _not_from_bill(voucher)
         on, kind = on or voucher.date, kind or voucher.kind
         _check_header(voucher.fiscal_year, on, kind)
+        check_unlocked(muni, voucher.date)
+        check_unlocked(muni, on)
         voucher.description, voucher.date, voucher.kind = _text(description, 'شرح سند'), on, kind
         cleaned = _clean_lines(muni, lines)
         voucher.save(update_fields=['description', 'date', 'kind'])
@@ -206,6 +216,7 @@ def finalize(actor, voucher):
         voucher = _locked(Voucher, voucher.pk)
         voucher.fiscal_year = FiscalYear.objects.get(pk=voucher.fiscal_year_id)
         _editable(voucher)
+        check_unlocked(muni, voucher.date)
         if voucher.lines.count() < 2 or not is_balanced(voucher):
             raise Conflict('سند بی‌حساب است؛ جمع بدهکار و بستانکار باید برابر و حداقل دو ردیف باشد.')
         voucher.status, voucher.finalized_by, voucher.finalized_at = 'final', actor, timezone.now()
@@ -225,6 +236,7 @@ def revert_to_temporary(actor, voucher):
             raise Conflict('این سند قطعی نیست.')
         if year.is_closed:
             raise Conflict('سال مالی بسته شده است.')
+        check_unlocked(muni, voucher.date)
         voucher.status, voucher.finalized_by, voucher.finalized_at = 'temporary', None, None
         voucher.save(update_fields=['status', 'finalized_by', 'finalized_at'])
     return voucher
@@ -239,6 +251,7 @@ def delete_voucher(actor, voucher):
         voucher.fiscal_year = FiscalYear.objects.get(pk=voucher.fiscal_year_id)
         _editable(voucher)
         _not_from_bill(voucher)
+        check_unlocked(muni, voucher.date)
         voucher.deleted_at = timezone.now()
         voucher.save(update_fields=['deleted_at'])
 
@@ -261,17 +274,35 @@ def trial_balance(actor, year, include_temporary=True):
     return rows, totals
 
 
-def account_ledger(actor, year, account, include_temporary=True):
+def account_ledger(actor, year, account, include_temporary=True, date_from=None, date_to=None):
+    """Turnover of one account; a group account (one that cannot be posted to) shows its descendants' lines.
+
+    With ``date_from`` the first row is the balance carried in from before that date (it has no voucher).
+    """
     muni = municipality_of(actor)
     _own(muni, year)
     _own(muni, account)
-    lines = (_lines(muni, year, include_temporary).filter(account=account).select_related('voucher')
-             .order_by('voucher__date', 'voucher__number', 'row'))
+    ids = {account.id}
+    if not account.is_postable:
+        children = list(Account.objects.filter(municipality=muni, parent_id__in=ids))
+        while children:
+            ids |= {c.id for c in children}
+            children = list(Account.objects.filter(municipality=muni, parent_id__in=[c.id for c in children]).exclude(pk__in=ids))
+    base = _lines(muni, year, include_temporary).filter(account_id__in=ids)
     rows, balance = [], Decimal(0)
-    for ln in lines:
+    if date_from:
+        carried = base.filter(voucher__date__lt=date_from).aggregate(d=Sum('debit'), c=Sum('credit'))
+        balance = (carried['d'] or 0) - (carried['c'] or 0)
+        rows.append({'voucher': None, 'row': 0, 'description': 'مانده از قبل', 'debit': 0, 'credit': 0, 'balance': balance,
+                     'account': None})
+        base = base.filter(voucher__date__gte=date_from)
+    if date_to:
+        base = base.filter(voucher__date__lte=date_to)
+    for ln in base.select_related('voucher', 'account').order_by('voucher__date', 'voucher__number', 'row'):
         balance += ln.debit - ln.credit
         rows.append({'voucher': ln.voucher, 'row': ln.row, 'description': ln.description or ln.voucher.description,
-                     'debit': ln.debit, 'credit': ln.credit, 'balance': balance})
+                     'debit': ln.debit, 'credit': ln.credit, 'balance': balance,
+                     'account': ln.account if len(ids) > 1 else None})
     return rows
 
 

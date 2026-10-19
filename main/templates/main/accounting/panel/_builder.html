@@ -1,0 +1,27 @@
+{% load accounting_tags %}
+<div class="ac-card">
+    <form class="ac-tools" id="builder-form" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="builder">
+        <label class="ac-select"><span class="ac-sr">مجموعه داده</span><select name="dataset" onchange="document.getElementById('builder-form').requestSubmit()">{% for key, info in catalogue.items %}<option value="{{ key }}" {% if key == builder_params.dataset %}selected{% endif %}>{{ info.label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-select"><span class="ac-sr">ردیف‌ها بر حسب</span><select name="group">{% for key, label in dimensions %}<option value="{{ key }}" {% if key == builder_params.group %}selected{% endif %}>ردیف: {{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-select"><span class="ac-sr">ستون‌ها بر حسب (تحلیل‌گر)</span><select name="column"><option value="">بدون ستون (جدول ساده)</option>{% for key, label in dimensions %}<option value="{{ key }}" {% if key == builder_params.column %}selected{% endif %}>ستون: {{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-select"><span class="ac-sr">مقدار</span><select name="measure">{% for key, label in measures %}<option value="{{ key }}" {% if key == builder_params.measure %}selected{% endif %}>مقدار: {{ label }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">از تاریخ</span><input class="ac-in" name="date_from" dir="ltr" placeholder="از ۱۴۰۴/۰۱/۰۱" value="{{ g.date_from }}" style="width:130px"></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="date_to" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ g.date_to }}" style="width:130px"></label>
+        <label class="muted" style="font-size:12px"><input type="checkbox" name="final" value="1" {% if g.final == '1' %}checked{% endif %}> فقط اسناد قطعی</label>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-table-cells" aria-hidden="true"></i>ساخت گزارش</button>
+        <a class="ac-btn ac-spaced" href="{% url 'main:acc_p_builder_export' year.id %}?{{ export_query }}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
+    </form>
+    {% if builder_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ builder_error }}</div>
+    {% elif report %}
+    <p class="muted" style="padding:8px 16px;margin:0;font-size:12.5px">{{ report.label }} · مقدار: {{ report.measure_label }}</p>
+    <div class="ac-table-wrap"><table>
+        <thead><tr>{% for h in report.columns %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for row in report.rows %}<tr>{% for c in row %}<td{% if c.money %} class="num-cell"{% endif %}>{% if c.money %}{{ c.v|rial }}{% else %}{{ c.v|fa }}{% endif %}</td>{% endfor %}</tr>
+        {% empty %}<tr><td colspan="{{ report.columns|length }}"><div class="ac-empty"><span class="eic"><i class="fas fa-table" aria-hidden="true"></i></span><h4>موردی با این تنظیم پیدا نشد</h4></div></td></tr>{% endfor %}
+        </tbody>
+        {% if report.totals %}<tfoot><tr>{% for c in report.totals %}<td{% if c.money %} class="num-cell"{% endif %}><b>{% if c.money %}{{ c.v|rial }}{% else %}{{ c.v|fa }}{% endif %}</b></td>{% endfor %}</tr></tfoot>{% endif %}
+    </table></div>
+    {% endif %}
+</div>

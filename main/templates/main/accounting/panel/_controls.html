@@ -1,0 +1,27 @@
+{% load accounting_tags %}
+<div class="ac-grid2">
+    <section class="ac-card" aria-labelledby="ctl-lock">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="ctl-lock"><i class="fas fa-lock" aria-hidden="true"></i> قفل تاریخ</h2></div>
+        <p class="muted" style="margin:0 0 12px">اسنادی که تاریخ آن‌ها تا تاریخ قفل باشد دیگر ساخته، ویرایش، قطعی، موقت یا حذف نمی‌شوند.</p>
+        <p style="margin:0 0 12px">وضعیت: {% if lock.lock_date %}<b>قفل تا {{ lock_text|fa }}</b>{% else %}<span class="muted">قفلی ثبت نشده است</span>{% endif %}</p>
+        {% if can_lock %}
+        <form hx-post="{% url 'main:acc_p_lock_set' %}" hx-swap="none" class="ac-box">{% csrf_token %}
+            <label class="ac-lab" for="lock-date">قفل تا تاریخ (برای برداشتن قفل، خالی بگذارید)</label>
+            <div style="display:flex;gap:8px"><input class="ac-in" id="lock-date" name="lock_date" dir="ltr" placeholder="۱۴۰۴/۰۶/۳۱" value="{{ lock_text }}"><button type="submit" class="ac-btn ac-btn-brand">ثبت</button></div>
+        </form>
+        {% else %}<p class="muted">فقط دهیار می‌تواند قفل را تغییر دهد.</p>{% endif %}
+    </section>
+    <section class="ac-card" aria-labelledby="ctl-check">
+        <div class="ac-card-head"><h2 class="ac-card-title" id="ctl-check"><i class="fas fa-shield-heart" aria-hidden="true"></i> کنترل صحت داده</h2></div>
+        <p style="margin:0 0 12px">{% if check_summary.failed %}<span class="ac-bad-text"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ check_summary.failed|fa }} مورد از {{ check_summary.checks|fa }} کنترل مشکل دارد ({{ check_summary.problems|fa }} ردیف).</span>{% else %}<span style="color:var(--ok)"><i class="fas fa-circle-check" aria-hidden="true"></i> همه {{ check_summary.checks|fa }} کنترل سالم است.</span>{% endif %}</p>
+        <ul class="ac-list">
+            {% for c in checks %}
+            <li style="display:block">
+                <div>{% if c.count %}<i class="fas fa-circle-xmark ac-bad-text" aria-hidden="true"></i>{% else %}<i class="fas fa-circle-check" style="color:var(--ok)" aria-hidden="true"></i>{% endif %} {{ c.title }}{% if c.count %} <span class="ac-tag">{{ c.count|fa }}</span>{% endif %}</div>
+                {% if c.items %}<ul style="margin:6px 22px;font-size:12.5px" class="muted">{% for item in c.items %}<li>{{ item|fa }}</li>{% endfor %}{% if c.more %}<li>و {{ c.more|fa }} مورد دیگر...</li>{% endif %}</ul>{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        <button type="button" class="ac-btn" hx-get="{{ panel_url }}?year={{ year.id }}&tab=controls"><i class="fas fa-rotate" aria-hidden="true"></i>بررسی دوباره</button>
+    </section>
+</div>

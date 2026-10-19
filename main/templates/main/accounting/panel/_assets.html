@@ -1,0 +1,38 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-card">
+    <div class="ac-tools">
+        <span class="muted" style="font-size:12.5px">دارایی‌های ثابت و استهلاک سالانه؛ سند استهلاک هر سال یک‌جا و موقت صادر می‌شود.</span>
+        {% if not year.is_closed %}
+        {% if not has_asset_accounts %}<form hx-post="{% url 'main:acc_p_asset_accounts' %}" hx-swap="none" class="ac-spaced">{% csrf_token %}<button type="submit" class="ac-btn"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>ساخت سرفصل‌های دارایی ثابت</button></form>{% endif %}
+        <button type="button" class="ac-btn ac-btn-brand {% if has_asset_accounts %}ac-spaced{% endif %}" hx-get="{% url 'main:acc_p_asset_new' %}" hx-target="#acc-modal-body"><i class="fas fa-plus" aria-hidden="true"></i><span class="lbl">دارایی جدید</span></button>
+        {% endif %}
+    </div>
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>کد</th><th>عنوان</th><th>تاریخ تحصیل</th><th>بها</th><th>استهلاک انباشته</th><th>ارزش دفتری</th><th>روش</th><th></th></tr></thead>
+        <tbody>
+        {% for r in asset_rows %}
+            <tr><td class="muted nw" dir="ltr">{{ r.asset.code }}</td><td>{{ r.asset.title }}{% if r.asset.status == 'disposed' %} <span class="ac-tag">خارج‌شده</span>{% endif %}</td>
+                <td class="nw">{{ r.asset.acquisition_date|jalali_date|fa }}</td>
+                <td class="num-cell">{{ r.asset.cost|rial }}</td><td class="num-cell">{{ r.accumulated|rial }}</td><td class="num-cell">{{ r.book|rial }}</td>
+                <td>{{ r.asset.get_method_display }} · {{ r.asset.life_years|fa }} سال</td>
+                <td class="nw">{% if not year.is_closed and r.asset.status == 'active' %}
+                    <button type="button" class="ac-link" hx-get="{% url 'main:acc_p_asset_dispose' r.asset.id %}" hx-target="#acc-modal-body">خروج / فروش</button>
+                    {% if not r.accumulated %}<form hx-post="{% url 'main:acc_p_asset_delete' r.asset.id %}" hx-swap="none" hx-confirm="این دارایی حذف شود؟" style="display:inline">{% csrf_token %}<button class="ac-link" type="submit">حذف</button></form>{% endif %}{% endif %}</td></tr>
+        {% empty %}
+            <tr><td colspan="8"><div class="ac-empty"><span class="eic"><i class="fas fa-building" aria-hidden="true"></i></span><h4>دارایی ثابتی ثبت نشده است</h4></div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% if dep_rows %}
+<div class="ac-card" style="margin-top:14px">
+    <div class="ac-card-head"><h2 class="ac-card-title">استهلاک سال {{ year.year|fa }}</h2></div>
+    {% if dep_missing %}<div class="ac-notice warn" role="status"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>استهلاک سال‌های قبل برای این دارایی‌ها صادر نشده است: {{ dep_missing|join:"، " }}</span></div>{% endif %}
+    <div class="ac-table-wrap"><table>
+        <thead><tr><th>دارایی</th><th>انباشته تا قبل</th><th>استهلاک سال</th><th>انباشته پس از آن</th></tr></thead>
+        <tbody>{% for r in dep_rows %}<tr><td>{{ r.asset.title }}</td><td class="num-cell">{{ r.before|rial }}</td><td class="num-cell">{{ r.amount|rial }}</td><td class="num-cell">{{ r.after|rial }}</td></tr>{% endfor %}</tbody>
+        <tfoot><tr><td>جمع</td><td></td><td class="num-cell">{{ dep_total|rial }}</td><td></td></tr></tfoot>
+    </table></div>
+    {% if not year.is_closed %}<div class="ac-foot" style="padding:12px 16px"><form hx-post="{% url 'main:acc_p_asset_depreciate' year.id %}" hx-swap="none" hx-confirm="سند استهلاک سال صادر شود؟ اگر قبلاً صادر شده و هنوز موقت است، جایگزین می‌شود.">{% csrf_token %}<button type="submit" class="ac-btn ac-btn-ok"><i class="fas fa-file-circle-check" aria-hidden="true"></i>صدور سند استهلاک</button></form></div>{% endif %}
+</div>
+{% endif %}

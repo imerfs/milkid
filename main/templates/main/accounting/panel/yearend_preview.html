@@ -1,0 +1,20 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title=title subtitle='پیش‌نمایش؛ هنوز چیزی ثبت نشده است.' %}
+<div class="ac-mb">
+    {% if plan %}
+    <p style="margin:0 0 10px">تاریخ سند: <b dir="ltr">{{ date_text|fa }}</b> · {{ plan.description }}</p>
+    {% for w in plan.warnings %}<div class="ac-notice warn" role="status"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>{{ w }}</span></div>{% endfor %}
+    {% if plan.existing %}<div class="ac-notice" role="status"><i class="fas fa-circle-info" aria-hidden="true"></i><span>سند {{ plan.existing.number|fa }} ({{ plan.existing.get_status_display }}) قبلاً صادر شده است؛ صدور دوباره آن را جایگزین می‌کند.</span></div>{% endif %}
+    <div class="ac-lines"><table>
+        <thead><tr><th>ردیف</th><th>حساب</th><th>بدهکار</th><th>بستانکار</th></tr></thead>
+        <tbody>{% for ln in plan.lines %}<tr><td>{{ forloop.counter|fa }}</td><td><span class="muted" dir="ltr">{{ ln.account.code }}</span> {{ ln.account.title }}</td><td class="num-cell">{{ ln.debit|rial }}</td><td class="num-cell">{{ ln.credit|rial }}</td></tr>{% endfor %}</tbody>
+        <tfoot><tr><td></td><td>جمع</td><td class="num-cell">{{ plan.debit|rial }}</td><td class="num-cell">{{ plan.credit|rial }}</td></tr></tfoot>
+    </table></div>
+    <div class="ac-foot">
+        <button type="button" class="ac-btn" data-acc-close>انصراف</button>
+        <form hx-post="{% url 'main:acc_p_yearend_issue' year.id kind %}" hx-swap="none" style="display:inline">{% csrf_token %}<button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-file-circle-check" aria-hidden="true"></i>صدور سند</button></form>
+    </div>
+    {% else %}
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>بستن</button></div>
+    {% endif %}
+</div>

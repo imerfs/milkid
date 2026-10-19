@@ -13,7 +13,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
-from main.accounting import bills, budget, chart, ledger
+from main.accounting import access_levels, bills, budget, chart, ledger, statements
 from main.accounting.parse import jalali_str, parse_amount, parse_jalali
 from main.models import Account, BillPayment, FiscalYear, Party, Payment, Voucher
 from main.office.errors import Invalid, OfficeError
@@ -21,11 +21,11 @@ from main.views.accounting_views import (
     PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines, new_account,
     new_party)
 
-YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'credit', 'contracts', 'payables', 'images',
+YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'statements', 'yearend', 'recon', 'controls', 'access', 'audit', 'builder', 'charts', 'assets', 'credit', 'contracts', 'payables', 'images',
              'statuschange', 'plans', 'received', 'transport', 'planimages', 'reports')
 PAYROLL_TABS = ('pstaff', 'pcalc', 'pattendance', 'pmission', 'pspecialallow', 'pspecialdebt', 'pmisc', 'pworkers', 'peidi', 'prun',
                 'psettings')
-TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings') + PAYROLL_TABS
+TABS = YEAR_TABS + ('guarantees', 'parties', 'accounts', 'online', 'setup', 'settings', 'tools') + PAYROLL_TABS
 # Tabs drawn by the generic register template (see main/views/accounting_finance.py)
 REGISTER_TABS = ('credit', 'contracts', 'guarantees', 'payables', 'images', 'plans', 'received', 'transport', 'planimages') + PAYROLL_TABS
 PANEL = 'main/accounting/panel/'
@@ -35,6 +35,16 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('bills', 'فیش‌های نقدی', 'receipt', True, 'صدور فیش و ثبت پرداخت‌ها.'),
             ('budget', 'بودجه و عملکرد', 'chart-pie', True, 'بودجه مصوب در برابر عملکرد هر حساب.'),
             ('trial', 'تراز آزمایشی', 'scale-balanced', True, 'جمع بدهکار و بستانکار همه حساب‌ها.'),
+            ('statements', 'صورت‌های مالی', 'file-invoice-dollar', True, 'صورت منابع و مصارف و ترازنامه تا تاریخ دلخواه.'),
+            ('yearend', 'عملیات سال مالی', 'flag-checkered', True, 'سند بستن حساب‌های موقت، اختتامیه، افتتاحیه و بستن سال.'),
+            ('recon', 'مغایرت‌گیری بانک', 'building-columns', True, 'تیک‌زدن گردش بانک و صندوق و مقایسه با صورت‌حساب بانک.'),
+            ('controls', 'قفل تاریخ و کنترل داده', 'shield-heart', True, 'قفل اسناد تا یک تاریخ و بررسی سلامت دفتر.'),
+            ('audit', 'لاگ ممیزی', 'clock-rotate-left', True, 'چه کسی چه چیزی را کی تغییر داده؛ ورود و خروج کاربران.'),
+            ('access', 'سطوح دسترسی حسابدار', 'user-lock', True, 'تعیین کنید حسابدار هر بخش را ببیند یا ویرایش کند.'),
+            ('builder', 'گزارش‌ساز و تحلیل‌گر', 'table-cells', True, 'گزارش دلخواه از اسناد، فیش‌ها و اقساط، به‌صورت جدول یا ماتریس، با خروجی اکسل.'),
+            ('charts', 'نمودارها', 'chart-column', True, 'منابع و مصارف ماهانه، بزرگ‌ترین حساب‌ها و بودجه در برابر عملکرد.'),
+            ('assets', 'دارایی‌های ثابت', 'building', True, 'ثبت دارایی، استهلاک سالانه با سند حسابداری و خروج یا فروش.'),
+            ('tools', 'ابزارها', 'screwdriver-wrench', False, 'ماشین‌حساب، عدد به حروف، تبدیل تاریخ و اقساط وام.'),
             ('credit', 'تامین اعتبار', 'hand-holding-dollar', True, 'رزرو اعتبار بودجه برای حساب‌های مصرف، بدون عبور از بودجه مصوب.'),
             ('contracts', 'قراردادها', 'file-signature', True, 'قراردادها، صورت‌وضعیت‌ها و کسورات پیمانکار.'),
             ('guarantees', 'ضمانت‌نامه‌ها', 'shield-halved', False, 'ضمانت‌نامه‌ها، چک و سفته‌های دریافتی و سررسید آن‌ها.'),
@@ -168,9 +178,31 @@ def _tab_budget(request, year, ctx):
     ctx['rows'], ctx['totals'] = budget.report(request.user, year, include_temporary=not ctx['final_only'])
 
 
+def _date_param(request, name):
+    """(date or None, error) from a Jalali ?name= parameter."""
+    text = request.GET.get(name, '').strip()
+    if not text:
+        return None, None
+    try:
+        return parse_jalali(text), None
+    except OfficeError as exc:
+        return None, str(exc)
+
+
 def _tab_trial(request, year, ctx):
-    ctx['final_only'] = request.GET.get('final') == '1'
-    ctx['rows'], ctx['totals'] = ledger.trial_balance(request.user, year, include_temporary=not ctx['final_only'])
+    """Trial balance with opening / turnover / ending columns, rolled up to a level of the chart."""
+    g = request.GET
+    level = g.get('level') if g.get('level') in statements.LEVELS else 'all'
+    date_from, err_from = _date_param(request, 'date_from')
+    date_to, err_to = _date_param(request, 'date_to')
+    ctx.update(final_only=g.get('final') == '1', level=level, levels=statements.LEVELS, with_closing=g.get('closing') == '1',
+               trial_error=err_from or err_to)
+    if ctx['trial_error']:
+        ctx['rows'], ctx['totals'] = [], {key: 0 for key in ('debit', 'credit', 'open_d', 'open_c', 'turn_d', 'turn_c', 'end_d', 'end_c')}
+        return
+    ctx['rows'], ctx['totals'] = statements.trial_by_level(
+        request.user, year, level=level, date_from=date_from, date_to=date_to, final_only=ctx['final_only'],
+        with_closing=ctx['with_closing'])
 
 
 def _tab_parties(request, year, ctx):
@@ -222,9 +254,11 @@ def render_panel(request, year, status=200):
     tab = g.get('tab') if g.get('tab') in TABS else 'overview'
     if year is None and tab in YEAR_TABS:
         tab = 'setup'
+    denied = access_levels.tab_level(user, tab) == 'none'
     ctx = {'year': year, 'years': years_for(user), 'tab': tab, 'g': g, 'kinds': Voucher.KINDS,
            'muni': ledger.municipality_of(user), 'tab_list': TAB_LIST,
-           'tab_meta': next(t for t in TAB_LIST if t[0] == tab), 'tab_template': f'{PANEL}_register.html' if tab in REGISTER_TABS else f'{PANEL}_{tab}.html',
+           'tab_meta': next(t for t in TAB_LIST if t[0] == tab), 'tab_template': (f'{PANEL}_denied.html' if denied else f'{PANEL}_register.html' if tab in REGISTER_TABS else f'{PANEL}_{tab}.html'),
+           'hidden_tabs': ','.join(access_levels.hidden_tabs(user)), 'read_only': access_levels.tab_level(user, tab) == 'view',
            'filtered': any(g.get(k) for k in ('q', 'status', 'kind', 'bill_status', 'pay_status'))}
     keep = g.copy()
     keep.pop('page', None)
@@ -233,12 +267,18 @@ def render_panel(request, year, status=200):
         keep['year'] = year.id
         ctx['summary'] = _summary(user, year)
     ctx['query'] = keep.urlencode()
-    if tab in TAB_BUILDERS:
+    if denied:
+        pass
+    elif tab in TAB_BUILDERS:
         TAB_BUILDERS[tab](request, year, ctx)
     else:
-        from main.views import accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings   # late: they import this module
+        from main.views import (accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings,
+                                accounting_statements, accounting_controls, accounting_audit, accounting_analysis, accounting_assets, accounting_tools)   # late: they import this module
         {**accounting_finance.BUILDERS, **accounting_income.BUILDERS, **accounting_reports.BUILDERS,
-         **accounting_settings.BUILDERS, **accounting_payroll.BUILDERS}[tab](request, year, ctx)
+         **accounting_settings.BUILDERS, **accounting_payroll.BUILDERS, **accounting_statements.BUILDERS,
+         **accounting_controls.BUILDERS, **accounting_audit.BUILDERS,
+         **accounting_analysis.BUILDERS, **accounting_assets.BUILDERS,
+         **accounting_tools.BUILDERS}[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 
@@ -303,9 +343,12 @@ def acc_p_ledger(request, year_id, account_id):
     year = ledger.get_year(request.user, year_id)
     account = get_object_or_404(Account, pk=account_id, municipality=ledger.municipality_of(request.user))
     final_only = request.GET.get('final') == '1'
+    date_from, err_from = _date_param(request, 'date_from')
+    date_to, err_to = _date_param(request, 'date_to')
     return render(request, PANEL + 'ledger.html', {
-        'year': year, 'account': account,
-        'rows': ledger.account_ledger(request.user, year, account, include_temporary=not final_only)})
+        'year': year, 'account': account, 'error': err_from or err_to,
+        'rows': ledger.account_ledger(request.user, year, account, include_temporary=not final_only,
+                                      date_from=date_from, date_to=date_to)})
 
 
 # ---------- vouchers ----------

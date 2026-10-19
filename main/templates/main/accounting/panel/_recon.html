@@ -1,0 +1,39 @@
+{% load accounting_tags jalali_tags %}
+<div class="ac-card">
+    <form class="ac-tools" hx-get="{{ panel_url }}" hx-target="#acc-panel" hx-trigger="submit, change from:select" style="flex-wrap:wrap;gap:10px" novalidate>
+        <input type="hidden" name="year" value="{{ year.id }}"><input type="hidden" name="tab" value="recon">
+        <label class="ac-select"><span class="ac-sr">حساب بانک یا صندوق</span><select name="account"><option value="">حساب بانک / صندوق...</option>{% for a in bank_accounts %}<option value="{{ a.id }}" {% if recon_account and a.id == recon_account.id %}selected{% endif %}>{{ a.code }} - {{ a.title }}</option>{% endfor %}</select><i class="fas fa-chevron-down" aria-hidden="true"></i></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">از تاریخ</span><input class="ac-in" name="date_from" dir="ltr" placeholder="از ۱۴۰۴/۰۱/۰۱" value="{{ g.date_from }}" style="width:130px"></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">تا تاریخ</span><input class="ac-in" name="date_to" dir="ltr" placeholder="تا ۱۴۰۴/۱۲/۲۹" value="{{ g.date_to }}" style="width:130px"></label>
+        <label class="ac-field" style="margin:0"><span class="ac-sr">مانده طبق صورت‌حساب بانک</span><input class="ac-in" name="statement" dir="ltr" inputmode="numeric" placeholder="مانده صورت‌حساب بانک (ریال)" value="{{ g.statement }}" style="width:200px"></label>
+        <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>نمایش</button>
+    </form>
+    {% if recon_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ recon_error }}</div>{% endif %}
+    {% if not recon_account %}
+    <div class="ac-empty"><span class="eic"><i class="fas fa-building-columns" aria-hidden="true"></i></span><h4>حساب بانک یا صندوق را انتخاب کنید</h4><p class="muted">ردیف‌هایی که در صورت‌حساب بانک دیده‌اید را تیک بزنید؛ مانده تیک‌خورده‌ها با مانده بانک مقایسه می‌شود.</p></div>
+    {% elif recon %}
+    <div class="ac-stats" style="display:flex;gap:18px;flex-wrap:wrap;padding:12px 16px">
+        <div>مانده دفتر: <b>{{ recon.book|rial }}</b></div>
+        <div>مانده تیک‌خورده (در بانک): <b>{{ recon.cleared|rial }}</b></div>
+        <div>تیک‌نخورده: <b>{{ recon.uncleared|rial }}</b></div>
+        {% if recon.difference is not None %}<div>اختلاف با صورت‌حساب بانک: <b class="{% if recon.difference %}ac-bad-text{% endif %}">{{ recon.difference|rial }}</b>{% if not recon.difference %} <i class="fas fa-circle-check" style="color:var(--ok)" aria-hidden="true"></i>{% endif %}</div>{% endif %}
+    </div>
+    <form hx-post="{% url 'main:acc_p_recon_save' year.id %}" hx-swap="none">{% csrf_token %}
+        <input type="hidden" name="account" value="{{ recon_account.id }}"><input type="hidden" name="shown" value="{{ shown_ids }}">
+        <div class="ac-table-wrap"><table>
+            <thead><tr><th>تیک</th><th>تاریخ</th><th>سند</th><th>شرح</th><th>بدهکار</th><th>بستانکار</th></tr></thead>
+            <tbody>
+            {% for r in recon.rows %}
+                <tr><td><input type="checkbox" name="line" value="{{ r.line.id }}" {% if r.marked %}checked{% endif %} aria-label="تیک ردیف {{ r.line.row|fa }} سند {{ r.line.voucher.number|fa }}"></td>
+                    <td class="nw">{{ r.line.voucher.date|jalali_date|fa }}</td>
+                    <td><button type="button" class="ac-link" hx-get="{% url 'main:acc_p_voucher_detail' r.line.voucher.id %}" hx-target="#acc-modal-body">{{ r.line.voucher.number|fa }}</button></td>
+                    <td>{{ r.line.description|default:r.line.voucher.description|truncatechars:60 }}</td>
+                    <td class="num-cell">{{ r.line.debit|rial }}</td><td class="num-cell">{{ r.line.credit|rial }}</td></tr>
+            {% empty %}<tr><td colspan="6" class="muted" style="text-align:center;padding:20px">در این بازه گردشی نیست.</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+        {% if recon.truncated %}<p class="muted" style="padding:10px 16px;font-size:12px">فقط ۲٬۰۰۰ ردیف اول نمایش داده شد؛ بازه را کوچک‌تر کنید.</p>{% endif %}
+        <div class="ac-foot" style="padding:12px 16px"><button type="submit" class="ac-btn ac-btn-ok"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره تیک‌ها</button></div>
+    </form>
+    {% endif %}
+</div>

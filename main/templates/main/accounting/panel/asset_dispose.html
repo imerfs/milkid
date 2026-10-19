@@ -1,0 +1,13 @@
+{% load accounting_tags %}
+{% include 'main/accounting/panel/_modal_head.html' with title='خروج یا فروش دارایی' subtitle=asset.title %}
+<form method="post" hx-post="{% url 'main:acc_p_asset_dispose' asset.id %}" hx-target="#acc-modal-body" hx-swap="innerHTML" class="ac-mb" novalidate>
+    {% csrf_token %}
+    <p class="muted" style="margin:0 0 10px">ارزش دفتری ثبت‌شده: <b>{{ book|rial }}</b> ریال (بها منهای استهلاک ثبت‌شده). استهلاک تا ماه خروج در همین سند اضافه می‌شود.</p>
+    <div class="ac-fgrid">
+        <div class="ac-field s2"><label for="ds-date">تاریخ خروج</label><input class="ac-in" id="ds-date" name="date" dir="ltr" value="{{ p.date }}" required></div>
+        <div class="ac-field s2"><label for="ds-amount">مبلغ فروش (ریال؛ صفر اگر فروخته نشده)</label><input class="ac-in" id="ds-amount" name="proceeds" inputmode="numeric" dir="ltr" value="{{ p.proceeds }}"></div>
+        <div class="ac-field s2"><label for="ds-bank">حساب دریافت وجه</label><select class="ac-in" id="ds-bank" name="proceeds_account"><option value="">انتخاب...</option>{% for a in asset_accounts %}<option value="{{ a.id }}" {% if p.proceeds_account|stringformat:'s' == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code }} - {{ a.title }}</option>{% endfor %}</select></div>
+        <div class="ac-field s2"><label for="ds-result">حساب سود یا زیان (اگر مبلغ فروش با ارزش دفتری فرق دارد)</label><select class="ac-in" id="ds-result" name="result_account"><option value="">انتخاب...</option>{% for a in result_accounts %}<option value="{{ a.id }}" {% if p.result_account|stringformat:'s' == a.id|stringformat:'s' %}selected{% endif %}>{{ a.code }} - {{ a.title }}</option>{% endfor %}</select></div>
+    </div>
+    <div class="ac-foot"><button type="button" class="ac-btn" data-acc-close>انصراف</button><button type="submit" class="ac-btn ac-btn-bad"><i class="fas fa-right-from-bracket" aria-hidden="true"></i>خروج دارایی</button></div>
+</form>

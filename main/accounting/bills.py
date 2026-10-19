@@ -43,6 +43,7 @@ def issue_bill(actor, year, on, party, income_account, amount, description):
         raise Conflict('سال مالی بسته شده است.')
     if not (year.start_date <= on <= year.end_date):
         raise Invalid('تاریخ فیش باید داخل سال مالی باشد.')
+    ledger.check_unlocked(muni, on)
     party = _own_or_invalid(muni, party, 'طرف حساب')
     income_account = _own_or_invalid(muni, income_account, 'حساب درآمد')
     if income_account.kind != 'budget_resource' or not income_account.is_postable:
@@ -106,6 +107,7 @@ def cancel_payment(actor, payment):
             raise Conflict('سند این پرداخت قطعی شده است؛ ابتدا دهیار آن را به موقت برگرداند.')
         if payment.voucher.fiscal_year.is_closed:
             raise Conflict('سال مالی بسته شده است.')
+        ledger.check_unlocked(muni, voucher.date)
         bill_id = payment.bill_id
         payment.delete()
         voucher.deleted_at = timezone.now()
