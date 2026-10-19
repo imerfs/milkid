@@ -1,19 +1,17 @@
 """Accounting backup and restore, the safety backups and letters linked to records."""
 import gzip
 import json
-import tempfile
 from datetime import date
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.test import override_settings
 from django.urls import reverse
 
 from main.accounting import backup, bills, letter_links, ledger, yearend
 from main.models import (Account, AuditEvent, BackupFile, Bill, Contract, FiscalYear, Letter, LetterLink, Party, Voucher, VoucherLine)
 from main.office.errors import Conflict, Forbidden, Invalid
-from main.tests.helpers import client_for, make_municipality
+from main.tests.helpers import client_for, isolate_private_media, make_municipality
 from main.tests.test_accounting_ledger import LedgerBase, line, make_user
 
 
@@ -24,11 +22,7 @@ def raw(item):
 
 class BackupBase(LedgerBase):
     def setUp(self):
-        self._media = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
-        self.addCleanup(self._media.cleanup)
-        override = override_settings(PRIVATE_MEDIA_ROOT=self._media.name)
-        override.enable()
-        self.addCleanup(override.disable)
+        self._media_root = isolate_private_media(self)
         super().setUp()
         self.party = Party.objects.create(municipality=self.muni, name='آقای الف')
         self.v1, self.v2 = self.voucher(1000), self.voucher(500, on=date(2025, 6, 1))
@@ -91,6 +85,17 @@ class RestoreTests(BackupBase):
         self.assertEqual(restored, sum(before.values()))
         self.assertEqual(Voucher.objects.filter(municipality=self.muni, deleted_at__isnull=True).count(), 3)
         self.assertFalse(Party.objects.filter(name='تازه').exists())
+
+    def test_a_chart_of_accounts_with_parents_is_restored(self):
+        group = Account.objects.create(municipality=self.muni, code='501', title='منابع', kind='budget_resource', nature='credit',
+                                       is_postable=False)
+        child = Account.objects.create(municipality=self.muni, code='5010101002', title='زیرحساب', kind='budget_resource',
+                                       nature='credit', parent=group)
+        item = backup.create(self.dehyar)
+        Account.objects.filter(pk=child.pk).update(parent=None)
+        self.restore(item)
+        child.refresh_from_db()
+        self.assertEqual(child.parent_id, group.pk)
 
     def test_numbering_continues_after_a_restore(self):
         item = backup.create(self.dehyar)
@@ -211,9 +216,9 @@ class CommandTests(BackupBase):
     def test_the_command_backs_up_each_municipality_with_accounting_data(self):
         other_mayor = make_user('dehyari')
         make_municipality(other_mayor)                               # no fiscal year: skipped
-        call_command('backup_accounting', stdout=open(self._media.name + '/out.txt', 'w'))
+        call_command('backup_accounting', stdout=open(self._media_root + '/out.txt', 'w'))
         self.assertEqual(list(BackupFile.objects.values_list('municipality_id', 'kind')), [(self.muni.id, 'auto')])
-        call_command('backup_accounting', '--municipality', str(self.muni.id), '--keep', '1', stdout=open(self._media.name + '/out.txt', 'w'))
+        call_command('backup_accounting', '--municipality', str(self.muni.id), '--keep', '1', stdout=open(self._media_root + '/out.txt', 'w'))
         self.assertEqual(BackupFile.objects.filter(kind='auto').count(), 1)
 
 

@@ -264,7 +264,7 @@
         try {
             var value = evaluate(input.value);
             out.className = '';
-            out.textContent = value === null ? '' : toFa((Math.round(value * 1e6) / 1e6).toLocaleString('en', { maximumFractionDigits: 6 }));
+            out.textContent = value === null ? '' : toFa((Math.round(value * 1e6) / 1e6).toLocaleString('en', { maximumFractionDigits: 6 })).replace(/,/g, '٬');
         } catch (err) { out.className = 'ac-bad-text'; out.textContent = err.message; }
     }
     document.addEventListener('click', function (e) {
@@ -286,7 +286,7 @@
     });
 
     // ---------- tools tab: words, dates, loan ----------
-    function money(n) { return toFa(Number(n).toLocaleString('en')); }
+    function money(n) { return toFa(Number(n).toLocaleString('en')).replace(/,/g, '٬'); }
     document.addEventListener('submit', function (e) {
         var form = e.target.closest('[data-tool]');
         if (!form) return;

@@ -1,24 +1,18 @@
 """Financial statements, multi-level trial balance and the year-end operations (closing and opening vouchers)."""
-import tempfile
 from datetime import date
 
-from django.test import override_settings
 from django.urls import reverse
 
 from main.accounting import ledger, statements, yearend
 from main.models import Account, Voucher
 from main.office.errors import Conflict, Invalid
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, isolate_private_media
 from main.tests.test_accounting_ledger import LedgerBase, line
 
 
 class YearEndBase(LedgerBase):
     def setUp(self):
-        self._media = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)         # year-end operations write safety backups
-        self.addCleanup(self._media.cleanup)
-        override = override_settings(PRIVATE_MEDIA_ROOT=self._media.name)
-        override.enable()
-        self.addCleanup(override.disable)
+        isolate_private_media(self)                                   # year-end operations write safety backups
         super().setUp()
         def make(code, title, kind, nature):
             return Account.objects.create(municipality=self.muni, code=code, title=title, kind=kind, nature=nature)

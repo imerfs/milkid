@@ -183,6 +183,13 @@ def _sanitise_users(model, objects, fallback_user):
                 obj['fields'][f.name] = None if f.null else fallback_user.pk
 
 
+def _detach_self_references(model, queryset):
+    """A table that points to itself (the chart of accounts: parent) cannot be emptied while rows protect each other."""
+    for field in model._meta.concrete_fields:
+        if field.is_relation and field.related_model is model and field.null:
+            queryset.update(**{field.name: None})
+
+
 def _drop_orphans(model, objects):
     """Rows that point to a record outside the backup which no longer exists (a deleted letter) cannot be restored."""
     chosen = {m for m, _ in tables()}
@@ -207,6 +214,7 @@ def restore(actor, data):
     with transaction.atomic(), audit.muted():
         Municipality.objects.select_for_update().get(pk=muni.pk)
         for model, lookup in reversed(tables()):
+            _detach_self_references(model, _scoped(model, lookup, muni))
             _scoped(model, lookup, muni).delete()
         for model, lookup in tables():
             objects = data['tables'].get(model._meta.label, [])

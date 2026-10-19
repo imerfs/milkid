@@ -63,3 +63,15 @@ def make_ad(status='approved', owner=None):
     return PropertyAdvertisement.objects.create(
         user=owner, ad_type='sale', property_type='land', total_area=100, address='addr',
         contact_name='n', contact_phone='09120000000', status=status)
+
+
+def isolate_private_media(testcase):
+    """Point PRIVATE_MEDIA_ROOT at a temporary folder for one test (backups and uploads must not land in the real one)."""
+    import tempfile
+    from django.test import override_settings
+    folder = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+    override = override_settings(PRIVATE_MEDIA_ROOT=folder.name)
+    override.enable()
+    testcase.addCleanup(override.disable)
+    testcase.addCleanup(folder.cleanup)
+    return folder.name
