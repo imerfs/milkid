@@ -21,7 +21,7 @@ from main.views.accounting_views import (
     PAGE_SIZE, _bill_form_data, _filtered, _find, _form_context, _guard, _row_dicts, _service_lines, new_account,
     new_party)
 
-YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'statements', 'yearend', 'recon', 'controls', 'access', 'audit', 'credit', 'contracts', 'payables', 'images',
+YEAR_TABS = ('overview', 'vouchers', 'bills', 'budget', 'trial', 'statements', 'yearend', 'recon', 'controls', 'access', 'audit', 'builder', 'charts', 'credit', 'contracts', 'payables', 'images',
              'statuschange', 'plans', 'received', 'transport', 'planimages', 'reports')
 PAYROLL_TABS = ('pstaff', 'pcalc', 'pattendance', 'pmission', 'pspecialallow', 'pspecialdebt', 'pmisc', 'pworkers', 'peidi', 'prun',
                 'psettings')
@@ -41,6 +41,8 @@ TAB_LIST = [('overview', 'نمای کلی', 'gauge-high', True, 'وضعیت ما
             ('controls', 'قفل تاریخ و کنترل داده', 'shield-heart', True, 'قفل اسناد تا یک تاریخ و بررسی سلامت دفتر.'),
             ('audit', 'لاگ ممیزی', 'clock-rotate-left', True, 'چه کسی چه چیزی را کی تغییر داده؛ ورود و خروج کاربران.'),
             ('access', 'سطوح دسترسی حسابدار', 'user-lock', True, 'تعیین کنید حسابدار هر بخش را ببیند یا ویرایش کند.'),
+            ('builder', 'گزارش‌ساز و تحلیل‌گر', 'table-cells', True, 'گزارش دلخواه از اسناد، فیش‌ها و اقساط، به‌صورت جدول یا ماتریس، با خروجی اکسل.'),
+            ('charts', 'نمودارها', 'chart-column', True, 'منابع و مصارف ماهانه، بزرگ‌ترین حساب‌ها و بودجه در برابر عملکرد.'),
             ('credit', 'تامین اعتبار', 'hand-holding-dollar', True, 'رزرو اعتبار بودجه برای حساب‌های مصرف، بدون عبور از بودجه مصوب.'),
             ('contracts', 'قراردادها', 'file-signature', True, 'قراردادها، صورت‌وضعیت‌ها و کسورات پیمانکار.'),
             ('guarantees', 'ضمانت‌نامه‌ها', 'shield-halved', False, 'ضمانت‌نامه‌ها، چک و سفته‌های دریافتی و سررسید آن‌ها.'),
@@ -269,10 +271,11 @@ def render_panel(request, year, status=200):
         TAB_BUILDERS[tab](request, year, ctx)
     else:
         from main.views import (accounting_finance, accounting_income, accounting_payroll, accounting_reports, accounting_settings,
-                                accounting_statements, accounting_controls, accounting_audit)   # late: they import this module
+                                accounting_statements, accounting_controls, accounting_audit, accounting_analysis)   # late: they import this module
         {**accounting_finance.BUILDERS, **accounting_income.BUILDERS, **accounting_reports.BUILDERS,
          **accounting_settings.BUILDERS, **accounting_payroll.BUILDERS, **accounting_statements.BUILDERS,
-         **accounting_controls.BUILDERS, **accounting_audit.BUILDERS}[tab](request, year, ctx)
+         **accounting_controls.BUILDERS, **accounting_audit.BUILDERS,
+         **accounting_analysis.BUILDERS}[tab](request, year, ctx)
     return render(request, PANEL + 'panel.html', ctx, status=status)
 
 

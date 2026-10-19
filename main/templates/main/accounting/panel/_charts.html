@@ -1,0 +1,38 @@
+{% load static accounting_tags %}
+<div class="ac-card">
+    <div class="ac-tools">
+        <div class="ac-seg" role="group" aria-label="دامنهٔ اسناد">
+            <button type="button" class="{% if not final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=charts">همه اسناد</button>
+            <button type="button" class="{% if final_only %}on{% endif %}" hx-get="{{ panel_url }}?year={{ year.id }}&tab=charts&final=1">فقط قطعی</button>
+        </div>
+    </div>
+    <div class="ac-grid2" style="padding:12px">
+        <div><h3 class="ac-card-title" style="font-size:14px">منابع و مصارف ماهانه</h3><canvas id="ch-monthly" height="220" aria-label="نمودار منابع و مصارف ماهانه" role="img"></canvas></div>
+        <div><h3 class="ac-card-title" style="font-size:14px">بودجه و عملکرد</h3><canvas id="ch-budget" height="220" aria-label="نمودار بودجه و عملکرد" role="img"></canvas></div>
+        <div><h3 class="ac-card-title" style="font-size:14px">بزرگ‌ترین مصارف</h3><canvas id="ch-uses" height="220" aria-label="نمودار بزرگ‌ترین مصارف" role="img"></canvas></div>
+        <div><h3 class="ac-card-title" style="font-size:14px">بزرگ‌ترین منابع</h3><canvas id="ch-resources" height="220" aria-label="نمودار بزرگ‌ترین منابع" role="img"></canvas></div>
+        <div><h3 class="ac-card-title" style="font-size:14px">وصولی فیش‌ها در ماه</h3><canvas id="ch-collected" height="220" aria-label="نمودار وصولی ماهانه" role="img"></canvas></div>
+    </div>
+</div>
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+<script>
+(function () {
+    var url = "{% url 'main:acc_p_chart_data' year.id %}{% if final_only %}?final=1{% endif %}";
+    var money = function (v) { return Number(v).toLocaleString('en').replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); };
+    function bar(id, labels, sets) {
+        var el = document.getElementById(id);
+        if (!el || !window.Chart) return;
+        new Chart(el, { type: 'bar', data: { labels: labels, datasets: sets },
+            options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Vazirmatn' } } },
+                tooltip: { callbacks: { label: function (c) { return c.dataset.label + ': ' + money(c.parsed.y) + ' ریال'; } } } },
+                scales: { y: { ticks: { callback: function (v) { return money(v); } } } } } });
+    }
+    fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+        bar('ch-monthly', d.months, [{ label: 'منابع', data: d.resources, backgroundColor: '#16a34a' }, { label: 'مصارف', data: d.uses, backgroundColor: '#dc2626' }]);
+        bar('ch-budget', d.budget_vs_actual.labels, [{ label: 'بودجه مصوب', data: d.budget_vs_actual.budget, backgroundColor: '#94a3b8' }, { label: 'عملکرد', data: d.budget_vs_actual.actual, backgroundColor: '#2563eb' }]);
+        bar('ch-uses', d.top_uses.labels, [{ label: 'عملکرد', data: d.top_uses.actual, backgroundColor: '#dc2626' }, { label: 'بودجه', data: d.top_uses.budget, backgroundColor: '#94a3b8' }]);
+        bar('ch-resources', d.top_resources.labels, [{ label: 'عملکرد', data: d.top_resources.actual, backgroundColor: '#16a34a' }, { label: 'بودجه', data: d.top_resources.budget, backgroundColor: '#94a3b8' }]);
+        bar('ch-collected', d.months, [{ label: 'وصولی', data: d.collected, backgroundColor: '#0891b2' }]);
+    });
+})();
+</script>
