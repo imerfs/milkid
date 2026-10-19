@@ -21,6 +21,7 @@ from .mail_views import *
 from .accounting_views import *
 from .accounting_panel import *
 from .accounting_statements import *
+from .accounting_controls import *
 from .accounting_finance import *
 from .accounting_income import *
 from .accounting_reports import *

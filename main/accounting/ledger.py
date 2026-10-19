@@ -12,7 +12,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from main.access import can, role_of
-from main.models import Account, BillPayment, FiscalYear, Municipality, Voucher, VoucherLine
+from main.models import Account, AccountingLock, BillPayment, FiscalYear, Municipality, Voucher, VoucherLine
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.roles import is_admin, municipality_for
 
@@ -93,6 +93,13 @@ def _own_or_invalid(muni, obj, label):
     return obj
 
 
+def check_unlocked(muni, on):
+    """Raise Conflict if ``on`` falls on or before the municipality's date lock (قفل تاریخ)."""
+    lock = AccountingLock.objects.filter(municipality=muni).values_list('lock_date', flat=True).first()
+    if lock and on <= lock:
+        raise Conflict('اسناد تا تاریخ قفل (' + jdatetime.date.fromgregorian(date=lock).strftime('%Y/%m/%d') + ') قفل شده‌اند.')
+
+
 def _check_header(year, on, kind):
     if kind not in KINDS:
         raise Invalid('نوع سند نامعتبر است.')
@@ -167,6 +174,7 @@ def create_voucher(actor, year, on, kind, description, lines, *, number_hint=Non
     if year.is_closed:
         raise Conflict('سال مالی بسته شده است.')
     _check_header(year, on, kind)
+    check_unlocked(muni, on)
     description = _text(description, 'شرح سند')
     cleaned = _clean_lines(muni, lines)
     with transaction.atomic():
@@ -191,6 +199,8 @@ def update_voucher(actor, voucher, *, description, lines, on=None, kind=None):
         _not_from_bill(voucher)
         on, kind = on or voucher.date, kind or voucher.kind
         _check_header(voucher.fiscal_year, on, kind)
+        check_unlocked(muni, voucher.date)
+        check_unlocked(muni, on)
         voucher.description, voucher.date, voucher.kind = _text(description, 'شرح سند'), on, kind
         cleaned = _clean_lines(muni, lines)
         voucher.save(update_fields=['description', 'date', 'kind'])
@@ -206,6 +216,7 @@ def finalize(actor, voucher):
         voucher = _locked(Voucher, voucher.pk)
         voucher.fiscal_year = FiscalYear.objects.get(pk=voucher.fiscal_year_id)
         _editable(voucher)
+        check_unlocked(muni, voucher.date)
         if voucher.lines.count() < 2 or not is_balanced(voucher):
             raise Conflict('سند بی‌حساب است؛ جمع بدهکار و بستانکار باید برابر و حداقل دو ردیف باشد.')
         voucher.status, voucher.finalized_by, voucher.finalized_at = 'final', actor, timezone.now()
@@ -225,6 +236,7 @@ def revert_to_temporary(actor, voucher):
             raise Conflict('این سند قطعی نیست.')
         if year.is_closed:
             raise Conflict('سال مالی بسته شده است.')
+        check_unlocked(muni, voucher.date)
         voucher.status, voucher.finalized_by, voucher.finalized_at = 'temporary', None, None
         voucher.save(update_fields=['status', 'finalized_by', 'finalized_at'])
     return voucher
@@ -239,6 +251,7 @@ def delete_voucher(actor, voucher):
         voucher.fiscal_year = FiscalYear.objects.get(pk=voucher.fiscal_year_id)
         _editable(voucher)
         _not_from_bill(voucher)
+        check_unlocked(muni, voucher.date)
         voucher.deleted_at = timezone.now()
         voucher.save(update_fields=['deleted_at'])
 
