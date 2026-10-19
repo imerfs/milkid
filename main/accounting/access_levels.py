@@ -28,7 +28,7 @@ AREAS = [
     ('master', 'طرف‌حساب‌ها، سرفصل‌ها و تنظیمات مالی', ('parties', 'accounts', 'settings')),
     ('assets', 'دارایی‌های ثابت', ('assets',)),
     ('yearend', 'سال مالی، عملیات پایان سال و مغایرت‌گیری', ('setup', 'yearend', 'recon')),
-    ('controls', 'قفل تاریخ و کنترل داده', ('controls',)),
+    ('controls', 'قفل تاریخ، کنترل داده و پشتیبان', ('controls', 'backup')),
 ]
 AREA_KEYS = tuple(k for k, _, _ in AREAS)
 TAB_AREA = {tab: key for key, _, tabs in AREAS for tab in tabs}
@@ -50,10 +50,10 @@ _PREFIXES = [
     ('acc_p_party', 'master'), ('acc_p_account', 'master'), ('acc_p_setting', 'master'), ('acc_parties', 'master'),
     ('acc_accounts', 'master'), ('acc_p_asset', 'assets'), ('acc_p_seed', 'yearend'), ('acc_seed', 'yearend'),
     ('acc_p_year', 'yearend'), ('acc_p_yearend', 'yearend'), ('acc_home', 'yearend'), ('acc_p_recon', 'yearend'),
-    ('acc_p_lock', 'controls'), ('acc_p_integrity', 'controls'),
+    ('acc_p_lock', 'controls'), ('acc_p_integrity', 'controls'), ('acc_p_backup', 'controls'), ('acc_p_letter', 'vouchers'),
 ]
 # Names that are not an area at all: the tab dispatcher (checks the tab itself) and the pages the role checks itself
-EXEMPT = ('acc_panel', 'acc_p_search', 'acc_p_access_save', 'acc_p_audit_export', 'acc_p_backup', 'acc_p_calculator',
+EXEMPT = ('acc_panel', 'acc_p_search', 'acc_p_access_save', 'acc_p_audit_export', 'acc_p_calculator',
           'acc_p_shortcuts', 'acc_p_tools_words', 'acc_p_tools_date', 'acc_p_tools_loan')
 
 

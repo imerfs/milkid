@@ -6,12 +6,13 @@ from django.urls import reverse
 from main.accounting import bills, builder, charts, ledger
 from main.models import Party
 from main.office.errors import Invalid
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, isolate_private_media
 from main.tests.test_accounting_ledger import LedgerBase, line
 
 
 class BuilderBase(LedgerBase):
     def setUp(self):
+        isolate_private_media(self)
         super().setUp()
         self.party = Party.objects.create(municipality=self.muni, name='آقای الف')
         self.other = Party.objects.create(municipality=self.muni, name='خانم ب')

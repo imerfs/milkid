@@ -8,7 +8,7 @@ __all__ = ['AuditEvent', 'AccessRule']
 class AuditEvent(models.Model):
     """One change to an accounting record, or a sign-in/sign-out. Written by main/audit.py; never edited."""
     ACTIONS = [('create', 'ایجاد'), ('update', 'ویرایش'), ('delete', 'حذف'), ('login', 'ورود'), ('logout', 'خروج'),
-               ('login_failed', 'ورود ناموفق')]
+               ('login_failed', 'ورود ناموفق'), ('restore', 'بازیابی پشتیبان')]
 
     municipality = models.ForeignKey('main.Municipality', on_delete=models.CASCADE, null=True, blank=True, related_name='audit_events')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')

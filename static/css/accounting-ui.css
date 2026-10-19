@@ -307,3 +307,12 @@ select.ac-in { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .ac * { animation: none !important; transition: none !important; } }
 .ac-box .ac-in { background: var(--paper); border-color: var(--border); }
 .ac-box .ac-in:focus { border-color: var(--brand); }
+
+/* Printing a statement or report: only the table, no menus, filters or buttons. */
+@media print {
+    #ac-side, .ac-mobnav, .ac-actions, .ac-tools, .ac-foot, .ac-pager, #ac-burger, .ac-topbar, dialog, #acc-toast { display: none !important; }
+    body { background: #fff !important; }
+    .ac-card { box-shadow: none !important; border: 0 !important; }
+    .ac-table-wrap { overflow: visible !important; }
+    table { font-size: 11px; }
+}

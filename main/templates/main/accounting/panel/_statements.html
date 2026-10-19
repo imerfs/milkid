@@ -7,7 +7,7 @@
         <label class="muted" style="font-size:12px"><input type="checkbox" name="final" value="1" {% if final_only %}checked{% endif %}> فقط اسناد قطعی</label>
         <button type="submit" class="ac-btn ac-btn-brand"><i class="fas fa-filter" aria-hidden="true"></i>اعمال</button>
         <a class="ac-btn ac-spaced" href="{% url 'main:acc_p_statement_export' year.id statement_key %}?{{ export_query }}"><i class="fas fa-file-excel" aria-hidden="true"></i>خروجی اکسل</a>
-        <button type="button" class="ac-btn" onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i>چاپ</button>
+        {% include 'main/accounting/panel/_print_button.html' %}
     </form>
     {% if statement_error %}<div class="ac-merr" role="alert" style="margin:12px"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ statement_error }}</div>
     {% elif statement_key == 'resources_uses' %}

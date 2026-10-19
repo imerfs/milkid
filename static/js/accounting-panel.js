@@ -264,7 +264,7 @@
         try {
             var value = evaluate(input.value);
             out.className = '';
-            out.textContent = value === null ? '' : toFa((Math.round(value * 1e6) / 1e6).toLocaleString('en', { maximumFractionDigits: 6 }));
+            out.textContent = value === null ? '' : toFa((Math.round(value * 1e6) / 1e6).toLocaleString('en', { maximumFractionDigits: 6 })).replace(/,/g, '٬');
         } catch (err) { out.className = 'ac-bad-text'; out.textContent = err.message; }
     }
     document.addEventListener('click', function (e) {
@@ -286,7 +286,7 @@
     });
 
     // ---------- tools tab: words, dates, loan ----------
-    function money(n) { return toFa(Number(n).toLocaleString('en')); }
+    function money(n) { return toFa(Number(n).toLocaleString('en')).replace(/,/g, '٬'); }
     document.addEventListener('submit', function (e) {
         var form = e.target.closest('[data-tool]');
         if (!form) return;
@@ -304,6 +304,19 @@
             }
         }).catch(function () { out.textContent = 'اتصال به سرور برقرار نشد.'; });
     }, true);
+
+    // ---------- printing: the chosen paper size becomes the page size, the workspace chrome is hidden by print CSS ----------
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-print]');
+        if (!btn) return;
+        var holder = btn.closest('.ac-printer'), select = holder && holder.querySelector('[data-print-paper]');
+        var size = select ? select.value : 'A4';
+        if (['A4', 'A5', '80mm auto'].indexOf(size) === -1) size = 'A4';
+        var style = document.getElementById('ac-page-style');
+        if (!style) { style = document.createElement('style'); style.id = 'ac-page-style'; document.head.appendChild(style); }
+        style.textContent = '@page { size: ' + size + '; margin: 8mm; }';
+        window.print();
+    });
 
     // ---------- keyboard shortcuts ----------
     var TAB_KEYS = { Digit1: 'overview', Digit2: 'vouchers', Digit3: 'bills', Digit4: 'budget', Digit5: 'trial', Digit6: 'statements',

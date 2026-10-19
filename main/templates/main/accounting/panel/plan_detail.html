@@ -53,4 +53,5 @@
         <form hx-post="{% url 'main:acc_p_plan_cancel' plan.id %}" hx-target="#acc-modal-body" hx-confirm="پرونده فسخ شود؟ دیگر پرداختی برای آن ثبت نمی‌شود.">{% csrf_token %}<button type="submit" class="ac-btn ac-btn-bad">فسخ قرارداد</button></form>
         {% endif %}
     </div>
+    <div hx-get="{% url 'main:acc_p_letter_links' 'plan' plan.id %}" hx-trigger="load" hx-swap="innerHTML" aria-live="polite"></div>
 </div>

@@ -6,12 +6,13 @@ from django.urls import reverse
 from main.accounting import ledger, statements, yearend
 from main.models import Account, Voucher
 from main.office.errors import Conflict, Invalid
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, isolate_private_media
 from main.tests.test_accounting_ledger import LedgerBase, line
 
 
 class YearEndBase(LedgerBase):
     def setUp(self):
+        isolate_private_media(self)                                   # year-end operations write safety backups
         super().setUp()
         def make(code, title, kind, nature):
             return Account.objects.create(municipality=self.muni, code=code, title=title, kind=kind, nature=nature)

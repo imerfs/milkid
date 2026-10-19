@@ -18,6 +18,15 @@ systemctl list-timers milkid-backup.timer
 Backups land in `/opt/milkid/backups/`. **Also copy them off the server** (another machine or storage): a backup on the same disk
 dies with the disk. Example from your own computer: `scp root@SERVER:/opt/milkid/backups/db-*.gz .`
 
+### Accounting backups (per municipality)
+The accountant workspace has its own backup tab: a gzip JSON file with one municipality's accounting data, which the mayor can
+download or restore without touching the rest of the site. `python manage.py backup_accounting [--municipality ID] [--keep N]`
+writes one automatic file per municipality that has fiscal years (default: keep the newest 20 automatic ones; manual backups are
+kept until deleted). Files are in `private_media/accounting_backups/`. A cron line is enough:
+`0 2 * * * cd /opt/milkid && venv/bin/python manage.py backup_accounting`. Restoring takes a safety backup first, refuses a
+file of another municipality, and replaces the municipality's accounting data in one transaction. The whole-database backup above
+is still the disaster-recovery copy.
+
 ### Restore drill (do it once, then every month, and write down how long it took)
 SQLite:
 ```bash
