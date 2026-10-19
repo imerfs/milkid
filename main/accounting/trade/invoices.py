@@ -91,7 +91,9 @@ def _clean_lines(muni, lines):
         total = rial(qty * price) - discount
         if total < 0:
             raise Invalid(f'ردیف {row}: تخفیف از مبلغ ردیف بیشتر است.')
-        cleaned.append({'product': product, 'qty': qty, 'unit_price': price, 'discount': discount, 'total': total})
+        lot = _text(item.get('lot') or '', f'ردیف {row}: سری ساخت', required=False)[:40]
+        expiry = item.get('expiry') or None
+        cleaned.append({'product': product, 'qty': qty, 'unit_price': price, 'discount': discount, 'total': total, 'lot': lot, 'expiry': expiry})
     return cleaned
 
 
@@ -136,7 +138,8 @@ def create_invoice(actor, year, kind, on, party, lines, *, warehouse=None, disco
                 inventory.add_move(muni, product, warehouse, on, -item['qty'], 'invoice', invoice_line=line)
             else:
                 unit_cost = (Decimal(item['total']) / item['qty']) if kind == 'purchase' else inventory.current_avg(muni, product, upto=on)
-                inventory.add_move(muni, product, warehouse, on, item['qty'], 'invoice', unit_cost=unit_cost, invoice_line=line)
+                inventory.add_move(muni, product, warehouse, on, item['qty'], 'invoice', unit_cost=unit_cost, invoice_line=line,
+                                   lot=item['lot'], expiry=item['expiry'])
         if paid:
             add_payment(actor, invoice, on, paid, method, bank_account)
     return invoice
@@ -150,7 +153,8 @@ def convert(actor, source, on, *, kind='sale', allow_shortage=False):
         raise Conflict('فقط پیش‌فاکتور یا سفارش باز تبدیل می‌شود.')
     if kind not in ('sale', 'purchase'):
         raise Invalid('نوع فاکتور مقصد نامعتبر است.')
-    lines = [{'product': l.product, 'qty': l.qty, 'unit_price': l.unit_price, 'discount': l.discount} for l in source.lines.select_related('product')]
+    lines = [{'product': l.product, 'qty': l.qty, 'unit_price': l.unit_price, 'discount': l.discount, 'lot': l.lot, 'expiry': l.expiry}
+             for l in source.lines.select_related('product')]
     with transaction.atomic():
         invoice = create_invoice(actor, source.fiscal_year, kind, on, source.party, lines, warehouse=source.warehouse,
                                  discount=source.discount, tax=source.tax, visitor=source.visitor, note=source.note,

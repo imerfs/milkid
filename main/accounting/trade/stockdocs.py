@@ -66,7 +66,8 @@ def _clean_lines(muni, kind, lines):
             continue
         qty = qty_of(item.get('qty'), f'ردیف {row}: مقدار', signed=(kind == 'adjust'))
         cost = item.get('unit_cost') or 0
-        out.append({'product': product, 'qty': qty, 'counted': None, 'unit_cost': Decimal(str(cost)) if cost not in ('', None) else ZERO})
+        out.append({'product': product, 'qty': qty, 'counted': None, 'unit_cost': Decimal(str(cost)) if cost not in ('', None) else ZERO,
+                    'lot': _text(item.get('lot') or '', f'ردیف {row}: سری ساخت', required=False)[:40], 'expiry': item.get('expiry') or None})
     return out
 
 
@@ -101,19 +102,21 @@ def create_doc(actor, year, kind, on, warehouse, lines, *, to_warehouse=None, no
                     inventory.add_move(muni, product, warehouse, on, diff, 'doc', doc=doc)
                 continue
             qty, cost = item['qty'], item['unit_cost']
-            StockDocLine.objects.create(doc=doc, row=row, product=product, qty=qty, unit_cost=cost)
+            lot, expiry = item.get('lot', ''), item.get('expiry')
+            StockDocLine.objects.create(doc=doc, row=row, product=product, qty=qty, unit_cost=cost, lot=lot, expiry=expiry)
             if kind == 'receipt':
-                inventory.add_move(muni, product, warehouse, on, qty, 'doc', unit_cost=cost, doc=doc)
+                inventory.add_move(muni, product, warehouse, on, qty, 'doc', unit_cost=cost, doc=doc, lot=lot, expiry=expiry)
             elif kind == 'issue':
                 inventory.check_available(muni, product, warehouse, qty)
                 inventory.add_move(muni, product, warehouse, on, -qty, 'doc', doc=doc)
             elif kind == 'transfer':
                 inventory.check_available(muni, product, warehouse, qty)
-                inventory.add_move(muni, product, warehouse, on, -qty, 'doc', doc=doc)
-                inventory.add_move(muni, product, to_warehouse, on, qty, 'doc', unit_cost=avg, doc=doc)
+                for taken in inventory.add_move(muni, product, warehouse, on, -qty, 'doc', doc=doc):
+                    inventory.add_move(muni, product, to_warehouse, on, -taken.qty, 'doc', unit_cost=avg, doc=doc, lot=taken.lot,
+                                       expiry=taken.expiry)
             else:                                                                  # adjust: signed
                 if qty > 0:
-                    inventory.add_move(muni, product, warehouse, on, qty, 'doc', unit_cost=cost or avg, doc=doc)
+                    inventory.add_move(muni, product, warehouse, on, qty, 'doc', unit_cost=cost or avg, doc=doc, lot=lot, expiry=expiry)
                 else:
                     inventory.check_available(muni, product, warehouse, -qty)
                     inventory.add_move(muni, product, warehouse, on, qty, 'doc', doc=doc)

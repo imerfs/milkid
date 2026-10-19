@@ -25,8 +25,12 @@ from main.views.accounting_views import _cell, _guard
 def tab_trade_pos(request, year, ctx):
     muni = ctx['muni']
     stock = {r['product'].id: r['qty'] for r in inventory.stock_report(request.user)}
+    expiry = inventory.nearest_expiry(muni)
+    today = date.today()
     products = [{'id': p.id, 'code': p.code, 'name': p.name, 'barcode': p.barcode, 'price': int(p.sell_price), 'stock': float(stock.get(p.id, 0)),
-                 'unit': p.unit} for p in inventory.products_for(request.user, active=True)]
+                 'unit': p.unit, 'expiry': jalali_str(expiry[p.id]) if p.id in expiry else '',
+                 'expiryState': ('expired' if expiry[p.id] < today else 'soon' if (expiry[p.id] - today).days <= 30 else '') if p.id in expiry else ''}
+                for p in inventory.products_for(request.user, active=True)]
     config = invoices.settings_of(request.user)
     last = Invoice.objects.filter(municipality=muni, fiscal_year=year, kind='sale', created_by=request.user).order_by('-id').first()
     ctx.update(pos_products=products, vat_percent=float(config.vat_percent), last_sale=last,
@@ -77,7 +81,8 @@ def tab_trade_stock(request, year, ctx):
     upto, error = _date_param(request, 'upto')
     low = g.get('low') == '1'
     rows = inventory.stock_report(request.user, warehouse=warehouse, upto=upto, low_only=low) if not error else []
-    ctx.update(stock_rows=rows, warehouses=warehouses, warehouse=warehouse, stock_error=error, low_only=low,
+    lots = inventory.lot_report(request.user, warehouse=warehouse) if not error else []
+    ctx.update(stock_rows=rows, lot_rows=lots, warehouses=warehouses, warehouse=warehouse, stock_error=error, low_only=low,
                stock_total=sum(r['value'] for r in rows), export_query=g.urlencode())
 
 
@@ -106,7 +111,8 @@ def acc_p_trade_stock_export(request, year_id):
 
 
 DOC_COLUMNS = {
-    'receipt': [('product', 'کالا', 'product'), ('qty', 'تعداد', 'qty'), ('unit_cost', 'بهای هر واحد (ریال)', 'money')],
+    'receipt': [('product', 'کالا', 'product'), ('qty', 'تعداد', 'qty'), ('unit_cost', 'بهای هر واحد (ریال)', 'money'),
+                ('lot', 'سری ساخت', 'text'), ('expiry', 'تاریخ انقضا', 'date')],
     'issue': [('product', 'کالا', 'product'), ('qty', 'تعداد', 'qty')],
     'transfer': [('product', 'کالا', 'product'), ('qty', 'تعداد', 'qty')],
     'adjust': [('product', 'کالا', 'product'), ('qty', 'تعداد (منفی = کسر)', 'qty'), ('unit_cost', 'بهای هر واحد برای افزایش (ریال)', 'money')],
@@ -156,7 +162,7 @@ def acc_p_trade_doc_new(request, year_id, kind):
     rows = _posted_rows(request.POST, names)
     try:
         data = formspec.parse(muni, fields, request.POST)
-        lines = _post_lines(request, muni, names, money=('unit_cost',))
+        lines = _post_lines(request, muni, names, money=('unit_cost',), texts=('lot',), dates=('expiry',))
         doc = stockdocs.create_doc(request.user, year, kind, data['on'], data['warehouse'], lines, to_warehouse=data.get('to_warehouse'),
                                    note=data.get('note') or '')
     except OfficeError as exc:
@@ -255,7 +261,8 @@ def acc_p_trade_run_new(request, year_id, formula_id):
     try:
         warehouse = Warehouse.objects.filter(municipality=muni, pk=parse_int_or_none(p.get('warehouse'))).first()
         run = production.run_production(request.user, year, formula, _num(p.get('batches')), parse_jalali(p.get('date', '')),
-                                        warehouse=warehouse, note=p.get('note', ''))
+                                        warehouse=warehouse, note=p.get('note', ''), lot=p.get('lot', ''),
+                                        expiry=parse_jalali(p['expiry']) if p.get('expiry', '').strip() else None)
     except OfficeError as exc:
         return _run_modal(request, year, formula, p, str(exc), exc.status)
     return _done(f'تولید شماره {run.number} ثبت شد.')

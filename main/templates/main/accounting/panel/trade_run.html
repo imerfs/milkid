@@ -6,6 +6,8 @@
         <div class="ac-field s1"><label for="pr-date">تاریخ</label><input class="ac-in" id="pr-date" name="date" dir="ltr" value="{{ p|get:'date' }}"></div>
         <div class="ac-field s1"><label for="pr-batches">تعداد نوبت</label><input class="ac-in" id="pr-batches" name="batches" inputmode="decimal" dir="ltr" value="{{ p|get:'batches' }}"></div>
         <div class="ac-field s2"><label for="pr-wh">انبار</label><select class="ac-in" id="pr-wh" name="warehouse">{% for w in warehouses %}<option value="{{ w.id }}" {% if p|get:'warehouse'|stringformat:'s' == w.id|stringformat:'s' %}selected{% endif %}>{{ w.name }}</option>{% endfor %}</select></div>
+        <div class="ac-field s2"><label for="pr-lot">سری ساخت <span class="muted">(خالی = خودکار)</span></label><input class="ac-in" id="pr-lot" name="lot" maxlength="40" dir="ltr" value="{{ p|get:'lot' }}"></div>
+        <div class="ac-field s2"><label for="pr-exp">تاریخ انقضا <span class="muted">(اختیاری)</span></label><input class="ac-in" id="pr-exp" name="expiry" dir="ltr" placeholder="۱۴۰۵/۰۲/۱۱" value="{{ p|get:'expiry' }}"></div>
         <div class="ac-field s4"><label for="pr-note">توضیحات <span class="muted">(اختیاری)</span></label><input class="ac-in" id="pr-note" name="note" maxlength="300" value="{{ p|get:'note' }}"></div>
     </div>
     {% if error %}<div class="ac-merr" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}

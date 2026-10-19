@@ -312,18 +312,31 @@
 
     // ---------- trade: line tables (invoices, stock documents, formulas, consignment) ----------
     function num(text) { var n = parseFloat(toLatin(text || '')); return isNaN(n) ? 0 : n; }
+    function fmtRial(n) { return toFa(Math.round(n).toLocaleString('en')).replace(/,/g, '٬'); }
+    function groupMoney(input) {
+        var digits = toLatin(input.value).replace(/\D/g, '');
+        input.value = digits ? fmtRial(parseInt(digits, 10)) : '';
+    }
+    document.addEventListener('input', function (e) {
+        if (e.target.matches && e.target.matches('[data-money]')) groupMoney(e.target);
+    });
+    document.addEventListener('htmx:afterSettle', function () { document.querySelectorAll('[data-money]').forEach(function (i) { if (i.value) groupMoney(i); }); });
     function recalcTrade(form) {
-        var subtotal = 0;
+        var subtotal = 0, profit = 0;
         form.querySelectorAll('[data-trade-lines] tbody tr').forEach(function (row) {
             var q = row.querySelector('[data-trade-qty]'), pr = row.querySelector('[data-trade-unit_price]'), d = row.querySelector('[data-trade-discount]');
             var cell = row.querySelector('[data-trade-rowtotal]');
             if (!cell || !q || !pr) return;
             var total = Math.round(num(q.value) * num(pr.value)) - num(d && d.value);
             subtotal += total;
+            var sp = row.querySelector('[data-trade-sell_price]');
+            if (sp && sp.value) profit += Math.round((num(sp.value) - num(pr.value)) * num(q.value));
             cell.textContent = toFa(Math.max(total, 0).toLocaleString('en')).replace(/,/g, '٬');
         });
         var box = form.querySelector('[data-trade-subtotal]');
         if (box) box.textContent = toFa(subtotal.toLocaleString('en')).replace(/,/g, '٬');
+        var pbox = form.querySelector('[data-trade-profit]');
+        if (pbox) pbox.textContent = (profit < 0 ? '−' : '') + fmtRial(Math.abs(profit));
     }
     document.addEventListener('click', function (e) {
         var add = e.target.closest('[data-trade-add]');
@@ -346,13 +359,29 @@
         var form = select.closest('[data-trade-form]'), option = select.options[select.selectedIndex], row = select.closest('tr');
         if (!option || !option.dataset.price) return;
         var price = row.querySelector('[data-trade-unit_price]'), cost = row.querySelector('[data-trade-unit_cost]');
-        if (price && !price.value) price.value = form.dataset.price === 'buy' ? option.dataset.buy : option.dataset.price;
-        if (cost && !cost.value) cost.value = option.dataset.buy;
+        if (price && !price.value) price.value = fmtRial(Number(form.dataset.price === 'buy' ? option.dataset.buy : option.dataset.price));
+        if (cost && !cost.value) cost.value = fmtRial(Number(option.dataset.buy));
+        var sell = row.querySelector('[data-trade-sell_price]');
+        if (sell && !sell.value && Number(option.dataset.price)) { sell.value = fmtRial(Number(option.dataset.price)); syncMargin(sell); }
         recalcTrade(form);
     });
+    // purchase lines: profit % <-> selling price, both directions, from the buying price
+    function syncMargin(target) {
+        var row = target.closest('tr'), price = row.querySelector('[data-trade-unit_price]'), pct = row.querySelector('[data-trade-margin]'),
+            sell = row.querySelector('[data-trade-sell_price]');
+        if (!price || !pct || !sell) return;
+        var buy = num(price.value);
+        if (target === sell) {
+            pct.value = buy > 0 && sell.value ? toFa(String(Math.round((num(sell.value) / buy - 1) * 1000) / 10)) : '';
+        } else if (buy > 0 && pct.value !== '') {
+            sell.value = fmtRial(buy * (1 + num(pct.value) / 100));
+        }
+    }
     document.addEventListener('input', function (e) {
         var form = e.target.closest && e.target.closest('[data-trade-form]');
-        if (form) recalcTrade(form);
+        if (!form) return;
+        if (e.target.matches('[data-trade-unit_price],[data-trade-margin],[data-trade-sell_price]')) syncMargin(e.target);
+        recalcTrade(form);
     });
 
     // ---------- trade: point of sale ----------
@@ -396,12 +425,12 @@
             var row = document.createElement('tr');
             row.dataset.id = product.id;
             var name = document.createElement('td'); name.textContent = product.name + ' (' + product.code + ')';
-            var stock = document.createElement('td'); stock.className = 'num-cell'; stock.textContent = toFa(String(product.stock)) + ' ' + product.unit;
+            var stock = document.createElement('td'); stock.className = 'num-cell'; stock.textContent = toFa(String(product.stock)) + ' ' + product.unit + (product.expiry ? ' · انقضا ' + toFa(product.expiry) : '');
             var qtyCell = document.createElement('td'), qtyInput = document.createElement('input');
             qtyInput.className = 'ac-in'; qtyInput.setAttribute('data-pos-qty', ''); qtyInput.value = '1'; qtyInput.dir = 'ltr'; qtyInput.style.width = '5rem';
             qtyInput.setAttribute('aria-label', 'تعداد'); qtyCell.appendChild(qtyInput);
             var priceCell = document.createElement('td'), priceInput = document.createElement('input');
-            priceInput.className = 'ac-in'; priceInput.setAttribute('data-pos-price', ''); priceInput.value = String(product.price); priceInput.dir = 'ltr';
+            priceInput.className = 'ac-in'; priceInput.setAttribute('data-pos-price', ''); priceInput.setAttribute('data-money', ''); priceInput.value = fmtRial(product.price); priceInput.dir = 'ltr';
             priceInput.style.width = '8rem'; priceInput.setAttribute('aria-label', 'قیمت واحد'); priceCell.appendChild(priceInput);
             var line = document.createElement('td'); line.className = 'num-cell'; line.setAttribute('data-pos-line', ''); line.textContent = '۰';
             var cell = document.createElement('td'), remove = document.createElement('button');
@@ -412,15 +441,60 @@
         }
         posRender(root);
     }
+    function posMatches(root, q) {
+        var tokens = String(q).replace(/[۰-۹]/g, function (d) { return FA.indexOf(d); }).replace(/ي/g, 'ی').replace(/ك/g, 'ک').toLowerCase().split(/\s+/).filter(Boolean), all = root.querySelector('[data-pos-all]');
+        var showAll = all && all.checked;
+        return posState(root).products.filter(function (p) {
+            if (!showAll && !(p.stock > 0)) return false;
+            var hay = (p.name + ' ' + p.code + ' ' + p.barcode).replace(/ي/g, 'ی').replace(/ك/g, 'ک').toLowerCase();
+            return tokens.every(function (t) { return hay.indexOf(t) !== -1; });
+        });
+    }
+    function posGrid(root) {
+        var box = root.querySelector('[data-pos-search]'), grid = root.querySelector('[data-pos-grid]');
+        var found = posMatches(root, box ? box.value : ''), shown = found.slice(0, 60);
+        grid.innerHTML = '';
+        shown.forEach(function (p) {
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = 'ac-pos-item' + (p.stock > 0 ? '' : ' out'); b.dataset.posPick = p.id;
+            var name = document.createElement('b'); name.textContent = p.name;
+            var info = document.createElement('span'); info.textContent = 'موجودی ' + toFa(String(p.stock)) + ' ' + p.unit;
+            var price = document.createElement('span'); price.textContent = fmtRial(p.price) + ' ریال';
+            b.appendChild(name); b.appendChild(info); b.appendChild(price);
+            if (p.expiry) { var ex = document.createElement('em'); ex.textContent = 'انقضا ' + toFa(p.expiry); if (p.expiryState) ex.className = p.expiryState; b.appendChild(ex); }
+            grid.appendChild(b);
+        });
+        var more = root.querySelector('[data-pos-count]');
+        if (more) more.textContent = found.length > shown.length ? 'نمایش ' + toFa(String(shown.length)) + ' از ' + toFa(String(found.length)) + ' کالا؛ عبارت را دقیق‌تر کنید.'
+            : (found.length ? toFa(String(found.length)) + ' کالا' : 'کالایی پیدا نشد.');
+    }
+    document.addEventListener('input', function (e) {
+        var box = e.target.closest && e.target.closest('[data-pos-search]');
+        if (box) posGrid(box.closest('[data-pos]'));
+    });
+    document.addEventListener('change', function (e) {
+        if (e.target.matches && e.target.matches('[data-pos-all]')) posGrid(e.target.closest('[data-pos]'));
+    });
+    document.addEventListener('click', function (e) {
+        var pick = e.target.closest && e.target.closest('[data-pos-pick]');
+        if (!pick) return;
+        var root = pick.closest('[data-pos]'), product = posState(root).products.filter(function (p) { return String(p.id) === pick.dataset.posPick; })[0];
+        if (product) posAdd(root, product);
+    });
+    function posInit() {
+        document.querySelectorAll('[data-pos]').forEach(function (root) { if (!root._gridDone) { root._gridDone = true; posGrid(root); } });
+    }
+    document.addEventListener('htmx:afterSettle', posInit);
+    posInit();
     document.addEventListener('keydown', function (e) {
         var box = e.target.closest && e.target.closest('[data-pos-search]');
         if (!box || e.key !== 'Enter') return;
         e.preventDefault();
         var root = box.closest('[data-pos]'), q = box.value.trim();
         if (!q) return;
-        var products = posState(root).products, lower = q.toLowerCase();
+        var products = posState(root).products;
         var found = products.filter(function (p) { return p.barcode === q || p.code === q; })[0]
-            || products.filter(function (p) { return p.name.toLowerCase().indexOf(lower) !== -1; })[0];
+            || posMatches(root, q)[0];
         if (!found) { say('کالایی با «' + q + '» پیدا نشد.', true); return; }
         posAdd(root, found);
         box.value = '';
