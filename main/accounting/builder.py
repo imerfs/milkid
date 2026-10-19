@@ -160,5 +160,5 @@ def build(actor, year, dataset, group, *, measure=None, column=None, date_from=N
         totals = [t + v for t, v in zip(totals, values)]
     money = set(range(1, len(heads))) if m_money else set()
     return {'label': f"{spec['label']} بر حسب {dim_group[0]}" + (f' و {dim_col[0]}' if dim_col else ''), 'columns': heads,
-            'rows': rows, 'totals': (['جمع'] + totals) if rows else None, 'money': money, 'truncated': False,
+            'rows': rows, 'totals': (['جمع'] + totals) if rows else [], 'money': money, 'truncated': False,
             'measure_label': m_label}
