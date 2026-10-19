@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from main.accounting import ledger
 from main.accounting.ledger import _amount, _locked, _own, _own_or_invalid, _text, check_unlocked, municipality_of
-from main.accounting.trade import inventory, stockdocs
+from main.accounting.trade import inventory, movements, stockdocs
 from main.accounting.trade.inventory import ZERO, qty_of, rial
 from main.models import Invoice, InvoiceLine, InvoicePayment, Municipality, Party, StockMove, TradeSettings
 from main.office.errors import Conflict, Invalid
@@ -133,13 +133,11 @@ def create_invoice(actor, year, kind, on, party, lines, *, warehouse=None, disco
                 continue
             product = item['product']
             if sign < 0:
-                if not shortage_ok:
-                    inventory.check_available(muni, product, warehouse, item['qty'])
-                inventory.add_move(muni, product, warehouse, on, -item['qty'], 'invoice', invoice_line=line)
+                movements.issue(muni, product, warehouse, on, item['qty'], 'invoice', allow_shortage=shortage_ok, invoice_line=line)
             else:
                 unit_cost = (Decimal(item['total']) / item['qty']) if kind == 'purchase' else inventory.current_avg(muni, product, upto=on)
-                inventory.add_move(muni, product, warehouse, on, item['qty'], 'invoice', unit_cost=unit_cost, invoice_line=line,
-                                   lot=item['lot'], expiry=item['expiry'])
+                movements.receive(muni, product, warehouse, on, item['qty'], 'invoice', unit_cost=unit_cost, invoice_line=line,
+                                  lot=item['lot'], expiry=item['expiry'])
         if paid:
             add_payment(actor, invoice, on, paid, method, bank_account)
     return invoice
@@ -225,14 +223,12 @@ def cancel_invoice(actor, invoice):
             if invoice.voucher.status != 'temporary':
                 raise Conflict('سند این فاکتور قطعی شده است؛ ابتدا دهیار آن را به موقت برگرداند.')
             ledger.delete_voucher(actor, invoice.voucher)
-        products = list(StockMove.objects.filter(invoice_line__invoice=invoice).values_list('product_id', flat=True))
-        StockMove.objects.filter(invoice_line__invoice=invoice).delete()
         invoice.status, invoice.canceled_at, invoice.voucher = 'canceled', timezone.now(), None
         invoice.save(update_fields=['status', 'canceled_at', 'voucher'])
         if invoice.source_id:                                    # the proforma goes back to being open
             invoice.source.status = 'issued'
             invoice.source.save(update_fields=['status'])
-        stockdocs.ensure_not_negative(muni, products)
+        movements.reverse(muni, StockMove.objects.filter(invoice_line__invoice=invoice))
     return invoice
 
 

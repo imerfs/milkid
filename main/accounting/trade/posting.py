@@ -12,7 +12,6 @@ from main.accounting import ledger
 from main.accounting.ledger import _own, municipality_of
 from main.accounting.trade import inventory, invoices
 from main.accounting.trade.inventory import ZERO, rial
-from main.models import Invoice
 from main.office.errors import Conflict, Invalid
 
 LABELS = {'receivable_account': 'حساب دریافتنی', 'payable_account': 'حساب پرداختنی', 'sales_account': 'حساب درآمد فروش',
@@ -102,7 +101,6 @@ def post_invoice(actor, invoice):
 
 
 def post_payment(actor, invoice, payment):
-    muni = municipality_of(actor)
     config = invoices.settings_of(actor)
     sale = invoice.kind == 'sale'
     _need(config, 'receivable_account' if sale else 'payable_account')
