@@ -1,6 +1,6 @@
 {% load accounting_tags jalali_tags %}
 {% url 'main:acc_panel' as panel_url %}
-<div id="acc-view" data-tab="{{ tab }}" data-tab-label="{{ tab_meta.1 }}" data-year="{{ year.id }}" data-panel-url="{{ panel_url }}"
+<div id="acc-view" data-tab="{{ tab }}" data-tab-label="{{ tab_meta.1 }}" data-year="{{ year.id }}" data-panel-url="{{ panel_url }}" data-hidden-tabs="{{ hidden_tabs }}"
      {% if year and not year.is_closed %}data-new-voucher="{% url 'main:acc_p_voucher_new' year.id %}" data-new-bill="{% url 'main:acc_p_bill_new' year.id %}" data-new-budget="{% url 'main:acc_p_budget' year.id %}"{% endif %}
      data-new-party="{% url 'main:acc_p_party_new' %}" data-new-account="{% url 'main:acc_p_account_new' %}"
      hx-target="#acc-panel" hx-swap="innerHTML">

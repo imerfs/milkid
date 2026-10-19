@@ -2,6 +2,7 @@
 from django.urls import path
 
 from main import views
+from main.accounting import access_levels
 
 urlpatterns = [
     # Accounting
@@ -57,6 +58,8 @@ urlpatterns = [
     path('accounting/panel/<int:year_id>/yearend/<str:kind>/', views.acc_p_yearend_preview, name='acc_p_yearend_preview'),
     path('accounting/panel/<int:year_id>/yearend/<str:kind>/issue/', views.acc_p_yearend_issue, name='acc_p_yearend_issue'),
     path('accounting/panel/lock/', views.acc_p_lock_set, name='acc_p_lock_set'),
+    path('accounting/panel/access/', views.acc_p_access_save, name='acc_p_access_save'),
+    path('accounting/panel/audit/export/', views.acc_p_audit_export, name='acc_p_audit_export'),
     path('accounting/panel/<int:year_id>/recon/save/', views.acc_p_recon_save, name='acc_p_recon_save'),
     path('accounting/panel/<int:year_id>/close/', views.acc_p_year_close, name='acc_p_year_close'),
     path('accounting/panel/<int:year_id>/reopen/', views.acc_p_year_reopen, name='acc_p_year_reopen'),
@@ -110,3 +113,5 @@ urlpatterns = [
     path('accounting/panel/image/<int:image_id>/file/', views.acc_p_image_file, name='acc_p_image_file'),
     path('accounting/panel/image/<int:image_id>/delete/', views.acc_p_image_delete, name='acc_p_image_delete'),
 ]
+
+urlpatterns = access_levels.guard(urlpatterns)

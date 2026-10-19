@@ -42,6 +42,8 @@
             a.classList.toggle('active', on);
             if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
         });
+        var hidden = (v.dataset.hiddenTabs || '').split(',');
+        document.querySelectorAll('[data-acc-tab]').forEach(function (a) { a.hidden = hidden.indexOf(a.dataset.accTab) !== -1; });
         var crumb = document.getElementById('ac-crumb');
         if (crumb) crumb.textContent = v.dataset.tabLabel || '';
         var active = document.querySelector('.ac-mobnav .active');
