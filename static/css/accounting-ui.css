@@ -49,6 +49,19 @@ body.dark .ac {
 .ac-item[aria-disabled] { opacity: .55; cursor: not-allowed; }
 .ac-item[aria-disabled]:hover { background: none; color: var(--slate); }
 .ac-soon { margin-inline-start: auto; font-size: 10px; background: var(--mist); color: var(--slate); border-radius: var(--r-pill); padding: 1px 8px; }
+.ac-top { margin-bottom: 4px; }
+.ac-grp { border-radius: 16px; }
+.ac-grp summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 11px; padding: 10px 13px; border-radius: var(--r-pill); color: var(--ink); font-size: 13.5px; font-weight: 600; transition: background .18s; user-select: none; }
+.ac-grp summary::-webkit-details-marker { display: none; }
+.ac-grp summary:hover { background: var(--mist); }
+.ac-grp summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ac-grp summary .gic { width: 18px; text-align: center; color: var(--brand); }
+.ac-grp summary .chev { margin-inline-start: auto; font-size: 10px; color: var(--ash); transition: transform .2s; }
+.ac-grp[open] > summary .chev { transform: rotate(180deg); }
+.ac-grp[open] > summary { background: var(--mist); }
+.ac-grp > .ac-nav { padding: 6px 6px 8px; margin-inline-start: 12px; border-inline-start: 1px solid var(--hairline); }
+.ac-grp > .ac-nav .ac-item { padding: 7px 11px; font-size: 13px; }
+.ac-grp > .ac-nav .ac-label-s { padding: 10px 11px 4px; }
 .ac-fold summary { list-style: none; cursor: pointer; }
 .ac-fold summary::-webkit-details-marker { display: none; }
 .ac-fold summary .ac-label-s { display: flex; align-items: center; justify-content: space-between; }

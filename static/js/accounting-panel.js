@@ -44,6 +44,11 @@
         });
         var hidden = (v.dataset.hiddenTabs || '').split(',');
         document.querySelectorAll('[data-acc-tab]').forEach(function (a) { a.hidden = hidden.indexOf(a.dataset.accTab) !== -1; });
+        document.querySelectorAll('#ac-side .ac-grp').forEach(function (g) {
+            var links = g.querySelectorAll('[data-acc-tab]');
+            g.hidden = Array.prototype.every.call(links, function (a) { return a.hidden; });
+            if (g.querySelector('.ac-item.active')) g.open = true;
+        });
         var crumb = document.getElementById('ac-crumb');
         if (crumb) crumb.textContent = v.dataset.tabLabel || '';
         var active = document.querySelector('.ac-mobnav .active');
