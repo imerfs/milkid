@@ -9,10 +9,10 @@ from main.models import Municipality, RoleGrant, UserProfile
 from main.notifications import notify
 from main.office.errors import Forbidden, Invalid, NotFound
 
-GRANTABLE = ('accountant', 'engineer', 'inspector', 'council')
+GRANTABLE = ('accountant', 'engineer', 'inspector', 'clerk', 'council')
 PROTECTED = ('admin', 'dehyari')
 ROLE_ICONS = {'accountant': 'fa-calculator', 'engineer': 'fa-helmet-safety',
-              'inspector': 'fa-clipboard-check', 'council': 'fa-landmark'}
+              'inspector': 'fa-clipboard-check', 'clerk': 'fa-folder-open', 'council': 'fa-landmark'}
 
 
 def is_admin(user):

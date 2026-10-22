@@ -140,7 +140,7 @@ def _legacy_mayor_staff_list(request):
     
     staff = UserProfile.objects.filter(
         city_village=municipality.city_village,
-        role__in=['engineer', 'inspector', 'accountant', 'council']
+        role__in=office_roles.GRANTABLE
     ).select_related('user').order_by('role', 'user__first_name')
     
     paginator = Paginator(staff, 20)

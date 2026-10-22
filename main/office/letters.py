@@ -15,7 +15,7 @@ from main.office.errors import Forbidden, Invalid, NotFound, RateLimited
 from main.office.roles import is_admin
 from main.validators import validate_file_content, validate_file_extension, validate_file_size
 
-STAFF_ROLES = ('dehyari', 'engineer', 'inspector', 'accountant', 'council')
+STAFF_ROLES = ('dehyari', 'engineer', 'inspector', 'accountant', 'clerk', 'council')
 HOURLY_CAP = 30
 MAX_RECIPIENTS = 20
 MAX_ATTACHMENTS = 5

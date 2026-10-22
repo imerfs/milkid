@@ -6,7 +6,7 @@ from main.tests.helpers import client_for, make_user
 PAGES = ['home', 'about', 'contact', 'services_catalog', 'property_listings', 'my_requests', 'notifications',
          'letters_inbox', 'appointments', 'appointment_providers', 'messaging_dashboard', 'announcement_list',
          'dashboard']
-ROLES = ['admin', 'dehyari', 'engineer', 'inspector', 'accountant', 'council', 'owner', 'citizen']
+ROLES = ['admin', 'dehyari', 'engineer', 'inspector', 'accountant', 'clerk', 'council', 'owner', 'citizen']
 
 
 class EveryRoleCanOpenTheCommonPages(TestCase):

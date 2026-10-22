@@ -22,7 +22,7 @@ class Village(TestCase):
 
 class GrantingRoles(Village):
     def test_dehyari_grants_each_staff_role(self):
-        for role in ('accountant', 'engineer', 'inspector', 'council'):
+        for role in ('accountant', 'engineer', 'inspector', 'clerk', 'council'):
             user = make_user('citizen', city_village='روستای الف')
             self.grant(user, role)
             self.assertEqual(self.role(user), role)
@@ -50,7 +50,7 @@ class GrantingRoles(Village):
         self.assertIsNone(grants[1].revoked_at)
         self.assertEqual(grants[1].previous_role, 'engineer')
 
-    def test_only_the_four_staff_roles_can_be_granted(self):
+    def test_only_the_staff_roles_can_be_granted(self):
         for role in ('admin', 'dehyari', 'owner', 'bogus', ''):
             response = self.grant(self.resident, role)
             self.assertEqual(response.status_code, 400, role)

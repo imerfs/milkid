@@ -1,0 +1,169 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags %}
+{% block title %}میز کارشناس اداری - ملک آیدی{% endblock %}
+{% block body_class %}mk-tw cd-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/clerk-desk.css' %}">{% endblock %}
+{% block content %}
+<script>try { if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark'); } catch (e) {}</script>
+{% include 'main/clerk/_icons.html' %}
+<div class="cd">
+  <a href="#cd-main" class="cd-skip">رفتن به محتوای اصلی</a>
+
+  <header class="cd-bar">
+    <div class="cd-bar-in">
+      <a href="{% url 'main:clerk_dashboard' %}" class="cd-brand" aria-label="میز کارشناس اداری">
+        <span class="cd-mark"><svg class="cd-i"><use href="#i-folder"/></svg></span>
+        <span><b>میز اداری</b><small>{{ request.user.profile.city_village|default:"ملک آیدی" }}</small></span>
+      </a>
+      <nav class="cd-tabs" aria-label="بخش‌ها">
+        <a href="{% url 'main:clerk_dashboard' %}" class="is-on" aria-current="page"><svg class="cd-i"><use href="#i-home"/></svg>امروز</a>
+        <a href="{% url 'main:letters_inbox' %}"><svg class="cd-i"><use href="#i-mail"/></svg>نامه‌ها{% if stats.unread %}<em>{{ stats.unread|persian_numbers }}</em>{% endif %}</a>
+        <a href="{% url 'main:appointments' %}"><svg class="cd-i"><use href="#i-cal"/></svg>وقت‌ملاقات{% if stats.pending_visits %}<em>{{ stats.pending_visits|persian_numbers }}</em>{% endif %}</a>
+        <a href="#cd-follow"><svg class="cd-i"><use href="#i-doc-alert"/></svg>پیگیری‌ها{% if stats.waiting_docs %}<em>{{ stats.waiting_docs|persian_numbers }}</em>{% endif %}</a>
+      </nav>
+      <div class="cd-tools">
+        <a href="{% url 'main:notifications' %}" class="cd-ico" aria-label="اعلان‌ها"><svg class="cd-i"><use href="#i-bell"/></svg></a>
+        <button type="button" class="cd-ico" id="cd-theme" aria-label="تغییر حالت تاریک/روشن"><svg class="cd-i"><use href="#i-moon"/></svg></button>
+        <a href="{% url 'main:logout' %}" class="cd-ico" aria-label="خروج"><svg class="cd-i"><use href="#i-exit"/></svg></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="cd-main" class="cd-wrap">
+    {% if messages %}
+    <div class="cd-flash" role="status">
+      {% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <section class="cd-hero" aria-labelledby="cd-hello">
+      <div>
+        <p class="cd-eyebrow">{{ today_label|persian_numbers }}</p>
+        <h1 id="cd-hello">{{ greeting }}، {{ request.user.first_name|default:request.user.username }}</h1>
+        <p class="cd-sub">{% if stats.unread or stats.today or stats.waiting_docs %}امروز این‌ها منتظر شماست؛ از بالاترین مورد شروع کنید.{% else %}کار عقب‌افتاده‌ای ندارید. می‌توانید نامه‌ی تازه‌ای بنویسید.{% endif %}</p>
+      </div>
+      <a href="{% url 'main:letter_compose' %}" class="cd-btn cd-btn-main"><svg class="cd-i"><use href="#i-pen"/></svg>نامه‌ی جدید</a>
+    </section>
+
+    <ul class="cd-stats" aria-label="خلاصه‌ی امروز">
+      <li class="{% if stats.unread %}is-hot{% endif %}"><a href="{% url 'main:letters_inbox' %}?unread=1"><svg class="cd-i"><use href="#i-mail"/></svg><b>{{ stats.unread|persian_numbers }}</b><span>نامه‌ی نخوانده</span></a></li>
+      <li><a href="{% url 'main:letters_drafts' %}"><svg class="cd-i"><use href="#i-pen"/></svg><b>{{ stats.drafts|persian_numbers }}</b><span>پیش‌نویس</span></a></li>
+      <li class="{% if stats.today %}is-hot{% endif %}"><a href="#cd-agenda"><svg class="cd-i"><use href="#i-clock"/></svg><b>{{ stats.today|persian_numbers }}</b><span>ملاقات امروز</span></a></li>
+      <li class="{% if stats.pending_visits %}is-warn{% endif %}"><a href="{% url 'main:appointments' %}"><svg class="cd-i"><use href="#i-cal"/></svg><b>{{ stats.pending_visits|persian_numbers }}</b><span>منتظر تایید شما</span></a></li>
+      <li class="{% if stats.waiting_docs %}is-warn{% endif %}"><a href="#cd-follow"><svg class="cd-i"><use href="#i-doc-alert"/></svg><b>{{ stats.waiting_docs|persian_numbers }}</b><span>درخواست منتظر مدارک</span></a></li>
+    </ul>
+
+    <div class="cd-grid">
+      <div class="cd-col">
+        <section class="cd-card" id="cd-agenda" aria-labelledby="h-agenda">
+          <header><h2 id="h-agenda"><svg class="cd-i"><use href="#i-clock"/></svg>برنامه‌ی امروز</h2><a href="{% url 'main:appointments' %}">همه‌ی وقت‌ها<svg class="cd-i"><use href="#i-chev"/></svg></a></header>
+          {% for a in agenda %}
+          <div class="cd-line">
+            <time class="cd-time" datetime="{{ a.start|date:'c' }}">{{ a.start|time:"H:i"|persian_numbers }}</time>
+            <div><b>{{ a.client.get_full_name|default:a.client.username }}</b><span>{{ a.subject }}</span></div>
+            <em class="cd-tag {% if a.status == 'pending' %}warn{% else %}ok{% endif %}">{{ a.get_status_display }}</em>
+          </div>
+          {% empty %}
+          <p class="cd-empty"><svg class="cd-i"><use href="#i-cal"/></svg>امروز ملاقاتی ندارید.</p>
+          {% endfor %}
+          {% if pending_visits %}
+          <div class="cd-sub-head">درخواست‌های ملاقات منتظر تصمیم</div>
+          {% for a in pending_visits %}
+          <div class="cd-line">
+            <time class="cd-time soft">{{ a.start|date:"m/d"|persian_numbers }}<small>{{ a.start|time:"H:i"|persian_numbers }}</small></time>
+            <div><b>{{ a.client.get_full_name|default:a.client.username }}</b><span>{{ a.subject }}</span></div>
+            <a class="cd-btn cd-btn-soft" href="{% url 'main:appointments' %}">بررسی</a>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </section>
+
+        <section class="cd-card" aria-labelledby="h-inbox">
+          <header><h2 id="h-inbox"><svg class="cd-i"><use href="#i-mail"/></svg>آخرین نامه‌های دریافتی</h2><a href="{% url 'main:letters_inbox' %}">صندوق ورودی<svg class="cd-i"><use href="#i-chev"/></svg></a></header>
+          {% for l in inbox %}
+          <a class="cd-line cd-link" href="{% url 'main:letter_detail' l.id %}">
+            <span class="cd-no">{{ l.number|persian_numbers }}</span>
+            <div><b>{{ l.subject }}</b><span>{{ l.sender.get_full_name|default:l.sender.username }} · {{ l.sent_at|jalali_date|persian_numbers }}</span></div>
+            {% if l.priority != 'normal' %}<em class="cd-tag bad">{{ l.get_priority_display }}</em>{% endif %}
+          </a>
+          {% empty %}
+          <p class="cd-empty"><svg class="cd-i"><use href="#i-mail"/></svg>نامه‌ای در صندوق ورودی نیست.</p>
+          {% endfor %}
+        </section>
+      </div>
+
+      <aside class="cd-col">
+        <section class="cd-card" aria-labelledby="h-cal">
+          <header>
+            <h2 id="h-cal"><svg class="cd-i"><use href="#i-cal"/></svg>{{ calendar.title|persian_numbers }}</h2>
+            <span class="cd-pager">
+              <a href="?m={{ calendar.prev }}" aria-label="ماه قبل"><svg class="cd-i"><use href="#i-chev"/></svg></a>
+              <a href="?m={{ calendar.next }}" aria-label="ماه بعد"><svg class="cd-i flip"><use href="#i-chev"/></svg></a>
+            </span>
+          </header>
+          <table class="cd-cal">
+            <thead><tr><th scope="col">ش</th><th scope="col">ی</th><th scope="col">د</th><th scope="col">س</th><th scope="col">چ</th><th scope="col">پ</th><th scope="col">ج</th></tr></thead>
+            <tbody>
+              {% for week in calendar.weeks %}<tr>
+                {% for c in week %}
+                <td>{% if c %}<span class="{% if c.today %}is-today {% endif %}{% if c.friday %}is-off {% endif %}{% if c.count %}has{% endif %}"{% if c.count %} title="{{ c.count|persian_numbers }} ملاقات"{% endif %}>{{ c.day|persian_numbers }}</span>{% endif %}</td>
+                {% endfor %}
+              </tr>{% endfor %}
+            </tbody>
+          </table>
+          <p class="cd-foot">{% if calendar.total %}{{ calendar.total|persian_numbers }} ملاقات در این ماه (روزهای نقطه‌دار){% else %}در این ماه ملاقاتی ثبت نشده است.{% endif %}</p>
+        </section>
+
+        <section class="cd-card" aria-labelledby="h-quick">
+          <header><h2 id="h-quick"><svg class="cd-i"><use href="#i-send"/></svg>میان‌بر</h2></header>
+          <div class="cd-quick">
+            <a href="{% url 'main:letter_compose' %}"><svg class="cd-i"><use href="#i-pen"/></svg>نوشتن نامه</a>
+            <a href="{% url 'main:letters_sent' %}"><svg class="cd-i"><use href="#i-send"/></svg>نامه‌های ارسالی</a>
+            <a href="{% url 'main:letters_archive' %}"><svg class="cd-i"><use href="#i-folder"/></svg>بایگانی نامه‌ها</a>
+            <a href="{% url 'main:availability' %}"><svg class="cd-i"><use href="#i-clock"/></svg>ساعت‌های حضور من</a>
+            <a href="{% url 'main:appointment_providers' %}"><svg class="cd-i"><use href="#i-user"/></svg>وقت گرفتن از همکاران</a>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <section class="cd-card cd-wide" id="cd-follow" aria-labelledby="h-follow">
+      <header><h2 id="h-follow"><svg class="cd-i"><use href="#i-doc-alert"/></svg>درخواست‌های منتظر مدارک</h2><span class="cd-note">قدیمی‌ترین در بالاست</span></header>
+      {% if follow_ups %}
+      <div class="cd-table-wrap">
+        <table class="cd-table">
+          <thead><tr><th scope="col">درخواست</th><th scope="col">شهروند</th><th scope="col">کد رهگیری</th><th scope="col">آخرین تغییر</th><th scope="col"><span class="cd-sr">اقدام</span></th></tr></thead>
+          <tbody>
+            {% for sr in follow_ups %}
+            <tr>
+              <td data-l="درخواست"><b>{{ sr.title }}</b></td>
+              <td data-l="شهروند">{{ sr.user.get_full_name|default:sr.user.username }}</td>
+              <td data-l="کد رهگیری" dir="ltr" class="cd-code">{{ sr.tracking_code|default:"—" }}</td>
+              <td data-l="آخرین تغییر">{{ sr.updated_at|jalali_date|persian_numbers }}</td>
+              <td>
+                <form method="post" action="{% url 'main:clerk_remind' sr.id %}">{% csrf_token %}
+                  <button type="submit" class="cd-btn cd-btn-soft"><svg class="cd-i"><use href="#i-bell"/></svg>یادآوری به شهروند</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="cd-empty"><svg class="cd-i"><use href="#i-check"/></svg>درخواستی منتظر مدارک نیست.</p>
+      {% endif %}
+    </section>
+  </main>
+</div>
+<script>
+(function () {
+  var b = document.getElementById('cd-theme');
+  if (!b) return;
+  b.addEventListener('click', function () {
+    var on = document.body.classList.toggle('dark');
+    try { localStorage.setItem('darkMode', on ? 'true' : 'false'); } catch (e) {}
+  });
+})();
+</script>
+{% endblock %}
