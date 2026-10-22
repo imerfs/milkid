@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import DatabaseError
 from django.utils import timezone
 
@@ -6,6 +7,11 @@ from main.seo import page_context
 
 def seo(request):
     return {'seo': page_context(request)}
+
+
+def contact(request):
+    """The support address shown on public pages (settings.SUPPORT_EMAIL)."""
+    return {'support_email': settings.SUPPORT_EMAIL}
 
 
 def office(request):

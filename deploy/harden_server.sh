@@ -5,7 +5,7 @@
 #            slow-client timeouts, private /media/, unknown hosts dropped
 #   * kernel (SYN-flood) sysctls, fail2ban, sshd tightening, systemd sandboxing
 #
-# Usage:   bash harden_server.sh amirl.ir
+# Usage:   bash harden_server.sh milkid.ir
 # Options (env): ADMIN_IPS="1.2.3.4 5.6.7.8"   extra IPs always allowed (SSH + web)
 #                SSH_IRAN_ONLY=0               leave SSH open to the world (still rate-limited)
 set -euo pipefail

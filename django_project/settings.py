@@ -114,6 +114,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'main.context_processors.seo',
+                'main.context_processors.contact',
                 'main.context_processors.office',
             ],
         },
@@ -450,7 +451,9 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') or ''
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT') or '10')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'support@amirl.ir'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'support@milkid.ir'
+# Support address shown on the public pages; follows the sender address unless set on its own (so a domain move is only a .env change).
+SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL') or DEFAULT_FROM_EMAIL
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL') or DEFAULT_FROM_EMAIL
 # Incoming mail for the admin mailbox (optional; without IMAP_HOST the inbox holds only support-form messages).
 IMAP_HOST = os.environ.get('IMAP_HOST') or ''
