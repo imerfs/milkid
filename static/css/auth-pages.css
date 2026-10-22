@@ -1,0 +1,73 @@
+/* Sign-in and sign-up pages: one calm centred card on a light canvas, the same look as the login page.
+   Colours come from the site theme (green accent, slate neutrals, Vazirmatn). Only the page chrome lives here;
+   the form fields keep their own markup. */
+.au {
+  --canvas: #f3f4f6; --paper: #ffffff; --ink: #1f2937; --slate: #6b7280; --line: #e5e7eb; --line-strong: #d1d5db;
+  --brand: #16a34a; --brand-deep: #15803d; --brand-soft: #f0fdf4; --brand-ring: rgba(22, 163, 74, .18);
+  --bad: #b91c1c; --bad-soft: #fef2f2;
+  margin: 0; min-height: 100vh; background: var(--canvas); color: var(--ink);
+  font-family: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif; font-size: 14px; line-height: 1.8; -webkit-font-smoothing: antialiased;
+}
+.au *, .au *::before, .au *::after { box-sizing: border-box; }
+.au a { text-decoration: none; }
+.au :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* keyline icons: stroke only, follow the text colour */
+.au .au-i { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.au .au-shell { max-width: 460px; margin-inline: auto; padding: 24px 16px 48px; }
+.au .au-shell.mid { max-width: 640px; }
+.au .au-shell.wide { max-width: 760px; }
+
+.au .au-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.au .au-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--brand-deep); font-size: 1.5rem; font-weight: 700; line-height: 1.4; }
+.au .au-brand .au-i { width: 1.6rem; height: 1.6rem; color: var(--brand); }
+.au .au-back { color: var(--slate); font-size: 14px; }
+.au .au-back:hover { color: var(--brand-deep); }
+
+.au .au-card { background: var(--paper); border-radius: 16px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, .08), 0 8px 10px -6px rgba(0, 0, 0, .06); }
+.au .au-title { margin: 0 0 6px; text-align: center; font-size: 1.75rem; font-weight: 700; line-height: 1.5; color: #111827; }
+.au .au-sub { margin: 0 0 28px; text-align: center; color: var(--slate); }
+
+/* section heading inside a long form */
+.au .au-sec { display: flex; align-items: center; gap: 8px; margin: 0 0 18px; padding-bottom: 8px; border-bottom: 1px dashed var(--line-strong); font-size: 1rem; font-weight: 700; color: #111827; }
+.au .au-sec i, .au .au-sec .au-i { color: var(--brand); }
+.au .au-card .mb-12 { margin-bottom: 28px; }
+
+.au .au-note { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 20px; padding: 10px 14px; border: 1px solid #bbf7d0; border-radius: 10px; background: var(--brand-soft); color: var(--brand-deep); font-size: 13px; }
+.au .au-note .au-i { margin-top: 3px; }
+
+.au .au-alert { margin: 0 0 16px; padding: 10px 14px; border-radius: 10px; font-size: 13px; background: var(--brand-soft); color: var(--brand-deep); border: 1px solid #bbf7d0; }
+.au .au-alert.error, .au .au-alert.danger { background: var(--bad-soft); color: var(--bad); border-color: #fecaca; }
+
+/* actions: one clear primary button, one quiet link under it */
+.au .au-actions { display: flex; flex-direction: column; gap: 14px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.au .au-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 16px; border: 0; border-radius: 8px; background: var(--brand); color: #fff; font: inherit; font-weight: 700; cursor: pointer; transition: background .15s; }
+.au .au-btn:hover { background: var(--brand-deep); }
+.au .au-btn:disabled { opacity: .6; cursor: not-allowed; }
+.au .au-foot { margin: 0; text-align: center; color: var(--slate); font-size: 13.5px; }
+.au .au-foot a { color: var(--brand); font-weight: 700; }
+.au .au-foot a:hover { text-decoration: underline; }
+
+/* the choice page */
+.au .au-choices { display: grid; gap: 12px; }
+.au .au-choice { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--paper); transition: border-color .15s, background .15s; }
+.au .au-choice:hover { border-color: var(--brand); background: var(--brand-soft); }
+.au .au-choice-icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font-size: 22px; flex: none; }
+.au .au-choice b { display: block; font-size: 1rem; line-height: 1.5; }
+.au .au-choice span { display: block; color: var(--slate); font-size: 13px; line-height: 1.6; }
+.au .au-choice > .au-i { margin-inline-start: auto; color: var(--slate); transform: scaleX(-1); }
+
+/* Bootstrap-based form (municipality): fields look like the login fields */
+.au .form-label { margin-bottom: 6px; font-size: 14px; font-weight: 500; color: #374151; }
+.au .form-control, .au .form-select { padding: 12px; border: 1px solid var(--line-strong); border-radius: 8px; font-size: 14px; }
+.au .form-control:focus, .au .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+.au .form-text, .au small.text-muted { color: var(--slate) !important; }
+.au .alert { border-radius: 10px; font-size: 13px; }
+.au .progress { border-radius: 999px; }
+
+@media (max-width: 560px) {
+  .au .au-card { padding: 20px; }
+  .au .au-title { font-size: 1.4rem; }
+  .au .au-brand { font-size: 1.25rem; }
+}

@@ -1,0 +1,27 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ملک آیدی{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+    {% include 'partials/seo_head.html' %}
+    <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
+    {% block framework %}<link rel="stylesheet" href="{% static 'css/tailwind.css' %}">{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/auth-pages.css' %}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="au {% block body_class %}mk-tw{% endblock %}">
+{% include 'registration/_au_icons.html' %}
+<div class="au-shell {% block shell %}{% endblock %}">
+    <header class="au-head">
+        <a href="{% url 'main:home' %}" class="au-brand"><svg class="au-i" aria-hidden="true"><use href="#au-home"/></svg>ملک آیدی</a>
+        <a class="au-back" href="{% url 'main:home' %}">بازگشت به خانه</a>
+    </header>
+    {% if messages %}{% for m in messages %}<p class="au-alert {{ m.tags }}" role="status">{{ m }}</p>{% endfor %}{% endif %}
+    {% block content %}{% endblock %}
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>
