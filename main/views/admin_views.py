@@ -203,6 +203,7 @@ def admin_dashboard(request, server_panel=None):
         'engineer': 0,
         'inspector': 0,
         'accountant': 0,
+        'clerk': 0,
         'admin': 0,
         'other': 0,
     }

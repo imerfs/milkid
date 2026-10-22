@@ -36,9 +36,8 @@ def make_payment(owner=None):
 
 def make_request(owner=None, **kwargs):
     owner = owner or make_user('citizen')
-    return ServiceRequest.objects.create(
-        user=owner, request_type='other', title='t', description='d', **kwargs
-    )
+    fields = {'request_type': 'other', 'title': 't', 'description': 'd', **kwargs}
+    return ServiceRequest.objects.create(user=owner, **fields)
 
 
 def make_municipality(manager, village='روستای نمونه'):

@@ -102,6 +102,7 @@ def dashboard(request):
             'engineer': 'main:dehyari_expert_dashboard',  # کارشناس دهیاری
             'inspector': 'main:inspector_dashboard', # ناظر فنی
             'accountant': 'main:accountant_dashboard', # مسئول مالی
+            'clerk': 'main:clerk_dashboard',        # کارشناس اداری
             'citizen': 'main:owner_dashboard',      # شهروند
             'owner': 'main:owner_dashboard',        # مالک
         }

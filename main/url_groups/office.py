@@ -1,4 +1,4 @@
-"""Office: letters and appointments."""
+"""Office: letters, appointments and the administrative expert's desk."""
 from django.urls import path
 
 from main import views
@@ -19,4 +19,6 @@ urlpatterns = [
     path('appointments/providers/<int:provider_id>/', views.appointment_book, name='appointment_book'),
     path('appointments/<int:appointment_id>/action/', views.appointment_action, name='appointment_action'),
     path('appointments/hours/', views.availability, name='availability'),
+    path('dashboard/clerk/', views.clerk_dashboard, name='clerk_dashboard'),
+    path('dashboard/clerk/remind/<int:request_id>/', views.clerk_remind, name='clerk_remind'),
 ]

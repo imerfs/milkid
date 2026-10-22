@@ -3,6 +3,6 @@
 ``main/access.py`` maps *actions* to roles; these are the plain groups that several places need.
 """
 CITIZEN_ROLES = ('citizen', 'owner', 'resident')                                     # verified automatically on sign-up
-MUNICIPAL_STAFF_ROLES = ('dehyari', 'engineer', 'inspector', 'accountant', 'council')
+MUNICIPAL_STAFF_ROLES = ('dehyari', 'engineer', 'inspector', 'accountant', 'clerk', 'council')
 ADMIN_ROLES = ('admin',)
 ALL_STAFF_ROLES = MUNICIPAL_STAFF_ROLES + ADMIN_ROLES

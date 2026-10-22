@@ -19,7 +19,7 @@ class StaffAccountCreation(TestCase):
         return client_for(who or self.dehyari).post(self.url, {**VALID, **over})
 
     def test_dehyari_creates_each_staff_role_in_own_village(self):
-        for i, role in enumerate(('accountant', 'engineer', 'inspector', 'council')):
+        for i, role in enumerate(('accountant', 'engineer', 'inspector', 'clerk', 'council')):
             r = self.create(role=role, username=f'user{i}', national_id=f'00123456{i:02d}', mobile_number=f'0912123456{i}')
             self.assertEqual(r.status_code, 302, r.content.decode()[:300])
             user = User.objects.get(username=f'user{i}')

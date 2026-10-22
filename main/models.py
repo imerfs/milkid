@@ -164,6 +164,7 @@ class UserProfile(GeographyLink):
         ('engineer', 'کارشناس دهیاری'),
         ('inspector', 'ناظر فنی'),
         ('accountant', 'مسئول مالی'),
+        ('clerk', 'کارشناس اداری'),
         ('council', 'شورای روستا'),
         ('admin', 'مدیر سیستم'),
     ]

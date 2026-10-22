@@ -26,7 +26,9 @@ POLICY = {
     # municipality management ("mayor_*" views)
     'mayor.manage': {'dehyari'},
     # office hours / appointments: every staff role can receive visitors
-    'office.provide': {'dehyari', 'engineer', 'inspector', 'accountant', 'council'},
+    'office.provide': {'dehyari', 'engineer', 'inspector', 'accountant', 'clerk', 'council'},
+    # the administrative expert's desk (letters, visitors, follow-ups of the village)
+    'clerk.desk': {'clerk', 'dehyari'},
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed
     'admin.manage': set(),
     # village web-GIS map and plot archives: the village's technical expert (the village match is in main/gis/access.py)
