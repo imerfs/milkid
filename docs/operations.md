@@ -55,3 +55,16 @@ An admin can turn on two-step login (TOTP, Google/Microsoft Authenticator) in it
 If that admin loses the phone, remove the device on the server and log in with the password only:
 
     cd /opt/milkid && ./venv/bin/python manage.py shell -c "from main.models import TwoFactorDevice; TwoFactorDevice.objects.filter(user__username='USERNAME').delete()"
+
+## Reaching GitHub from the server (DNS guard)
+
+The VPS has no direct foreign internet access, so `git pull` only works through a sanctions-bypass DNS. `deploy/dns-github-guard.sh`
+runs every 5 minutes (systemd timer): when `https://github.com` answers with the current DNS it does nothing, otherwise it tries the
+listed providers in order and keeps the first that works; if none does it goes back to the network's own DNS.
+
+Install (files are copied from the developer's computer, since the server cannot clone):
+
+    scp deploy/dns-github-guard.* deploy/install_dns_guard.sh root@SERVER:/tmp/dnsguard/
+    ssh root@SERVER "bash /tmp/dnsguard/install_dns_guard.sh"
+
+Look at what it did: `journalctl -t dns-github-guard -n 20`. Change the provider list at the top of the script and run the installer again.
