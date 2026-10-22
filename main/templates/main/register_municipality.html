@@ -1,32 +1,24 @@
-{% extends 'base.html' %}
+{% extends 'registration/auth_base.html' %}
 {% load static %}
 
 {% block title %}ثبت نام شهرداری/دهیاری - ملک آیدی{% endblock %}
+{% block shell %}wide{% endblock %}
+{% block body_class %}{% endblock %}
+{% block framework %}<link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.rtl.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jalali-datepicker.css' %}">{% endblock %}
 
-{% block extra_head %}
+{% block head_extra %}
 <style>
-    .form-step {
-        margin-bottom: 2rem;
-    }
+    .form-step { margin-bottom: 2rem; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-lg border-0">
-                <div class="card-header bg-gradient-primary text-white text-center py-4">
-                    <h1 class="mb-0">
-                        <i class="fas fa-building me-3"></i>
-                        ثبت نام شهرداری / دهیاری در سامانه ملک آیدی
-                    </h1>
-                    <p class="mb-0 mt-2">پلتفرم دیجیتال مدیریت خدمات شهری و روستایی</p>
-                </div>
-                
-                <div class="card-body p-5">
-                    
-                    {% if form.errors %}
+<main class="au-card">
+    <h1 class="au-title">ثبت‌نام شهرداری / دهیاری</h1>
+    <p class="au-sub">اطلاعات دهیاری و مسئول آن را وارد کنید؛ پس از تایید مدیر سیستم حساب فعال می‌شود.</p>
+
+    {% if form.errors %}
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>خطا در پر کردن فرم:</strong>
@@ -48,9 +40,9 @@
                         
                         <!-- Step 1: Basic Info -->
                         <div class="form-step" id="form-step-1">
-                            <h4 class="mb-4 text-primary">
-                                <i class="fas fa-info-circle me-2"></i>اطلاعات پایه
-                            </h4>
+                            <h2 class="au-sec">
+                                <i class="fas fa-info-circle"></i>اطلاعات پایه
+                            </h2>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">{{ form.name.label }}</label>
@@ -96,9 +88,9 @@
                         
                         <!-- Step 2: Contact Info -->
                         <div class="form-step" id="form-step-2">
-                            <h4 class="mb-4 text-primary">
+                            <h2 class="au-sec">
                                 <i class="fas fa-phone me-2"></i>اطلاعات تماس
-                            </h4>
+                            </h2>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">{{ form.official_phone.label }}</label>
@@ -129,9 +121,9 @@
                         
                         <!-- Step 3: Administrative Info -->
                         <div class="form-step" id="form-step-3">
-                            <h4 class="mb-4 text-primary">
+                            <h2 class="au-sec">
                                 <i class="fas fa-chart-bar me-2"></i>اطلاعات اداری
-                            </h4>
+                            </h2>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">{{ form.establishment_date.label }}</label>
@@ -154,9 +146,9 @@
                         
                         <!-- Step 4: Manager Info -->
                         <div class="form-step" id="form-step-4">
-                            <h4 class="mb-4 text-primary">
+                            <h2 class="au-sec">
                                 <i class="fas fa-user-tie me-2"></i>اطلاعات مدیر سیستم
-                            </h4>
+                            </h2>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">{{ form.manager_name.label }}</label>
@@ -235,18 +227,21 @@
                             </div>
                             <p id="upload-text" class="mt-2 mb-0 text-center" role="status" aria-live="polite"></p>
                         </div>
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-success btn-lg w-100" id="submit-btn">
-                                <i class="fas fa-check me-2"></i>ثبت درخواست
+                        <div class="au-actions">
+                            <button type="submit" class="au-btn" id="submit-btn">
+                                <i class="fas fa-check"></i>ثبت درخواست
                             </button>
+                            <p class="au-foot">قبلاً ثبت‌نام کرده‌اید؟ <a href="{% url 'main:login' %}">وارد شوید</a></p>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+</main>
+{% endblock %}
 
+{% block scripts %}
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/htmx/htmx.min.js' %}" defer></script>
+<script src="{% static 'js/jalali-datepicker.js' %}" defer></script>
+<script src="{% static 'js/password-toggle.js' %}" defer></script>
 <script>
 // Post the form with XHR so the upload shows a real progress bar, then confirm "upload finished".
 (function () {

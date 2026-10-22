@@ -94,9 +94,9 @@ class StructuredData(TestCase):
         self.assertEqual(crumbs['itemListElement'][-1]['item'], 'http://testserver/services/')
 
     def test_visible_breadcrumb_nav_on_inner_pages(self):
-        page = html(self.client.get(reverse('main:register_citizen')))
+        page = html(self.client.get(reverse('main:about')))
         self.assertIn('aria-label="breadcrumb"', page)
-        self.assertIn(reverse('main:register'), page)
+        self.assertIn(reverse('main:home'), page)
 
     def test_no_phone_published_unless_configured(self):
         data = jsonld(html(self.client.get(reverse('main:home'))))
