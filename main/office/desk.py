@@ -8,9 +8,10 @@ from datetime import datetime, time, timedelta
 import jdatetime
 from django.utils import timezone
 
-from main.models import Appointment, LetterRecipient, Notification, ServiceRequest
+from main.models import Appointment, Notification, ServiceRequest
 from main.notifications import notify
-from main.office import letters
+from main.office import letters, messenger
+from main.office.directory import requests_for
 from main.office.errors import Forbidden, NotFound, RateLimited
 from main.office.roles import is_admin
 
@@ -26,7 +27,7 @@ def request_scope(user):
     if is_admin(user):
         return rows
     village = letters.village_of(user)
-    return rows.filter(user__profile__city_village=village) if village else rows.none()
+    return rows.filter(requests_for(village)) if village else rows.none()
 
 
 def follow_ups(user):
@@ -125,9 +126,8 @@ def month_grid(user, year, month, today=None):
 
 def summary(user):
     """Numbers for the top of the desk."""
-    inbox = LetterRecipient.objects.filter(user=user, read_at__isnull=True, archived=False, letter__status='sent')
     return {
-        'unread': inbox.count(),
+        'unread': messenger.unread_total(user),
         'drafts': letters.mailbox(user, 'drafts').count(),
         'today': today_agenda(user).count(),
         'pending_visits': _own_appointments(user).filter(status='pending', start__gte=timezone.now()).count(),

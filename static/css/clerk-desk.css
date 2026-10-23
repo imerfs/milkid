@@ -19,8 +19,8 @@ body.dark .cd {
   --bad: #fca5a5; --bad-soft: rgba(239, 68, 68, .16);
 }
 .cd *, .cd *::before, .cd *::after { box-sizing: border-box; }
-.cd a { color: inherit; text-decoration: none; }
-.cd button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:where(.cd) a { color: inherit; text-decoration: none; }
+:where(.cd) button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 :where(.cd) :is(h1, h2, p, ul) { margin: 0; padding: 0; }
 :where(.cd) ul { list-style: none; }
 .cd :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 8px; }
@@ -136,6 +136,42 @@ body.dark .cd-cal td span.is-today { color: #0b1220; }
 .cd-table tr:last-child td { border-bottom: 0; }
 .cd-code { font-family: ui-monospace, monospace; font-size: 12.5px; color: var(--slate); text-align: end; }
 
+/* ---------- messenger tab ---------- */
+.cd-messenger { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--paper); }
+.cd-messenger .mg { height: calc(100vh - 170px); height: calc(100dvh - 170px); min-height: 520px; }
+body.dark .cd-messenger .mg { --paper: #151d2c; --canvas: #0e1420; --ink: #e2e8f0; --slate: #9aa7bd; --line: #243049; --tint: #1b2536;
+  --brand-soft: rgba(94, 234, 212, .12); --mine: #14532d; --brand: #22c55e; --brand-deep: #86efac; }
+
+/* ---------- visits tab ---------- */
+.cd-line-act { grid-template-columns: 64px 1fr auto auto; }
+.cd-acts { display: inline-flex; gap: 6px; }
+.cd-acts form { margin: 0; }
+.cd-btn.sm { padding: 5px 14px; }
+.cd-form-row { padding: 12px 18px; }
+.cd .cd-form-row select, .cd .cd-book input[type=text], .cd .cd-book textarea, .cd .cd-hour input:not([type=checkbox]), .cd .cd-hour select {
+  min-width: 0;
+  width: 100%; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper); color: var(--ink); font: inherit; }
+.cd .cd-form-row select:focus, .cd .cd-book input:focus, .cd .cd-book textarea:focus, .cd .cd-hour input:focus, .cd .cd-hour select:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+.cd-days { display: flex; gap: 6px; padding: 0 18px 12px; overflow-x: auto; scrollbar-width: thin; }
+.cd-days a { flex: none; padding: 4px 12px; border-radius: 12px; border: 1px solid var(--line); text-align: center; font-size: 12.5px; line-height: 1.5; }
+.cd-days a small { display: block; color: var(--slate); font-size: 11px; }
+.cd-days a.is-on { background: var(--brand-soft); border-color: var(--brand); }
+.cd-days a.is-empty { opacity: .55; }
+.cd-book { display: flex; flex-direction: column; gap: 10px; padding: 0 18px 16px; }
+.cd-book .cd-note { color: var(--slate); font-weight: 600; font-size: 13px; }
+.cd-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-slots label { cursor: pointer; }
+.cd-slots input { position: absolute; opacity: 0; }
+.cd-slots span { display: inline-block; padding: 4px 14px; border-radius: 999px; border: 1px solid var(--line-strong); }
+.cd-slots input:checked + span { background: var(--brand); border-color: var(--brand); color: #fff; }
+.cd-slots input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
+body.dark .cd-slots input:checked + span { color: #0b1220; }
+.cd-hours { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; }
+.cd-hour { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; align-items: center; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.cd-hour .cd-check { grid-column: 1 / -1; font-weight: 600; }
+.cd-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.cd .cd-hour input[type=time] { padding: 6px 8px; }
+
 /* ---------- small screens ---------- */
 @media (max-width: 960px) {
   .cd-grid { grid-template-columns: 1fr; }
@@ -143,6 +179,8 @@ body.dark .cd-cal td span.is-today { color: #0b1220; }
   .cd-stats li:last-child { grid-column: 1 / -1; }
 }
 @media (max-width: 720px) {
+  .cd-line-act { grid-template-columns: 56px 1fr; }
+  .cd-line-act .cd-acts { grid-column: 2; }
   .cd-bar-in { flex-wrap: wrap; gap: 10px; padding: 10px 16px; }
   .cd-tabs { order: 3; width: 100%; margin: 0; }
   .cd-tools { margin-inline-start: auto; }

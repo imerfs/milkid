@@ -52,10 +52,13 @@ def dehyari_expert_dashboard(request):
     village_filter = Q()
     user_village = user_profile.city_village or user_profile.city_village_name
     if user_village and user_profile.role != 'admin':
+        # filed with this village directly, or by its own citizens without another target
         village_filter = (
-            Q(city_village__name=user_village) |
-            Q(user__profile__city_village_name=user_village) |
-            Q(user__profile__city_village=user_profile.city_village)
+            Q(target_municipality__city_village=user_village) |
+            Q(target_municipality__isnull=True) & (
+                Q(city_village__name=user_village) |
+                Q(user__profile__city_village_name=user_village) |
+                Q(user__profile__city_village=user_profile.city_village))
         )
 
     # پایگاه کلی درخواست‌های شهروندان

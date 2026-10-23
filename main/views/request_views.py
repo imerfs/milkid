@@ -95,7 +95,8 @@ def create_request(request):
     else:
         form = ServiceRequestForm()
 
-    context = {'form': form}
+    from main.office.directory import effective_org
+    context = {'form': form, 'target_org': effective_org(request.user)}
     return render(request, 'main/create_request.html', context)
 
 

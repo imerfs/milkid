@@ -7,7 +7,7 @@ writes to the staff of their home village and of the organization they switched 
 from dataclasses import dataclass
 
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Case, Q, When
 
 from main import roles
 from main.models import Municipality
@@ -39,7 +39,7 @@ def org_of(user):
         org = Municipality.objects.filter(Q(admin_user=user) | Q(manager_user=user)).first()
         village = village_of(user)
         if org is None and village:
-            org = Municipality.objects.filter(city_village=village).order_by('id').first()
+            org = Municipality.objects.filter(city_village=village).order_by(Case(When(status='active', then=0), default=1), 'id').first()
         user._org_cache = org
     return user._org_cache
 

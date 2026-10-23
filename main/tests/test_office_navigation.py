@@ -37,8 +37,9 @@ class Navigation(TestCase):
     def test_dashboards_carry_the_office_dock(self):
         for who, name in ((self.accountant, 'accountant_dashboard'), (self.dehyari, 'dehyari_dashboard')):
             page = self.get(who, name)
-            self.assertIn('aria-label="میان‌بر مکاتبات و وقت‌ها"', page, name)
-            self.assertIn(reverse('main:letter_compose'), page, name)
+            self.assertIn('aria-label="میان‌بر پیام‌ها و وقت‌ها"', page, name)
+            self.assertIn(reverse('main:messenger'), page, name)          # the messenger opens as a drawer over the panel
+            self.assertIn('id="mg-drawer"', page, name)
         self.assertIn(reverse('main:mayor_panel', args=['employees']), self.get(self.dehyari, 'dehyari_dashboard'))
 
     def test_mayor_staff_tab_opens_inside_the_panel(self):

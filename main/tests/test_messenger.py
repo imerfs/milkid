@@ -209,3 +209,36 @@ class SwitchingOrganization(World):
     def test_open_redirect_target_is_ignored(self):
         response = client_for(self.citizen).post(reverse('main:switch_municipality'), {'org': self.org_b.pk, 'next': '//evil.test'})
         self.assertEqual(response.url, reverse('main:my_municipality'))
+
+
+class RequestsFollowTheChosenOrganization(World):
+    def file(self, user, title):
+        from main import lifecycle
+        from main.models import ServiceRequest
+        return lifecycle.submit(user, action='ثبت', instance=ServiceRequest(request_type='other', title=title, description='d'))
+
+    def test_request_goes_to_the_organization_the_citizen_switched_to(self):
+        from main.models import ServiceRequest
+        home = self.file(self.citizen, 'در دهیاری خودم')
+        UserProfile.objects.filter(user=self.citizen).update(active_municipality=self.org_b)
+        away = self.file(fresh(self.citizen), 'در بخشداری')
+        self.assertIsNone(home.target_municipality)
+        self.assertEqual(away.target_municipality, self.org_b)
+        in_a = set(ServiceRequest.objects.filter(directory.requests_for(A)).values_list('title', flat=True))
+        in_b = set(ServiceRequest.objects.filter(directory.requests_for(B)).values_list('title', flat=True))
+        self.assertEqual((in_a, in_b), ({'در دهیاری خودم'}, {'در بخشداری'}))
+
+    def test_clerk_of_the_target_sees_it_in_the_follow_up_list(self):
+        from main.models import ServiceRequest
+        UserProfile.objects.filter(user=self.citizen).update(active_municipality=self.org_b)
+        away = self.file(fresh(self.citizen), 'نیاز به مدارک')
+        ServiceRequest.objects.filter(pk=away.pk).update(status='requires_documents')
+        clerk_b = fresh(person('clerk', 'م', 'ک', city_village=B))
+        from main.office import desk
+        self.assertEqual([sr.pk for sr in desk.follow_ups(clerk_b)], [away.pk])
+        self.assertEqual(list(desk.follow_ups(self.clerk)), [])
+
+    def test_create_request_page_names_the_target(self):
+        UserProfile.objects.filter(user=self.citizen).update(active_municipality=self.org_b)
+        page = client_for(self.citizen).get(reverse('main:create_request'), {'embed': '1'})
+        self.assertContains(page, 'بخشداری مرکزی')

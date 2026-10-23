@@ -21,6 +21,13 @@
                         {% endfor %}
                     {% endif %}
 
+                    {% if target_org %}
+                    <div class="alert alert-success d-flex justify-content-between align-items-center" role="status">
+                        <span><i class="fas fa-location-dot ms-1"></i>این درخواست برای «{{ target_org.name }}» ثبت می‌شود.</span>
+                        <a href="{% url 'main:my_municipality' %}?next={{ request.path|urlencode }}" class="alert-link">تغییر دهیاری</a>
+                    </div>
+                    {% endif %}
+
                     <form method="post" dir="rtl">
                         {% csrf_token %}
                         
