@@ -66,10 +66,10 @@ class Tabs(TestCase):
 
     def test_sections_load_inside_the_panel(self):
         html = page(self.user).content.decode()
-        for name in ('my_requests', 'payments_debts', 'my_property_ads', 'update_profile', 'letters_inbox'):
+        for name in ('my_requests', 'payments_debts', 'my_property_ads', 'update_profile'):
             self.assertIn(f'data-frame-src="{reverse("main:" + name)}"', html)
-        for name in ('announcement_list', 'conversation_list'):
-            self.assertIn(f'data-seg="{reverse("main:" + name)}"', html)
+        self.assertIn(f'data-frame-src="{reverse("main:messenger")}?embed=1"', html)      # chats and letters: the messenger
+        self.assertIn(f'data-seg="{reverse("main:announcement_list")}"', html)
 
     def test_every_service_form_is_an_option_in_new_request(self):
         html = page(self.user).content.decode()
