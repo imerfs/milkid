@@ -200,11 +200,10 @@
 
                     <div id="messages-tab" class="tab-content">
                                                 <div class="flex gap-2 mb-4" role="tablist">
-                            <button type="button" class="seg-btn active bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:letters_inbox' %}">نامه‌ها</button>
+                            <button type="button" class="seg-btn active bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:messenger' %}?embed=1">پیام‌ها و نامه‌ها</button>
                             <button type="button" class="seg-btn bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:announcement_list' %}">اطلاعیه‌ها</button>
-                            <button type="button" class="seg-btn bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:conversation_list' %}">گفتگوها</button>
                         </div>
-                        <iframe class="panel-frame" title="پیام‌ها و اطلاعیه‌ها" data-frame-src="{% url 'main:letters_inbox' %}"></iframe>
+                        <iframe class="panel-frame" title="پیام‌ها و اطلاعیه‌ها" data-frame-src="{% url 'main:messenger' %}?embed=1"></iframe>
                     </div>
 
                     <div id="ads-tab" class="tab-content">
@@ -225,7 +224,7 @@
                 'a[href="/dashboard/"],a[href="/dashboard/owner/"]{display:none!important}';
             // Where a page the frame lands on really belongs (e.g. after submitting a form).
             const PATH_TAB = {'/dashboard/': 'dashboard', '/dashboard/owner/': 'dashboard', '/requests/': 'tracking',
-                              '/my-property-ads/': 'ads', '/payments/': 'payments', '/letters/': 'messages'};
+                              '/my-property-ads/': 'ads', '/payments/': 'payments', '/letters/': 'messages', '/messenger/': 'messages'};
             let activeTab = 'dashboard';
 
             function frameUrl(url) { return url + (url.includes('?') ? '&' : '?') + 'embed=1'; }

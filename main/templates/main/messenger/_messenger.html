@@ -1,0 +1,67 @@
+{% load messenger_tags jalali_tags %}
+{% include 'main/messenger/_icons.html' %}
+<div class="mg{% if embed %} is-embed{% endif %}" id="mg" data-base="{% url 'main:messenger' %}" data-open="{{ open_key }}" data-new="{{ new_kind }}" data-sig="{{ sig }}" data-view="list">
+  {% csrf_token %}
+  <aside class="mg-side" aria-label="فهرست گفتگوها و نامه‌ها">
+    <header class="mg-me">
+      <span class="mg-av c{{ me.name|mg_color }}" aria-hidden="true">{{ me.initials }}</span>
+      <span class="mg-me-body"><b>{{ me.name }}</b><span>{{ me.line }}</span></span>
+      <button type="button" class="mg-ico mg-primary" id="mg-open-new" aria-label="پیام یا نامه‌ی جدید" title="پیام یا نامه‌ی جدید"><svg class="mg-i"><use href="#mg-plus"/></svg></button>
+    </header>
+    {% if is_citizen %}
+    <a class="mg-org" href="{% url 'main:my_municipality' %}?next={% url 'main:messenger' %}{% if embed %}%3Fembed%3D1{% endif %}">
+      <svg class="mg-i"><use href="#mg-pin"/></svg>
+      <span>ارسال به: <b>{{ active_org.name|default:"دهیاری خودتان" }}</b></span><em>تغییر</em>
+    </a>
+    {% endif %}
+    <div class="mg-search"><svg class="mg-i"><use href="#mg-search"/></svg><input type="search" id="mg-q" placeholder="جستجو در گفتگوها و نامه‌ها" aria-label="جستجو"></div>
+    <nav class="mg-chips" aria-label="فیلتر">
+      <button type="button" data-kind="all" class="is-on">همه</button>
+      <button type="button" data-kind="chat">گفتگو</button>
+      <button type="button" data-kind="letter">نامه‌ها</button>
+      <button type="button" data-unread="1">نخوانده</button>
+    </nav>
+    <div class="mg-list" id="mg-list">{% include 'main/messenger/_list.html' with threads=threads open_key=open_key %}</div>
+  </aside>
+
+  <section class="mg-pane" id="mg-pane" aria-live="polite">
+    <div class="mg-welcome">
+      <span><svg class="mg-i"><use href="#mg-chat"/></svg></span>
+      <h2>پیام‌ها و مکاتبات اداری</h2>
+      <p>یک گفتگو یا نامه را از فهرست انتخاب کنید، یا با دکمه‌ی «+» پیام تازه بفرستید.</p>
+    </div>
+  </section>
+
+  <div class="mg-modal" id="mg-new" role="dialog" aria-modal="true" aria-label="پیام جدید" hidden>
+    <div class="mg-sheet">
+      <header>
+        <h2>پیام جدید</h2>
+        <button type="button" class="mg-ico" data-act="close-new" aria-label="بستن"><svg class="mg-i"><use href="#mg-close"/></svg></button>
+      </header>
+      <div class="mg-sheet-body">
+        <div class="mg-dir">
+          <div class="mg-search"><svg class="mg-i"><use href="#mg-search"/></svg><input type="search" id="mg-dq" placeholder="جستجوی دهیاری، شهرداری یا فرد" aria-label="جستجوی گیرنده"></div>
+          <div class="mg-dir-list" id="mg-dir-list"></div>
+        </div>
+        <form class="mg-form" id="mg-new-form" enctype="multipart/form-data">
+          <div class="mg-seg" role="tablist" aria-label="نوع پیام">
+            <button type="button" role="tab" data-kind="chat" class="is-on"><svg class="mg-i"><use href="#mg-chat"/></svg>گفتگو</button>
+            <button type="button" role="tab" data-kind="letter"><svg class="mg-i"><use href="#mg-mail"/></svg>نامه‌ی رسمی</button>
+          </div>
+          <div class="mg-chosen" id="mg-chosen" aria-live="polite"><span class="mg-hint">گیرنده را از فهرست انتخاب کنید.</span></div>
+          <div class="mg-letter-only" hidden>
+            <input type="text" name="subject" id="mg-subject" maxlength="200" placeholder="موضوع نامه" aria-label="موضوع نامه">
+            <div class="mg-row2">
+              <select name="priority" aria-label="اولویت">{% for v, label in priorities %}<option value="{{ v }}">{{ label }}</option>{% endfor %}</select>
+              <label class="mg-check"><input type="checkbox" name="confidential" value="1"> محرمانه</label>
+              <label class="mg-attach"><svg class="mg-i"><use href="#mg-clip"/></svg><span id="mg-files-label">پیوست</span><input type="file" name="files" id="mg-new-files" multiple hidden></label>
+            </div>
+          </div>
+          <textarea name="body" id="mg-body" rows="6" placeholder="متن پیام…" aria-label="متن پیام" required></textarea>
+          <p class="mg-err" id="mg-err" role="alert" hidden></p>
+          <button type="submit" class="mg-btn" id="mg-send-new"><svg class="mg-i"><use href="#mg-send"/></svg>ارسال</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

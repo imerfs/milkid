@@ -480,9 +480,9 @@
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:letters_inbox' %}">
-                            <i class="fas fa-envelope-open-text ms-1"></i>
-                            مکاتبات{% if office.letters_unread %} <span class="badge bg-danger">{{ office.letters_unread }}</span>{% endif %}
+                        <a class="nav-link" href="{% url 'main:messenger' %}">
+                            <i class="fas fa-comments ms-1"></i>
+                            پیام‌ها{% if office.messages_unread %} <span class="badge bg-danger">{{ office.messages_unread }}</span>{% endif %}
                         </a>
                     </li>
                     <li class="nav-item">
@@ -736,7 +736,7 @@
                 <div class="col-md-3 footer-section">
                     <h5>اطلاعات تماس</h5>
                     <ul>
-                        <li><i class="fas fa-phone ms-1"></i> ۰۲۱-۱۲۳۴۵۶۷۸</li>
+                        <li><i class="fas fa-phone ms-1"></i> <a href="tel:{{ support_phone }}">{{ support_phone_fa }}</a></li>
                         <li><i class="fas fa-envelope ms-1"></i> info@behrangaar.ir</li>
                         <li><i class="fas fa-map-marker-alt ms-1"></i> سمندآباد، خیابان اصلی</li>
                         <li><i class="fas fa-clock ms-1"></i> ۸:۰۰ تا ۱۶:۰۰</li>

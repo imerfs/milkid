@@ -154,6 +154,10 @@ class ServiceRequest(models.Model):
     current_step = models.PositiveIntegerField(default=1, verbose_name='مرحله فعلی')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='وضعیت')
 
+    # The organization the citizen filed this request with (empty = the village of the citizen's profile).
+    target_municipality = models.ForeignKey('Municipality', on_delete=models.SET_NULL, null=True, blank=True,
+                                            related_name='incoming_requests', verbose_name='سازمان مقصد')
+
     # Workflow tracking fields
     workflow_stage = models.CharField(
         max_length=30,

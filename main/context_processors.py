@@ -10,8 +10,10 @@ def seo(request):
 
 
 def contact(request):
-    """The support address shown on public pages (settings.SUPPORT_EMAIL)."""
-    return {'support_email': settings.SUPPORT_EMAIL}
+    """The support address and phone shown on public pages (settings.SUPPORT_EMAIL, SUPPORT_PHONE)."""
+    phone = settings.SUPPORT_PHONE
+    return {'support_email': settings.SUPPORT_EMAIL, 'support_phone': phone,
+            'support_phone_fa': phone.translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))}
 
 
 def office(request):
@@ -21,13 +23,13 @@ def office(request):
         return {}
     from main.models import Appointment
     from main.office.appointments import PROVIDER_ROLES
-    from main.office.letters import unread_count
+    from main.office.messenger import unread_total
     role = getattr(getattr(user, 'profile', None), 'role', None)
     try:
         pending = (Appointment.objects.filter(provider=user, status='pending', end__gte=timezone.now()).count()
                    if role in PROVIDER_ROLES else 0)
-        unread = unread_count(user)
+        unread = unread_total(user)
     except DatabaseError:        # e.g. migrations not applied yet: the counters are optional, the page is not
         pending = unread = 0
-    return {'office': {'letters_unread': unread, 'appointments_pending': pending,
+    return {'office': {'letters_unread': unread, 'messages_unread': unread, 'appointments_pending': pending,
                        'can_grant_roles': role == 'dehyari' or user.is_superuser or role == 'admin'}}

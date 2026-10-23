@@ -52,9 +52,24 @@ class Composing(Office):
         self.assertEqual(self.send(self.citizen, [self.citizen2]).status_code, 403)
         self.assertEqual(Letter.objects.filter(sender=self.citizen).count(), 1)
 
-    def test_recipients_of_another_village_are_refused(self):
-        self.assertEqual(self.send(self.dehyari, [self.stranger]).status_code, 403)
+    def test_citizens_of_another_village_are_refused(self):
+        outsider = make_user('citizen', city_village='روستای ب')
+        self.assertEqual(self.send(self.dehyari, [outsider]).status_code, 403)
         self.assertFalse(Letter.objects.exists())
+
+    def test_staff_may_write_to_staff_of_another_organization(self):
+        self.assertEqual(self.send(self.dehyari, [self.stranger]).status_code, 302)
+        self.assertEqual(self.send(self.stranger, [self.dehyari]).status_code, 302)
+        self.assertEqual(Letter.objects.count(), 2)
+
+    def test_citizen_reaches_the_staff_of_the_organization_they_switched_to(self):
+        other = make_user('dehyari', city_village='روستای ب')
+        other = type(other).objects.get(pk=other.pk)
+        self.assertEqual(self.send(self.citizen, [other]).status_code, 403)
+        from main.models import UserProfile
+        make_municipality(other, 'روستای ب')
+        UserProfile.objects.filter(user=self.citizen).update(active_municipality=other.managed_municipality.first())
+        self.assertEqual(self.send(type(self.citizen).objects.get(pk=self.citizen.pk), [other]).status_code, 302)
 
     def test_admin_can_write_anywhere(self):
         admin = make_user('admin')

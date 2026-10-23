@@ -20,6 +20,7 @@ import os
 from .common import role_required
 from main import lifecycle
 from main.office import roles as office_roles
+from main.office.directory import requests_for
 from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -46,7 +47,7 @@ def dehyari_dashboard(request):
     # Try to get the municipality managed by this user
     try:
         municipality = Municipality.objects.get(admin_user=request.user)
-        municipality_filter = Q(user__profile__city_village=municipality.city_village)
+        municipality_filter = requests_for(municipality.city_village)
     except Municipality.DoesNotExist:
         municipality = None
         municipality_filter = Q(pk__in=[])
@@ -305,7 +306,7 @@ def mayor_requests_list(request):
     
     try:
         municipality = Municipality.objects.get(admin_user=request.user)
-        municipality_filter = Q(user__profile__city_village=municipality.city_village)
+        municipality_filter = requests_for(municipality.city_village)
     except Municipality.DoesNotExist:
         municipality = None
         municipality_filter = Q(pk__in=[])   # no municipality: show nothing, never every request

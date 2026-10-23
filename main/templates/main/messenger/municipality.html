@@ -1,0 +1,43 @@
+{% extends 'registration/auth_base.html' %}
+{% load static %}
+{% block title %}دهیاری یا شهرداری من - ملک آیدی{% endblock %}
+{% block shell %}mid{% endblock %}
+
+{% block content %}
+<main class="au-card">
+    <h1 class="au-title">درخواست‌ها و نامه‌ها به کجا برود؟</h1>
+    <p class="au-sub">دهیاری یا شهرداری مقصد را انتخاب کنید. هر وقت خواستید می‌توانید عوضش کنید؛ درخواست‌هایی که قبلاً ثبت کرده‌اید جابه‌جا نمی‌شوند.</p>
+
+    <p class="au-note"><svg class="au-i" aria-hidden="true"><use href="#au-info"/></svg>الان: <b>{{ active.name|default:"هنوز مقصدی انتخاب نشده" }}</b>{% if home and active and home.pk != active.pk %} · دهیاری خودتان: {{ home.name }}{% endif %}</p>
+
+    <form method="get" class="au-search">
+        <input type="search" name="q" value="{{ q }}" placeholder="نام دهیاری، شهرداری، شهرستان یا استان" aria-label="جستجو">
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button type="submit" class="au-btn au-btn-slim">جستجو</button>
+    </form>
+
+    <div class="au-choices">
+        {% for o in orgs %}
+        <form method="post" action="{% url 'main:switch_municipality' %}">{% csrf_token %}
+            <input type="hidden" name="org" value="{{ o.pk }}">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <button type="submit" class="au-choice{% if active and active.pk == o.pk %} is-on{% endif %}" style="width:100%;text-align:right;font:inherit;cursor:pointer">
+                <span class="au-choice-icon"><svg class="au-i" aria-hidden="true"><use href="#au-building"/></svg></span>
+                <div><b>{{ o.name }}</b><span>{{ o.get_municipality_type_display }} · {{ o.county }}{% if o.province %}، {{ o.province }}{% endif %}</span></div>
+                {% if active and active.pk == o.pk %}<span class="au-foot" style="margin-inline-start:auto"><b>فعال</b></span>{% endif %}
+            </button>
+        </form>
+        {% empty %}
+        <p class="au-foot">دهیاری یا شهرداری فعالی پیدا نشد.</p>
+        {% endfor %}
+    </div>
+
+    {% if home and active and home.pk != active.pk %}
+    <form method="post" action="{% url 'main:switch_municipality' %}" class="au-actions">{% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button type="submit" class="au-btn">برگشت به دهیاری خودم ({{ home.name }})</button>
+    </form>
+    {% endif %}
+    <p class="au-foot" style="margin-top:18px"><a href="{% url 'main:dashboard' %}">بازگشت به پنل</a></p>
+</main>
+{% endblock %}

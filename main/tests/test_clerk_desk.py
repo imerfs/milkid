@@ -71,9 +71,8 @@ class TheDeskPage(Village):
         return client_for(user or self.clerk).get(reverse('main:clerk_dashboard'), params)
 
     def test_empty_desk_renders(self):
-        response = self.open()
-        self.assertContains(response, 'کار عقب‌افتاده‌ای ندارید')
-        self.assertContains(response, 'درخواستی منتظر مدارک نیست')
+        self.assertContains(self.open(), 'کار عقب‌افتاده‌ای ندارید')
+        self.assertContains(self.open(tab='follow'), 'درخواستی منتظر مدارک نیست')
 
     def test_counts_unread_letters_and_lists_them(self):
         letters.compose(self.dehyari, to=[self.clerk.id], subject='گزارش ماهانه', body='متن')
@@ -95,7 +94,7 @@ class TheDeskPage(Village):
         mine = make_request(self.citizen, status='requires_documents', title='نقشه ساختمان')
         foreign = make_request(make_user('citizen', city_village=OTHER), status='requires_documents', title='درخواست غریبه')
         make_request(self.citizen, status='pending', title='در جریان')
-        response = self.open()
+        response = self.open(tab='follow')
         self.assertContains(response, mine.title)
         self.assertNotContains(response, foreign.title)
         self.assertNotContains(response, 'در جریان')
@@ -183,3 +182,75 @@ class LettersReachTheClerk(Village):
         sent = letters.compose(self.clerk, to=[self.dehyari.id], subject='ارسال از میز اداری', body='سلام')
         self.assertEqual(sent.status, 'sent')
         self.assertIn(self.clerk, [u for u in letters.allowed_recipients(self.dehyari)])
+
+
+class Tabs(Village):
+    def open(self, **params):
+        return client_for(self.clerk).get(reverse('main:clerk_dashboard'), params)
+
+    def test_every_tab_renders_and_unknown_tab_falls_back_to_today(self):
+        for tab in ('today', 'messages', 'visits', 'follow'):
+            self.assertContains(self.open(tab=tab), f'cd-tabs', msg_prefix=tab)
+        self.assertEqual(self.open(tab='nonsense').context['tab'], 'today')
+
+    def test_messages_tab_holds_the_messenger_inline(self):
+        page = self.open(tab='messages')
+        self.assertContains(page, 'id="mg"')
+        self.assertContains(page, 'messenger.js')
+
+    def test_opening_a_thread_from_the_today_tab_links_into_the_messenger_tab(self):
+        letters.compose(self.dehyari, to=[self.clerk.id], subject='نامه‌ی امروز', body='متن')
+        page = self.open()
+        self.assertContains(page, '?tab=messages&open=l')
+
+
+class VisitsInTheDesk(Village):
+    def setUp(self):
+        super().setUp()
+        self.start = timezone.now() + timedelta(days=1)
+        self.visit = Appointment.objects.create(provider=self.clerk, client=self.citizen, start=self.start,
+                                                end=self.start + timedelta(minutes=30), subject='گواهی')
+
+    def post(self, name, *args, **data):
+        return client_for(self.clerk).post(reverse(f'main:{name}', args=args), data, follow=True)
+
+    def test_clerk_confirms_and_the_citizen_is_told(self):
+        response = self.post('clerk_visit_action', self.visit.id, action='confirm')
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, 'confirmed')
+        self.assertContains(response, 'وقت ملاقات شما تایید شد')
+        self.assertTrue(Notification.objects.filter(user=self.citizen, title='وقت ملاقات').exists())
+
+    def test_clerk_cannot_decide_someone_elses_visit(self):
+        other = make_user('engineer', city_village=VILLAGE)
+        elsewhere = Appointment.objects.create(provider=other, client=self.citizen, start=self.start + timedelta(days=1),
+                                               end=self.start + timedelta(days=1, minutes=30), subject='x')
+        self.post('clerk_visit_action', elsewhere.id, action='confirm')
+        elsewhere.refresh_from_db()
+        self.assertEqual(elsewhere.status, 'pending')
+
+    def test_weekly_hours_are_saved_from_the_desk(self):
+        from main.models import AvailabilityRule
+        self.post('clerk_hours', d0_on='on', d0_from='08:00', d0_to='12:00', d0_len='30')
+        rule = AvailabilityRule.objects.get(provider=self.clerk)
+        self.assertEqual((rule.weekday, rule.slot_minutes), (0, 30))
+        response = self.post('clerk_hours', d0_on='on', d0_from='12:00', d0_to='08:00', d0_len='30')
+        self.assertContains(response, 'ساعت پایان باید بعد از شروع باشد')
+
+    def test_booking_a_colleague_from_the_desk(self):
+        from datetime import time
+        from main.models import AvailabilityRule
+        from main.tests.test_appointments import jalali_weekday
+        engineer = User.objects.get(pk=make_user('engineer', city_village=VILLAGE).pk)
+        day = (timezone.now() + timedelta(days=3)).date()
+        AvailabilityRule.objects.create(provider=engineer, weekday=jalali_weekday(day), start_time=time(9), end_time=time(12))
+        page = client_for(self.clerk).get(reverse('main:clerk_dashboard'), {'tab': 'visits', 'provider': engineer.id, 'date': day.isoformat()})
+        self.assertContains(page, 'name="start"')
+        self.post('clerk_book', provider=engineer.id, start=f'{day.isoformat()}T09:00', subject='مشورت')
+        self.assertTrue(Appointment.objects.filter(provider=engineer, client=self.clerk, subject='مشورت').exists())
+
+    def test_visit_actions_are_closed_to_other_roles(self):
+        r = client_for(self.citizen).post(reverse('main:clerk_visit_action', args=[self.visit.id]), {'action': 'confirm'})
+        self.assertEqual(r.status_code, 302)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, 'pending')

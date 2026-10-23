@@ -16,6 +16,7 @@ from django.utils.http import urlencode
 from main.access import policy_required, role_of
 from main.models import Announcement, Municipality, ServiceRequest, UserProfile
 from main.office import roles
+from main.office.directory import requests_for
 from main.office.errors import OfficeError
 from main.views.office_views import change_password
 
@@ -48,7 +49,7 @@ def _requests(request):
     municipality = Municipality.objects.filter(admin_user=request.user).first()
     if municipality is None:
         return {'municipality': None, 'service_requests': [], 'status_choices': ServiceRequest.STATUS_CHOICES}
-    scope = ServiceRequest.objects.filter(user__profile__city_village=municipality.city_village)
+    scope = ServiceRequest.objects.filter(requests_for(municipality.city_village))
     status, search = request.GET.get('status', ''), request.GET.get('search', '').strip()[:100]
     rows = scope.select_related('user', 'user__profile', 'service')
     if status in dict(ServiceRequest.STATUS_CHOICES):

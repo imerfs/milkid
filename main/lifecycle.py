@@ -68,6 +68,9 @@ def submit(user, *, action, instance=None, **fields):
         setattr(sr, name, value)
     _ensure_not_locked(sr)
     sr.user = user
+    chosen = getattr(getattr(user, 'profile', None), 'active_municipality', None)
+    if chosen is not None and sr.target_municipality_id is None:
+        sr.target_municipality = chosen          # a citizen who switched municipality files with the new one
     sr.status = 'pending'
     sr.workflow_stage = 'expert_review'
     sr.referral_target = 'engineer'

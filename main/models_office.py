@@ -40,6 +40,8 @@ class Letter(models.Model):
 
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='letters_sent')
     village = models.CharField(max_length=100, blank=True, db_index=True, verbose_name='روستا/شهر')
+    sender_org = models.ForeignKey('main.Municipality', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='letters_sent', verbose_name='سازمان فرستنده')
     subject = models.CharField(max_length=200, verbose_name='موضوع')
     body = models.TextField(max_length=20000, verbose_name='متن نامه')
     priority = models.CharField(max_length=10, choices=PRIORITIES, default='normal', verbose_name='اولویت')

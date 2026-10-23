@@ -9,40 +9,16 @@ from django.db.models import Max, Q
 from django.utils import timezone
 from datetime import timedelta
 
-from main.models import Letter, LetterAttachment, LetterRecipient, Municipality
+from main.models import Letter, LetterAttachment, LetterRecipient
 from main.notifications import notify
+from main.office.directory import STAFF_ROLES, allowed_recipients, org_of, village_of    # noqa: F401  (re-exported: other modules import them from here)
 from main.office.errors import Forbidden, Invalid, NotFound, RateLimited
-from main.office.roles import is_admin
 from main.validators import validate_file_content, validate_file_extension, validate_file_size
 
-STAFF_ROLES = ('dehyari', 'engineer', 'inspector', 'accountant', 'clerk', 'council')
 HOURLY_CAP = 30
 MAX_RECIPIENTS = 20
 MAX_ATTACHMENTS = 5
 PRIORITIES = {value for value, _ in Letter.PRIORITIES}
-
-
-def village_of(user):
-    """Village the user writes from ('' = none, e.g. an admin)."""
-    if is_admin(user):
-        return ''
-    if user.profile.role == 'dehyari':
-        municipality = Municipality.objects.filter(admin_user=user).first()
-        if municipality:
-            return municipality.city_village
-    return user.profile.city_village or ''
-
-
-def allowed_recipients(sender):
-    """Users this sender may write to (profiles joined, active only)."""
-    from django.contrib.auth.models import User
-    people = User.objects.filter(is_active=True, profile__is_active=True).exclude(pk=sender.pk).select_related('profile')
-    if is_admin(sender):
-        return people
-    people = people.filter(profile__city_village=village_of(sender))
-    if sender.profile.role not in STAFF_ROLES:
-        people = people.filter(profile__role__in=STAFF_ROLES)    # citizens write to the offices, not to each other
-    return people
 
 
 def _recipients(sender, ids, kind):
@@ -128,7 +104,7 @@ def compose(sender, *, to, cc=(), subject, body, priority='normal', confidential
     try:
         with transaction.atomic():
             letter = Letter.objects.create(
-                sender=sender, village=village_of(sender), subject=subject, body=body, priority=priority,
+                sender=sender, village=village_of(sender), sender_org=org_of(sender), subject=subject, body=body, priority=priority,
                 confidential=bool(confidential), parent=parent, client_token=token or None)
             LetterRecipient.objects.bulk_create([LetterRecipient(letter=letter, user=u, kind=k) for u, k in people])
             for f in files:

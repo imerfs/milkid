@@ -1,8 +1,8 @@
 {% extends 'main/dashboards/_base.html' %}
-{% load static jalali_tags %}
+{% load static jalali_tags messenger_tags %}
 {% block title %}میز کارشناس اداری - ملک آیدی{% endblock %}
 {% block body_class %}mk-tw cd-body{% endblock %}
-{% block head_late %}<link rel="stylesheet" href="{% static 'css/clerk-desk.css' %}">{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/clerk-desk.css' %}">{% if tab == 'messages' %}<link rel="stylesheet" href="{% static 'css/messenger.css' %}">{% endif %}{% endblock %}
 {% block content %}
 <script>try { if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark'); } catch (e) {}</script>
 {% include 'main/clerk/_icons.html' %}
@@ -16,10 +16,10 @@
         <span><b>میز اداری</b><small>{{ request.user.profile.city_village|default:"ملک آیدی" }}</small></span>
       </a>
       <nav class="cd-tabs" aria-label="بخش‌ها">
-        <a href="{% url 'main:clerk_dashboard' %}" class="is-on" aria-current="page"><svg class="cd-i"><use href="#i-home"/></svg>امروز</a>
-        <a href="{% url 'main:letters_inbox' %}"><svg class="cd-i"><use href="#i-mail"/></svg>نامه‌ها{% if stats.unread %}<em>{{ stats.unread|persian_numbers }}</em>{% endif %}</a>
-        <a href="{% url 'main:appointments' %}"><svg class="cd-i"><use href="#i-cal"/></svg>وقت‌ملاقات{% if stats.pending_visits %}<em>{{ stats.pending_visits|persian_numbers }}</em>{% endif %}</a>
-        <a href="#cd-follow"><svg class="cd-i"><use href="#i-doc-alert"/></svg>پیگیری‌ها{% if stats.waiting_docs %}<em>{{ stats.waiting_docs|persian_numbers }}</em>{% endif %}</a>
+        <a href="{% url 'main:clerk_dashboard' %}" {% if tab == 'today' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-home"/></svg>امروز</a>
+        <a href="?tab=messages" {% if tab == 'messages' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-mail"/></svg>پیام‌ها و نامه‌ها{% if stats.unread %}<em>{{ stats.unread|persian_numbers }}</em>{% endif %}</a>
+        <a href="?tab=visits" {% if tab == 'visits' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-cal"/></svg>وقت‌ملاقات{% if stats.pending_visits %}<em>{{ stats.pending_visits|persian_numbers }}</em>{% endif %}</a>
+        <a href="?tab=follow" {% if tab == 'follow' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-doc-alert"/></svg>پیگیری‌ها{% if stats.waiting_docs %}<em>{{ stats.waiting_docs|persian_numbers }}</em>{% endif %}</a>
       </nav>
       <div class="cd-tools">
         <a href="{% url 'main:notifications' %}" class="cd-ico" aria-label="اعلان‌ها"><svg class="cd-i"><use href="#i-bell"/></svg></a>
@@ -36,27 +36,28 @@
     </div>
     {% endif %}
 
+{% if tab == 'today' %}
     <section class="cd-hero" aria-labelledby="cd-hello">
       <div>
         <p class="cd-eyebrow">{{ today_label|persian_numbers }}</p>
         <h1 id="cd-hello">{{ greeting }}، {{ request.user.first_name|default:request.user.username }}</h1>
         <p class="cd-sub">{% if stats.unread or stats.today or stats.waiting_docs %}امروز این‌ها منتظر شماست؛ از بالاترین مورد شروع کنید.{% else %}کار عقب‌افتاده‌ای ندارید. می‌توانید نامه‌ی تازه‌ای بنویسید.{% endif %}</p>
       </div>
-      <a href="{% url 'main:letter_compose' %}" class="cd-btn cd-btn-main"><svg class="cd-i"><use href="#i-pen"/></svg>نامه‌ی جدید</a>
+      <a href="?tab=messages&new=letter" class="cd-btn cd-btn-main"><svg class="cd-i"><use href="#i-pen"/></svg>نامه‌ی جدید</a>
     </section>
 
     <ul class="cd-stats" aria-label="خلاصه‌ی امروز">
-      <li class="{% if stats.unread %}is-hot{% endif %}"><a href="{% url 'main:letters_inbox' %}?unread=1"><svg class="cd-i"><use href="#i-mail"/></svg><b>{{ stats.unread|persian_numbers }}</b><span>نامه‌ی نخوانده</span></a></li>
-      <li><a href="{% url 'main:letters_drafts' %}"><svg class="cd-i"><use href="#i-pen"/></svg><b>{{ stats.drafts|persian_numbers }}</b><span>پیش‌نویس</span></a></li>
+      <li class="{% if stats.unread %}is-hot{% endif %}"><a href="?tab=messages"><svg class="cd-i"><use href="#i-mail"/></svg><b>{{ stats.unread|persian_numbers }}</b><span>پیام و نامه‌ی نخوانده</span></a></li>
+      <li><a href="?tab=messages"><svg class="cd-i"><use href="#i-pen"/></svg><b>{{ stats.drafts|persian_numbers }}</b><span>پیش‌نویس</span></a></li>
       <li class="{% if stats.today %}is-hot{% endif %}"><a href="#cd-agenda"><svg class="cd-i"><use href="#i-clock"/></svg><b>{{ stats.today|persian_numbers }}</b><span>ملاقات امروز</span></a></li>
-      <li class="{% if stats.pending_visits %}is-warn{% endif %}"><a href="{% url 'main:appointments' %}"><svg class="cd-i"><use href="#i-cal"/></svg><b>{{ stats.pending_visits|persian_numbers }}</b><span>منتظر تایید شما</span></a></li>
-      <li class="{% if stats.waiting_docs %}is-warn{% endif %}"><a href="#cd-follow"><svg class="cd-i"><use href="#i-doc-alert"/></svg><b>{{ stats.waiting_docs|persian_numbers }}</b><span>درخواست منتظر مدارک</span></a></li>
+      <li class="{% if stats.pending_visits %}is-warn{% endif %}"><a href="?tab=visits"><svg class="cd-i"><use href="#i-cal"/></svg><b>{{ stats.pending_visits|persian_numbers }}</b><span>منتظر تایید شما</span></a></li>
+      <li class="{% if stats.waiting_docs %}is-warn{% endif %}"><a href="?tab=follow"><svg class="cd-i"><use href="#i-doc-alert"/></svg><b>{{ stats.waiting_docs|persian_numbers }}</b><span>درخواست منتظر مدارک</span></a></li>
     </ul>
 
     <div class="cd-grid">
       <div class="cd-col">
         <section class="cd-card" id="cd-agenda" aria-labelledby="h-agenda">
-          <header><h2 id="h-agenda"><svg class="cd-i"><use href="#i-clock"/></svg>برنامه‌ی امروز</h2><a href="{% url 'main:appointments' %}">همه‌ی وقت‌ها<svg class="cd-i"><use href="#i-chev"/></svg></a></header>
+          <header><h2 id="h-agenda"><svg class="cd-i"><use href="#i-clock"/></svg>برنامه‌ی امروز</h2><a href="?tab=visits">همه‌ی وقت‌ها<svg class="cd-i"><use href="#i-chev"/></svg></a></header>
           {% for a in agenda %}
           <div class="cd-line">
             <time class="cd-time" datetime="{{ a.start|date:'c' }}">{{ a.start|time:"H:i"|persian_numbers }}</time>
@@ -72,22 +73,22 @@
           <div class="cd-line">
             <time class="cd-time soft">{{ a.start|date:"m/d"|persian_numbers }}<small>{{ a.start|time:"H:i"|persian_numbers }}</small></time>
             <div><b>{{ a.client.get_full_name|default:a.client.username }}</b><span>{{ a.subject }}</span></div>
-            <a class="cd-btn cd-btn-soft" href="{% url 'main:appointments' %}">بررسی</a>
+            <a class="cd-btn cd-btn-soft" href="?tab=visits">بررسی</a>
           </div>
           {% endfor %}
           {% endif %}
         </section>
 
         <section class="cd-card" aria-labelledby="h-inbox">
-          <header><h2 id="h-inbox"><svg class="cd-i"><use href="#i-mail"/></svg>آخرین نامه‌های دریافتی</h2><a href="{% url 'main:letters_inbox' %}">صندوق ورودی<svg class="cd-i"><use href="#i-chev"/></svg></a></header>
-          {% for l in inbox %}
-          <a class="cd-line cd-link" href="{% url 'main:letter_detail' l.id %}">
-            <span class="cd-no">{{ l.number|persian_numbers }}</span>
-            <div><b>{{ l.subject }}</b><span>{{ l.sender.get_full_name|default:l.sender.username }} · {{ l.sent_at|jalali_date|persian_numbers }}</span></div>
-            {% if l.priority != 'normal' %}<em class="cd-tag bad">{{ l.get_priority_display }}</em>{% endif %}
+          <header><h2 id="h-inbox"><svg class="cd-i"><use href="#i-mail"/></svg>آخرین پیام‌ها و نامه‌ها</h2><a href="?tab=messages">همه<svg class="cd-i"><use href="#i-chev"/></svg></a></header>
+          {% for t in latest %}
+          <a class="cd-line cd-link" href="?tab=messages&open={{ t.key }}">
+            <span class="cd-no">{% if t.kind == 'letter' %}{{ t.number|persian_numbers }}{% else %}گفتگو{% endif %}</span>
+            <div><b>{{ t.who.name }}{% if t.subject %} · {{ t.subject }}{% endif %}</b><span>{{ t.who.line }} · {{ t.when|mg_when }}</span></div>
+            {% if t.unread %}<em class="cd-tag bad">{{ t.unread|persian_numbers }} جدید</em>{% elif t.priority != 'normal' %}<em class="cd-tag bad">فوری</em>{% endif %}
           </a>
           {% empty %}
-          <p class="cd-empty"><svg class="cd-i"><use href="#i-mail"/></svg>نامه‌ای در صندوق ورودی نیست.</p>
+          <p class="cd-empty"><svg class="cd-i"><use href="#i-mail"/></svg>هنوز پیام یا نامه‌ای ندارید.</p>
           {% endfor %}
         </section>
       </div>
@@ -117,16 +118,112 @@
         <section class="cd-card" aria-labelledby="h-quick">
           <header><h2 id="h-quick"><svg class="cd-i"><use href="#i-send"/></svg>میان‌بر</h2></header>
           <div class="cd-quick">
-            <a href="{% url 'main:letter_compose' %}"><svg class="cd-i"><use href="#i-pen"/></svg>نوشتن نامه</a>
-            <a href="{% url 'main:letters_sent' %}"><svg class="cd-i"><use href="#i-send"/></svg>نامه‌های ارسالی</a>
-            <a href="{% url 'main:letters_archive' %}"><svg class="cd-i"><use href="#i-folder"/></svg>بایگانی نامه‌ها</a>
-            <a href="{% url 'main:availability' %}"><svg class="cd-i"><use href="#i-clock"/></svg>ساعت‌های حضور من</a>
-            <a href="{% url 'main:appointment_providers' %}"><svg class="cd-i"><use href="#i-user"/></svg>وقت گرفتن از همکاران</a>
+            <a href="?tab=messages&new=letter"><svg class="cd-i"><use href="#i-pen"/></svg>نوشتن نامه‌ی رسمی</a>
+            <a href="?tab=messages&new=chat"><svg class="cd-i"><use href="#i-send"/></svg>گفتگوی تازه</a>
+            <a href="?tab=visits#hours"><svg class="cd-i"><use href="#i-clock"/></svg>ساعت‌های حضور من</a>
+            <a href="?tab=visits#book"><svg class="cd-i"><use href="#i-user"/></svg>وقت گرفتن از همکاران</a>
           </div>
         </section>
       </aside>
     </div>
 
+{% elif tab == 'messages' %}
+    <section class="cd-messenger" aria-label="پیام‌ها و نامه‌ها">
+      {% include 'main/messenger/_messenger.html' %}
+    </section>
+
+{% elif tab == 'visits' %}
+    <div class="cd-grid cd-visits">
+      <div class="cd-col">
+        <section class="cd-card" aria-labelledby="h-in">
+          <header><h2 id="h-in"><svg class="cd-i"><use href="#i-user"/></svg>ملاقات‌های من (آینده)</h2></header>
+          {% for a in incoming %}
+          <div class="cd-line cd-line-act">
+            <time class="cd-time soft">{{ a.start|date:"m/d"|persian_numbers }}<small>{{ a.start|time:"H:i"|persian_numbers }}</small></time>
+            <div><b>{{ a.client.get_full_name|default:a.client.username }}</b><span>{{ a.subject }}{% if a.notes %} — {{ a.notes }}{% endif %}</span></div>
+            <em class="cd-tag {% if a.status == 'pending' %}warn{% elif a.status == 'confirmed' %}ok{% endif %}">{{ a.get_status_display }}</em>
+            <span class="cd-acts">
+              {% if a.status == 'pending' %}
+              <form method="post" action="{% url 'main:clerk_visit_action' a.id %}">{% csrf_token %}<input type="hidden" name="action" value="confirm"><button class="cd-btn cd-btn-main sm">تایید</button></form>
+              <form method="post" action="{% url 'main:clerk_visit_action' a.id %}">{% csrf_token %}<input type="hidden" name="action" value="reject"><button class="cd-btn cd-btn-soft">رد</button></form>
+              {% elif a.status == 'confirmed' %}
+              <form method="post" action="{% url 'main:clerk_visit_action' a.id %}">{% csrf_token %}<input type="hidden" name="action" value="complete"><button class="cd-btn cd-btn-soft">انجام شد</button></form>
+              <form method="post" action="{% url 'main:clerk_visit_action' a.id %}">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="cd-btn cd-btn-soft">لغو</button></form>
+              {% endif %}
+            </span>
+          </div>
+          {% empty %}
+          <p class="cd-empty"><svg class="cd-i"><use href="#i-cal"/></svg>ملاقاتی در پیش ندارید.</p>
+          {% endfor %}
+        </section>
+
+        <section class="cd-card" id="book" aria-labelledby="h-book">
+          <header><h2 id="h-book"><svg class="cd-i"><use href="#i-user"/></svg>وقت گرفتن از همکاران</h2></header>
+          <form method="get" class="cd-form-row">
+            <input type="hidden" name="tab" value="visits">
+            <label class="cd-sr" for="cd-prov">همکار</label>
+            <select name="provider" id="cd-prov" onchange="this.form.submit()">
+              <option value="">یک همکار را انتخاب کنید…</option>
+              {% for p in colleagues %}<option value="{{ p.id }}" {% if chosen and chosen.id == p.id %}selected{% endif %}>{{ p.get_full_name|default:p.username }} — {{ p.profile.get_role_display }}</option>{% endfor %}
+            </select>
+            <noscript><button class="cd-btn cd-btn-soft">نمایش</button></noscript>
+          </form>
+          {% if chosen %}
+          <div class="cd-days" role="list">
+            {% for d in strip %}<a role="listitem" href="?tab=visits&provider={{ chosen.id }}&date={{ d.iso }}#book" class="{% if d.date == date %}is-on{% endif %}{% if not d.free %} is-empty{% endif %}">{{ d.label|persian_numbers }}<small>{% if d.free %}{{ d.free|persian_numbers }} وقت{% else %}پر{% endif %}</small></a>{% endfor %}
+          </div>
+          <form method="post" action="{% url 'main:clerk_book' %}" class="cd-book">{% csrf_token %}
+            <input type="hidden" name="provider" value="{{ chosen.id }}">
+            <p class="cd-note">{{ date_label|persian_numbers }}</p>
+            {% if slots %}
+            <div class="cd-slots">{% for s in slots %}<label><input type="radio" name="start" value="{{ s|date:'Y-m-d\TH:i' }}" required><span>{{ s|time:"H:i"|persian_numbers }}</span></label>{% endfor %}</div>
+            <input type="text" name="subject" maxlength="200" placeholder="موضوع ملاقات" required aria-label="موضوع ملاقات">
+            <textarea name="notes" rows="2" maxlength="1000" placeholder="توضیحات (اختیاری)" aria-label="توضیحات"></textarea>
+            <button class="cd-btn cd-btn-main" type="submit"><svg class="cd-i"><use href="#i-cal"/></svg>ثبت درخواست وقت</button>
+            {% else %}
+            <p class="cd-empty">این روز وقت آزاد ندارد؛ روز دیگری را انتخاب کنید.</p>
+            {% endif %}
+          </form>
+          {% endif %}
+          {% if booked %}
+          <div class="cd-sub-head">وقت‌هایی که از همکاران گرفته‌اید</div>
+          {% for a in booked %}
+          <div class="cd-line cd-line-act">
+            <time class="cd-time soft">{{ a.start|date:"m/d"|persian_numbers }}<small>{{ a.start|time:"H:i"|persian_numbers }}</small></time>
+            <div><b>{{ a.provider.get_full_name|default:a.provider.username }}</b><span>{{ a.subject }}</span></div>
+            <em class="cd-tag {% if a.status == 'pending' %}warn{% elif a.status == 'confirmed' %}ok{% endif %}">{{ a.get_status_display }}</em>
+            {% if a.status == 'pending' or a.status == 'confirmed' %}<span class="cd-acts"><form method="post" action="{% url 'main:clerk_visit_action' a.id %}">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="cd-btn cd-btn-soft">لغو</button></form></span>{% endif %}
+          </div>
+          {% endfor %}
+          {% endif %}
+        </section>
+      </div>
+
+      <aside class="cd-col">
+        <section class="cd-card" id="hours" aria-labelledby="h-hours">
+          <header><h2 id="h-hours"><svg class="cd-i"><use href="#i-clock"/></svg>ساعت‌های حضور من</h2></header>
+          <form method="post" action="{% url 'main:clerk_hours' %}" class="cd-hours">{% csrf_token %}
+            {% for row in hours %}
+            <div class="cd-hour">
+              <label class="cd-check"><input type="checkbox" name="d{{ row.index }}_on" {% if row.rule %}checked{% endif %}><span>{{ row.name }}</span></label>
+              <input type="time" name="d{{ row.index }}_from" value="{% if row.rule %}{{ row.rule.start_time|time:'H:i' }}{% else %}08:00{% endif %}" aria-label="از ساعت {{ row.name }}">
+              <input type="time" name="d{{ row.index }}_to" value="{% if row.rule %}{{ row.rule.end_time|time:'H:i' }}{% else %}13:00{% endif %}" aria-label="تا ساعت {{ row.name }}">
+              <select name="d{{ row.index }}_len" aria-label="مدت هر وقت {{ row.name }}">
+                <option value="15" {% if row.rule.slot_minutes == 15 %}selected{% endif %}>۱۵ دقیقه</option>
+                <option value="20" {% if row.rule.slot_minutes == 20 %}selected{% endif %}>۲۰ دقیقه</option>
+                <option value="30" {% if not row.rule or row.rule.slot_minutes == 30 %}selected{% endif %}>۳۰ دقیقه</option>
+                <option value="45" {% if row.rule.slot_minutes == 45 %}selected{% endif %}>۴۵ دقیقه</option>
+                <option value="60" {% if row.rule.slot_minutes == 60 %}selected{% endif %}>۶۰ دقیقه</option>
+              </select>
+            </div>
+            {% endfor %}
+            <button class="cd-btn cd-btn-main" type="submit"><svg class="cd-i"><use href="#i-check"/></svg>ذخیره‌ی ساعت‌ها</button>
+          </form>
+        </section>
+      </aside>
+    </div>
+
+{% else %}
     <section class="cd-card cd-wide" id="cd-follow" aria-labelledby="h-follow">
       <header><h2 id="h-follow"><svg class="cd-i"><use href="#i-doc-alert"/></svg>درخواست‌های منتظر مدارک</h2><span class="cd-note">قدیمی‌ترین در بالاست</span></header>
       {% if follow_ups %}
@@ -154,6 +251,7 @@
       <p class="cd-empty"><svg class="cd-i"><use href="#i-check"/></svg>درخواستی منتظر مدارک نیست.</p>
       {% endif %}
     </section>
+{% endif %}
   </main>
 </div>
 <script>
@@ -166,4 +264,5 @@
   });
 })();
 </script>
+{% if tab == 'messages' %}<script src="{% static 'js/messenger.js' %}"></script>{% endif %}
 {% endblock %}

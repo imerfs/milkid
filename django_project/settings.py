@@ -440,6 +440,8 @@ SITE_DESCRIPTION = os.environ.get(
 SITE_URL = os.environ.get('SITE_URL', '')
 SITE_EMAIL = os.environ.get('SITE_EMAIL', '')
 SITE_PHONE = os.environ.get('SITE_PHONE', '')
+# Phone shown on the public pages (contact page, footers); SITE_PHONE above is only for the search-engine data
+SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE', '09370789824')
 SITE_ADDRESS_LOCALITY = os.environ.get('SITE_ADDRESS_LOCALITY', '')
 SITE_ADDRESS_STREET = os.environ.get('SITE_ADDRESS_STREET', '')
 

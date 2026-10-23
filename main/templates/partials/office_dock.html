@@ -1,10 +1,10 @@
 {% if office %}
-<nav class="office-dock" aria-label="میان‌بر مکاتبات و وقت‌ها" style="position:fixed;left:12px;bottom:12px;z-index:1000;display:flex;gap:6px;padding:6px;border-radius:999px;background:#1e40af;box-shadow:0 4px 14px rgba(15,23,42,.35)">
-    <a href="{% url 'main:letters_inbox' %}" title="مکاتبات اداری" aria-label="مکاتبات اداری" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none">
-        <i class="fas fa-envelope-open-text" aria-hidden="true"></i>
-        {% if office.letters_unread %}<span style="position:absolute;top:2px;left:2px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#dc2626;color:#fff;font-size:11px;line-height:18px;text-align:center">{{ office.letters_unread }}</span>{% endif %}
-    </a>
-    <a href="{% url 'main:letter_compose' %}" title="نامه‌ی جدید" aria-label="نامه‌ی جدید" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none"><i class="fas fa-pen-to-square" aria-hidden="true"></i></a>
+<nav class="office-dock" aria-label="میان‌بر پیام‌ها و وقت‌ها" style="position:fixed;left:12px;bottom:12px;z-index:1000;display:flex;gap:6px;padding:6px;border-radius:999px;background:#1e40af;box-shadow:0 4px 14px rgba(15,23,42,.35)">
+    <button type="button" id="mg-dock-open" title="پیام‌ها و مکاتبات" aria-label="پیام‌ها و مکاتبات" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;background:none;border:0;cursor:pointer">
+        <i class="fas fa-comments" aria-hidden="true"></i>
+        <span id="mg-dock-badge" {% if not office.messages_unread %}hidden{% endif %} style="position:absolute;top:2px;left:2px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#dc2626;color:#fff;font-size:11px;line-height:18px;text-align:center">{{ office.messages_unread }}</span>
+    </button>
+    <button type="button" id="mg-dock-new" title="نامه‌ی جدید" aria-label="نامه‌ی جدید" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;background:none;border:0;cursor:pointer"><i class="fas fa-pen-to-square" aria-hidden="true"></i></button>
     <a href="{% url 'main:appointments' %}" title="وقت‌های ملاقات" aria-label="وقت‌های ملاقات" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none">
         <i class="fas fa-calendar-check" aria-hidden="true"></i>
         {% if office.appointments_pending %}<span style="position:absolute;top:2px;left:2px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#f59e0b;color:#111;font-size:11px;line-height:18px;text-align:center">{{ office.appointments_pending }}</span>{% endif %}
@@ -13,4 +13,30 @@
     <a href="{% url 'main:role_grants' %}" title="نقش‌های دهیاری" aria-label="نقش‌های دهیاری" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:#fff;text-decoration:none"><i class="fas fa-user-shield" aria-hidden="true"></i></a>
     {% endif %}
 </nav>
+{# The messenger opens as a drawer over the panel: same page, no navigation. #}
+<div id="mg-drawer" hidden role="dialog" aria-modal="true" aria-label="پیام‌ها و مکاتبات" style="position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.45)">
+    <div style="position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(1100px,100%);background:#fff;box-shadow:0 0 40px rgba(0,0,0,.3)">
+        <button type="button" id="mg-drawer-close" aria-label="بستن پیام‌ها" style="position:absolute;top:10px;inset-inline-end:10px;z-index:3;width:36px;height:36px;border-radius:50%;border:0;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;font-size:18px;line-height:1">&times;</button>
+        <iframe id="mg-frame" title="پیام‌ها و مکاتبات" style="width:100%;height:100%;border:0"></iframe>
+    </div>
+</div>
+<script>
+(function () {
+    var drawer = document.getElementById('mg-drawer'), frame = document.getElementById('mg-frame');
+    var badge = document.getElementById('mg-dock-badge');
+    var src = "{% url 'main:messenger' %}?embed=1";
+    function open(extra) { frame.src = src + (extra || ''); drawer.hidden = false; document.getElementById('mg-drawer-close').focus(); }
+    function close() { drawer.hidden = true; frame.src = 'about:blank'; }
+    document.getElementById('mg-dock-open').addEventListener('click', function () { open(); });
+    document.getElementById('mg-dock-new').addEventListener('click', function () { open('&new=letter'); });
+    document.getElementById('mg-drawer-close').addEventListener('click', close);
+    drawer.addEventListener('click', function (e) { if (e.target === drawer) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !drawer.hidden) close(); });
+    window.addEventListener('message', function (e) {
+        if (e.origin !== window.location.origin || !e.data || typeof e.data.messengerUnread !== 'number') return;
+        badge.textContent = e.data.messengerUnread;
+        badge.hidden = e.data.messengerUnread === 0;
+    });
+})();
+</script>
 {% endif %}

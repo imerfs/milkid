@@ -15,6 +15,7 @@ from .mayor_panel import mayor_panel, tab_redirect
 from .letter_views import *
 from .appointment_views import *
 from .clerk_panel import *
+from .messenger_views import *
 from .monitoring_views import *
 from .server_views import *
 from .twofactor_views import *

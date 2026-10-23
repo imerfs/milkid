@@ -71,3 +71,10 @@
   .au .au-title { font-size: 1.4rem; }
   .au .au-brand { font-size: 1.25rem; }
 }
+
+/* switcher page */
+.au .au-search { display: flex; gap: 8px; margin-bottom: 14px; }
+.au .au-search input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; }
+.au .au-search input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+.au .au-btn-slim { width: auto; padding: 10px 18px; }
+.au .au-choice.is-on { border-color: var(--brand); background: var(--brand-soft); }
