@@ -10,8 +10,10 @@ def seo(request):
 
 
 def contact(request):
-    """The support address shown on public pages (settings.SUPPORT_EMAIL)."""
-    return {'support_email': settings.SUPPORT_EMAIL}
+    """The support address and phone shown on public pages (settings.SUPPORT_EMAIL, SUPPORT_PHONE)."""
+    phone = settings.SUPPORT_PHONE
+    return {'support_email': settings.SUPPORT_EMAIL, 'support_phone': phone,
+            'support_phone_fa': phone.translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))}
 
 
 def office(request):
