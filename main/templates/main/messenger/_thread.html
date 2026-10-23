@@ -1,0 +1,53 @@
+{% load messenger_tags jalali_tags %}
+<header class="mg-head">
+  <button type="button" class="mg-ico mg-back" data-act="back" aria-label="بازگشت به فهرست"><svg class="mg-i"><use href="#mg-back"/></svg></button>
+  <span class="mg-av c{{ t.who.name|mg_color }}" aria-hidden="true">{{ t.who.initials }}</span>
+  <span class="mg-head-body">
+    <b>{{ t.who.name }}{% if t.extra %} <small>و {{ t.extra|persian_numbers }} نفر دیگر</small>{% endif %}</b>
+    <span>{{ t.who.line }}</span>
+  </span>
+  {% if t.subject %}<span class="mg-subject"><svg class="mg-i"><use href="#mg-{% if t.kind == 'chat' %}chat{% else %}mail{% endif %}"/></svg>{{ t.subject }}</span>{% endif %}
+</header>
+
+<div class="mg-feed" id="mg-feed" data-last="{{ t.last_id }}">
+{% for i in t.items %}
+  {% if i.show_day %}<div class="mg-day"><span>{{ i.at|mg_day }}</span></div>{% endif %}
+  {% if t.kind == 'chat' %}
+  <div class="mg-b {% if i.mine %}mine{% else %}theirs{% endif %}">
+    {% if not i.mine %}<span class="mg-from"><b>{{ i.who.name }}</b> {{ i.who.line }}</span>{% endif %}
+    <p>{{ i.body|linebreaksbr }}</p>
+    <time>{{ i.at|mg_clock }}</time>
+  </div>
+  {% else %}
+  <article class="mg-letter {% if i.mine %}mine{% endif %}">
+    <header>
+      <span class="mg-stamp"><svg class="mg-i"><use href="#mg-mail"/></svg>{% if i.letter.number %}نامه‌ی {{ i.letter.number|persian_numbers }}{% else %}پیش‌نویس{% endif %}</span>
+      {% if i.letter.priority != 'normal' %}<span class="mg-tag hot"><svg class="mg-i"><use href="#mg-flag"/></svg>{{ i.letter.get_priority_display }}</span>{% endif %}
+      {% if i.letter.confidential %}<span class="mg-tag"><svg class="mg-i"><use href="#mg-lock"/></svg>محرمانه</span>{% endif %}
+      <time>{{ i.at|mg_clock }}</time>
+    </header>
+    <dl>
+      <div><dt>از</dt><dd><b>{{ i.who.name }}</b> · {{ i.who.line }}</dd></div>
+      <div><dt>به</dt><dd>{% for p in i.to %}<span class="mg-pill"><b>{{ p.name }}</b> {{ p.line }}</span>{% endfor %}</dd></div>
+      {% if i.cc %}<div><dt>رونوشت</dt><dd>{% for p in i.cc %}<span class="mg-pill"><b>{{ p.name }}</b> {{ p.line }}</span>{% endfor %}</dd></div>{% endif %}
+    </dl>
+    <h3>{{ i.letter.subject }}</h3>
+    <p class="mg-body">{{ i.letter.body|linebreaksbr }}</p>
+    {% if i.attachments %}<div class="mg-files">{% for a in i.attachments %}<a href="{% url 'main:letter_attachment' a.id %}"><svg class="mg-i"><use href="#mg-file"/></svg>{{ a.original_name }}</a>{% endfor %}</div>{% endif %}
+  </article>
+  {% endif %}
+{% endfor %}
+</div>
+
+{% if t.kind == 'chat' or t.can_reply %}
+<form class="mg-compose" id="mg-compose" data-key="{{ t.key }}" data-kind="{{ t.kind }}" enctype="multipart/form-data">
+  {% if t.kind == 'letter' %}
+  <input type="hidden" name="parent" value="{{ t.reply_parent }}">
+  <label class="mg-ico" title="پیوست"><svg class="mg-i"><use href="#mg-clip"/></svg><input type="file" name="files" id="mg-files" multiple hidden></label>
+  {% endif %}
+  <textarea name="body" rows="1" maxlength="{% if t.kind == 'chat' %}4000{% else %}20000{% endif %}" placeholder="{% if t.kind == 'chat' %}پیام بنویسید…{% else %}پاسخ به‌صورت نامه‌ی رسمی شماره‌دار ثبت می‌شود…{% endif %}" aria-label="متن پیام" required></textarea>
+  <button type="submit" class="mg-send" aria-label="ارسال"><svg class="mg-i"><use href="#mg-send"/></svg></button>
+</form>
+{% else %}
+<p class="mg-closed">این گفتگو پیش‌نویس است و هنوز برای کسی فرستاده نشده.</p>
+{% endif %}

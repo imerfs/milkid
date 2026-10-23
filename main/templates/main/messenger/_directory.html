@@ -1,0 +1,21 @@
+{% load messenger_tags %}{% if org %}
+<button type="button" class="mg-crumb" data-act="orgs"><svg class="mg-i flip"><use href="#mg-back"/></svg>همه‌ی سازمان‌ها</button>
+<p class="mg-org-name"><svg class="mg-i"><use href="#mg-building"/></svg>{{ org.name }}</p>
+{% for p, who in people %}
+<button type="button" class="mg-person" data-person="{{ p.id }}" data-name="{{ who.name }}" data-line="{{ who.line }}">
+  <span class="mg-av sm c{{ who.name|mg_color }}">{{ who.initials }}</span>
+  <span><b>{{ who.name }}</b><small>{{ who.line }}</small></span>
+</button>
+{% empty %}
+<p class="mg-none"><svg class="mg-i"><use href="#mg-user"/></svg>کسی در این سازمان برای شما قابل پیام‌دادن نیست.<br><small>شهروندان می‌توانند از «تغییر دهیاری» سازمان دیگری را انتخاب کنند.</small></p>
+{% endfor %}
+{% else %}
+{% for o in orgs %}
+<button type="button" class="mg-person" data-org="{{ o.id }}">
+  <span class="mg-av sm c{{ o.name|mg_color }}"><svg class="mg-i"><use href="#mg-building"/></svg></span>
+  <span><b>{{ o.name }}</b><small>{{ o.get_municipality_type_display }} · {{ o.county }}{% if o.province %}، {{ o.province }}{% endif %}</small></span>
+</button>
+{% empty %}
+<p class="mg-none"><svg class="mg-i"><use href="#mg-building"/></svg>سازمانی پیدا نشد.</p>
+{% endfor %}
+{% endif %}

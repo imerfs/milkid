@@ -1,0 +1,21 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پیام‌ها و مکاتبات - ملک آیدی</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+    <link rel="stylesheet" href="{% static 'css/messenger.css' %}">
+</head>
+<body class="mg-page{% if embed %} is-embed{% endif %}">
+{% if not embed %}
+<header class="mg-top">
+    <a href="{% url 'main:dashboard' %}" class="mg-top-back"><svg class="mg-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>بازگشت به پنل</a>
+    <b>ملک آیدی · پیام‌ها و مکاتبات</b>
+</header>
+{% endif %}
+{% include 'main/messenger/_messenger.html' %}
+<script src="{% static 'js/messenger.js' %}"></script>
+</body>
+</html>

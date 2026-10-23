@@ -480,9 +480,9 @@
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:letters_inbox' %}">
-                            <i class="fas fa-envelope-open-text ms-1"></i>
-                            مکاتبات{% if office.letters_unread %} <span class="badge bg-danger">{{ office.letters_unread }}</span>{% endif %}
+                        <a class="nav-link" href="{% url 'main:messenger' %}">
+                            <i class="fas fa-comments ms-1"></i>
+                            پیام‌ها{% if office.messages_unread %} <span class="badge bg-danger">{{ office.messages_unread }}</span>{% endif %}
                         </a>
                     </li>
                     <li class="nav-item">

@@ -1,0 +1,17 @@
+{% load messenger_tags jalali_tags %}{% for t in threads %}
+<button type="button" class="mg-row{% if t.key == open_key %} is-on{% endif %}" data-key="{{ t.key }}">
+  <span class="mg-av c{{ t.who.name|mg_color }}" aria-hidden="true">{{ t.who.initials }}<i class="mg-kind {{ t.kind }}"><svg class="mg-i"><use href="#mg-{% if t.kind == 'chat' %}chat{% else %}mail{% endif %}"/></svg></i></span>
+  <span class="mg-row-body">
+    <span class="mg-row-top"><b>{{ t.who.name }}{% if t.extra %} <small>و {{ t.extra|persian_numbers }} نفر دیگر</small>{% endif %}</b><time>{{ t.when|mg_when }}</time></span>
+    <span class="mg-row-org">{{ t.who.line }}</span>
+    <span class="mg-row-bot">
+      <span class="mg-prev">{% if t.kind == 'letter' %}<em>{{ t.number|persian_numbers }}</em> {{ t.subject }}{% else %}{{ t.preview }}{% endif %}</span>
+      {% if t.priority != 'normal' %}<span class="mg-flag"><svg class="mg-i"><use href="#mg-flag"/></svg></span>{% endif %}
+      {% if t.confidential %}<span class="mg-lock"><svg class="mg-i"><use href="#mg-lock"/></svg></span>{% endif %}
+      {% if t.unread %}<span class="mg-badge">{{ t.unread|persian_numbers }}</span>{% endif %}
+    </span>
+  </span>
+</button>
+{% empty %}
+<p class="mg-none"><svg class="mg-i"><use href="#mg-chat"/></svg>گفتگو یا نامه‌ای پیدا نشد.<br><small>با دکمه‌ی «+» اولین پیام را بفرستید.</small></p>
+{% endfor %}

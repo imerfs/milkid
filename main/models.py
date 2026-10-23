@@ -257,6 +257,9 @@ class UserProfile(GeographyLink):
     is_verified = models.BooleanField(default=False, verbose_name='تایید شده')
     # Set for accounts a dehyari creates (initial password = national ID); cleared on the first password change.
     must_change_password = models.BooleanField(default=False, verbose_name='نیاز به تغییر رمز')
+    # The dehyari / shahrdari a citizen currently sends requests and letters to (empty = the home village).
+    active_municipality = models.ForeignKey('Municipality', on_delete=models.SET_NULL, null=True, blank=True,
+                                            related_name='+', verbose_name='دهیاری/شهرداری فعال')
     deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='تاریخ حذف')
     # Original unique values of a deleted account (the live ones are released for a new registration).
     deleted_username = models.CharField(max_length=150, blank=True, default='', editable=False)
