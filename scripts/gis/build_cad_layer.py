@@ -101,7 +101,7 @@ def readable(text):
     Persian letters on the ASCII keys, so ``,v,nچ`` is a mis-encoded word, not text).
     """
     persian = re.compile(r'[؀-ۿ]')
-    stray = re.compile(r'[A-Za-z-ÿĀ-˿ -​‍-⁯؀-؅ؐ-؟٪-٭۔۝۞۩]')
+    stray = re.compile(r'[A-Za-z\u0080-\u00FF\u0100-\u02FF\u2000-\u200B\u200D-\u206F\u0600-\u0605\u0610-\u061F\u066A-\u066D\u06D4\u06DD\u06DE\u06E9]')
     if not text:
         return None
     if persian.search(text) and not stray.search(text):
