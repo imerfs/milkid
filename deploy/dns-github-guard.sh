@@ -12,6 +12,7 @@ SERVERS=(
     "10.202.10.10 10.202.10.11"        # Radar Game
     "178.22.122.100 185.51.200.2"      # Shecan
     "185.55.226.26 185.55.225.25"      # Begzar
+    "85.15.1.14 85.15.1.15"            # Shatel
 )
 CHECK_URL="https://github.com"
 TIMEOUT=8
