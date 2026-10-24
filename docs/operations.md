@@ -56,15 +56,32 @@ If that admin loses the phone, remove the device on the server and log in with t
 
     cd /opt/milkid && ./venv/bin/python manage.py shell -c "from main.models import TwoFactorDevice; TwoFactorDevice.objects.filter(user__username='USERNAME').delete()"
 
-## Reaching GitHub from the server (DNS guard)
+## Reaching GitHub from the server (DNS watch)
 
-The VPS has no direct foreign internet access, so `git pull` only works through a sanctions-bypass DNS. `deploy/dns-github-guard.sh`
-runs every 5 minutes (systemd timer): when `https://github.com` answers with the current DNS it does nothing, otherwise it tries the
-listed providers in order and keeps the first that works; if none does it goes back to the network's own DNS.
+The VPS has no direct foreign internet access, so `git pull` only works through a sanctions-bypass DNS, and any of them
+can stop working at any time. `deploy/dns-github-watch.py` runs as a service (`dns-github-watch`):
+
+* every 3 seconds it checks the DNS pair in use, and one other pair in turn (six pairs: Electro, 403.online, Radar Game,
+  Shecan, Begzar, Shatel). A check asks that pair for github.com, opens a TLS connection to the answer and verifies GitHub's
+  certificate; it sends no HTTP request, so GitHub is not hammered, and a DNS that answers with a block page fails;
+* it keeps the last 20 results of every pair and uses the steadiest (success rate, then speed). It stays on the pair in use
+  unless that failed twice in a row or another is 20 points steadier, so it does not flap;
+* if nothing works for a minute it gives the network's own DNS back.
 
 Install (files are copied from the developer's computer, since the server cannot clone):
 
-    scp deploy/dns-github-guard.* deploy/install_dns_guard.sh root@SERVER:/tmp/dnsguard/
-    ssh root@SERVER "bash /tmp/dnsguard/install_dns_guard.sh"
+    scp deploy/dns-github-watch.* deploy/milkid-update.sh deploy/install_dns_watch.sh root@SERVER:/tmp/dnswatch/
+    ssh root@SERVER "bash /tmp/dnswatch/install_dns_watch.sh"
 
-Look at what it did: `journalctl -t dns-github-guard -n 20`. Change the provider list at the top of the script and run the installer again.
+The installer also turns the older 5-minute `dns-github-guard` timer off. See the scores: `python3 /usr/local/bin/dns-github-watch.py status`;
+the history: `journalctl -t dns-github-watch -n 30`. Change the provider list at the top of the script and run the installer again.
+
+### Updating the site
+
+    sudo milkid-update
+
+does what `cd /opt/milkid && git pull origin main && manage.py migrate && collectstatic && systemctl restart milkid` did, but first
+makes sure GitHub is reachable: it tests a real `git` request, and if it fails walks the pairs, best first, until one works; a
+stalled connection fails after 15 seconds instead of minutes, and `git pull` is retried up to five times, each time on a
+different DNS. If GitHub cannot be reached at all it says so; then send the code from your computer (`git archive` + `scp`,
+and `git stash` on the server first so the next `git pull` is clean).

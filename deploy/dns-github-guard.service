@@ -1,8 +1,0 @@
-[Unit]
-Description=Keep a DNS server that can reach GitHub
-After=network-online.target systemd-resolved.service
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/dns-github-guard.sh
