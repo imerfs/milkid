@@ -850,3 +850,43 @@ class BuildingsMatchTheDrawing(TestCase):
         on_plots = sum(1 for f in buildings if f['properties']['parcel'])
         counted = sum(f['properties'].get('bld_count', 0) for f in data['features'] if f['properties']['type'] == 'parcel')
         self.assertEqual(on_plots, counted)
+
+
+class MapPlanLayer(TestCase):
+    """The plan as drawn in AutoCAD: the map's default base layer."""
+
+    def url(self):
+        return reverse('main:gis_cad', args=[SLUG])
+
+    def test_engineer_gets_areas_lines_and_texts_with_the_drawings_colours(self):
+        body = client_for(make_user('engineer', **LOCAL)).get(self.url()).json()
+        kinds = {item['k'] for item in body['items']}
+        self.assertEqual(kinds, {'h', 'l', 't'})
+        self.assertGreater(len(body['items']), 15000)
+        self.assertTrue(all(re.fullmatch(r'#[0-9a-f]{6}', layer['c']) for layer in body['layers']))
+        patterns = {item.get('p') for item in body['items'] if item['k'] == 'h'}
+        self.assertTrue({None, 'l'} <= patterns)                  # solid fills and hatched areas
+
+    def test_every_text_is_readable_persian_or_a_number(self):
+        items = client_for(make_user('engineer', **LOCAL)).get(self.url()).json()['items']
+        texts = [item['s'] for item in items if item['k'] == 't']
+        self.assertGreater(len(texts), 300)
+        for text in texts:
+            self.assertTrue(re.search('[\u0600-\u06FF]', text) or re.fullmatch(r'[\d\s./:+\-()%]+', text), text)
+            self.assertNotIn('<', text)
+
+    def test_everything_lies_in_the_village(self):
+        items = client_for(make_user('engineer', **LOCAL)).get(self.url()).json()['items']
+        for item in items[:: max(1, len(items) // 800)]:
+            first = item['r'][0] if item['k'] == 'h' else item['p'] if item['k'] == 'l' else [item['x'], item['y']]
+            self.assertTrue(59.2 < first[0] < 59.4 and 32.85 < first[1] < 32.97, item)
+
+    def test_closed_to_everyone_else(self):
+        for who in (make_user('citizen'), make_user('engineer', province='خراسان جنوبی', county='بیرجند', city_village='ولدآباد')):
+            self.assertIn(client_for(who).get(self.url()).status_code, (302, 403))
+        self.assertIn(client_for().get(self.url()).status_code, (302, 401, 403))
+
+    def test_page_offers_the_plan_as_the_default_base(self):
+        page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
+        self.assertContains(page, 'name="basemap" value="cad" checked')
+        self.assertContains(page, 'village-cad.js')

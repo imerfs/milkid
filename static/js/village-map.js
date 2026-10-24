@@ -131,6 +131,7 @@
     if (!st.exists) return { opacity: 0, fillOpacity: 0, weight: 0 };
     const visible = matchesFilter(p, st);
     const style = { fillColor: fillFor(p, st), color: '#475569', weight: 1, dashArray: p.e ? '4 3' : null, fillOpacity: visible ? 0.78 : 0.06, opacity: visible ? 1 : 0.2 };
+    if (planOn()) { style.fillOpacity = visible ? 0.14 : 0.02; style.opacity = visible ? 0.5 : 0.1; style.weight = 0.8; style.color = '#94a3b8'; }
     if (colorMode === 'status' && p.e) style.color = '#7f1d1d';
     if (st.locked) { style.color = '#7f1d1d'; style.weight = 3; style.dashArray = null; style.opacity = 1; }
     return style;
@@ -192,6 +193,7 @@
     const list = $('vm-codes');
     [...byCode.keys()].sort().forEach((code) => { const o = document.createElement('option'); o.value = code; list.appendChild(o); });
     applyLayerBoxes();
+    applyPlan();
     updateStats();
     updateLegend();
   }
@@ -247,6 +249,30 @@
     all.indeterminate = !all.checked && boxes.some((b) => b.checked);
   }
 
+
+
+  // ---------- the plan as drawn in AutoCAD (the default base layer) ----------
+  let cadLayer = null, cadLoading = false, cadAsked = false;
+  const planOn = () => { const r = document.querySelector('input[name=basemap]:checked'); return Boolean(r && r.value === 'cad'); };
+  async function applyPlan() {
+    const on = planOn();
+    map.getContainer().style.background = on ? '#15181c' : '';
+    if (on && !cadLayer && !cadLoading) {
+      cadLoading = true;
+      try {
+        cadLayer = window.VillageCad.create(await fetchLayer(cfg.urls.cad), {});
+      } catch (e) { notice('بارگذاری نقشه‌ی طرح ممکن نشد.', true); }
+      cadLoading = false;
+    }
+    if (cadLayer) { if (on && !map.hasLayer(cadLayer)) { cadLayer.addTo(map); cadLayer.bringToBack(); } if (!on && map.hasLayer(cadLayer)) map.removeLayer(cadLayer); }
+    if (on && !cadAsked) {                       // the plan already draws the buildings: show the footprints only when asked
+      cadAsked = true;
+      const box = document.querySelector('[data-layer="buildings"]');
+      if (box && box.checked) { box.checked = false; applyLayerBoxes(); }
+    }
+    restyleAll();
+  }
+  document.querySelectorAll('input[name=basemap]').forEach((radio) => radio.addEventListener('change', applyPlan));
 
   // ---------- details around the plots: roads, water, power, trees, limits, signs, street names ----------
   const DETAIL_STYLE = {
