@@ -44,6 +44,19 @@ def static_parcels(village_map):
     return _cached((village_map.slug, 'parcels'), village_map.loaded_at, build)
 
 
+def static_context(village_map):
+    """Roads, water, power lines, trees, limits and street names around the plots (built by scripts/gis/build_context_layers.py).
+
+    Read from ``<slug>_context.geojson`` when the village has one; cached per file change.
+    """
+    from main.gis.loader import DATA_DIR
+    path = DATA_DIR / f'{village_map.slug}_context.geojson'
+    if not path.exists():
+        return []
+    return _cached((village_map.slug, 'context'), path.stat().st_mtime_ns,
+                   lambda: json.loads(path.read_text(encoding='utf-8'))['features'])
+
+
 def static_blocks(village_map):
     return _cached((village_map.slug, 'blocks'), village_map.loaded_at, lambda: [
         {'type': 'Feature', 'properties': {'n': b.number, 'c': b.parcel_count, 'z': b.zone}, 'geometry': b.geometry}

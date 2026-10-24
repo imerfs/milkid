@@ -41,6 +41,34 @@ plot on the «اعیان و پروانه» tab. Land and building can have diffe
   The map flies there and opens the plot under the point.
 * Opening a plot by search shows a banner when it breaks an easement or is locked.
 
+## Details around the plots (جزئیات نقشه)
+
+One tick box per group in the layers panel (and a master box). They come from the detail drawing (1405) and are served
+by `/gis/<slug>/context/` (same access as the rest of the map; read from `main/data/gis/<slug>_context.geojson`).
+
+| Group | Layers of the drawing |
+|---|---|
+| معابر | راه آسفالته, راه شوسه, راه جیپ‌رو, `ax road` (street axes) |
+| آب و مسیل | کانال آبی (1 036), آبریز, بستر / `bastar`, لوله‌ی آب, مخزن آب, آب‌انبار, شیر آب, رشته قنات - چاه آب |
+| برق و تأسیسات | تیر برق - چراغ روشنایی (939), تیر تلفن, ترانس, خط فشار قوی, منهول |
+| درختان | تک درخت (1 803) |
+| حدود و دام‌داری | `limit-final` and حد (village limit), دیوار, سیم خاردار, دام و طیور |
+| تابلوها | تابلو |
+| نام معابر | text of layer `0txt` / `dim` that is readable Persian (from zoom 17) |
+
+A layer is used only when its name says what it is; the others are not guessed. Rebuild after a new drawing:
+
+```
+python scripts/gis/build_context_layers.py detail.dxf main/data/gis/dastgerd_context.geojson --plots main/data/gis/dastgerd.geojson
+python scripts/gis/refresh_buildings.py detail.dxf main/data/gis/dastgerd.geojson      # buildings and per-plot counts only
+python manage.py load_village_map dastgerd                                              # on the server, after the pull
+```
+
+`refresh_buildings.py` replaces the footprints with the drawing's `l.building` layer and recomputes every plot's
+building count and area; plots, blocks, neighbourhoods and easements are untouched. Checked against the 1405 drawing:
+the plots match (3 093 outlines, 1 poorly aligned, 2 not on the map); the other plots on the map are the 846 estimated ones and
+the housing area's (the drawing has neither); 49 old footprints were no longer in the drawing and were removed.
+
 ## Renewal code (کد نوسازی)
 
 `صنف - آپارتمان - ملک - بلوک - محله`, e.g. `0-0-12-69-3`: guild, apartment, plot, block, neighbourhood

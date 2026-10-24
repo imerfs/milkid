@@ -73,6 +73,16 @@
                         {% endfor %}
                     </fieldset>
                     <fieldset>
+                        <legend><label><input type="checkbox" id="vm-details-all"> جزئیات نقشه</label></legend>
+                        <label class="vm-detail" title="آسفالته، شوسه، جیپ‌رو و محور خیابان‌ها"><input type="checkbox" data-detail="roads"> <svg class="vm-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 5 21M16 3l3 18M12 4v3M12 10v4M12 17v3"/></svg>معابر</label>
+                        <label class="vm-detail" title="کانال آبی، آبریز، بستر مسیل، لوله، قنات و مخزن"><input type="checkbox" data-detail="water"> <svg class="vm-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5s6 6.2 6 10.3a6 6 0 0 1-12 0c0-4.100 6-10.300 6-10.300Z"/></svg>آب و مسیل</label>
+                        <label class="vm-detail" title="تیر برق و تلفن، ترانس، خط فشار قوی، منهول"><input type="checkbox" data-detail="power"> <svg class="vm-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.500h6L10 21l8-10.500h-6L13 3Z"/></svg>برق و تأسیسات</label>
+                        <label class="vm-detail" title="درختان تکی"><input type="checkbox" data-detail="trees"> <svg class="vm-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-6M12 15c-4 0-6-2.500-6-5.500A6 6 0 0 1 12 3a6 6 0 0 1 6 6.500c0 3-2 5.500-6 5.500Z"/></svg>درختان</label>
+                        <label class="vm-detail" title="حد روستا، دیوار، سیم خاردار، دام و طیور"><input type="checkbox" data-detail="limits"> <svg class="vm-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z" stroke-dasharray="3 2.500"/></svg>حدود و دام‌داری</label>
+                        <label class="vm-detail" title="تابلوهای معابر و اماکن"><input type="checkbox" data-detail="signs"> <svg class="vm-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9M6 4.500h12v6H6z"/></svg>تابلوها</label>
+                        <label class="vm-detail" title="نام خیابان‌ها و کوچه‌ها (از بزرگ‌نمایی ۱۷)"><input type="checkbox" data-detail="names"> <svg class="vm-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18 10 6l5 12M7 14h6M17 8h3M18.500 8v10"/></svg>نام معابر</label>
+                    </fieldset>
+                    <fieldset>
                         <legend>رنگ‌آمیزی قطعه‌ها</legend>
                         <label><input type="radio" name="colormode" value="use" checked> نوع کاربری</label>
                         <label><input type="radio" name="colormode" value="zone"> محله</label>
