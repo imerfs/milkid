@@ -254,13 +254,54 @@
   // ---------- the plan as drawn in AutoCAD (the default base layer) ----------
   let cadLayer = null, cadLoading = false, cadAsked = false;
   const planOn = () => { const r = document.querySelector('input[name=basemap]:checked'); return Boolean(r && r.value === 'cad'); };
+  // the plan's own legend (راهنما) in the sidebar: one tick box per row hides or shows what that row stands for
+  function swatchStyle(sw) {
+    if (!sw) return 'background:transparent';
+    const c = sw.c;
+    if (sw.p === 'l') return `background:repeating-linear-gradient(${sw.a === 135 ? '-45deg' : '45deg'},${c} 0 2px,transparent 2px 5px)`;
+    if (sw.p === 'x') return `background:repeating-linear-gradient(45deg,${c} 0 1.5px,transparent 1.5px 5px),repeating-linear-gradient(-45deg,${c} 0 1.5px,transparent 1.5px 5px)`;
+    if (sw.p === 'o') return `background:radial-gradient(${c} 1px,transparent 1.5px) 0 0/6px 6px`;
+    return `background:${c}`;
+  }
+  function buildPlanLegend(rows) {
+    const box = $('vm-plan-rows');
+    box.replaceChildren();
+    const hide = () => {
+      const hidden = new Set();
+      box.querySelectorAll('input:not(:checked)').forEach((b) => rows[Number(b.dataset.row)].l.forEach((name) => hidden.add(name)));
+      cadLayer.setHidden(hidden);
+      const all = $('vm-plan-all'), boxes = [...box.querySelectorAll('input')];
+      all.checked = boxes.every((b) => b.checked);
+      all.indeterminate = !all.checked && boxes.some((b) => b.checked);
+    };
+    rows.forEach((row, i) => {
+      const label = document.createElement('label');
+      label.className = 'vm-plan-row';
+      const input = document.createElement('input');
+      input.type = 'checkbox'; input.checked = true; input.dataset.row = String(i);
+      if (!row.l.length) { input.disabled = true; label.title = 'در نقشه‌ی طرح با نماد خطی کشیده شده است؛ حریم‌ها را از بخش «حریم‌ها» روشن و خاموش کنید.'; label.classList.add('is-off'); }
+      input.addEventListener('change', hide);
+      const sw = document.createElement('span');
+      sw.className = 'vm-plan-sw';
+      [row.e, row.p].forEach((one) => { const s = document.createElement('i'); s.setAttribute('style', swatchStyle(one)); sw.appendChild(s); });
+      const text = document.createElement('span');
+      text.textContent = row.t;
+      label.append(input, sw, text);
+      box.appendChild(label);
+    });
+    $('vm-plan-all').onchange = (e) => { box.querySelectorAll('input').forEach((b) => { b.checked = e.target.checked; }); hide(); };
+  }
+
   async function applyPlan() {
     const on = planOn();
     map.getContainer().style.background = on ? '#15181c' : '';
+    $('vm-plan-legend').hidden = !on || !cadLayer;
     if (on && !cadLayer && !cadLoading) {
       cadLoading = true;
       try {
-        cadLayer = window.VillageCad.create(await fetchLayer(cfg.urls.cad), {});
+        const plan = await fetchLayer(cfg.urls.cad);
+        cadLayer = window.VillageCad.create(plan, {});
+        buildPlanLegend(plan.legend || []);
       } catch (e) { notice('بارگذاری نقشه‌ی طرح ممکن نشد.', true); }
       cadLoading = false;
     }
@@ -270,6 +311,7 @@
       const box = document.querySelector('[data-layer="buildings"]');
       if (box && box.checked) { box.checked = false; applyLayerBoxes(); }
     }
+    $('vm-plan-legend').hidden = !on || !cadLayer;
     restyleAll();
   }
   document.querySelectorAll('input[name=basemap]').forEach((radio) => radio.addEventListener('change', applyPlan));
@@ -707,6 +749,23 @@
     $('vm-search-input').reportValidity();
     setTimeout(() => $('vm-search-input').setCustomValidity(''), 1500);
   });
+
+  // X / Y search: two boxes, UTM zone 40 N as in AutoCAD
+  const xyBox = $('vm-xy');
+  $('vm-xy-toggle').addEventListener('click', () => {
+    xyBox.hidden = !xyBox.hidden;
+    $('vm-xy-toggle').setAttribute('aria-expanded', String(!xyBox.hidden));
+    if (!xyBox.hidden) $('vm-x').focus();
+  });
+  function goXY() {
+    const num = (id) => Number(toDigits($(id).value).replace(/[٬,\s]/g, '').replace('٫', '.'));
+    const x = num('vm-x'), y = num('vm-y');
+    if (!(x > 100000 && x < 900000 && y > 1000000 && y < 10000000)) { notice('X (حدود ۶ رقم) و Y (حدود ۷ رقم) را به‌صورت UTM وارد کنید؛ مثلاً X 714299 و Y 3644453.', true); return; }
+    const [lat, lng] = UTM.toLatLng(x, y);
+    goTo(lat, lng, `X ${fa(x)}، Y ${fa(y)}`);
+  }
+  $('vm-xy-go').addEventListener('click', goXY);
+  [$('vm-x'), $('vm-y')].forEach((input) => input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); goXY(); } }));
 
   map.on('mousemove', (e) => {
     const [x, y] = UTM.fromLatLng(e.latlng.lat, e.latlng.lng);

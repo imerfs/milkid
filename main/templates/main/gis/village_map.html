@@ -27,6 +27,13 @@
             <input id="vm-search-input" type="text" dir="ltr" list="vm-codes"
                    placeholder="کد نوسازی، بلوک، قطعه‌ی تفکیکی (t432) یا مختصات UTM" aria-label="جستجو">
             <datalist id="vm-codes"></datalist>
+            <button type="button" class="vm-xy-btn" id="vm-xy-toggle" aria-expanded="false" aria-controls="vm-xy" title="جستجو با مختصات X و Y"><i class="fas fa-crosshairs" aria-hidden="true"></i></button>
+            <div class="vm-xy" id="vm-xy" hidden>
+                <label>X <input id="vm-x" dir="ltr" inputmode="decimal" placeholder="714299" aria-label="X (UTM)"></label>
+                <label>Y <input id="vm-y" dir="ltr" inputmode="decimal" placeholder="3644453" aria-label="Y (UTM)"></label>
+                <button type="button" id="vm-xy-go">برو</button>
+                <small>مختصات UTM، زون ۴۰ شمالی (همان که در اتوکد می‌بینید)</small>
+            </div>
         </form>
         <button type="button" class="vm-toggle" id="vm-layers-toggle" aria-controls="vm-layers" aria-expanded="false" title="لایه‌ها">
             <i class="fas fa-layer-group"></i>
@@ -58,6 +65,11 @@
                             <input type="checkbox" id="vm-traffic" {% if not traffic_url %}disabled{% endif %}> ترافیک
                             {% if not traffic_url %}<small>(نیازمند سرویس‌دهنده)</small>{% endif %}
                         </label>
+                    </fieldset>
+                    <fieldset id="vm-plan-legend" hidden>
+                        <legend><label><input type="checkbox" id="vm-plan-all" checked> راهنمای نقشه‌ی طرح</label></legend>
+                        <small class="vm-plan-head"><span>موجود</span><span>پیشنهادی</span></small>
+                        <div id="vm-plan-rows" class="vm-plan-rows"></div>
                     </fieldset>
                     <fieldset>
                         <legend>محله‌ها و ملک‌ها</legend>
