@@ -48,7 +48,8 @@
                 <div class="vm-layers-body">
                     <fieldset>
                         <legend>نقشه‌ی پایه</legend>
-                        <label><input type="radio" name="basemap" value="" checked> بدون پس‌زمینه (آفلاین)</label>
+                        <label><input type="radio" name="basemap" value="cad" checked> نقشه‌ی طرح (مانند اتوکد)</label>
+                        <label><input type="radio" name="basemap" value=""> بدون پس‌زمینه (آفلاین)</label>
                         {% for b in basemaps %}
                         <label><input type="radio" name="basemap" value="{{ b.id }}"> {{ b.label }}</label>
                         {% endfor %}
@@ -237,6 +238,7 @@
 </div>
 
 <script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'js/village-cad.js' %}"></script>
 <script src="{% static 'js/village-map.js' %}"></script>
 </body>
 </html>

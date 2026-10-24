@@ -41,6 +41,26 @@ plot on the «اعیان و پروانه» tab. Land and building can have diffe
   The map flies there and opens the plot under the point.
 * Opening a plot by search shows a banner when it breaks an easement or is locked.
 
+## The plan as AutoCAD shows it (نقشه‌ی طرح)
+
+The default base layer of the map (first radio box under «نقشه‌ی پایه») is the detail drawing itself: every filled and
+pattern-hatched area (land-use zones, roads, parks, building hatches), line, curb, channel and text of the plan, with the
+drawing's own colours, line weights, line types and hatch patterns. The plots, blocks and neighbourhoods are drawn over it
+as a light, clickable skin (the building footprints stay off until ticked, because the plan already draws buildings).
+Choose «بدون پس‌زمینه» or a street/satellite map for the plain view.
+
+* Built by `scripts/gis/build_cad_layer.py` into `main/data/gis/dastgerd_cad.json` (4.6 MB, about 1.2 MB gzipped): 7 735
+  hatches, 13 024 lines, ~1 000 readable texts. Layers that are off or frozen in the drawing, and the title block and legend
+  outside the village, are left out.
+* Served by `/gis/<slug>/cad/` with the map's access rules; drawn on one canvas tile layer (`static/js/village-cad.js`) over
+  a spatial index, so it stays fast. Hatch spacing follows the drawing's scale; below 3 px it fades to a tint.
+* The plan's legacy Persian text (SHX fonts) is decoded with `scripts/gis/shx_text.py`; a text that still has an unknown
+  byte is dropped, never shown garbled. The `0xA0` byte of that font is the letter ن, so only plain blanks are collapsed.
+
+```
+python scripts/gis/build_cad_layer.py detail.dxf main/data/gis/dastgerd_cad.json --plots main/data/gis/dastgerd.geojson
+```
+
 ## Details around the plots (جزئیات نقشه)
 
 One tick box per group in the layers panel (and a master box). They come from the detail drawing (1405) and are served

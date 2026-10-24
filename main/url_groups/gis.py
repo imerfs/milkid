@@ -10,6 +10,7 @@ urlpatterns = [
     path('gis/<slug:slug>/buildings/', views.map_buildings, name='gis_buildings'),
     path('gis/<slug:slug>/easements/', views.map_easements, name='gis_easements'),
     path('gis/<slug:slug>/context/', views.map_context, name='gis_context'),
+    path('gis/<slug:slug>/cad/', views.map_cad, name='gis_cad'),
     path('gis/<slug:slug>/parcels/<int:parcel_id>/', views.parcel_detail, name='gis_parcel'),
     path('gis/<slug:slug>/parcels/<int:parcel_id>/lock/', views.parcel_lock, name='gis_lock'),
     path('gis/<slug:slug>/parcels/<int:parcel_id>/locks/<int:lock_id>/release/', views.parcel_unlock, name='gis_unlock'),

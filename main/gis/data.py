@@ -57,6 +57,15 @@ def static_context(village_map):
                    lambda: json.loads(path.read_text(encoding='utf-8'))['features'])
 
 
+def static_cad(village_map):
+    """The plan as drawn in AutoCAD (built by scripts/gis/build_cad_layer.py), as the JSON text of ``<slug>_cad.json``."""
+    from main.gis.loader import DATA_DIR
+    path = DATA_DIR / f'{village_map.slug}_cad.json'
+    if not path.exists():
+        return None
+    return _cached((village_map.slug, 'cad'), path.stat().st_mtime_ns, lambda: path.read_text(encoding='utf-8'))
+
+
 def static_blocks(village_map):
     return _cached((village_map.slug, 'blocks'), village_map.loaded_at, lambda: [
         {'type': 'Feature', 'properties': {'n': b.number, 'c': b.parcel_count, 'z': b.zone}, 'geometry': b.geometry}

@@ -66,6 +66,7 @@ def map_page(request, slug):
             'buildings': reverse('main:gis_buildings', args=[village_map.slug]),
             'easements': reverse('main:gis_easements', args=[village_map.slug]),
             'context': reverse('main:gis_context', args=[village_map.slug]),
+            'cad': reverse('main:gis_cad', args=[village_map.slug]),
             'parcel': reverse('main:gis_parcel', args=[village_map.slug, 0]),
         },
         'lockReasons': dict(ParcelLock.REASONS),
@@ -112,6 +113,21 @@ def map_buildings(request, slug):
 @policy_required('gis.view', api=True)
 def map_easements(request, slug):
     return _layer(request, slug, gis_data.static_easements)
+
+
+@require_GET
+@policy_required('gis.view', api=True)
+def map_cad(request, slug):
+    """The cartographic base layer: the plan with its own colours, hatches and texts."""
+    village_map = _map_or_none(request, slug)
+    if village_map is None:
+        return _denied()
+    text = gis_data.static_cad(village_map)
+    if text is None:
+        return JsonResponse({'items': [], 'layers': []})
+    response = HttpResponse(text, content_type='application/json')
+    response['Cache-Control'] = 'private, max-age=600'
+    return response
 
 
 @require_GET
