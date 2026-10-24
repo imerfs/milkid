@@ -38,6 +38,7 @@ HATCH_KINDS = {                      # pattern name -> (kind, base angle in degr
     'ANSI37': ('x', 45), 'ANSI38': ('x', 45), 'NET': ('x', 0), 'NET3': ('x', 45), 'HEX': ('x', 0),
     'GRAVEL': ('o', 0), 'STARS': ('o', 0), 'GRASS': ('o', 0), 'HOUND': ('o', 0), 'AR-CONC': ('o', 0), 'DOTS': ('o', 0),
 }
+FRAME_LAYERS = {'58-0'}            # the sheet's frame and its 400 m coordinate grid (lines and numbers); Persian labels on it stay
 SHEET_STRIP_X = 713165.0           # UTM x: the sheet's left column (logo, title block, legend) is left of this line
 LEGEND_SWATCH_X = (712700.0, 712900.0)      # the two swatch columns of the legend: proposed (~712752) and existing (~712821)
 LEGEND_LABEL_X = 713100.0          # legend labels start (right edge) here
@@ -247,6 +248,9 @@ def main():
                 if pts[0][0] <= SHEET_STRIP_X:
                     skipped['sheet strip'] += 1
                     continue
+                if name in FRAME_LAYERS:
+                    skipped['frame'] += 1
+                    continue
                 coords = flat_coords(pts)
                 if not inside(coords[0], coords[1]):
                     skipped['outside'] += 1
@@ -269,6 +273,9 @@ def main():
                         label_texts.append({'x': x, 'y': y, 't': LEGEND_FIXES.get(text, text) if text else None,
                                             'raw': (e.dxf.text if kind == 'TEXT' else e.text)[:60]})
                     skipped['sheet strip'] += 1
+                    continue
+                if name in FRAME_LAYERS and text and not re.search('[\u0600-\u06FF]', text):
+                    skipped['frame'] += 1                            # the grid's coordinate numbers (3645800, 713200 ...)
                     continue
                 if not text or text in SKIP_TEXTS:
                     skipped['text'] += 1

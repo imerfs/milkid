@@ -35,6 +35,7 @@
                 <small>مختصات UTM، زون ۴۰ شمالی (همان که در اتوکد می‌بینید)</small>
             </div>
         </form>
+        <button type="button" class="vm-side-btn" id="vm-side-toggle" aria-pressed="false" title="پنهان یا نمایش نوار کناری (بایگانی ملک)"><i class="fas fa-table-columns" aria-hidden="true"></i></button>
         <button type="button" class="vm-toggle" id="vm-layers-toggle" aria-controls="vm-layers" aria-expanded="false" title="لایه‌ها">
             <i class="fas fa-layer-group"></i>
         </button>
@@ -123,6 +124,7 @@
 
             <div class="vm-coords" id="vm-coords" dir="ltr" aria-live="off"></div>
 
+            <div class="vm-imagery" id="vm-imagery" hidden role="status"></div>
             <div class="vm-timeline" id="vm-timeline" aria-label="خط زمانی">
                 <button type="button" class="vm-play" id="vm-play" aria-label="پخش"><i class="fas fa-play"></i></button>
                 <div class="vm-timeline-track">

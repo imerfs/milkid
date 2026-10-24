@@ -63,7 +63,7 @@
   window.villageMap = map;                        // handy in the browser console when checking a deployment
   const canvas = L.canvas({ padding: 0.5 });
   const baseLayers = {};
-  cfg.basemaps.forEach((b) => { baseLayers[b.id] = L.tileLayer(b.url, { maxZoom: b.maxZoom, maxNativeZoom: b.maxZoom, attribution: b.attribution }); });
+  cfg.basemaps.forEach((b) => { baseLayers[b.id] = L.tileLayer(b.url, { maxZoom: b.maxZoom, maxNativeZoom: b.nativeZoom || b.maxZoom, subdomains: b.subdomains || 'abc', attribution: b.attribution }); });
   let currentBase = null;
   document.querySelectorAll('input[name=basemap]').forEach((radio) => radio.addEventListener('change', () => {
     if (currentBase) map.removeLayer(currentBase);
@@ -131,7 +131,7 @@
     if (!st.exists) return { opacity: 0, fillOpacity: 0, weight: 0 };
     const visible = matchesFilter(p, st);
     const style = { fillColor: fillFor(p, st), color: '#475569', weight: 1, dashArray: p.e ? '4 3' : null, fillOpacity: visible ? 0.78 : 0.06, opacity: visible ? 1 : 0.2 };
-    if (planOn()) { style.fillOpacity = visible ? 0.14 : 0.02; style.opacity = visible ? 0.5 : 0.1; style.weight = 0.8; style.color = '#94a3b8'; }
+    if (skinOn()) { style.fillOpacity = visible ? 0.14 : 0.02; style.opacity = visible ? 0.5 : 0.1; style.weight = 0.8; style.color = '#94a3b8'; }
     if (colorMode === 'status' && p.e) style.color = '#7f1d1d';
     if (st.locked) { style.color = '#7f1d1d'; style.weight = 3; style.dashArray = null; style.opacity = 1; }
     return style;
@@ -251,8 +251,64 @@
 
 
 
+
+  // ---------- satellite imagery: the newest picture, or the dated release of the year the timeline shows ----------
+  const satellite = cfg.basemaps.find((b) => b.wayback);
+  let releases = null, releasesLoading = false;
+  const imageryBox = $('vm-imagery');
+  async function loadReleases() {
+    if (releases || releasesLoading || !cfg.waybackConfig) return;
+    releasesLoading = true;
+    try {
+      const data = await (await fetch(cfg.waybackConfig)).json();
+      releases = Object.values(data).map((r) => {
+        const m = /(\d{4})-(\d{2})-(\d{2})/.exec(r.itemTitle || '');
+        return m ? { date: new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])), url: r.itemURL.replace('{level}', '{z}').replace('{row}', '{y}').replace('{col}', '{x}') } : null;
+      }).filter(Boolean).sort((a, b) => a.date - b.date);
+    } catch (e) { releases = []; }
+    releasesLoading = false;
+  }
+  function showImagery(text) { imageryBox.textContent = text; imageryBox.hidden = !text; }
+  async function applyImagery() {
+    const radio = document.querySelector('input[name=basemap]:checked');
+    if (!satellite || !radio || radio.value !== satellite.id) { showImagery(''); return; }
+    const layer = baseLayers[satellite.id];
+    const native = (zoom) => { layer.options.maxNativeZoom = zoom; };
+    if (year >= LAST_YEAR || !cfg.waybackConfig) { native(satellite.nativeZoom || satellite.maxZoom); layer.setUrl(satellite.url); showImagery('جدیدترین تصویر ماهواره‌ای'); return; }
+    await loadReleases();
+    if (!releases || !releases.length) { native(satellite.nativeZoom || satellite.maxZoom); layer.setUrl(satellite.url); showImagery('تصاویر تاریخی در دسترس نیست؛ جدیدترین تصویر نشان داده شد'); return; }
+    const end = new Date(Date.UTC(year + 622, 2, 20));              // the end of that Persian year
+    const before = releases.filter((r) => r.date <= end);
+    const pick = before.length ? before[before.length - 1] : releases[0];
+    native(17);                                                     // older releases have real pictures only up to z17
+    layer.setUrl(pick.url);
+    const when = pick.date.toISOString().slice(0, 10);
+    showImagery(before.length ? `تصویر ماهواره‌ای نسخه‌ی ${when} (برای سال ${faDigits(year)})` : `قدیمی‌ترین تصویر در دسترس: ${when}؛ برای ${faDigits(year)} تصویر ماهواره‌ای وجود ندارد`);
+  }
+  // a provider that refuses this network shows grey squares: say so instead of leaving a blank map
+  if (satellite) {
+    let loaded = 0, failed = 0;
+    baseLayers[satellite.id].on('tileload', () => { loaded += 1; });
+    baseLayers[satellite.id].on('tileerror', () => {
+      failed += 1;
+      if (failed === 12 && loaded === 0) notice('تصاویر ماهواره‌ای بارگذاری نمی‌شود؛ احتمالاً این سرویس‌دهنده از شبکه‌ی شما در دسترس نیست (Esri معمولاً از ایران فیلتر است). از «نقشه‌ی طرح» یا نقشه‌ی خیابانی استفاده کنید.', true);
+    });
+  }
+
+  // the archive panel can be hidden to give the map the whole width
+  const sideBtn = $('vm-side-toggle');
+  function setSideHidden(hidden) {
+    app.classList.toggle('vm-noside', hidden);
+    sideBtn.setAttribute('aria-pressed', String(hidden));
+    try { localStorage.setItem('vm-noside', hidden ? '1' : '0'); } catch (e) { /* private window */ }
+    setTimeout(() => map.invalidateSize(), 50);
+  }
+  sideBtn.addEventListener('click', () => setSideHidden(!app.classList.contains('vm-noside')));
+  try { if (localStorage.getItem('vm-noside') === '1') setSideHidden(true); } catch (e) { /* private window */ }
+
   // ---------- the plan as drawn in AutoCAD (the default base layer) ----------
   let cadLayer = null, cadLoading = false, cadAsked = false;
+  const skinOn = () => { const r = document.querySelector('input[name=basemap]:checked'); return Boolean(r && r.value !== ''); };
   const planOn = () => { const r = document.querySelector('input[name=basemap]:checked'); return Boolean(r && r.value === 'cad'); };
   // the plan's own legend (راهنما) in the sidebar: one tick box per row hides or shows what that row stands for
   function swatchStyle(sw) {
@@ -314,7 +370,7 @@
     $('vm-plan-legend').hidden = !on || !cadLayer;
     restyleAll();
   }
-  document.querySelectorAll('input[name=basemap]').forEach((radio) => radio.addEventListener('change', applyPlan));
+  document.querySelectorAll('input[name=basemap]').forEach((radio) => radio.addEventListener('change', () => { applyPlan(); applyImagery(); }));
 
   // ---------- details around the plots: roads, water, power, trees, limits, signs, street names ----------
   const DETAIL_STYLE = {
@@ -455,9 +511,10 @@
     yearBox.value = year;
     $('vm-year-out').textContent = year === LAST_YEAR ? `${faDigits(year)} (امسال)` : faDigits(year);
     restyleAll();
+    applyImagery();
     if (map.getZoom() >= 19) updateLabels();
   }
-  cfg.years.forEach((y) => { const s = document.createElement('span'); s.textContent = faDigits(y); $('vm-ticks').appendChild(s); });
+  cfg.years.forEach((y, i) => { const s = document.createElement('span'); s.textContent = (y - cfg.years[0]) % 5 === 0 || y === LAST_YEAR ? faDigits(y) : ''; $('vm-ticks').appendChild(s); });
   yearBox.addEventListener('input', () => setYear(yearBox.value));
   let timer = null;
   $('vm-play').addEventListener('click', () => {
