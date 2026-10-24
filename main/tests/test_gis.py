@@ -798,3 +798,55 @@ class HousingAreaHelpers(TestCase):
         self.assertEqual(land_use_name('27hp'), 'جهانگردی و پذیرایی')
         self.assertEqual(land_use_name('50 p'), '')                   # not in the legend
         self.assertEqual(land_use_name('hp'), '')
+
+
+class MapDetails(TestCase):
+    """Roads, water, power, trees, limits and street names around the plots (from the 1405 detail drawing)."""
+
+    def url(self):
+        return reverse('main:gis_context', args=[SLUG])
+
+    def test_engineer_gets_the_surroundings(self):
+        body = client_for(make_user('engineer', **LOCAL)).get(self.url()).json()
+        self.assertEqual(body['type'], 'FeatureCollection')
+        groups = {f['properties']['g'] for f in body['features']}
+        self.assertEqual(groups, {'roads', 'water', 'power', 'trees', 'limits', 'signs', 'names'})
+        self.assertGreater(len(body['features']), 4000)
+
+    def test_everything_lies_in_the_village(self):
+        features = client_for(make_user('engineer', **LOCAL)).get(self.url()).json()['features']
+        for f in features:
+            first = f['geometry']['coordinates']
+            while isinstance(first[0], list):
+                first = first[0]
+            self.assertTrue(59.2 < first[0] < 59.4 and 32.85 < first[1] < 32.97, f['properties'])
+
+    def test_street_names_are_readable_persian(self):
+        names = [f['properties']['name'] for f in client_for(make_user('engineer', **LOCAL)).get(self.url()).json()['features']
+                 if f['properties']['g'] == 'names']
+        self.assertTrue(names)
+        self.assertTrue(any('امام خمینی' in n for n in names))
+        self.assertTrue(all(re.search('[؀-ۿ]', n) for n in names))
+
+    def test_closed_to_everyone_else(self):
+        for who in (make_user('citizen'), make_user('engineer', province='خراسان جنوبی', county='بیرجند', city_village='ولدآباد')):
+            self.assertIn(client_for(who).get(self.url()).status_code, (302, 403))
+        self.assertEqual(client_for().get(self.url()).status_code in (302, 401, 403), True)
+
+    def test_page_has_the_detail_tick_boxes(self):
+        page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
+        for group in ('roads', 'water', 'power', 'trees', 'limits', 'signs', 'names'):
+            self.assertContains(page, f'data-detail="{group}"')
+
+
+class BuildingsMatchTheDrawing(TestCase):
+    def test_every_building_is_a_polygon_and_plot_counts_add_up(self):
+        import json as _json
+        from main.gis.loader import DATA_DIR
+        data = _json.loads((DATA_DIR / 'dastgerd.geojson').read_text(encoding='utf-8'))
+        buildings = [f for f in data['features'] if f['properties']['type'] == 'building']
+        self.assertGreater(len(buildings), 3700)
+        self.assertTrue(all(f['geometry']['type'] == 'Polygon' for f in buildings))
+        on_plots = sum(1 for f in buildings if f['properties']['parcel'])
+        counted = sum(f['properties'].get('bld_count', 0) for f in data['features'] if f['properties']['type'] == 'parcel')
+        self.assertEqual(on_plots, counted)

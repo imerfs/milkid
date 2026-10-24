@@ -152,3 +152,9 @@ html, body { height: 100%; margin: 0; }
 .vm-facts { grid-template-columns: repeat(3, 1fr); }
 .vm-rule { color: var(--vm-alert-text); opacity: .9; line-height: 1.7; display: inline-block; margin-top: 2px; }
 [data-pane][hidden], [data-pane-shared][hidden] { display: none; }
+
+/* layer panel: details around the plots (keyline icons) */
+.vm-detail { display: flex; align-items: center; gap: 6px; }
+.vm-ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.vm-street-wrap { background: none; border: 0; }
+.vm-street { position: absolute; transform-origin: center; white-space: nowrap; direction: rtl; translate: -50% -50%; font: 600 11px 'Vazirmatn', sans-serif; color: #f8fafc; text-shadow: 0 0 3px #0f172a, 0 0 3px #0f172a, 0 0 2px #0f172a; pointer-events: none; }

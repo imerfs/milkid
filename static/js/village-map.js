@@ -247,6 +247,90 @@
     all.indeterminate = !all.checked && boxes.some((b) => b.checked);
   }
 
+
+  // ---------- details around the plots: roads, water, power, trees, limits, signs, street names ----------
+  const DETAIL_STYLE = {
+    asphalt: { color: '#94a3b8', weight: 4.5, opacity: 0.95 },
+    gravel: { color: '#d6b98c', weight: 3, opacity: 0.95, dashArray: '2 5' },
+    jeep: { color: '#a16207', weight: 2, opacity: 0.95, dashArray: '8 5' },
+    axis: { color: '#f8fafc', weight: 0.8, opacity: 0.55, dashArray: '10 6' },
+    channel: { color: '#38bdf8', weight: 1.4, opacity: 0.95 },
+    drain: { color: '#0ea5e9', weight: 1.4, opacity: 0.95, dashArray: '5 4' },
+    bed: { color: '#0284c7', weight: 1.4, fillColor: '#38bdf8', fillOpacity: 0.28 },
+    pipe: { color: '#2563eb', weight: 2, dashArray: '3 4' },
+    tank: { color: '#0369a1', weight: 1.5, fillColor: '#0ea5e9', fillOpacity: 0.55 },
+    qanat: { color: '#a855f7', weight: 1.6, dashArray: '6 4' },
+    hv_line: { color: '#ef4444', weight: 1.8, dashArray: '10 5' },
+    village: { color: '#facc15', weight: 3, fillOpacity: 0, dashArray: '12 6' },
+    fence: { color: '#eab308', weight: 1.4, dashArray: '2 4' },
+    wall: { color: '#fb923c', weight: 2.2 },
+    livestock: { color: '#a16207', weight: 1, fillColor: '#ca8a04', fillOpacity: 0.4 },
+  };
+  const DETAIL_POINT = {
+    pole: { radius: 2.2, color: '#f59e0b', fillColor: '#fde68a', title: 'تیر برق / چراغ روشنایی' },
+    phone_pole: { radius: 2.2, color: '#a3a3a3', fillColor: '#e5e5e5', title: 'تیر تلفن' },
+    transformer: { radius: 5, color: '#b91c1c', fillColor: '#ef4444', title: 'ترانس' },
+    manhole: { radius: 2, color: '#64748b', fillColor: '#cbd5e1', title: 'منهول' },
+    tree: { radius: 2.6, color: '#15803d', fillColor: '#4ade80', title: 'درخت' },
+    sign: { radius: 3, color: '#a21caf', fillColor: '#e879f9', title: 'تابلو' },
+    qanat: { radius: 4, color: '#7e22ce', fillColor: '#c084fc', title: 'چاه قنات' },
+    tap: { radius: 3, color: '#1d4ed8', fillColor: '#60a5fa', title: 'شیر آب' },
+  };
+  const DETAIL_GROUPS = ['roads', 'water', 'power', 'trees', 'limits', 'signs', 'names'];
+  const detailGroups = {};
+  let detailsLoaded = false;
+
+  function nameLabel(feature) {
+    const { name, rot } = feature.properties;
+    const [lng, lat] = feature.geometry.coordinates;
+    const el = document.createElement('span');
+    el.className = 'vm-street';
+    el.textContent = name;
+    el.style.transform = `rotate(${-(rot || 0)}deg)`;
+    return L.marker([lat, lng], { interactive: false, keyboard: false, icon: L.divIcon({ className: 'vm-street-wrap', html: el.outerHTML, iconSize: [0, 0] }) });
+  }
+
+  function buildDetails(features) {
+    DETAIL_GROUPS.forEach((g) => { detailGroups[g] = L.layerGroup(); });
+    features.forEach((feature) => {
+      const { g, k } = feature.properties;
+      if (!detailGroups[g]) return;
+      if (g === 'names') { detailGroups.names.addLayer(nameLabel(feature)); return; }
+      let layer;
+      if (feature.geometry.type === 'Point') {
+        const style = DETAIL_POINT[k];
+        if (!style) return;
+        const [lng, lat] = feature.geometry.coordinates;
+        layer = L.circleMarker([lat, lng], { renderer: canvas, interactive: false, weight: 1, fillOpacity: 0.95, ...style });
+      } else {
+        layer = L.geoJSON(feature, { renderer: canvas, interactive: false, style: () => DETAIL_STYLE[k] || { color: '#94a3b8', weight: 1 } });
+      }
+      detailGroups[g].addLayer(layer);
+    });
+  }
+
+  async function applyDetails() {
+    const boxes = [...document.querySelectorAll('[data-detail]')];
+    const wanted = boxes.filter((b) => b.checked).map((b) => b.dataset.detail);
+    if (wanted.length && !detailsLoaded) {
+      detailsLoaded = true;
+      try { buildDetails((await fetchLayer(cfg.urls.context)).features); }
+      catch (e) { detailsLoaded = false; boxes.forEach((b) => { b.checked = false; }); notice('بارگذاری جزئیات نقشه ممکن نشد.', true); return; }
+    }
+    DETAIL_GROUPS.forEach((g) => { if (detailGroups[g]) setGroup(detailGroups[g], wanted.includes(g) && (g !== 'names' || map.getZoom() >= 17)); });
+    const all = $('vm-details-all');
+    all.checked = boxes.every((b) => b.checked);
+    all.indeterminate = !all.checked && boxes.some((b) => b.checked);
+    // the plots stay on top of the surroundings
+    [groups.zones, groups.plots, groups.buildings].forEach((g) => { if (map.hasLayer(g)) g.eachLayer((l) => { if (l.bringToFront) l.bringToFront(); }); });
+  }
+  document.querySelectorAll('[data-detail]').forEach((b) => b.addEventListener('change', applyDetails));
+  $('vm-details-all').addEventListener('change', (e) => {
+    document.querySelectorAll('[data-detail]').forEach((b) => { b.checked = e.target.checked; });
+    applyDetails();
+  });
+  map.on('zoomend', () => { if (detailGroups.names) setGroup(detailGroups.names, document.querySelector('[data-detail=names]').checked && map.getZoom() >= 17); });
+
   document.querySelectorAll('[data-layer]').forEach((b) => b.addEventListener('change', applyLayerBoxes));
   document.querySelectorAll('[data-easement]').forEach((b) => b.addEventListener('change', applyEasements));
   $('vm-easements-all').addEventListener('change', (e) => {

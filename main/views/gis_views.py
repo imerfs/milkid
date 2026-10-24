@@ -65,6 +65,7 @@ def map_page(request, slug):
             'data': reverse('main:gis_data', args=[village_map.slug]),
             'buildings': reverse('main:gis_buildings', args=[village_map.slug]),
             'easements': reverse('main:gis_easements', args=[village_map.slug]),
+            'context': reverse('main:gis_context', args=[village_map.slug]),
             'parcel': reverse('main:gis_parcel', args=[village_map.slug, 0]),
         },
         'lockReasons': dict(ParcelLock.REASONS),
@@ -111,6 +112,13 @@ def map_buildings(request, slug):
 @policy_required('gis.view', api=True)
 def map_easements(request, slug):
     return _layer(request, slug, gis_data.static_easements)
+
+
+@require_GET
+@policy_required('gis.view', api=True)
+def map_context(request, slug):
+    """Roads, water, power, trees, limits and street names (the plan's surroundings of the plots)."""
+    return _layer(request, slug, gis_data.static_context)
 
 
 def _archive_dict(parcel):
