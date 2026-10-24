@@ -6,6 +6,14 @@ from main.models import (MapBlock, MapBuilding, MapEasement, MapParcel, MapZone,
                          ParcelLock)
 
 _static = {}
+FIRST_YEAR = 1370          # the timeline starts here (1991 / 1992)
+
+
+def version_query(village_map, name):
+    """``?v=<file change>`` so a browser never keeps an old copy of a rebuilt drawing layer."""
+    from main.gis.loader import DATA_DIR
+    path = DATA_DIR / (f'{village_map.slug}_{name}.' + ('json' if name == 'cad' else 'geojson'))
+    return f'?v={path.stat().st_mtime_ns // 1_000_000}' if path.exists() else ''
 
 
 def _cached(key, loaded_at, build):

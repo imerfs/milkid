@@ -52,21 +52,22 @@ def map_page(request, slug):
     if village_map is None:
         messages.error(request, 'شما به نقشه‌ی این روستا دسترسی ندارید.')
         return redirect('main:home')
-    years = list(range(1400, gis_data.current_year() + 1))
+    years = list(range(gis_data.FIRST_YEAR, gis_data.current_year() + 1))
     config = {
         'slug': village_map.slug,
         'csrf': get_token(request),
         'canEdit': may_use(request.user, village_map, 'gis.edit'),
         'canLock': may_use(request.user, village_map, 'gis.lock'),
         'basemaps': settings.GIS_BASEMAPS,
+        'waybackConfig': settings.GIS_WAYBACK_CONFIG_URL,
         'trafficUrl': settings.GIS_TRAFFIC_TILE_URL,
         'years': years,
         'urls': {
             'data': reverse('main:gis_data', args=[village_map.slug]),
             'buildings': reverse('main:gis_buildings', args=[village_map.slug]),
             'easements': reverse('main:gis_easements', args=[village_map.slug]),
-            'context': reverse('main:gis_context', args=[village_map.slug]),
-            'cad': reverse('main:gis_cad', args=[village_map.slug]),
+            'context': reverse('main:gis_context', args=[village_map.slug]) + gis_data.version_query(village_map, 'context'),
+            'cad': reverse('main:gis_cad', args=[village_map.slug]) + gis_data.version_query(village_map, 'cad'),
             'parcel': reverse('main:gis_parcel', args=[village_map.slug, 0]),
         },
         'lockReasons': dict(ParcelLock.REASONS),

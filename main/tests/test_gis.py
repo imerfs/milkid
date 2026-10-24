@@ -915,3 +915,40 @@ class MapPlanLayer(TestCase):
         page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
         for marker in ('id="vm-plan-legend"', 'id="vm-xy"', 'id="vm-x"', 'id="vm-y"'):
             self.assertContains(page, marker)
+
+
+class MapBackgroundsAndTimeline(TestCase):
+    def setUp(self):
+        self.page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
+
+    def config(self):
+        return json.loads(re.search(r'<script id="vm-config" type="application/json">(.*?)</script>', self.page.content.decode(), re.S).group(1))
+
+    def test_timeline_runs_from_1370_to_this_year(self):
+        years = self.config()['years']
+        self.assertEqual(years[0], 1370)
+        self.assertEqual(years, list(range(1370, years[-1] + 1)))
+        self.assertContains(self.page, 'min="1370"')
+
+    def test_satellite_is_first_and_follows_the_timeline_with_better_street_maps_next_to_it(self):
+        maps = self.config()['basemaps']
+        self.assertEqual([m['id'] for m in maps][:3], ['satellite', 'carto', 'osm'])
+        self.assertTrue(maps[0]['wayback'])
+        self.assertTrue(self.config()['waybackConfig'].startswith('https://'))
+        self.assertTrue(all(m['maxZoom'] >= m['nativeZoom'] for m in maps))      # zooming past the last real tile stretches it
+
+    def test_the_drawing_layers_urls_change_with_the_file(self):
+        urls = self.config()['urls']
+        self.assertRegex(urls['cad'], r'/cad/\?v=\d+$')
+        self.assertRegex(urls['context'], r'/context/\?v=\d+$')
+
+    def test_page_can_hide_the_archive_panel_and_shows_the_imagery_note(self):
+        self.assertContains(self.page, 'id="vm-side-toggle"')
+        self.assertContains(self.page, 'id="vm-imagery"')
+
+
+class PlanHasNoFrame(TestCase):
+    def test_no_grid_numbers_or_frame_texts(self):
+        items = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_cad', args=[SLUG])).json()['items']
+        numbers = [i['s'] for i in items if i['k'] == 't' and re.fullmatch(r'\d{6,7}', i['s'])]
+        self.assertEqual(numbers, [])                              # 3645800, 713200 ... of the sheet's coordinate grid

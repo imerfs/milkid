@@ -178,3 +178,11 @@ html, body { height: 100%; margin: 0; }
 .vm-plan-rows { overflow-x: hidden; }
 .vm-plan-row span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .vm-plan-row.is-off { opacity: .55; }
+
+/* hide the archive panel; the imagery badge */
+.vm-side-btn { border: 1px solid var(--vm-line); background: var(--vm-card); color: var(--vm-text); border-radius: 8px; padding: 8px 11px; cursor: pointer; }
+.vm-side-btn[aria-pressed=true] { background: var(--vm-brand); color: #fff; border-color: var(--vm-brand); }
+.vm-noside .vm-panel { display: none; }
+.vm-imagery { position: absolute; z-index: 940; inset-inline-end: 10px; bottom: 86px; padding: 4px 10px; border-radius: 8px; background: rgba(15, 23, 42, .78); color: #f1f5f9; font-size: 12px; max-width: 70%; }
+.vm-imagery[hidden] { display: none; }
+@media (max-width: 820px) { .vm-side-btn { display: none; } }

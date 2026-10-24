@@ -74,6 +74,22 @@ python scripts/gis/build_cad_layer.py detail.dxf main/data/gis/dastgerd_cad.json
 * **Search by X / Y**: the crosshair button in the search box opens two fields, X and Y (UTM zone 40 N, as in AutoCAD, Persian
   digits fine); Enter or «برو» flies there and opens the plot under the point. Typing `714299 3644453` in the search box works too.
 
+### Background maps, the timeline and the archive panel
+
+* **Timeline**: 1370 (1991/92) to this year, ticks every five years.
+* **ماهواره‌ای** (first in the list): the newest Esri World Imagery (real pictures to z18 here; beyond that the tile is stretched, because z19 is a grey placeholder).
+  Move the timeline back and the picture follows it: the release of Esri's *Wayback* archive that was current at the end of that
+  Persian year (releases from 2014-02-20 on; a note on the map says which one; before 2014 there is no usable picture, the oldest one is shown and
+  the note says so). Releases older than a few years have real pictures to z17 only, so zoomed in they are blurrier. Set `GIS_WAYBACK_CONFIG_URL=` (empty)
+  to turn dated imagery off, or `GIS_SATELLITE_TILE_URL` to use another provider (then Wayback is off).
+* **نقشه‌ی خیابانی روشن (CARTO Voyager)** and OpenStreetMap; `GIS_STREET_TILE_URL` / `GIS_OSM_TILE_URL` replace them, `GIS_EXTRA_BASEMAPS`
+  (a JSON list) adds more, e.g. an Iranian provider with a key.
+* The plots are a faint, clickable skin over every background map (not only the plan), so the picture stays visible.
+* If no satellite tile arrives (12 failed requests, none loaded) the page says the provider is probably blocked on that network
+  (Esri usually is in Iran): use «نقشه‌ی طرح» or a street map, or a VPN.
+* The **sheet frame and its coordinate grid** (layer `58-0`: the 400 m grid, its numbers) are not drawn.
+* The crosshair-free toggle at the top (columns icon) hides the archive panel so the map gets the whole width; the choice is remembered.
+
 ## Details around the plots (جزئیات نقشه)
 
 One tick box per group in the layers panel (and a master box). They come from the detail drawing (1405) and are served
