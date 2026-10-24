@@ -890,3 +890,28 @@ class MapPlanLayer(TestCase):
         page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
         self.assertContains(page, 'name="basemap" value="cad" checked')
         self.assertContains(page, 'village-cad.js')
+
+    def test_the_plans_legend_is_a_list_of_toggles(self):
+        body = client_for(make_user('engineer', **LOCAL)).get(self.url()).json()
+        rows = body['legend']
+        self.assertGreater(len(rows), 30)
+        labels = [r['t'] for r in rows]
+        for expected in ('مسکونی', 'مذهبی', 'تجاری', 'فضای سبز', 'مسیل', 'باغ', 'زراعت'):
+            self.assertTrue(any(expected in label for label in labels), expected)
+        layer_names = {layer['n'] for layer in body['layers']}
+        for row in rows:
+            for key in row['l']:
+                self.assertIn(key.split('|')[0], layer_names, key)       # every toggle points at a layer of the plan
+
+    def test_the_sheets_title_block_is_not_on_the_map(self):
+        body = client_for(make_user('engineer', **LOCAL)).get(self.url()).json()
+        texts = ' '.join(item['s'] for item in body['items'] if item['k'] == 't')
+        for word in ('انقلاب اسلامی', 'معاونت عمران', 'مهندسین مشاور', 'مقیاس', 'طرح هادی بازنگری', 'موجود پیشنهادی'):
+            self.assertNotIn(word, texts, word)
+        xs = [item['x'] for item in body['items'] if item['k'] == 't']
+        self.assertGreater(min(xs), 59.27)                       # nothing from the sheet's left column (logo, legend)
+
+    def test_page_has_the_legend_box_and_the_xy_search(self):
+        page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
+        for marker in ('id="vm-plan-legend"', 'id="vm-xy"', 'id="vm-x"', 'id="vm-y"'):
+            self.assertContains(page, marker)

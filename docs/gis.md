@@ -61,6 +61,19 @@ Choose «بدون پس‌زمینه» or a street/satellite map for the plain vi
 python scripts/gis/build_cad_layer.py detail.dxf main/data/gis/dastgerd_cad.json --plots main/data/gis/dastgerd.geojson
 ```
 
+### The plan's legend in the sidebar, the sheet frame, X / Y search
+
+* The sheet's left column (logo and name of the sponsoring organization, consultants, plan title, scale, legend) is not drawn:
+  everything left of UTM x 713 165 is cut. The legend is read from that column instead (`legend_rows()` in
+  `build_cad_layer.py`: each label row is matched to the swatches at the same y) and shown in the layers panel as
+  **«راهنمای نقشه‌ی طرح»**: one tick box per row with its existing / proposed swatch; unticking a row hides the hatches of the
+  layers (and, where two rows share a layer, of the colour) that row stands for. Rows drawn with line symbols only
+  (e.g. حریم کیفی مسیل) are listed but disabled; use the easement boxes for them.
+* The drawing is no longer cut 600 m around the blocks: the whole plan (river, roads, the housing area) is in, only the stray
+  items far outside are dropped.
+* **Search by X / Y**: the crosshair button in the search box opens two fields, X and Y (UTM zone 40 N, as in AutoCAD, Persian
+  digits fine); Enter or «برو» flies there and opens the plot under the point. Typing `714299 3644453` in the search box works too.
+
 ## Details around the plots (جزئیات نقشه)
 
 One tick box per group in the layers panel (and a master box). They come from the detail drawing (1405) and are served

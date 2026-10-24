@@ -38,6 +38,12 @@ HATCH_KINDS = {                      # pattern name -> (kind, base angle in degr
     'ANSI37': ('x', 45), 'ANSI38': ('x', 45), 'NET': ('x', 0), 'NET3': ('x', 45), 'HEX': ('x', 0),
     'GRAVEL': ('o', 0), 'STARS': ('o', 0), 'GRASS': ('o', 0), 'HOUND': ('o', 0), 'AR-CONC': ('o', 0), 'DOTS': ('o', 0),
 }
+SHEET_STRIP_X = 713165.0           # UTM x: the sheet's left column (logo, title block, legend) is left of this line
+LEGEND_SWATCH_X = (712700.0, 712900.0)      # the two swatch columns of the legend: proposed (~712752) and existing (~712821)
+LEGEND_LABEL_X = 713100.0          # legend labels start (right edge) here
+LEGEND_Y = (3643700.0, 3645320.0)
+LEGEND_LAYERS_SKIP = {'hp', 'Tite Kadr', 'arm2'}      # hatch lines laid over every proposed swatch, title block, logo
+LEGEND_FIXES = {'قبسی': 'قبلی'}
 MIN_SPACING_M = 0.4
 MAX_SPACING_M = 40.0
 
@@ -114,11 +120,39 @@ def readable(text):
     return decoded
 
 
+def legend_rows(label_texts, swatches):
+    """The sheet's legend (راهنما) as rows: label, the layers its swatches are drawn on, and the existing / proposed swatch.
+
+    A row is the labels and swatches that share a y position (within half a row); the continuation of a long label
+    sits left of the main one on the same row.
+    """
+    mains = sorted((t for t in label_texts if t['x'] >= LEGEND_LABEL_X and t['t']), key=lambda t: -t['y'])
+    rows = []
+    for main in mains:
+        extra = [t for t in label_texts if t['x'] < LEGEND_LABEL_X and t['t'] and abs(t['y'] - main['y']) < 8]
+        label = ' '.join([main['t']] + [t['t'] for t in sorted(extra, key=lambda t: -t['x'])])
+        near = [w for w in swatches if abs(w['y'] - main['y']) < 22]     # a row with no hatch swatch is drawn with line symbols
+        row = {'t': label, 'l': sorted({(w['layer'], w['c']) for w in near})}
+        existing = [w for w in near if w['x'] >= 712780]
+        proposed = [w for w in near if w['x'] < 712780]
+        for key, group in (('e', existing), ('p', proposed)):
+            if group:
+                best = sorted(group, key=lambda w: w['p'] != 's')[0]
+                row[key] = {'c': best['c'], 'p': best['p'] if best['p'] != 's' else '', 'a': best['a']}
+        rows.append(row)
+    # a layer that several rows share (the two قنات rows, خدماتی / مذهبی) is told apart by its colour: "layer|#colour"
+    uses = Counter(layer for row in rows for layer in {name for name, _ in row['l']})
+    for row in rows:
+        row['l'] = sorted({layer if uses[layer] == 1 else f'{layer}|{color}' for layer, color in row['l']})
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('dxf')
     parser.add_argument('output')
     parser.add_argument('--plots', required=True)
+    parser.add_argument('--debug-legend', help='write the legend labels and swatches the rows are built from')
     args = parser.parse_args()
 
     to_lonlat = Transformer.from_crs('EPSG:32640', 'EPSG:4326', always_xy=True)
@@ -128,7 +162,7 @@ def main():
             ring = f['geometry']['coordinates'][0] if f['geometry']['type'] == 'Polygon' else f['geometry']['coordinates'][0][0]
             xs += [p[0] for p in ring]
             ys += [p[1] for p in ring]
-    pad = 0.0065
+    pad = 0.03                                   # the whole drawing around the village; only the sheet's strip is cut
     area = (min(xs) - pad, min(ys) - pad, max(xs) + pad, max(ys) + pad)
 
     def ll(x, y):
@@ -157,6 +191,7 @@ def main():
         return layer_index[name]
 
     hatches, lines, texts = [], [], []
+    swatches, label_texts = [], []
     stats, skipped = Counter(), Counter()
     for e in doc.modelspace():
         kind = e.dxftype()
@@ -169,18 +204,30 @@ def main():
         color = entity_color(e, base)
         try:
             if kind == 'HATCH':
-                rings = []
+                rings, raw_rings = [], []
                 for sub in ezpath.from_hatch(e):
                     pts = [(p.x, p.y) for p in sub.flattening(0.5)]
                     if len(pts) >= 3:
+                        raw_rings.append(pts)
                         rings.append(flat_coords(pts))
-                if not rings or not inside(rings[0][0], rings[0][1]):
-                    skipped['outside'] += 1
+                if not rings:
                     continue
                 pattern = (e.dxf.pattern_name or 'SOLID').upper()
                 if e.dxf.solid_fill:
                     pattern = 'SOLID'
                 pkind, base_angle = HATCH_KINDS.get(pattern, ('l', 45))
+                if raw_rings[0][0][0] <= SHEET_STRIP_X:         # the sheet's left column: only the legend swatches are read
+                    xs0 = [p[0] for ring in raw_rings for p in ring]          # the whole hatch, not just its first loop
+                    ys0 = [p[1] for ring in raw_rings for p in ring]
+                    width = max(xs0) - min(xs0)
+                    if LEGEND_SWATCH_X[0] <= min(xs0) <= LEGEND_SWATCH_X[1] and max(ys0) - min(ys0) >= 25 and name not in LEGEND_LAYERS_SKIP:
+                        swatches.append({'y': (min(ys0) + max(ys0)) / 2, 'x': (min(xs0) + max(xs0)) / 2, 'layer': name,
+                                         'c': color, 'p': pkind, 'a': base_angle})
+                    skipped['sheet strip'] += 1
+                    continue
+                if not inside(rings[0][0], rings[0][1]):
+                    skipped['outside'] += 1
+                    continue
                 item = {'k': 'h', 'l': index_of(name), 'r': rings}
                 if color != base:
                     item['c'] = color
@@ -196,6 +243,9 @@ def main():
                 else:
                     pts = [(p.x, p.y) for p in ezpath.make_path(e).flattening(0.4)]
                 if len(pts) < 2:
+                    continue
+                if pts[0][0] <= SHEET_STRIP_X:
+                    skipped['sheet strip'] += 1
                     continue
                 coords = flat_coords(pts)
                 if not inside(coords[0], coords[1]):
@@ -213,10 +263,16 @@ def main():
                 stats['line'] += 1
             elif kind in ('TEXT', 'MTEXT'):
                 text = readable(clean_mtext(e.dxf.text if kind == 'TEXT' else e.text))
+                x, y = tuple(e.dxf.insert)[:2]
+                if x <= SHEET_STRIP_X:
+                    if name == 'rahnam' and LEGEND_Y[0] <= y <= LEGEND_Y[1] + 5 and x >= LEGEND_SWATCH_X[1]:
+                        label_texts.append({'x': x, 'y': y, 't': LEGEND_FIXES.get(text, text) if text else None,
+                                            'raw': (e.dxf.text if kind == 'TEXT' else e.text)[:60]})
+                    skipped['sheet strip'] += 1
+                    continue
                 if not text or text in SKIP_TEXTS:
                     skipped['text'] += 1
                     continue
-                x, y = tuple(e.dxf.insert)[:2]
                 lon, lat = ll(x, y)
                 if not inside(lon, lat):
                     skipped['outside'] += 1
@@ -233,8 +289,11 @@ def main():
         except Exception as exc:                             # one damaged entity must not stop the rebuild
             skipped[f'error:{kind}:{type(exc).__name__}'] += 1
 
+    if args.debug_legend:
+        Path(args.debug_legend).write_text(json.dumps({'labels': label_texts, 'swatches': swatches}, ensure_ascii=False), encoding='utf-8')
     solid_first = sorted(hatches, key=lambda h: 'p' in h)       # fills below pattern hatches
-    out = {'source': Path(args.dxf).name, 'layers': layer_meta, 'items': solid_first + lines + texts}
+    out = {'source': Path(args.dxf).name, 'layers': layer_meta, 'items': solid_first + lines + texts,
+           'legend': legend_rows(label_texts, swatches)}
     Path(args.output).write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     print(f'{len(out["items"])} items -> {args.output} ({Path(args.output).stat().st_size / 1e6:.2f} MB)', dict(stats), 'skipped', dict(skipped))
 

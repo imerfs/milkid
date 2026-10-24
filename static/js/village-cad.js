@@ -58,6 +58,7 @@
       this.layers = data.layers;
       this.bg = options.background || '#15181c';
       this.patterns = new Map();
+      this.hidden = new Set();
       this.items = data.items.map((raw) => this.prepare(raw));
       const all = this.items.map((it) => it.box);
       this.box = bboxOf([].concat(...all.map((b) => [b[0], b[1], b[2], b[3]])).length ? [new Float64Array(all.flatMap((b) => [b[0], b[1], b[2], b[3]]))] : [new Float64Array([0, 0, 1, 1])]);
@@ -71,6 +72,8 @@
         }
       });
     },
+
+    setHidden(names) { this.hidden = names; this.redraw(); },
 
     cell(v, axis) {
       const lo = this.box[axis], hi = this.box[axis + 2];
@@ -119,6 +122,7 @@
       todo.forEach((i) => {
         const it = this.items[i];
         if (it.box[2] < wx0 - pad || it.box[0] > wx0 + span + pad || it.box[3] < wy0 - pad || it.box[1] > wy0 + span + pad) return;
+        if (this.hidden.has(it.name) || this.hidden.has(`${it.name}|${it.color}`)) return;
         draw[it.k].push(it);
       });
       const px = (w, o) => w * scale - o;

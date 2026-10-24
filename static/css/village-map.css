@@ -158,3 +158,23 @@ html, body { height: 100%; margin: 0; }
 .vm-ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
 .vm-street-wrap { background: none; border: 0; }
 .vm-street { position: absolute; transform-origin: center; white-space: nowrap; direction: rtl; translate: -50% -50%; font: 600 11px 'Vazirmatn', sans-serif; color: #f8fafc; text-shadow: 0 0 3px #0f172a, 0 0 3px #0f172a, 0 0 2px #0f172a; pointer-events: none; }
+
+/* X / Y search and the plan's legend in the sidebar */
+.vm-xy-btn { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--vm-muted); cursor: pointer; }
+.vm-xy-btn:hover { background: var(--vm-line); color: inherit; }
+.vm-search input { padding-inline-end: 38px; }
+.vm-xy { position: absolute; inset-inline-end: 0; top: calc(100% + 6px); z-index: 1200; display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: end; width: 340px; max-width: 92vw; padding: 10px; background: var(--vm-card); border: 1px solid var(--vm-line); border-radius: 10px; box-shadow: 0 8px 28px rgba(0, 0, 0, .35); }
+.vm-xy[hidden] { display: none; }
+.vm-xy label { display: grid; gap: 2px; font-size: 12px; color: var(--vm-muted); }
+.vm-xy input { width: 100%; padding: 6px 8px; border: 1px solid var(--vm-line); border-radius: 6px; background: var(--vm-bg); color: inherit; font: inherit; }
+.vm-xy button { padding: 7px 14px; border: 0; border-radius: 6px; background: var(--vm-brand); color: #fff; font: inherit; cursor: pointer; }
+.vm-xy small { grid-column: 1 / -1; color: var(--vm-muted); font-size: 11.5px; }
+.vm-plan-head { display: flex; gap: 6px; justify-content: flex-start; padding-inline-start: 22px; color: var(--vm-muted); font-size: 11px; }
+.vm-plan-head span { width: 30px; text-align: center; }
+.vm-plan-rows { max-height: 34vh; overflow-y: auto; }
+.vm-plan-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 12.5px; line-height: 1.5; }
+.vm-plan-sw { display: inline-flex; gap: 4px; flex: none; }
+.vm-plan-sw i { width: 30px; height: 16px; border: 1px solid #cbd5e1; border-radius: 2px; display: inline-block; }
+.vm-plan-rows { overflow-x: hidden; }
+.vm-plan-row span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.vm-plan-row.is-off { opacity: .55; }
