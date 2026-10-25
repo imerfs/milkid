@@ -137,6 +137,7 @@
     return style;
   }
 
+  let handledClick = null;       // the DOM event a plot/building layer already answered
   function restyleBuildings(id, on) {
     (buildingsOf.get(id) || []).forEach((layer) => { layer.setStyle(on ? BUILDING_SELECTED : BUILDING_STYLE); if (on) layer.bringToFront(); });
   }
@@ -185,7 +186,7 @@
     data.parcels.features.forEach((f) => {
       const p = f.properties;
       const layer = L.geoJSON(f, { renderer: canvas, style: () => styleFor(p) });
-      layer.on('click', () => { if (stateAt(p, year).exists) select(p.id, false); });
+      layer.on('click', (e) => { handledClick = e.originalEvent; if (stateAt(p, year).exists) select(p.id, false); });
       plots.set(p.id, { layer, props: p, ring: ringOf(f.geometry) });
       if (p.code) { (byCode.get(p.code) || byCode.set(p.code, []).get(p.code)).push(p.id); }
       groups.plots.addLayer(layer);
@@ -216,7 +217,7 @@
           data.features.forEach((feature) => {
             const parcelId = feature.properties.p;
             const layer = L.geoJSON(feature, { renderer: canvas, style: BUILDING_STYLE });
-            layer.on('click', () => { if (parcelId && plots.has(parcelId)) select(parcelId, false, 'building'); });
+            layer.on('click', (e) => { handledClick = e.originalEvent; if (parcelId && plots.has(parcelId)) select(parcelId, false, 'building'); });
             if (parcelId) { (buildingsOf.get(parcelId) || buildingsOf.set(parcelId, []).get(parcelId)).push(layer); }
             groups.buildings.addLayer(layer);
           });
@@ -749,6 +750,13 @@
     }
     return null;
   }
+  // A click no plot or building layer answered (an easement or another overlay on top, a gap in the outline, the plan's
+  // own lines) still opens the plot under the finger: look the point up in the plots' outlines.
+  map.on('click', (e) => {
+    if (e.originalEvent === handledClick) return;
+    const id = containing(e.latlng.lat, e.latlng.lng);
+    if (id !== null) select(id, false);
+  });
   let pin = null;
   async function goTo(lat, lng, label) {
     if (pin) map.removeLayer(pin);
@@ -764,6 +772,27 @@
     if (parcel.locked) bits.push('قفل است و از خدمات محروم شده');
     notice(bits.join(' — '), parcel.easements.length > 0 || parcel.locked);
   }
+
+  // several plots share what was typed (a repeated code, a plot number): list them and let the user pick
+  function hideResults() { const box = $('vm-results'); box.hidden = true; box.replaceChildren(); }
+  function showResults(ids, text) {
+    const box = $('vm-results');
+    box.replaceChildren();
+    const head = document.createElement('p');
+    head.textContent = `${fa(ids.length)} قطعه با «${text}» پیدا شد؛ یکی را انتخاب کنید:`;
+    box.appendChild(head);
+    ids.slice(0, 30).forEach((id) => {
+      const { props } = plots.get(id);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const use = landUses.get(props.lu);
+      btn.textContent = `${props.code || 'بدون کد'} · ${fa(props.a)} م²${use ? ` · ${use.name}` : ''}${props.e ? ' · تقریبی' : ''}`;
+      btn.addEventListener('click', async () => { hideResults(); announce(await select(id, true)); });
+      box.appendChild(btn);
+    });
+    box.hidden = false;
+  }
+  $('vm-search-input').addEventListener('input', hideResults);
 
   $('vm-search').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -783,25 +812,28 @@
       const hit = [...plots.entries()].find(([, { props }]) => props.lt === lotMatch[1]);
       if (hit) { announce(await select(hit[0], true)); return; }
     }
-    const text = raw.replace(/[\s_/\\]+/g, '-');
+    // the code as people write it: any dash or slash, spaces, a "کد" in front (Persian/Arabic digits are already converted)
+    const text = raw.replace(/^کد(?:\s*نوسازی)?\s*:?\s*/, '').replace(/[\s_/\\.\-\u2010-\u2015\u2212\u0640\u066b]+/g, '-').replace(/^-+|-+$/g, '');
     let ids = byCode.get(text);
-    if (!ids) {                                   // partial codes: "ملک-بلوک-محله" or "ملک-بلوک" (either order)
+    if (!ids) {                                   // partial codes: "ملک-بلوک-محله", "ملک-بلوک" (either order) or a plot number alone
       const parts = text.split('-');
       const hit = [];
       plots.forEach(({ props }, id) => {
         if (parts.length === 3 && props.n === parts[0] && props.b === parts[1] && props.z === parts[2]) hit.push(id);
         else if (parts.length === 2 && ((props.n === parts[0] && props.b === parts[1]) || (props.b === parts[0] && props.n === parts[1]))) hit.push(id);
+        else if (parts.length === 1 && props.n === parts[0] && !blockLayers.has(text)) hit.push(id);
       });
       ids = hit.length ? hit : null;
     }
     if (ids) {
-      const parcel = await select(ids[0], true);
-      announce(parcel);
-      if (ids.length > 1) notice(`${fa(ids.length)} قطعه با این شماره پیدا شد؛ اولی نشان داده شد. کد کامل را بنویسید.`);
+      hideResults();
+      if (ids.length > 1) { showResults(ids, text); return; }
+      announce(await select(ids[0], true));
       return;
     }
     const block = blockLayers.get(text);
-    if (block) { map.fitBounds(block.getBounds().pad(0.1)); return; }
+    if (block) { hideResults(); map.fitBounds(block.getBounds().pad(0.1)); return; }
+    hideResults();
     $('vm-search-input').setCustomValidity('پیدا نشد');
     $('vm-search-input').reportValidity();
     setTimeout(() => $('vm-search-input').setCustomValidity(''), 1500);
