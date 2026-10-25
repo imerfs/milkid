@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import datetime
+from main.office.visits import panel_context
 import json
 
 from main.models import (
@@ -134,6 +135,7 @@ def dehyari_expert_dashboard(request):
         'unread_notifications': unread_notifications,
         'user_village': user_village or 'حوزه دهیاری مرکزی',
         'gis_maps': maps_for(request.user),     # village maps this user may open (technical expert / admin)
+        **panel_context(request),
     }
 
     return render(request, 'main/dashboards/dehyari_expert_dashboard.html', context)

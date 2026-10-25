@@ -67,6 +67,11 @@
                         <div class="flex items-center"><i class="fas fa-envelope ml-3"></i>پیام‌ها و اطلاعیه‌ها</div>
                         {% if stats.unread_notifications %}<span class="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ stats.unread_notifications }}</span>{% endif %}
                     </a>
+                    {% if visits.mode %}
+                    <a href="?tab=visits" data-tab="visits" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('visits', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-calendar-check ml-3"></i>گرفتن وقت ملاقات</div>
+                    </a>
+                    {% endif %}
                     <a href="?tab=ads" data-tab="ads" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('ads', this); return false;">
                         <div class="flex items-center"><i class="fas fa-home ml-3"></i>آگهی‌های ملک من</div>
                     </a>
@@ -204,6 +209,10 @@
                             <button type="button" class="seg-btn bg-white px-4 py-2 rounded-lg shadow text-sm" data-seg="{% url 'main:announcement_list' %}">اطلاعیه‌ها</button>
                         </div>
                         <iframe class="panel-frame" title="پیام‌ها و اطلاعیه‌ها" data-frame-src="{% url 'main:messenger' %}?embed=1"></iframe>
+                    </div>
+
+                    <div id="visits-tab" class="tab-content">
+                        {% include 'partials/visits_panel.html' %}
                     </div>
 
                     <div id="ads-tab" class="tab-content">

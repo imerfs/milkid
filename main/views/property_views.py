@@ -49,6 +49,7 @@ SERVICE_OPTIONS = (
 @login_required
 def owner_dashboard(request):
     """Citizen panel: dashboard plus every citizen section (requests, payments, messages, ads, profile) in place"""
+    from main.office.visits import panel_context
     from main.views.citizen_panel import PANEL_TABS
     mine = ServiceRequest.objects.filter(user=request.user)
     unread = Notification.objects.filter(user=request.user, is_read=False)
@@ -65,6 +66,7 @@ def owner_dashboard(request):
         'stats': stats,
         'service_options': [(reverse('main:' + name), icon, title, hint) for name, icon, title, hint in SERVICE_OPTIONS],
         'initial_tab': tab if (tab := request.GET.get('tab')) in PANEL_TABS else 'dashboard',
+        **panel_context(request),
     }
     return render(request, 'main/dashboards/Owner.html', context)
 

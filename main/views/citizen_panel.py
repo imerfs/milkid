@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from main.access import role_of
 
-PANEL_TABS = ('dashboard', 'new-request', 'tracking', 'documents', 'payments', 'messages', 'ads', 'profile')
+PANEL_TABS = ('dashboard', 'new-request', 'tracking', 'documents', 'payments', 'messages', 'ads', 'visits', 'profile')
 CITIZEN_ROLES = ('citizen', 'owner', 'resident')
 
 

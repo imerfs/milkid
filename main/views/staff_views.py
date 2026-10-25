@@ -85,6 +85,7 @@ def staff_dashboard(request):
 @policy_required('staff.inspector')
 def inspector_dashboard(request):
     """Dashboard for inspector (ناظر فنی)"""
+    from main.office.visits import panel_context
     user_profile = request.user.profile
     
     # Get inspection assignments for this inspector
@@ -124,6 +125,8 @@ def inspector_dashboard(request):
         'my_reports': my_reports,
         'recent_notifications': recent_notifications,
         'stats': stats,
+        'initial_tab': tab if (tab := request.GET.get('tab')) in ('dashboard', 'visits') else 'dashboard',
+        **panel_context(request),
     }
     return render(request, 'main/dashboards/Technical supervisor.html', context)
 

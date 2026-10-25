@@ -1,4 +1,9 @@
-"""Appointments (وقت‌دهی): weekly office hours, booking, decisions."""
+"""Appointments (وقت‌دهی): weekly office hours, booking, decisions.
+
+Only citizens book. They book the technical staff (the dehyari/shahrdari expert and the technical inspector) and the
+village council of their home village or of the dehyari/shahrdari they switched to. Everything is shown inside the panel
+of each role (see ``main/office/visits.py``), never on a page of its own.
+"""
 from datetime import datetime, time, timedelta
 
 import jdatetime
@@ -9,10 +14,10 @@ from django.utils import timezone
 from main.models import Appointment, AvailabilityRule
 from main.notifications import notify
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound, RateLimited
-from main.office.letters import STAFF_ROLES, village_of
-from main.office.roles import is_admin
+from main.roles import CITIZEN_ROLES
 
-PROVIDER_ROLES = STAFF_ROLES
+PROVIDER_ROLES = ('engineer', 'inspector', 'council')
+CLIENT_ROLES = CITIZEN_ROLES
 WEEKDAYS = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه']
 HORIZON_DAYS = 14
 LEAD = timedelta(hours=1)
@@ -30,12 +35,28 @@ def jalali_label(date):
     return f'{WEEKDAYS[weekday_of(date)]} {j.day} {j.j_months_fa[j.month - 1]}'
 
 
+def role_of(user):
+    return getattr(getattr(user, 'profile', None), 'role', None)
+
+
+def villages_of(user):
+    """Villages whose staff a citizen may book: the home village and the one switched to."""
+    from main.office.directory import effective_org, village_of
+    villages = {village_of(user)}
+    chosen = effective_org(user)
+    if chosen is not None:
+        villages.add(chosen.city_village)
+    villages.discard('')
+    return villages
+
+
 def providers_for(user):
+    """Technical staff and council members a citizen may book (nobody else books, so nobody else gets a list)."""
     people = User.objects.filter(is_active=True, profile__is_active=True, profile__role__in=PROVIDER_ROLES) \
         .exclude(pk=user.pk).select_related('profile')
-    if is_admin(user):
-        return people
-    return people.filter(profile__city_village=village_of(user))
+    if role_of(user) not in CLIENT_ROLES:
+        return people.none()
+    return people.filter(profile__city_village__in=villages_of(user))
 
 
 def _aware(naive):
@@ -89,8 +110,8 @@ def parse_date(raw, default=None):
 
 def book(client, provider_id, start_raw, subject, notes=''):
     """Returns (appointment, created)."""
-    if str(provider_id) == str(client.id):
-        raise Invalid('نمی‌توانید از خودتان وقت بگیرید.')
+    if role_of(client) not in CLIENT_ROLES:
+        raise Forbidden('فقط شهروندان می‌توانند وقت بگیرند.')
     provider = providers_for(client).filter(pk=provider_id).first()
     if provider is None:
         raise NotFound('کارمند مورد نظر پیدا نشد.')
@@ -164,13 +185,15 @@ def decide(actor, appointment_id, action):
 
 def my_appointments(user):
     now = timezone.now()
-    as_client = Appointment.objects.filter(client=user).select_related('provider', 'provider__profile')
+    role = role_of(user)
+    as_client = Appointment.objects.filter(client=user).select_related('provider', 'provider__profile') \
+        if role in CLIENT_ROLES else Appointment.objects.none()
     as_provider = Appointment.objects.filter(provider=user).select_related('client', 'client__profile') \
-        if user.profile.role in PROVIDER_ROLES else Appointment.objects.none()
+        if role in PROVIDER_ROLES else Appointment.objects.none()
     return {
         'upcoming': as_client.filter(end__gte=now).order_by('start'), 'past': as_client.filter(end__lt=now).order_by('-start')[:20],
         'incoming': as_provider.filter(end__gte=now).order_by('start'), 'incoming_past': as_provider.filter(end__lt=now).order_by('-start')[:20],
-        'is_provider': user.profile.role in PROVIDER_ROLES,
+        'is_provider': role in PROVIDER_ROLES,
     }
 
 
@@ -195,6 +218,8 @@ def parse_rules(post):
 
 
 def set_rules(provider, post):
+    if role_of(provider) not in PROVIDER_ROLES:
+        raise Forbidden('فقط کارشناس فنی و اعضای شورا ساعت کاری دارند.')
     rules = parse_rules(post)
     with transaction.atomic():
         AvailabilityRule.objects.filter(provider=provider).delete()

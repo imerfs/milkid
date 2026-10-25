@@ -215,6 +215,10 @@
                     <div class="flex items-center"><i class="fas fa-envelope ml-3"></i>پیام‌ها</div>
                     {% if stats.unread_messages > 0 %}<span class="bg-red-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center notification-badge">{{ stats.unread_messages }}</span>{% endif %}
                 </a>
+                <a href="#" data-tab="visits" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('visits', this); return false;">
+                    <div class="flex items-center"><i class="fas fa-calendar-check ml-3"></i>وقت‌های ملاقات</div>
+                    {% if visits.pending %}<span class="bg-amber-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">{{ visits.pending }}</span>{% endif %}
+                </a>
                 <a href="#" data-tab="members" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('members', this); return false;">
                     <div class="flex items-center"><i class="fas fa-users ml-3"></i>اعضای شورا</div>
                 </a>
@@ -784,6 +788,10 @@
                 </div>
 
                 <!-- Members Tab -->
+                <div id="visits-tab" class="tab-content">
+                    {% include 'partials/visits_panel.html' %}
+                </div>
+
                 <div id="members-tab" class="tab-content">
                     <div class="mb-8"><h2 class="text-3xl font-bold text-gray-800">اعضای شورا و دهیار</h2></div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
