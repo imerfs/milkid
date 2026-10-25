@@ -485,12 +485,14 @@
                             پیام‌ها{% if office.messages_unread %} <span class="badge bg-danger">{{ office.messages_unread }}</span>{% endif %}
                         </a>
                     </li>
+                    {% if office.has_visits %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:appointments' %}">
+                        <a class="nav-link" href="{{ office.visits_url }}">
                             <i class="fas fa-calendar-check ms-1"></i>
                             وقت‌ها{% if office.appointments_pending %} <span class="badge bg-warning text-dark">{{ office.appointments_pending }}</span>{% endif %}
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'main:messaging_dashboard' %}">
                             <i class="fas fa-comments ms-1"></i>

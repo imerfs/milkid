@@ -17,8 +17,9 @@ Scope agreed from the request; assumptions are marked **(A)** so they can be cor
 - Only sender and recipients can open a letter; confidential letters are never listed to anyone else, not even in counts.
 
 ## 3. Appointments (وقت‌دهی)
-- Staff roles (dehyari, engineer, inspector, accountant, council) set weekly availability (weekday, from, to, slot length).
-- **(A)** Any logged-in user of the same village can book a free slot with a staff member; every user has "my appointments" (as client and, for staff, as provider).
+- **Who:** only citizens (citizen / owner / resident) book. They book the technical staff (engineer = the dehyari/shahrdari expert, inspector) and the council members of their home village or of the dehyari/shahrdari they switched to. Nobody else books, and the dehyari, accountant and clerk neither receive nor book.
+- Those three roles set weekly availability (weekday, from, to, slot length).
+- **Where:** inside each panel, never on a page of its own (`main/office/visits.py` + `partials/visits_panel.html`): a "گرفتن وقت ملاقات" tab in the citizen panel, a "وقت‌های ملاقات" tab in the inspector and council panels, a collapsible block in the expert panel. The actions in `appointment_views.py` redirect back to the panel; the old page URLs redirect there too.
 - Two bookings can never share a slot (database constraint). Booking the same slot again by the same user returns the existing booking.
 - Provider confirms / rejects / completes; either side cancels. Every change notifies the other person.
 - Limits: 5 open appointments per user, slots start at least 1 hour from now, bookable 14 days ahead.

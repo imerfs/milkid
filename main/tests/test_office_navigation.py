@@ -1,8 +1,10 @@
 import uuid
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from main.office.visits import panel_url
 from main.tests.helpers import client_for, make_municipality, make_user
 
 VILLAGE = 'روستای الف'
@@ -21,7 +23,7 @@ class Navigation(TestCase):
     def test_navbar_links_to_letters_and_appointments(self):
         page = self.get(self.citizen, 'my_requests')
         self.assertIn(reverse('main:letters_inbox'), page)
-        self.assertIn(reverse('main:appointments'), page)
+        self.assertIn(panel_url(User.objects.get(pk=self.citizen.pk)), page)      # the section inside the citizen's own panel
         self.assertNotIn(reverse('main:role_grants'), page)       # only for the dehyari/admin
 
     def test_only_the_dehyari_sees_the_roles_link(self):

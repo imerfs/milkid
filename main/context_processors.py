@@ -23,6 +23,7 @@ def office(request):
         return {}
     from main.models import Appointment
     from main.office.appointments import PROVIDER_ROLES
+    from main.office.visits import has_visits, panel_url
     from main.office.messenger import unread_total
     role = getattr(getattr(user, 'profile', None), 'role', None)
     try:
@@ -31,5 +32,6 @@ def office(request):
         unread = unread_total(user)
     except DatabaseError:        # e.g. migrations not applied yet: the counters are optional, the page is not
         pending = unread = 0
-    return {'office': {'letters_unread': unread, 'messages_unread': unread, 'appointments_pending': pending,
+    return {'office': {'has_visits': has_visits(user), 'visits_url': panel_url(user),
+                       'letters_unread': unread, 'messages_unread': unread, 'appointments_pending': pending,
                        'can_grant_roles': role == 'dehyari' or user.is_superuser or role == 'admin'}}

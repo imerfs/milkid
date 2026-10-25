@@ -1,0 +1,154 @@
+{% load static jalali_tags %}
+{% comment %}
+The appointment section (وقت‌گیری) shown inside the panel of a citizen, the technical expert / inspector and a council member.
+Needs the `visits` context from main.office.visits.panel_context. Actions post to main:appointment_* and come back to the panel.
+{% endcomment %}
+{% if visits.mode %}
+<link rel="stylesheet" href="{% static 'css/visits.css' %}">
+<section class="vp" aria-labelledby="vp-title">
+    {% if messages %}
+    <div class="vp-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>
+    {% endif %}
+
+    <header class="vp-head">
+        <span class="vp-badge"><i class="fas fa-calendar-check" aria-hidden="true"></i></span>
+        <div>
+            <h2 id="vp-title">{% if visits.mode == 'citizen' %}گرفتن وقت ملاقات{% else %}وقت‌های ملاقات{% endif %}</h2>
+            <p>{% if visits.mode == 'citizen' %}از کارشناس فنی دهیاری/شهرداری یا از اعضای شورا وقت بگیرید و وضعیت وقت‌هایتان را همین‌جا ببینید.{% else %}درخواست‌های شهروندان را تایید یا رد کنید و ساعت‌های حضورتان را تعیین کنید.{% endif %}</p>
+        </div>
+    </header>
+
+{% if visits.mode == 'citizen' %}
+    <div class="vp-grid">
+        <div class="vp-main">
+            <section class="vp-card" aria-labelledby="vp-s1">
+                <h3 id="vp-s1"><span class="vp-step">۱</span>با چه کسی؟</h3>
+                {% if visits.cards %}
+                <ul class="vp-people">
+                    {% for c in visits.cards %}
+                    <li>
+                        <a href="{{ c.href }}" class="vp-person{% if c.on %} is-on{% endif %}"{% if c.on %} aria-current="true"{% endif %}>
+                            <span class="vp-av">{{ c.name|slice:":1" }}</span>
+                            <span class="vp-who"><b>{{ c.name }}</b><small>{{ c.title }}{% if c.org %} · {{ c.org }}{% endif %}</small></span>
+                            {% if c.has_hours %}<em class="vp-tag ok">دارای وقت</em>{% else %}<em class="vp-tag">بدون ساعت حضور</em>{% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="vp-empty"><i class="fas fa-user-slash" aria-hidden="true"></i>در دهیاری یا شهرداری شما هنوز کارشناس فنی یا عضو شورایی ثبت نشده است. از بخش «ثبت درخواست جدید» می‌توانید دهیاری/شهرداری دیگری را انتخاب کنید.</p>
+                {% endif %}
+            </section>
+
+            {% if visits.chosen %}
+            <section class="vp-card" id="vp-book" aria-labelledby="vp-s2">
+                <h3 id="vp-s2"><span class="vp-step">۲</span>روز و ساعت با {{ visits.chosen.get_full_name|default:visits.chosen.username }}</h3>
+                <div class="vp-days" role="list">
+                    {% for d in visits.strip %}<a role="listitem" href="{{ d.href }}" class="{% if d.on %}is-on{% endif %}{% if not d.free %} is-empty{% endif %}"{% if not d.free %} aria-disabled="true"{% endif %}>{{ d.label|persian_numbers }}<small>{% if d.free %}{{ d.free|persian_numbers }} وقت{% else %}پر{% endif %}</small></a>{% endfor %}
+                </div>
+                <p class="vp-day-name"><i class="fas fa-clock" aria-hidden="true"></i>{{ visits.date_label|persian_numbers }}</p>
+                {% if visits.slots %}
+                <form method="post" action="{{ visits.book_url }}" class="vp-form" data-once>{% csrf_token %}
+                    <fieldset class="vp-slots">
+                        <legend class="vp-sr">زمان آزاد</legend>
+                        {% for s in visits.slots %}<label><input type="radio" name="start" value="{{ s|date:'Y-m-d\TH:i' }}" required {% if visits.form.start == s|date:'Y-m-d\TH:i' %}checked{% endif %}><span>{{ s|time:"H:i"|persian_numbers }}</span></label>{% endfor %}
+                    </fieldset>
+                    <label class="vp-field"><span>موضوع ملاقات</span><input type="text" name="subject" maxlength="200" required value="{{ visits.form.subject }}"></label>
+                    <label class="vp-field"><span>توضیحات (اختیاری)</span><textarea name="notes" rows="3" maxlength="1000">{{ visits.form.notes }}</textarea></label>
+                    <button type="submit" class="vp-btn vp-btn-main"><i class="fas fa-calendar-plus" aria-hidden="true"></i>ثبت درخواست وقت</button>
+                </form>
+                {% else %}
+                <p class="vp-empty"><i class="fas fa-calendar-xmark" aria-hidden="true"></i>در این روز وقت آزادی نیست؛ روز دیگری را انتخاب کنید.</p>
+                {% endif %}
+            </section>
+            {% endif %}
+        </div>
+
+        <aside class="vp-side">
+            <section class="vp-card" aria-labelledby="vp-mine">
+                <h3 id="vp-mine"><i class="fas fa-list-check" aria-hidden="true"></i>وقت‌های من</h3>
+                {% for a in visits.upcoming %}
+                <div class="vp-row">
+                    <div class="vp-what"><b>{{ a.subject }}</b><small>{{ a.provider.get_full_name|default:a.provider.username }} · {{ a.provider.profile.get_role_display }}</small><small><i class="fas fa-calendar-day" aria-hidden="true"></i>{{ a.start|jalali_datetime|persian_numbers }}</small></div>
+                    <div class="vp-acts">
+                        <em class="vp-tag {% if a.status == 'confirmed' %}ok{% elif a.status == 'pending' %}warn{% endif %}">{{ a.get_status_display }}</em>
+                        {% if a.status == 'pending' or a.status == 'confirmed' %}
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once data-confirm="این وقت لغو شود؟">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="vp-btn vp-btn-soft" type="submit">لغو</button></form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="vp-empty"><i class="fas fa-calendar-plus" aria-hidden="true"></i>وقتی ندارید. یک نفر را انتخاب کنید تا وقت بگیرید.</p>
+                {% endfor %}
+                {% if visits.past %}
+                <p class="vp-sub">وقت‌های گذشته</p>
+                {% for a in visits.past %}
+                <p class="vp-past"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i>{{ a.subject }} — {{ a.provider.get_full_name|default:a.provider.username }} · {{ a.start|jalali_date|persian_numbers }} · {{ a.get_status_display }}</p>
+                {% endfor %}
+                {% endif %}
+            </section>
+        </aside>
+    </div>
+
+{% else %}
+    <div class="vp-grid">
+        <div class="vp-main">
+            <section class="vp-card" aria-labelledby="vp-in">
+                <h3 id="vp-in"><i class="fas fa-inbox" aria-hidden="true"></i>درخواست‌های دریافتی{% if visits.pending %} <em class="vp-tag warn">{{ visits.pending|persian_numbers }} منتظر تصمیم</em>{% endif %}</h3>
+                {% for a in visits.incoming %}
+                <div class="vp-row">
+                    <div class="vp-what">
+                        <b>{{ a.subject }}</b>
+                        <small><i class="fas fa-user" aria-hidden="true"></i>{{ a.client.get_full_name|default:a.client.username }} · <i class="fas fa-calendar-day" aria-hidden="true"></i>{{ a.start|jalali_datetime|persian_numbers }}</small>
+                        {% if a.notes %}<small>{{ a.notes }}</small>{% endif %}
+                    </div>
+                    <div class="vp-acts">
+                        <em class="vp-tag {% if a.status == 'confirmed' %}ok{% elif a.status == 'pending' %}warn{% endif %}">{{ a.get_status_display }}</em>
+                        {% if a.status == 'pending' %}
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once>{% csrf_token %}<input type="hidden" name="action" value="confirm"><button class="vp-btn vp-btn-main" type="submit"><i class="fas fa-check" aria-hidden="true"></i>تایید</button></form>
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once data-confirm="این درخواست رد شود؟">{% csrf_token %}<input type="hidden" name="action" value="reject"><button class="vp-btn vp-btn-soft" type="submit">رد</button></form>
+                        {% elif a.status == 'confirmed' %}
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once>{% csrf_token %}<input type="hidden" name="action" value="complete"><button class="vp-btn vp-btn-soft" type="submit">انجام شد</button></form>
+                        <form method="post" action="{% url 'main:appointment_action' a.id %}" data-once data-confirm="این وقت لغو شود؟">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="vp-btn vp-btn-soft" type="submit">لغو</button></form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="vp-empty"><i class="fas fa-calendar-xmark" aria-hidden="true"></i>درخواست بازی ندارید. ساعت حضور خود را تنظیم کنید تا شهروندان بتوانند وقت بگیرند.</p>
+                {% endfor %}
+                {% if visits.incoming_past %}
+                <p class="vp-sub">ملاقات‌های گذشته</p>
+                {% for a in visits.incoming_past %}
+                <p class="vp-past"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i>{{ a.subject }} — {{ a.client.get_full_name|default:a.client.username }} · {{ a.start|jalali_date|persian_numbers }} · {{ a.get_status_display }}</p>
+                {% endfor %}
+                {% endif %}
+            </section>
+        </div>
+
+        <aside class="vp-side">
+            <section class="vp-card" id="vp-hours" aria-labelledby="vp-h">
+                <h3 id="vp-h"><i class="fas fa-clock" aria-hidden="true"></i>ساعت‌های حضور من</h3>
+                <form method="post" action="{% url 'main:availability' %}" class="vp-hours" data-once>{% csrf_token %}
+                    {% for row in visits.hours %}
+                    <div class="vp-hour">
+                        <label class="vp-check"><input type="checkbox" name="d{{ row.index }}_on" {% if row.rule %}checked{% endif %}><span>{{ row.name }}</span></label>
+                        <input type="time" name="d{{ row.index }}_from" value="{% if row.rule %}{{ row.rule.start_time|time:'H:i' }}{% else %}08:00{% endif %}" aria-label="از ساعت {{ row.name }}">
+                        <input type="time" name="d{{ row.index }}_to" value="{% if row.rule %}{{ row.rule.end_time|time:'H:i' }}{% else %}13:00{% endif %}" aria-label="تا ساعت {{ row.name }}">
+                        <select name="d{{ row.index }}_len" aria-label="مدت هر وقت {{ row.name }}">
+                            <option value="15" {% if row.rule.slot_minutes == 15 %}selected{% endif %}>۱۵ دقیقه</option>
+                            <option value="20" {% if row.rule.slot_minutes == 20 %}selected{% endif %}>۲۰ دقیقه</option>
+                            <option value="30" {% if not row.rule or row.rule.slot_minutes == 30 %}selected{% endif %}>۳۰ دقیقه</option>
+                            <option value="45" {% if row.rule.slot_minutes == 45 %}selected{% endif %}>۴۵ دقیقه</option>
+                            <option value="60" {% if row.rule.slot_minutes == 60 %}selected{% endif %}>۶۰ دقیقه</option>
+                        </select>
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="vp-btn vp-btn-main"><i class="fas fa-check" aria-hidden="true"></i>ذخیره‌ی ساعت‌ها</button>
+                </form>
+            </section>
+        </aside>
+    </div>
+{% endif %}
+</section>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endif %}

@@ -30,7 +30,4 @@ urlpatterns = [
     path('my-municipality/switch/', views.switch_municipality, name='switch_municipality'),
     path('dashboard/clerk/', views.clerk_dashboard, name='clerk_dashboard'),
     path('dashboard/clerk/remind/<int:request_id>/', views.clerk_remind, name='clerk_remind'),
-    path('dashboard/clerk/visit/<int:appointment_id>/', views.clerk_visit_action, name='clerk_visit_action'),
-    path('dashboard/clerk/hours/', views.clerk_hours, name='clerk_hours'),
-    path('dashboard/clerk/book/', views.clerk_book, name='clerk_book'),
 ]

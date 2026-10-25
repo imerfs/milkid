@@ -25,9 +25,7 @@ POLICY = {
     'council.view': {'council', 'dehyari'},
     # municipality management ("mayor_*" views)
     'mayor.manage': {'dehyari'},
-    # office hours / appointments: every staff role can receive visitors
-    'office.provide': {'dehyari', 'engineer', 'inspector', 'accountant', 'clerk', 'council'},
-    # the administrative expert's desk (letters, visitors, follow-ups of the village)
+    # the administrative expert's desk (letters and follow-ups of the village)
     'clerk.desk': {'clerk', 'dehyari'},
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed
     'admin.manage': set(),

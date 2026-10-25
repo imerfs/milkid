@@ -21,6 +21,7 @@ from .common import role_required
 from .council_panel import (village_q, calendar_context, colleagues, conversation_context, meetings_for, poll_cards, polls_for,
                             panel_url)
 from main.access import policy_required
+from main.office.visits import panel_context
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
     start_conversation, create_announcement, announcement_list, 
@@ -36,7 +37,7 @@ from main.models import (UserProfile, ServiceRequest, Notification, RequestDocum
                    Vote, CouncilComment, PropertyAdvertisementEditLog)
 
 
-PANEL_TABS = {'dashboard', 'voting', 'financial', 'deeds', 'history', 'calendar', 'messages', 'members', 'settings'}
+PANEL_TABS = {'dashboard', 'voting', 'financial', 'deeds', 'history', 'calendar', 'messages', 'members', 'visits', 'settings'}
 
 
 @policy_required('council.view')
@@ -118,6 +119,7 @@ def council_dashboard(request):
         'members': colleagues(request.user).select_related('profile'),
         'initial_tab': tab if (tab := request.GET.get('tab')) in PANEL_TABS else 'dashboard',
         **conversation_context(request.user, request.GET.get('conv')),
+        **panel_context(request),
     }
     return render(request, 'main/dashboards/council.html', context)
 

@@ -236,6 +236,17 @@
                     </a>
                     <a
                         href="javascript:void(0)"
+                        data-tab="visits"
+                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        onclick="showTab('visits', this, event)"
+                    >
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-check ml-3"></i>وقت‌های ملاقات
+                        </div>
+                        {% if visits.pending %}<span class="bg-amber-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">{{ visits.pending }}</span>{% endif %}
+                    </a>
+                    <a
+                        href="javascript:void(0)"
                         class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('reports', this, event)"
                     >
@@ -1676,6 +1687,10 @@
                     </div>
                     
                     <!-- Reports Tab -->
+                    <div id="visits-tab" class="tab-content">
+                        {% include 'partials/visits_panel.html' %}
+                    </div>
+
                     <div id="reports-tab" class="tab-content">
                         <h2 class="text-3xl font-bold text-gray-800 mb-8">
                             گزارش‌های آماری و تحلیلی
@@ -1909,6 +1924,12 @@
                 overlay.classList.toggle("hidden");
                 icon.classList.toggle("fa-bars");
                 icon.classList.toggle("fa-times");
+            }
+            // Opened from a link to the appointment section (after an action there, or a deep link)
+            if ("{{ initial_tab }}" === "visits") {
+                document.querySelectorAll(".main-content > div").forEach((el) => el.classList.remove("active"));
+                document.getElementById("visits-tab").classList.add("active");
+                document.querySelectorAll(".sidebar-link").forEach((link) => link.classList.toggle("active", link.dataset.tab === "visits"));
             }
             // Set current date
             document.getElementById("current-date").textContent =

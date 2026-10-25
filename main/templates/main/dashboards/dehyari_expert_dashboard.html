@@ -112,6 +112,14 @@
                         <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-indigo-800 text-white font-mono">{{ stats.total_requests }}</span>
                     </a>
 
+                    {% if visits.mode %}
+                    <a href="#visits-section" onclick="var d=document.getElementById('visits-section'); if (d) d.open = true;" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-calendar-check text-indigo-400 text-sm"></i>
+                        <span>وقت‌های ملاقات</span>
+                        {% if visits.pending %}<span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 font-mono">{{ visits.pending }}</span>{% endif %}
+                    </a>
+                    {% endif %}
+
                     <a href="javascript:void(0)" onclick="filterByStage('expert_review')" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
                         <i class="fas fa-clock text-amber-400 text-sm"></i>
                         <span>بررسی کارشناس (جدید)</span>
@@ -412,6 +420,18 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Appointments: citizens book the technical expert; opens by itself when there is something to decide or after an action -->
+                {% if visits.mode %}
+                <details id="visits-section" class="bg-white rounded-2xl border border-slate-200/80 shadow-xs mb-6" {% if visits.pending %}open{% endif %}>
+                    <summary class="p-5 cursor-pointer flex items-center gap-3 font-extrabold text-slate-800 text-base">
+                        <i class="fas fa-calendar-check text-indigo-500"></i>وقت‌های ملاقات
+                        {% if visits.pending %}<span class="px-2 py-0.5 rounded-full text-[11px] bg-amber-100 text-amber-800 font-semibold">{{ visits.pending }} درخواست منتظر تصمیم</span>{% endif %}
+                    </summary>
+                    <div class="p-5 pt-0">{% include 'partials/visits_panel.html' %}</div>
+                </details>
+                <script>(function () { var d = document.getElementById('visits-section'); if (d && location.hash === '#visits-section') { d.open = true; d.scrollIntoView(); } })();</script>
+                {% endif %}
 
                 <!-- Main Requests Management Table -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden" id="requests-section">
