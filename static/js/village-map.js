@@ -781,6 +781,13 @@
     const head = document.createElement('p');
     head.textContent = `${fa(ids.length)} قطعه با «${text}» پیدا شد؛ یکی را انتخاب کنید:`;
     box.appendChild(head);
+    if (blockLayers.has(text)) {
+      const blockBtn = document.createElement('button');
+      blockBtn.type = 'button';
+      blockBtn.textContent = `بلوک ${text} (نمایش کل بلوک روی نقشه)`;
+      blockBtn.addEventListener('click', () => { hideResults(); map.fitBounds(blockLayers.get(text).getBounds().pad(0.1)); });
+      box.appendChild(blockBtn);
+    }
     ids.slice(0, 30).forEach((id) => {
       const { props } = plots.get(id);
       const btn = document.createElement('button');
@@ -792,7 +799,11 @@
     });
     box.hidden = false;
   }
-  $('vm-search-input').addEventListener('input', hideResults);
+  // Picking a suggestion from the browser's list only fills the box (Enter never reaches the form): search right away
+  $('vm-search-input').addEventListener('input', (event) => {
+    hideResults();
+    if (event.inputType === 'insertReplacementText' || (!event.inputType && byCode.has($('vm-search-input').value))) $('vm-search').requestSubmit();
+  });
 
   $('vm-search').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -807,10 +818,22 @@
       if (a > 20 && a < 45 && b > 40 && b < 70) return goTo(a, b, `${a}, ${b}`);
       if (b > 20 && b < 45 && a > 40 && a < 70) return goTo(b, a, `${b}, ${a}`);
     }
-    const lotMatch = raw.match(/^(?:t|lot|ت|تفکیکی)\s*[-:]?\s*(\d+)$/i);
-    if (lotMatch) {
-      const hit = [...plots.entries()].find(([, { props }]) => props.lt === lotMatch[1]);
-      if (hit) { announce(await select(hit[0], true)); return; }
+    // words in front of the numbers: "قطعه 25 بلوک 182 محله 2", "ملک 25", "قطعه تفکیکی 432", "t432"
+    const labelled = {};
+    raw.replace(/(قطعه\s*ی?\s*تفکیکی|تفکیکی|lot|t|قطعه|ملک|پلاک|بلوک|block|محله)\s*[-:]?\s*(\d+)/gi, (_, word, num) => {
+      const w = word.toLowerCase().replace(/\s+/g, '');
+      const key = /تفکیکی|^lot$|^t$/.test(w) ? 'lt' : /بلوک|block/.test(w) ? 'b' : w === 'محله' ? 'z' : 'n';
+      labelled[key] = num;
+      return '';
+    });
+    const wanted = Object.entries(labelled);
+    if (wanted.length) {
+      const hit = [];
+      plots.forEach(({ props }, id) => { if (wanted.every(([key, value]) => props[key] === value)) hit.push(id); });
+      hideResults();
+      if (hit.length === 1) { announce(await select(hit[0], true)); return; }
+      if (hit.length) { showResults(hit, raw); return; }
+      if (labelled.b && wanted.length === 1 && blockLayers.has(labelled.b)) { map.fitBounds(blockLayers.get(labelled.b).getBounds().pad(0.1)); return; }
     }
     // the code as people write it: any dash or slash, spaces, a "کد" in front (Persian/Arabic digits are already converted)
     const text = raw.replace(/^کد(?:\s*نوسازی)?\s*:?\s*/, '').replace(/[\s_/\\.\-\u2010-\u2015\u2212\u0640\u066b]+/g, '-').replace(/^-+|-+$/g, '');
@@ -821,13 +844,14 @@
       plots.forEach(({ props }, id) => {
         if (parts.length === 3 && props.n === parts[0] && props.b === parts[1] && props.z === parts[2]) hit.push(id);
         else if (parts.length === 2 && ((props.n === parts[0] && props.b === parts[1]) || (props.b === parts[0] && props.n === parts[1]))) hit.push(id);
-        else if (parts.length === 1 && props.n === parts[0] && !blockLayers.has(text)) hit.push(id);
+        else if (parts.length === 1 && (props.n === parts[0] || props.lt === parts[0])) hit.push(id);
       });
       ids = hit.length ? hit : null;
     }
     if (ids) {
       hideResults();
-      if (ids.length > 1) { showResults(ids, text); return; }
+      // a lone number can be a plot number and a block number at once: offer the block too
+      if (ids.length > 1 || (!byCode.has(text) && blockLayers.has(text))) { showResults(ids, text); return; }
       announce(await select(ids[0], true));
       return;
     }
