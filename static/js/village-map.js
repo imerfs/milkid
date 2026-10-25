@@ -799,7 +799,11 @@
     });
     box.hidden = false;
   }
-  $('vm-search-input').addEventListener('input', hideResults);
+  // Picking a suggestion from the browser's list only fills the box (Enter never reaches the form): search right away
+  $('vm-search-input').addEventListener('input', (event) => {
+    hideResults();
+    if (event.inputType === 'insertReplacementText' || (!event.inputType && byCode.has($('vm-search-input').value))) $('vm-search').requestSubmit();
+  });
 
   $('vm-search').addEventListener('submit', async (event) => {
     event.preventDefault();

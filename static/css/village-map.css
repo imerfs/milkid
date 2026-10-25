@@ -194,3 +194,7 @@ html, body { height: 100%; margin: 0; }
 .vm-results button { display: block; width: 100%; text-align: start; padding: 7px 10px; margin: 0 0 4px; border: 1px solid var(--vm-line); border-radius: 8px;
                      background: transparent; color: inherit; font: inherit; font-size: 13.5px; cursor: pointer; direction: rtl; }
 .vm-results button:hover, .vm-results button:focus-visible { border-color: var(--vm-brand); outline: none; }
+/* the magnifier is the search button */
+.vm-go { position: absolute; inset-inline-start: 3px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--vm-muted); cursor: pointer; z-index: 1; }
+.vm-go:hover { background: var(--vm-line); color: inherit; }
+.vm-search .vm-go i { position: static; transform: none; pointer-events: none; }
