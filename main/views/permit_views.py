@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permits
+from main.office import permit_form, permit_step2, permits
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
 
@@ -154,4 +154,67 @@ def permit_supplement(request, file_id):
         messages.success(request, 'مدارک فرستاده شد و پرونده دوباره بررسی می‌شود.')
     except OfficeError as exc:
         messages.error(request, str(exc))
+    return redirect(_file_url(permit, bool(request.POST.get('embed'))))
+
+
+@login_required
+def permit_forms(request, file_id):
+    """Step 2: form 1 (the staff fill it), form 2 (the owner fills it), the plot map; each is drawn over the blank form."""
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    if permit.stage_no < 2:
+        messages.error(request, 'فرم‌ها پس از افتتاح پرونده در دسترس‌اند.')
+        return redirect(_file_url(permit, bool(request.GET.get('embed'))))
+    mine = permit.request.user_id == request.user.id
+    open_stage = permit.stage_no == 2 and not permit.delivered_at
+    staff = permits.may_open(request.user, permit)
+    payload = permit_step2.payload(permit)
+    return render(request, 'main/permits/forms.html', {
+        'permit': permit, 'payload': payload, 'f1': payload['form1'], 'f2': payload['form2'], 'embed': bool(request.GET.get('embed')),
+        'can_form1': staff and open_stage, 'can_form2': mine and open_stage, 'can_deliver': staff and open_stage,
+        'sides': [(k, label) for k, label in (('north', 'شمالاً'), ('south', 'جنوباً'), ('west', 'غرباً'), ('east', 'شرقاً'))],
+        'purposes': permit_step2.PURPOSES.items(),
+    })
+
+
+def _step2_action(request, file_id, action, ok):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    target = reverse('main:permit_forms', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else '')
+    return redirect(target)
+
+
+@login_required
+@require_POST
+def permit_form1_save(request, file_id):
+    return _step2_action(request, file_id, lambda p: permit_step2.save_form1(request.user, p, request.POST), 'فرم ۱ ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_form2_save(request, file_id):
+    return _step2_action(request, file_id, lambda p: permit_step2.save_form2(request.user, p, request.POST), 'فرم ۲ ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_deliver(request, file_id):
+    return _step2_action(request, file_id, lambda p: permit_step2.deliver(request.user, p), 'فرم‌ها تحویل شد و پرونده به مرحله‌ی ۳ رفت.')
+
+
+@policy_required('permit.open')
+@require_POST
+def permit_shamim(request, file_id):
+    permit = permits.find(request.user, file_id)
+    if permit is None or not permits.may_open(request.user, permit):
+        raise Http404('پرونده پیدا نشد.')
+    info = permit_step2.refresh_shamim(permit)
+    messages.success(request, 'فایل شمیم دوباره بررسی شد.' if info.get('ok') else 'فایل شمیم خوانده نشد: ' + ' '.join(info.get('notes', [])))
     return redirect(_file_url(permit, bool(request.POST.get('embed'))))

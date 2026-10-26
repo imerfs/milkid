@@ -63,6 +63,13 @@ class PermitFile(models.Model):
     opened_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     opened_at = models.DateTimeField(null=True, blank=True)
     staff_notes = models.TextField(blank=True, verbose_name='یادداشت کارشناس')
+    # what reading the shamim file found (area, outline, plots of the map it lies on), see main/office/shamim.py
+    shamim_info = models.JSONField(default=dict, blank=True)
+    # step 2: form 1 (the dehyari's enquiry to Bonyad-e Maskan) and form 2 (the owner's request), as filled in
+    step2 = models.JSONField(default=dict, blank=True)
+    form1_at = models.DateTimeField(null=True, blank=True)
+    form2_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True, verbose_name='تحویل فرم‌های امضاشده')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -73,6 +80,19 @@ class PermitFile(models.Model):
 
     def __str__(self):
         return f'پرونده {self.pk} - {self.request.user.get_full_name() or self.request.user.username}'
+
+    @property
+    def status_text(self):
+        """One line for the lists: where the file stands now."""
+        if self.state != 'done':
+            return self.get_state_display()
+        if self.delivered_at:
+            return 'فرم‌ها تحویل شد'
+        if self.stage_no == 2:
+            if self.form1_at and self.form2_at:
+                return 'فرم‌ها آماده‌ی امضا'
+            return 'فرم ۱ ' + ('آماده' if self.form1_at else 'منتظر دهیاری') + ' · فرم ۲ ' + ('پر شد' if self.form2_at else 'منتظر متقاضی')
+        return self.get_state_display()
 
     @property
     def stage_title(self):

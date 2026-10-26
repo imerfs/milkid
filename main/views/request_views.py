@@ -104,7 +104,9 @@ def create_request(request):
 def request_detail(request, request_id):
     """View service request details"""
     service_request = get_object_or_404(ServiceRequest, id=request_id)
-    
+    if hasattr(service_request, 'permit_file'):         # a building-permit request is its file
+        return redirect('main:permit_file', file_id=service_request.permit_file.pk)
+
     # Check if user has permission to view this request
     if request.user != service_request.user and not request.user.profile.is_staff_member():
         messages.error(request, 'شما اجازه مشاهده این درخواست را ندارید.')
