@@ -20,7 +20,7 @@ from main.office.directory import requests_for
 from main.office.errors import OfficeError
 from main.views.office_views import change_password
 
-TABS = ('employees', 'requests', 'announcements', 'profile')
+TABS = ('employees', 'requests', 'permits', 'announcements', 'profile')
 _MOBILE = RegexValidator(r'^09\d{9}$', 'شماره موبایل صحیح وارد کنید (مثال: 09123456789)')
 
 
@@ -83,7 +83,13 @@ def _profile(request):
     return {'user_profile': request.user.profile}
 
 
-_BUILDERS = {'employees': _employees, 'requests': _requests, 'announcements': _announcements, 'profile': _profile}
+def _permits(request):
+    from main.office import permits
+    return {'permitlist': permits.panel_rows(request.user)}
+
+
+_BUILDERS = {'employees': _employees, 'requests': _requests, 'permits': _permits, 'announcements': _announcements,
+             'profile': _profile}
 
 
 def _save_profile(request):

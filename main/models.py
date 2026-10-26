@@ -196,6 +196,13 @@ class UserProfile(GeographyLink):
         verbose_name='نام پدر'
     )
 
+    # Kept from the last permit application, so the next one starts filled in
+    id_number = models.CharField(max_length=15, blank=True, default='', verbose_name='شماره شناسنامه')
+    birth_date = models.CharField(max_length=10, blank=True, default='', verbose_name='تاریخ تولد')
+    birth_place = models.CharField(max_length=80, blank=True, default='', verbose_name='محل صدور شناسنامه')
+    address = models.TextField(blank=True, default='', verbose_name='نشانی')
+    postal_code = models.CharField(max_length=10, blank=True, default='', verbose_name='کد پستی')
+
     # Geographic information
     province = models.CharField(
         max_length=100,
@@ -866,6 +873,7 @@ from .models_payroll import *  # noqa: E402,F401,F403
 from .models_council import *  # noqa: E402,F401,F403
 from .models_mail import *  # noqa: E402,F401,F403
 from .models_gis import *  # noqa: E402,F401,F403
+from .models_permit import *  # noqa: E402,F401,F403
 from .models_requests import *  # noqa: E402,F401,F403
 from .models_property import *  # noqa: E402,F401,F403
 from .models_controls import *  # noqa: E402,F401,F403

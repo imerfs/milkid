@@ -1,0 +1,157 @@
+"""Building-permit file, step 1: the application page, the file page and the staff's decisions on it.
+
+The application page is the owner's «ایجاد پرونده اولیه» form (main/templates/main/services/building-permits/step1.html).
+The file page is shared by the applicant and the village staff; it is also what the panels open in their drawer.
+"""
+import mimetypes
+import os
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, Http404
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
+
+from main import lifecycle
+from main.access import policy_required, role_of
+from main.models import PermitDocument, PermitFile, PermitPerson
+from main.office import permit_form, permits
+from main.office.errors import OfficeError
+from main.roles import CITIZEN_ROLES
+
+INLINE_TYPES = {'.pdf', '.jpg', '.jpeg', '.png'}
+
+
+def _file_url(permit, embed=False):
+    return reverse('main:permit_file', args=[permit.pk]) + ('?embed=1' if embed else '')
+
+
+def _co_rows(values, errors):
+    """The optional «other owners» blocks of the form, each with its own values and errors."""
+    rows = []
+    for n in range(1, permit_form.CO_OWNERS + 1):
+        prefix = f'co{n}_'
+        row = {'n': n, 'p': prefix, 'national_card': prefix + 'national_card', 'birth_cert': prefix + 'birth_cert',
+               'v': {k[len(prefix):]: v for k, v in values.items() if k.startswith(prefix)},
+               'e': {k[len(prefix):]: v for k, v in errors.items() if k.startswith(prefix)}}
+        row['filled'] = any(row['v'].get(k) for k in ('first_name', 'last_name', 'national_id')) or bool(row['e'])
+        rows.append(row)
+    return rows
+
+
+@login_required
+def building_permit_form(request):
+    """Step 1: the applicant fills in the file (owner, property, ownership paper, identity papers, shamim file)."""
+    if role_of(request.user) not in CITIZEN_ROLES:
+        messages.error(request, 'درخواست پروانه ساختمان را شهروند ثبت می‌کند.')
+        return redirect('main:dashboard')
+    values, errors = permits.prefill(request.user), {}
+    if request.method == 'POST':
+        data, errors = permit_form.parse(request.POST, request.FILES)
+        if not errors:
+            try:
+                permit = permits.submit(request.user, data)
+            except lifecycle.TransitionError as exc:        # the plot is locked: lifecycle words the refusal
+                errors = {'renewal_code': str(exc)}
+            else:
+                messages.success(request, 'پرونده‌ی پروانه ساختمان ثبت شد؛ کارشناس مدارک را بررسی و پرونده را افتتاح می‌کند.')
+                return redirect(_file_url(permit, embed=bool(request.GET.get('embed'))))
+        values = permit_form.keep_for_redisplay(request.POST)
+    return render(request, 'main/services/building-permits/step1.html', {
+        'v': values, 'errors': errors, 'profile': request.user.profile, 'co_rows': _co_rows(values, errors),
+        'land_uses': PermitFile.LAND_USES, 'kinds': PermitFile.KINDS,
+        'co_roles': [(r, label) for r, label in PermitPerson.ROLES if r != 'applicant'],
+    }, status=400 if errors else 200)
+
+
+@login_required
+def permit_file(request, file_id):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    mine = permit.request.user_id == request.user.id
+    can_decide = permits.may_open(request.user, permit)
+    people = list(permit.people.prefetch_related('documents'))
+    return render(request, 'main/permits/detail.html', {
+        'permit': permit, 'sr': permit.request, 'people': people, 'tracker': permits.tracker(permit),
+        'file_documents': permit.documents.filter(person__isnull=True), 'mine': mine, 'can_decide': can_decide,
+        'staff_view': not mine, 'embed': bool(request.GET.get('embed')),
+        'suggestions': permits.suggestions(permit) if can_decide else [],
+        'history': list(reversed(permit.request.workflow_history or [])),
+        'other_requests': permits.applicant_history(permit) if can_decide else [],
+        'doc_kinds': PermitDocument.KINDS, 'details': permit.details or {},
+    })
+
+
+@login_required
+def permit_document(request, doc_id):
+    """An identity paper or the shamim file: only its owner and the village's staff, never through /media/."""
+    doc = PermitDocument.objects.select_related('file').filter(pk=doc_id).first()
+    if doc is None or permits.find(request.user, doc.file_id) is None:
+        raise Http404('مدرک پیدا نشد.')
+    ext = os.path.splitext(doc.original_name)[1].lower()
+    inline = ext in INLINE_TYPES and not request.GET.get('download')
+    try:
+        response = FileResponse(doc.document.open('rb'), as_attachment=not inline, filename=doc.original_name,
+                                content_type=mimetypes.guess_type(doc.original_name)[0] or 'application/octet-stream')
+    except OSError as exc:
+        raise Http404('فایل پیدا نشد.') from exc
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+def _decide(request, file_id, action):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.POST.get('embed'))
+    try:
+        action(permit)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(_file_url(permit, embed))
+
+
+@policy_required('permit.open')
+@require_POST
+def permit_open(request, file_id):
+    def act(permit):
+        permits.open_file(request.user, permit, code=request.POST.get('renewal_code', ''),
+                          parcel_id=request.POST.get('parcel_id'), notes=request.POST.get('notes', ''))
+        messages.success(request, 'پرونده افتتاح شد و به مرحله‌ی ۲ رفت.')
+    return _decide(request, file_id, act)
+
+
+@policy_required('permit.open')
+@require_POST
+def permit_send_back(request, file_id):
+    def act(permit):
+        permits.send_back(request.user, permit, request.POST.get('notes', ''))
+        messages.success(request, 'پرونده برای رفع نقص به متقاضی برگشت داده شد.')
+    return _decide(request, file_id, act)
+
+
+@policy_required('permit.open')
+@require_POST
+def permit_refuse(request, file_id):
+    def act(permit):
+        permits.refuse(request.user, permit, request.POST.get('notes', ''))
+        messages.success(request, 'پرونده رد شد.')
+    return _decide(request, file_id, act)
+
+
+@login_required
+@require_POST
+def permit_supplement(request, file_id):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    kind = request.POST.get('kind', '')
+    try:
+        permits.supplement(request.user, permit, kind, request.FILES.getlist('document'))
+        messages.success(request, 'مدارک فرستاده شد و پرونده دوباره بررسی می‌شود.')
+    except OfficeError as exc:
+        messages.error(request, str(exc))
+    return redirect(_file_url(permit, bool(request.POST.get('embed'))))

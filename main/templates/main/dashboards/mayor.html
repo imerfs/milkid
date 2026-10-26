@@ -402,6 +402,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="permits" data-tab-link>
+                            <i class="fas fa-folder-plus ml-3 w-5"></i>
+                            <span>پرونده‌های پروانه</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="violations">
                             <i class="fas fa-exclamation-triangle ml-3 w-5"></i>
                             <span>گزارش تخلفات</span>
@@ -1362,6 +1368,10 @@
                         <div class="mp-loading" role="status"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> در حال بارگذاری…</div>
                     </div>
 
+                    <div id="permits-content" class="page-content hidden" data-panel="{% url 'main:mayor_panel' 'permits' %}">
+                        <div class="mp-loading" role="status"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> در حال بارگذاری…</div>
+                    </div>
+
                     <div id="violations-content" class="page-content hidden">
                         <!-- Page Title -->
                         <div class="mb-8">
@@ -2156,6 +2166,9 @@
                         case 'requests':
                             pageTitle.textContent = 'مدیریت درخواست‌ها';
                             break;
+                        case 'permits':
+                            pageTitle.textContent = 'پرونده‌های پروانه ساختمان';
+                            break;
                         case 'violations':
                             pageTitle.textContent = 'گزارش تخلفات';
                             break;
@@ -2250,4 +2263,5 @@
     {% csrf_token %}
     <script src="{% static 'js/mayor-panel.js' %}" defer></script>
     {% include 'partials/office_dock.html' %}
+    {% include 'partials/permit_drawer.html' %}
 {% endblock %}

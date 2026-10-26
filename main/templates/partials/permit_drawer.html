@@ -1,0 +1,26 @@
+{% load static %}
+{# A permit file opens over the panel (iframe, ?embed=1): include once per page. Links with data-open-permit use it. #}
+<link rel="stylesheet" href="{% static 'css/permits.css' %}">
+<div class="pd" id="pd" hidden role="dialog" aria-modal="true" aria-label="پرونده‌ی پروانه ساختمان">
+    <div class="pd-box">
+        <button type="button" class="pd-close" id="pd-close" aria-label="بستن پرونده">&times;</button>
+        <iframe id="pd-frame" title="پرونده‌ی پروانه ساختمان"></iframe>
+    </div>
+</div>
+<script>
+(function () {
+    var drawer = document.getElementById('pd'), frame = document.getElementById('pd-frame');
+    function close() { drawer.hidden = true; frame.src = 'about:blank'; }
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest ? e.target.closest('a[data-open-permit]') : null;
+        if (!link) return;
+        e.preventDefault();
+        frame.src = link.href + (link.href.indexOf('?') < 0 ? '?embed=1' : '&embed=1');
+        drawer.hidden = false;
+        document.getElementById('pd-close').focus();
+    });
+    document.getElementById('pd-close').addEventListener('click', function () { close(); location.reload(); });
+    drawer.addEventListener('click', function (e) { if (e.target === drawer) { close(); location.reload(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !drawer.hidden) { close(); location.reload(); } });
+})();
+</script>

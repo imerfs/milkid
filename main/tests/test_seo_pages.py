@@ -126,7 +126,11 @@ class PrivatePagesAreNoindex(TestCase):
             self.assertEqual(meta(html(response), 'robots'), 'noindex, nofollow', name)
 
     def test_service_wizard_step_pages_are_noindex(self):
-        page = html(self.client.get(reverse('main:building_permit_step1'), follow=True))
+        page = html(self.client.get(reverse('main:building_permit_step2'), follow=True))
+        self.assertIn('noindex', meta(page, 'robots') or '')
+        # step 1 is the real application form: only a signed-in citizen sees it
+        from main.tests.helpers import client_for, make_user
+        page = html(client_for(make_user('citizen')).get(reverse('main:building_permit_step1')))
         self.assertIn('noindex', meta(page, 'robots') or '')
 
 

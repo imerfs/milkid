@@ -5,6 +5,9 @@ Only ``main.office.letters`` validated uploads; every other view called
 .html/.svg/.exe files that were then served from the site's own origin (stored XSS).
 This middleware applies the extension / size / content checks to *every* multipart upload.
 """
+import os
+import re
+
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
@@ -20,6 +23,11 @@ class UploadValidationMiddleware:
     # produced). The view checks the role, the envelope and every row itself (main/accounting/backup.py).
     PARSE_ONLY = ('main:acc_p_backup_restore',)
 
+    # The shamim file of a building-permit application may also be a zip / geojson / kml (main/office/permit_form.py checks
+    # the extension again). These are stored in the private storage and only ever sent back as a download.
+    SHAMIM_EXTENSIONS = ('.zip', '.geojson', '.kml')
+    SHAMIM_PATH = re.compile(r'^/(?:services/building-permit/(?:step1/)?|construction-permit/|permits/\d+/supplement/)$')
+
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -29,6 +37,9 @@ class UploadValidationMiddleware:
                 if not uploaded.name:
                     continue
                 try:
+                    if os.path.splitext(uploaded.name)[1].lower() in self.SHAMIM_EXTENSIONS and self.SHAMIM_PATH.match(request.path):
+                        validate_file_size(uploaded)
+                        continue
                     validate_file_extension(uploaded)
                     validate_file_size(uploaded)
                     validate_file_content(uploaded)

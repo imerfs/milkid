@@ -1,0 +1,27 @@
+{% load static jalali_tags persian_filters %}
+{# The permit files of the village (context `permitlist` from main.office.permits.panel_rows). Each row opens the file. #}
+<link rel="stylesheet" href="{% static 'css/permits.css' %}">
+<div class="pl">
+{% if permitlist.rows %}
+  <div style="overflow-x:auto">
+  <table>
+    <thead><tr><th>متقاضی</th><th>نوع</th><th>ملک</th><th>مرحله</th><th>وضعیت</th><th>تاریخ</th><th><span class="sr-only">پرونده</span></th></tr></thead>
+    <tbody>
+    {% for f in permitlist.rows %}
+      <tr>
+        <td><b>{{ f.request.user.get_full_name|default:f.request.user.username }}</b></td>
+        <td>{{ f.get_permit_kind_display }}</td>
+        <td>{% if f.renewal_code %}<bdi dir="ltr">{{ f.renewal_code|persian_numbers }}</bdi>{% else %}{{ f.area_m2|persian_numbers }} م²{% if f.lot_number %} · قطعه‌ی تفکیکی {{ f.lot_number|persian_numbers }}{% endif %}{% endif %}</td>
+        <td>{{ f.stage_no|persian_numbers }}. {{ f.stage_title }}</td>
+        <td><span class="pl-state pl-state-{{ f.state }}">{{ f.get_state_display }}</span></td>
+        <td>{{ f.created_at|persian_date:"Y/m/d"|persian_numbers }}</td>
+        <td><a class="pl-open" data-open-permit href="{% url 'main:permit_file' f.pk %}">{% if f.state == 'submitted' and permitlist.can_open %}بررسی{% else %}مشاهده{% endif %}</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{% else %}
+  <p class="pl-empty"><i class="fas fa-folder-open" aria-hidden="true"></i> هنوز پرونده‌ی پروانه‌ای ثبت نشده است.</p>
+{% endif %}
+</div>

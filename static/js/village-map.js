@@ -616,7 +616,25 @@
     $('vm-updated').textContent = parcel.archive.updated_at ? `آخرین ویرایش: ${parcel.archive.updated_at}` : 'هنوز اطلاعاتی ثبت نشده است.';
     renderPayments(parcel);
     renderLocks(parcel);
+    renderRequests(parcel);
     syncPlot(parcel);
+  }
+
+  // who asked the municipality for what on this plot (permit files first)
+  function renderRequests(parcel) {
+    const box = $('vm-reqs'), list = $('vm-reqs-list');
+    list.replaceChildren();
+    box.hidden = !parcel.requests || parcel.requests.length === 0;
+    (parcel.requests || []).forEach((r) => {
+      const li = document.createElement('li');
+      const head = r.url ? document.createElement('a') : document.createElement('b');
+      head.textContent = `${r.who} — ${r.title}`;
+      if (r.url) { head.href = r.url; head.target = '_blank'; head.rel = 'noopener'; }
+      const meta = document.createElement('small');
+      meta.textContent = [r.stage, r.state || r.status, r.date && faDigits(r.date)].filter(Boolean).join(' · ');
+      li.append(head, meta);
+      list.appendChild(li);
+    });
   }
 
   // the plot's colour follows what the server says now

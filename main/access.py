@@ -25,6 +25,9 @@ POLICY = {
     'council.view': {'council', 'dehyari'},
     # municipality management ("mayor_*" views)
     'mayor.manage': {'dehyari'},
+    # building-permit files (step 1): the staff who see the identity papers / who may open a file
+    'permit.view': {'dehyari', 'engineer', 'clerk', 'inspector'},
+    'permit.open': {'dehyari', 'engineer', 'clerk'},
     # the administrative expert's desk (letters and follow-ups of the village)
     'clerk.desk': {'clerk', 'dehyari'},
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed

@@ -208,3 +208,21 @@ def record_inspection(sr, inspector, *, approved, reason=''):
                 action='رد بازرسی توسط ناظر فنی', notes=reason, to_role='citizen')
         notify(sr.user, 'بازرسی رد شد',
                f'بازرسی درخواست {sr.title} رد شد. دلیل: {reason}', request=sr)
+
+
+def permit_opened(sr, actor, *, code, notes=''):
+    """Step 1 of a building permit (افتتاح پرونده) is done: the file has its renewal code and moves on."""
+    _ensure_open(sr)
+    sr.parcel_number = code
+    _ensure_not_locked(sr)
+    _finish(sr, actor, status='in_review', stage='expert_review',
+            action=f'افتتاح پرونده پروانه و ثبت کد نوسازی {code}', notes=notes, to_role='engineer')
+    notify(sr.user, f'پرونده شما افتتاح شد: {sr.title}',
+           f'پرونده‌ی پروانه ساختمان شما افتتاح شد و کد نوسازی ملک شما {code} است. مرحله‌ی بعد را در پرونده ببینید.', request=sr)
+
+
+def permit_resubmitted(sr, actor):
+    """The applicant added the missing papers: the file is waiting for the staff again."""
+    _ensure_open(sr)
+    _finish(sr, actor, status='pending', stage='expert_review', action='ارسال مجدد مدارک توسط متقاضی',
+            to_role='engineer')

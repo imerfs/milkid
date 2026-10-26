@@ -188,35 +188,6 @@ def service_wizard(request, slug, step):
     return render(request, f'main/services/{service.slug}/step{step}.html', context)
 
 
-@login_required
-def construction_permit_request(request):
-    """Request construction permit"""
-    if request.method == 'POST':
-        form = ConstructionPermitForm(request.POST, request.FILES)
-        if form.is_valid():
-            data = form.cleaned_data
-            lifecycle.submit(
-                request.user, action='ثبت درخواست پروانه ساختمان توسط متقاضی - ارجاع به کارشناس دهیاری',
-                request_type='building_permit', title='درخواست صدور پروانه ساختمان',
-                **{name: data.get(name) for name in (
-                    'description', 'property_address', 'property_area', 'property_usage', 'deed_number',
-                    'parcel_number', 'province', 'county', 'district', 'city_village')
-                   if data.get(name) not in (None, '')})
-
-            messages.success(request, 'درخواست صدور پروانه ساختمان با موفقیت ثبت شد.')
-            return redirect('main:my_requests')
-    else:
-        form = ConstructionPermitForm()
-
-    context = {'form': form}
-    return render(request, 'main/construction_permit.html', context)
-
-
-def building_permit_form(request):
-    """Building permit step 1"""
-    return render(request, 'main/services/building-permits/step1.html')
-
-
 def building_permit_step2(request):
     """Building permit step 2"""
     return render(request, 'main/services/building-permits/step2.html')
