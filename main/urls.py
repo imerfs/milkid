@@ -242,7 +242,7 @@ urlpatterns = [
     path('properties/register/', views.register_property, name='register_property'),
 
     # Construction Permits
-    path('construction-permit/', views.construction_permit_request, name='construction_permit_request'),
+    path('construction-permit/', views.building_permit_form, name='construction_permit_request'),
 
     # AI & Analytics
     path('ai-fraud-detection/', views.ai_fraud_detection, name='ai_fraud_detection'),

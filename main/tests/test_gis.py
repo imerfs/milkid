@@ -14,7 +14,7 @@ from main.gis import data as gis_data, loader
 from main.gis.uids import parcel_uids, renewal_code
 from main.models import (CityVillage, County, District, LandUseClass, MapBuilding, MapEasement, MapParcel, MapZone,
                          ParcelArchive, ParcelFeePayment, ParcelLock, Province, VillageMap)
-from main.tests.helpers import client_for, make_service, make_user
+from main.tests.helpers import client_for, isolate_private_media, make_service, make_user
 
 try:
     import shapely  # noqa: F401  pylint: disable=unused-import
@@ -587,17 +587,19 @@ class LockedPlotsGetNoServices(TestCase):
 
     def test_the_permit_form_keeps_the_plot_it_was_given(self):
         from main.models import ServiceRequest
-        response = client_for(self.citizen).post(reverse('main:construction_permit_request'), {
-            'title': 'درخواست پروانه ساختمان', 'description': 'ساخت', 'property_address': 'آدرس', 'parcel_number': self.code})
+        from main.tests.test_permit_files import application
+        isolate_private_media(self)
+        response = client_for(self.citizen).post(reverse('main:construction_permit_request'), application(renewal_code=self.code))
         created = ServiceRequest.objects.filter(user=self.citizen, request_type='building_permit')
-        self.assertEqual(created.count(), 1, response.content[:300])
+        self.assertEqual(created.count(), 1, response.status_code)
         self.assertEqual(created.get().parcel_number, self.code)       # the request now names the plot, so the lock can see it
 
     def test_the_permit_form_refuses_a_locked_plot(self):
         from main.models import ServiceRequest
+        from main.tests.test_permit_files import application
+        isolate_private_media(self)
         self.lock()
-        client_for(self.citizen).post(reverse('main:construction_permit_request'), {
-            'title': 'درخواست پروانه ساختمان', 'description': 'ساخت', 'property_address': 'آدرس', 'parcel_number': self.code})
+        client_for(self.citizen).post(reverse('main:construction_permit_request'), application(renewal_code=self.code))
         self.assertFalse(ServiceRequest.objects.filter(request_type='building_permit').exists())
 
     def test_staff_cannot_approve_a_request_for_a_locked_plot(self):
@@ -625,9 +627,9 @@ class LockedPlotsGetNoServices(TestCase):
         self.assertEqual(request.status, 'approved')
 
     def test_the_request_form_refuses_a_locked_plot(self):
-        from main.forms import ConstructionPermitForm, ServiceRequestForm
+        from main.forms import ServiceRequestForm
         self.lock()
-        for form_class in (ServiceRequestForm, ConstructionPermitForm):
+        for form_class in (ServiceRequestForm,):
             form = form_class({'title': 't', 'description': 'd', 'parcel_number': self.code})
             form.is_valid()
             self.assertIn('parcel_number', form.errors, form_class.__name__)

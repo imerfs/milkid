@@ -20,6 +20,7 @@ from main.accounting.parse import digits, jalali_str, parse_amount, parse_jalali
 from main.gis import data as gis_data, rules
 from main.gis.access import may_use
 from main.models import MapEasement, MapParcel, ParcelArchive, ParcelFeePayment, ParcelLock, VillageMap
+from main.office import permits
 from main.office.errors import Invalid
 
 ARCHIVE_TEXT = ('permit_number', 'permit_type', 'permit_notes', 'owner_name', 'owner_phone', 'building_owner_name',
@@ -192,6 +193,7 @@ def _parcel_dict(parcel):
         'payments': [_payment_dict(p) for p in payments],
         'payments_total': int(sum(p.amount for p in payments)),
         'locks': locks, 'locked': any(lock['active'] for lock in locks),
+        'requests': permits.parcel_requests(parcel),      # who asked the municipality for what on this plot
     }
 
 

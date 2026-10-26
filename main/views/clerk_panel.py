@@ -12,12 +12,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from main.access import policy_required
-from main.office import desk, messenger
+from main.office import desk, messenger, permits
 from main.office.appointments import jalali_label
 from main.office.errors import OfficeError
 from main.views.messenger_views import messenger_context
 
-TABS = ('today', 'messages', 'follow')
+TABS = ('today', 'messages', 'files', 'follow')
 
 
 def _back(tab, **params):
@@ -31,11 +31,13 @@ def clerk_dashboard(request):
     user = request.user
     tab = request.GET.get('tab') if request.GET.get('tab') in TABS else 'today'
     context = {'tab': tab, 'greeting': desk.greeting(), 'today_label': jalali_label(timezone.localdate()),
-               'stats': desk.summary(user)}
+               'stats': {**desk.summary(user), 'permit_files': permits.panel_rows(user, limit=0)['waiting']}}
     if tab == 'today':
         context['latest'] = messenger.threads(user)[:6]
     elif tab == 'messages':
         context.update(messenger_context(request), embed=False)
+    elif tab == 'files':
+        context['permitlist'] = permits.panel_rows(user)
     else:
         context['follow_ups'] = desk.follow_ups(user)
     return render(request, 'main/clerk/desk.html', context)

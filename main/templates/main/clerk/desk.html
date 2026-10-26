@@ -18,6 +18,7 @@
       <nav class="cd-tabs" aria-label="بخش‌ها">
         <a href="{% url 'main:clerk_dashboard' %}" {% if tab == 'today' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-home"/></svg>امروز</a>
         <a href="?tab=messages" {% if tab == 'messages' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-mail"/></svg>پیام‌ها و نامه‌ها{% if stats.unread %}<em>{{ stats.unread|persian_numbers }}</em>{% endif %}</a>
+        <a href="?tab=files" {% if tab == 'files' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-folder"/></svg>پرونده‌های پروانه{% if stats.permit_files %}<em>{{ stats.permit_files|persian_numbers }}</em>{% endif %}</a>
         <a href="?tab=follow" {% if tab == 'follow' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-doc-alert"/></svg>پیگیری‌ها{% if stats.waiting_docs %}<em>{{ stats.waiting_docs|persian_numbers }}</em>{% endif %}</a>
       </nav>
       <div class="cd-tools">
@@ -40,7 +41,7 @@
       <div>
         <p class="cd-eyebrow">{{ today_label|persian_numbers }}</p>
         <h1 id="cd-hello">{{ greeting }}، {{ request.user.first_name|default:request.user.username }}</h1>
-        <p class="cd-sub">{% if stats.unread or stats.waiting_docs %}امروز این‌ها منتظر شماست؛ از بالاترین مورد شروع کنید.{% else %}کار عقب‌افتاده‌ای ندارید. می‌توانید نامه‌ی تازه‌ای بنویسید.{% endif %}</p>
+        <p class="cd-sub">{% if stats.unread or stats.waiting_docs or stats.permit_files %}امروز این‌ها منتظر شماست؛ از بالاترین مورد شروع کنید.{% else %}کار عقب‌افتاده‌ای ندارید. می‌توانید نامه‌ی تازه‌ای بنویسید.{% endif %}</p>
       </div>
       <a href="?tab=messages&new=letter" class="cd-btn cd-btn-main"><svg class="cd-i"><use href="#i-pen"/></svg>نامه‌ی جدید</a>
     </section>
@@ -82,6 +83,13 @@
     <section class="cd-messenger" aria-label="پیام‌ها و نامه‌ها">
       {% include 'main/messenger/_messenger.html' %}
     </section>
+
+{% elif tab == 'files' %}
+    <section class="cd-card cd-wide" id="cd-files" aria-labelledby="h-files">
+      <header><h2 id="h-files"><svg class="cd-i"><use href="#i-folder"/></svg>پرونده‌های پروانه ساختمان</h2><span class="cd-note">منتظر افتتاح بالاست</span></header>
+      {% include 'partials/permit_files.html' %}
+    </section>
+    {% include 'partials/permit_drawer.html' %}
 
 {% else %}
     <section class="cd-card cd-wide" id="cd-follow" aria-labelledby="h-follow">

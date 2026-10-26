@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پروانه ساختمان: ایجاد پرونده اولیه - ملک آیدی</title>
-    
+
     <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-    
-    
+
+
     <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
         <script src="{% static 'js/geographic_cascade.js' %}" defer></script>
-    
+
     <style>
         body {
             font-family: 'Vazirmatn', sans-serif;
@@ -26,7 +26,7 @@
             padding-top: 0;
         }
         .conditional-section.active {
-            max-height: 1000px; /* Adjust as needed */
+            max-height: 2000px;
             opacity: 1;
             margin-top: 1.5rem; /* mt-6 */
         }
@@ -39,45 +39,57 @@
 
     <div class="container mx-auto p-4 md:p-8">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <!-- Main Content Column -->
             <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
                 <div class="bg-white p-8 rounded-2xl">
-            
+
                     <!-- Header -->
                     <div class="text-center border-b pb-6 mb-8">
                         <i class="fas fa-folder-plus text-green-600 text-4xl mb-4"></i>
                         <h1 class="text-3xl font-bold text-gray-800">ایجاد پرونده اولیه</h1>
                         <p class="mt-2 text-gray-600">لطفاً اطلاعات پایه مالک و ملک را با دقت وارد نمایید.</p>
                     </div>
-        
+
                     <!-- Warning Banner -->
                     <div class="mb-6 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm flex items-center">
                         <i class="fas fa-exclamation-triangle ml-2"></i>
-                        توجه: تا زمان اتصال به API ثبت احوال، تأیید اصالت مدارک به‌صورت دستی انجام می‌شود.
+                        توجه: تا زمان اتصال به API ثبت احوال، تأیید اصالت مدارک به‌صورت دستی توسط کارشناس دهیاری انجام می‌شود.
                     </div>
-        
-                    <form id="case-creation-form" method="post">
+
+                    {% if errors %}
+                    <div class="mb-6 p-4 bg-red-50 text-red-800 rounded-lg border border-red-200" role="alert">
+                        <p class="font-bold"><i class="fas fa-circle-exclamation ml-2"></i>پرونده ثبت نشد؛ موارد زیر را اصلاح کنید و فایل‌ها را دوباره انتخاب کنید:</p>
+                        <ul class="list-disc pr-6 mt-2 text-sm">{% for field, message in errors.items %}<li>{{ message }}</li>{% endfor %}</ul>
+                    </div>
+                    {% endif %}
+                    {% if messages %}{% for m in messages %}<div class="mb-4 p-3 bg-red-50 text-red-800 rounded-lg text-sm">{{ m }}</div>{% endfor %}{% endif %}
+
+                    <form id="case-creation-form" method="post" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
-                        
+
                         <!-- 1. Owner Information -->
                         <div class="mb-8">
-                            <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۱. مشخصات مالک</h2>
+                            <h2 class="text-xl font-semibold mb-2 border-r-4 border-green-500 pr-4">۱. مشخصات مالک (متقاضی)</h2>
+                            {% if v.national_id and not errors %}<p class="text-sm text-green-700 mb-4"><i class="fas fa-circle-check ml-1"></i>اطلاعاتی که از شما در سایت داریم پر شده است؛ کم‌وکاست را کامل کنید. هر چه اینجا وارد کنید در پروفایل شما می‌ماند و دفعه‌ی بعد دوباره پر می‌شود.</p>{% else %}<div class="mb-4"></div>{% endif %}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label for="owner-name" class="block font-medium mb-2">نام<span class="text-red-500">*</span></label><input type="text" id="owner-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></div>
-                                <div><label for="last-name" class="block font-medium mb-2">نام خانوادگی<span class="text-red-500">*</span></label><input type="text" id="last-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></div>
-                                <div><label for="father-name" class="block font-medium mb-2">نام پدر<span class="text-red-500">*</span></label><input type="text" id="father-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></div>
-                                <div><label for="national-id" class="block font-medium mb-2">کد ملی<span class="text-red-500">*</span></label><input type="text" id="national-id" pattern="\d{10}" title="کد ملی باید ۱۰ رقمی باشد" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></div>
-                                <div><label for="birth-cert-location" class="block font-medium mb-2">محل صدور شناسنامه<span class="text-red-500">*</span></label><input type="text" id="birth-cert-location" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></div>
-                                <div><label for="phone" class="block font-medium mb-2">شماره تلفن<span class="text-red-500">*</span></label><input type="tel" id="phone" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
-                                <div class="md:col-span-2"><label for="email" class="block font-medium mb-2">ایمیل (اختیاری)</label><input type="email" id="email" class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                                {% include 'main/permits/_field.html' with name='first_name' label='نام' value=v.first_name error=errors.first_name required=1 %}
+                                {% include 'main/permits/_field.html' with name='last_name' label='نام خانوادگی' value=v.last_name error=errors.last_name required=1 %}
+                                {% include 'main/permits/_field.html' with name='father_name' label='نام پدر' value=v.father_name error=errors.father_name required=1 %}
+                                {% include 'main/permits/_field.html' with name='national_id' label='کد ملی' value=v.national_id error=errors.national_id required=1 ltr=1 mode='numeric' hint='۱۰ رقم' %}
+                                {% include 'main/permits/_field.html' with name='id_number' label='شماره شناسنامه' value=v.id_number error=errors.id_number ltr=1 mode='numeric' %}
+                                {% include 'main/permits/_field.html' with name='birth_date' label='تاریخ تولد (شمسی)' value=v.birth_date error=errors.birth_date ltr=1 hint='۱۳۷۶/۰۳/۱۷' %}
+                                {% include 'main/permits/_field.html' with name='birth_place' label='محل صدور شناسنامه' value=v.birth_place error=errors.birth_place required=1 %}
+                                {% include 'main/permits/_field.html' with name='phone' label='شماره تلفن همراه' value=v.phone error=errors.phone required=1 type='tel' ltr=1 mode='numeric' hint='۰۹۱۲۳۴۵۶۷۸۹' %}
+                                {% include 'main/permits/_field.html' with name='email' label='ایمیل (اختیاری)' value=v.email error=errors.email type='email' ltr=1 span=1 %}
                             </div>
                         </div>
-        
+
                         <!-- 2. Geographic Location -->
                         <div class="mb-8">
                             <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۲. موقعیت جغرافیایی</h2>
-                            
+                            {% if profile.city_village %}<p class="text-sm text-gray-600 mb-4"><i class="fas fa-location-dot ml-1 text-green-600"></i>اگر چیزی انتخاب نکنید، روستای ثبت‌شده در پروفایل شما («{{ profile.city_village }}») در نظر گرفته می‌شود.</p>{% endif %}
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
                                     <label class="block font-medium mb-2">استان</label>
@@ -125,83 +137,132 @@
                         <div class="mb-8">
                             <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۳. مشخصات ملک</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                 <div><label for="postal-code" class="block font-medium mb-2">کد پستی (اختیاری)</label><input type="text" id="postal-code" class="w-full p-3 border border-gray-300 rounded-lg"></div>
-                                 <div><label for="area" class="block font-medium mb-2">مساحت (متر مربع)<span class="text-red-500">*</span></label><input type="number" id="area" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
-                                 <div><label for="land-use" class="block font-medium mb-2">نوع کاربری فعلی<span class="text-red-500">*</span></label>
-                                    <select id="land-use" required class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                                {% include 'main/permits/_field.html' with name='postal_code' label='کد پستی (اختیاری)' value=v.postal_code error=errors.postal_code ltr=1 mode='numeric' %}
+                                {% include 'main/permits/_field.html' with name='area' label='مساحت (متر مربع)' value=v.area error=errors.area required=1 ltr=1 mode='decimal' hint='مثلاً ۱۹۹٫۷۶' %}
+                                <div>
+                                    <label for="land-use" class="block font-medium mb-2">نوع کاربری فعلی<span class="text-red-500">*</span></label>
+                                    <select id="land-use" name="land_use" required class="w-full p-3 border {% if errors.land_use %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg bg-white">
                                         <option value="">انتخاب کنید...</option>
-                                        <option value="residential">مسکونی</option>
-                                        <option value="administrative">اداری</option>
-                                        <option value="commercial">تجاری</option>
-                                        <option value="services">خدماتی</option>
+                                        {% for code, label in land_uses %}<option value="{{ code }}" {% if v.land_use == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
                                     </select>
-                                 </div>
-                                 <div class="md:col-span-2"><label for="address" class="block font-medium mb-2">آدرس دقیق ملک<span class="text-red-500">*</span></label><textarea id="address" rows="3" required class="w-full p-3 border border-gray-300 rounded-lg"></textarea></div>
+                                    {% if errors.land_use %}<p class="text-sm text-red-600 mt-1">{{ errors.land_use }}</p>{% endif %}
+                                </div>
+                                {% include 'main/permits/_field.html' with name='lot_number' label='شماره قطعه‌ی تفکیکی' value=v.lot_number error=errors.lot_number ltr=1 mode='numeric' hint='اگر در قرارداد یا نقشه آمده' %}
+                                {% include 'main/permits/_field.html' with name='registry_plot' label='پلاک ثبتی (فرعی از اصلی)' value=v.registry_plot error=errors.registry_plot hint='مثلاً ۵۶۲ فرعی از ۲۴۰۴' %}
+                                {% include 'main/permits/_field.html' with name='renewal_code' label='کد نوسازی (اگر دارید)' value=v.renewal_code error=errors.renewal_code ltr=1 hint='۰-۰-۸-۱۸۲-۲' %}
+                                {% include 'main/permits/_field.html' with name='address' label='آدرس دقیق ملک' value=v.address error=errors.address required=1 span=1 area=1 %}
                             </div>
                         </div>
-                        
+
                         <!-- 4. Request Type -->
                         <div class="mb-8">
                             <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۴. نوع درخواست</h2>
                             <div>
-                                <select id="serviceType" required class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                                <select id="serviceType" name="permit_kind" required class="w-full p-3 border {% if errors.permit_kind %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg bg-white">
                                     <option value="">انتخاب کنید...</option>
-                                    <option value="construction">پروانه احداث بنا</option>
-                                    <option value="demolition">پروانه تخریب</option>
-                                    <option value="repair">پروانه تعمیر</option>
+                                    {% for code, label in kinds %}<option value="{{ code }}" {% if v.permit_kind == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
                                 </select>
+                                {% if errors.permit_kind %}<p class="text-sm text-red-600 mt-1">{{ errors.permit_kind }}</p>{% endif %}
                             </div>
                         </div>
-        
-                        <!-- 5. Document Uploads -->
+
+                        <!-- 5. Other owners -->
                         <div class="mb-8">
-                            <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۵. بارگذاری مدارک</h2>
+                            <h2 class="text-xl font-semibold mb-2 border-r-4 border-green-500 pr-4">۵. مالکان دیگر یا همراه (اختیاری)</h2>
+                            <p class="text-sm text-gray-600 mb-4">اگر ملک چند مالک دارد، یا همسر / وکیل شما در پرونده نام‌برده می‌شود، مشخصات و مدارک هویتی هر نفر را اینجا بیاورید.</p>
+                            {% for row in co_rows %}
+                            <details class="mb-4 border border-gray-200 rounded-lg" {% if row.filled %}open{% endif %}>
+                                <summary class="p-4 cursor-pointer font-medium"><i class="fas fa-user-plus ml-2 text-green-600"></i>نفر {{ row.n }}</summary>
+                                <div class="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block font-medium mb-2">نسبت / نقش</label>
+                                        <select name="co{{ row.n }}_role" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                                            {% for code, label in co_roles %}<option value="{{ code }}" {% if row.v.role == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div></div>
+                                    {% include 'main/permits/_field.html' with prefix=row.p name='first_name' label='نام' value=row.v.first_name error=row.e.first_name %}
+                                    {% include 'main/permits/_field.html' with prefix=row.p name='last_name' label='نام خانوادگی' value=row.v.last_name error=row.e.last_name %}
+                                    {% include 'main/permits/_field.html' with prefix=row.p name='father_name' label='نام پدر' value=row.v.father_name error=row.e.father_name %}
+                                    {% include 'main/permits/_field.html' with prefix=row.p name='national_id' label='کد ملی' value=row.v.national_id error=row.e.national_id ltr=1 mode='numeric' %}
+                                    {% include 'main/permits/_file.html' with name=row.national_card label='کارت ملی (پشت و رو)' multiple=1 error=row.e.national_card %}
+                                    {% include 'main/permits/_file.html' with name=row.birth_cert label='شناسنامه (اختیاری)' multiple=1 error=row.e.birth_cert %}
+                                </div>
+                            </details>
+                            {% endfor %}
+                        </div>
+
+                        <!-- 6. Document Uploads -->
+                        <div class="mb-8">
+                            <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۶. بارگذاری مدارک</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label for="birth-cert-upload" class="block font-medium mb-2">شناسنامه (تمام صفحات)<span class="text-red-500">*</span></label><input type="file" id="birth-cert-upload" required accept=".pdf,.jpg,.jpeg" class="w-full text-sm"></div>
-                                <div><label for="national-card-upload" class="block font-medium mb-2">کارت ملی (پشت و رو)<span class="text-red-500">*</span></label><input type="file" id="national-card-upload" required accept=".pdf,.jpg,.jpeg" class="w-full text-sm"></div>
+                                {% include 'main/permits/_file.html' with name='birth_cert' label='شناسنامه (تمام صفحات)' multiple=1 required=1 error=errors.birth_cert hint='pdf، jpg یا png' %}
+                                {% include 'main/permits/_file.html' with name='national_card' label='کارت ملی (پشت و رو)' multiple=1 required=1 error=errors.national_card hint='هر دو روی کارت' %}
                             </div>
                              <div class="mt-6">
                                 <label class="block font-medium mb-3">وضعیت سند ملک<span class="text-red-500">*</span></label>
-                                <div class="flex gap-6">
-                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-green-50 has-[:checked]:border-green-500"><input type="radio" name="propertyStatus" value="deeded" class="ml-3" onchange="handlePropertyStatusChange()"><span>دارای سند رسمی</span></label>
-                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500"><input type="radio" name="propertyStatus" value="not-deeded" class="ml-3" onchange="handlePropertyStatusChange()"><span>فاقد سند (قولنامه)</span></label>
+                                {% if errors.ownership_type %}<p class="text-sm text-red-600 mb-2">{{ errors.ownership_type }}</p>{% endif %}
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-green-50 has-[:checked]:border-green-500"><input type="radio" name="ownership_type" value="deed" class="ml-3" onchange="handlePropertyStatusChange()" {% if v.ownership_type == 'deed' %}checked{% endif %}><span class="font-medium">دارای سند رسمی</span></label>
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500"><input type="radio" name="ownership_type" value="agreement" class="ml-3" onchange="handlePropertyStatusChange()" {% if v.ownership_type == 'agreement' %}checked{% endif %}><span class="font-medium">فاقد سند (قولنامه)</span></label>
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500"><input type="radio" name="ownership_type" value="bonyad" class="ml-3" onchange="handlePropertyStatusChange()" {% if v.ownership_type == 'bonyad' %}checked{% endif %}><span class="font-medium">قرارداد واگذاری بنیاد مسکن</span></label>
                                 </div>
                             </div>
                             <!-- Conditional Sections -->
-                            <div id="deeded-section" class="conditional-section border-t"><div class="p-6 bg-green-50 rounded-b-lg border-x border-b border-green-200"><label for="deed-upload" class="block font-medium mb-2">بارگذاری تصویر سند رسمی<span class="text-red-500">*</span></label><input type="file" id="deed-upload" accept=".pdf" class="w-full text-sm"></div></div>
-                            <div id="not-deeded-section" class="conditional-section border-t">
+                            <div id="deeded-section" class="conditional-section border-t"><div class="p-6 bg-green-50 rounded-b-lg border-x border-b border-green-200 space-y-4">
+                                {% include 'main/permits/_file.html' with name='deed' label='بارگذاری تصویر سند رسمی' multiple=1 error=errors.deed %}
+                            </div></div>
+                            <div id="agreement-section" class="conditional-section border-t">
                                 <div class="p-6 bg-amber-50 rounded-b-lg border-x border-b border-amber-200 space-y-4">
                                     <p class="text-sm text-amber-800 font-semibold">توضیح: تصویر قولنامه باید برگردد به صاحب اول.</p>
-                                    <div>
-                                        <label for="agreement-upload" class="block font-medium mb-2">آپلود قولنامه (می‌توانید چند فایل انتخاب کنید)<span class="text-red-500">*</span></label>
-                                        <input type="file" id="agreement-upload" accept=".pdf,.jpg,.jpeg,.png" multiple class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200">
+                                    {% include 'main/permits/_file.html' with name='agreement' label='آپلود قولنامه (می‌توانید چند فایل انتخاب کنید)' multiple=1 error=errors.agreement %}
+                                </div>
+                            </div>
+                            <div id="bonyad-section" class="conditional-section border-t">
+                                <div class="p-6 bg-blue-50 rounded-b-lg border-x border-b border-blue-200 space-y-4">
+                                    <p class="text-sm text-blue-800 font-semibold">قرارداد واگذاری (موقت) زمین از بنیاد مسکن؛ شماره، تاریخ و کد پروژه را از بالای برگه‌ی قرارداد بخوانید.</p>
+                                    {% include 'main/permits/_file.html' with name='bonyad_contract' label='تصویر قرارداد (تمام صفحات)' multiple=1 error=errors.bonyad_contract %}
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {% include 'main/permits/_field.html' with name='project_code' label='کد پروژه' value=v.project_code error=errors.project_code ltr=1 %}
+                                        {% include 'main/permits/_field.html' with name='lease_years' label='مدت قرارداد (سال)' value=v.lease_years ltr=1 mode='numeric' %}
                                     </div>
                                 </div>
+                            </div>
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {% include 'main/permits/_field.html' with name='doc_number' label='شماره سند / قرارداد' value=v.doc_number error=errors.doc_number ltr=1 %}
+                                {% include 'main/permits/_field.html' with name='doc_date' label='تاریخ سند / قرارداد' value=v.doc_date error=errors.doc_date ltr=1 hint='۱۴۰۴/۰۳/۰۵' %}
+                                {% include 'main/permits/_field.html' with name='doc_issuer' label='مرجع صدور (دفترخانه / بنیاد مسکن شهرستان)' value=v.doc_issuer error=errors.doc_issuer %}
+                                {% include 'main/permits/_field.html' with name='share_dang' label='سهم (دانگ)' value=v.share_dang error=errors.share_dang ltr=1 mode='numeric' hint='۶' %}
+                                {% include 'main/permits/_field.html' with name='limit_north' label='حد شمالی' value=v.limit_north %}
+                                {% include 'main/permits/_field.html' with name='limit_south' label='حد جنوبی' value=v.limit_south %}
+                                {% include 'main/permits/_field.html' with name='limit_east' label='حد شرقی' value=v.limit_east %}
+                                {% include 'main/permits/_field.html' with name='limit_west' label='حد غربی' value=v.limit_west %}
                             </div>
                             <!-- Shamim Upload Section -->
                             <div class="mt-6 border-t pt-6">
                                 <label for="shamim-upload" class="block font-medium mb-2">آپلود فایل شمیم<span class="text-red-500">*</span></label>
                                 <div class="flex items-center gap-4">
-                                    <input type="file" id="shamim-upload" required accept=".dwg,.dxf,.geojson,.zip,.kml" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                                    <button type="button" onclick="extractShamim()" class="bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                                    <input type="file" id="shamim-upload" name="shamim" data-required="1" accept=".dwg,.dxf,.geojson,.zip,.kml" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    <button type="button" onclick="extractShamim(this)" class="bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
                                         <i class="fas fa-cogs ml-2"></i>استخراج
                                     </button>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-2">فرمت‌های مجاز: dwg, dxf, geojson, zip(shp), kml</p>
+                                <p class="text-xs text-gray-500 mt-2">فرمت‌های مجاز: dwg, dxf, geojson, zip(shp), kml. کارشناس اداری بر اساس این فایل، کد نوسازی ملک شما را می‌دهد.</p>
+                                {% if errors.shamim %}<p class="text-sm text-red-600 mt-1">{{ errors.shamim }}</p>{% endif %}
                             </div>
                         </div>
-                        
+
                         <!-- Confirmation -->
                         <div class="mt-8 border-t pt-6">
                             <label class="flex items-center">
-                                <input type="checkbox" id="confirm-checkbox" required class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                                <input type="checkbox" id="confirm-checkbox" name="confirm" required class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded">
                                 <span class="mr-3 text-gray-700">تأیید می‌کنم اطلاعات و مدارک صحیح است.<span class="text-red-500">*</span></span>
                             </label>
+                            {% if errors.confirm %}<p class="text-sm text-red-600 mt-1">{{ errors.confirm }}</p>{% endif %}
                         </div>
-        
+
                         <!-- Action Buttons -->
-                        <div class="mt-10 pt-6 border-t flex justify-between items-center">
-                            <button type="button" class="text-gray-600 font-semibold hover:bg-gray-100 px-6 py-3 rounded-lg">ذخیره پیش‌نویس</button>
+                        <div class="mt-10 pt-6 border-t flex justify-end items-center">
                             <button type="submit" class="bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-all shadow-lg">ایجاد پرونده و ادامه</button>
                         </div>
                     </form>
@@ -216,16 +277,17 @@
                     <ul class="space-y-3 text-gray-600">
                         <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
                         <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
-                        <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>سند یا قولنامه ملک</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>سند، قولنامه یا قرارداد بنیاد مسکن</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>فایل شمیم (سی‌دی نقشه‌برداری ملک)</span></li>
                     </ul>
                 </div>
                 <!-- Case Status Card -->
                 <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-info-circle text-blue-500 mr-3"></i>وضعیت پرونده</h3>
                     <div class="space-y-4">
-                        <div><p class="font-semibold">کد نوسازی:</p><p class="text-gray-600">در انتظار ایجاد</p></div>
+                        <div><p class="font-semibold">کد نوسازی:</p><p class="text-gray-600">پس از بررسی شمیم توسط کارشناس داده می‌شود</p></div>
                         <div><p class="font-semibold">وضعیت:</p><p class="text-gray-600 font-bold">جدید (NEW)</p></div>
-                        <button class="w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</button>
+                        <a href="tel:{{ support_phone }}" class="block text-center w-full bg-blue-100 text-blue-700 font-semibold py-3 rounded-lg hover:bg-blue-200 mt-4"><i class="fas fa-phone-alt mr-2"></i>تماس با دهیاری</a>
                     </div>
                 </div>
             </div>
@@ -234,105 +296,53 @@
 
     <script>
         function handlePropertyStatusChange() {
-            const status = document.querySelector('input[name="propertyStatus"]:checked').value;
-            const deededSection = document.getElementById('deeded-section');
-            const notDeededSection = document.getElementById('not-deeded-section');
-            
-            const deededInputs = deededSection.querySelectorAll('input');
-            const notDeededInputs = notDeededSection.querySelectorAll('input');
-
-            if (status === 'deeded') {
-                deededSection.classList.add('active');
-                notDeededSection.classList.remove('active');
-                deededInputs.forEach(input => input.required = true);
-                notDeededInputs.forEach(input => input.required = false);
-            } else { // not-deeded
-                deededSection.classList.remove('active');
-                notDeededSection.classList.add('active');
-                deededInputs.forEach(input => input.required = false);
-                notDeededInputs.forEach(input => input.required = true);
-            }
+            const checked = document.querySelector('input[name="ownership_type"]:checked');
+            const status = checked ? checked.value : '';
+            ['deed', 'agreement', 'bonyad'].forEach(function (kind) {
+                const section = document.getElementById(kind === 'deed' ? 'deeded-section' : kind + '-section');
+                section.classList.toggle('active', kind === status);
+            });
         }
+        handlePropertyStatusChange();
 
-        function extractShamim() {
+        // Files cannot be kept by the browser after an error page: remind which ones are needed
+        function extractShamim(button) {
             const shamimInput = document.getElementById('shamim-upload');
             if (shamimInput.files.length === 0) {
                 alert('لطفاً ابتدا فایل شمیم را انتخاب کنید.');
                 return;
             }
-            
-            // Show loading state
-            const extractButton = event.target;
-            const originalText = extractButton.innerHTML;
-            extractButton.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>در حال پردازش...';
-            extractButton.disabled = true;
-            
-            // Store current form data in sessionStorage to restore later
-            const currentFormData = {};
-            document.querySelectorAll('input, select, textarea').forEach(element => {
-                if (element.id) {
-                    currentFormData[element.id] = element.value;
-                }
-            });
-            sessionStorage.setItem('building_permit_form_data', JSON.stringify(currentFormData));
-            sessionStorage.setItem('return_url', window.location.href);
-            
-            // Prepare FormData for file upload
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>در حال پردازش...';
+            button.disabled = true;
+
             const formData = new FormData();
-            formData.append('cad_file', shamimInput.files[0]);
-            
-            // Get CSRF token
+            formData.append('autocad_file', shamimInput.files[0]);
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfToken) {
-                formData.append('csrfmiddlewaretoken', csrfToken.value);
-            }
-            
-            // Send file via XMLHttpRequest
+            if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken.value);
+
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/autocad/upload/', true);
-            
-            xhr.onload = function() {
-                extractButton.innerHTML = originalText;
-                extractButton.disabled = false;
-                
-                if (xhr.status === 200) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            alert('فایل شمیم با موفقیت پردازش شد!');
-                            // Optionally redirect to results page
-                            if (response.result_url) {
-                                window.open(response.result_url, '_blank');
-                            }
-                        } else {
-                            alert('خطا در پردازش فایل: ' + (response.error || 'خطای ناشناخته'));
-                        }
-                    } catch (e) {
-                        // If response is not JSON (redirect), handle it
-                        if (xhr.responseURL && xhr.responseURL.includes('/autocad/result/')) {
-                            window.open(xhr.responseURL, '_blank');
-                            alert('فایل شمیم با موفقیت پردازش شد!');
-                        } else {
-                            alert('خطا در پردازش فایل');
-                        }
-                    }
+            xhr.onload = function () {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                if (xhr.responseURL && xhr.responseURL.includes('/autocad/result/')) {
+                    window.open(xhr.responseURL, '_blank');
                 } else {
-                    alert('خطا در ارسال فایل: ' + xhr.status);
+                    alert('فایل پردازش نشد؛ همچنان می‌توانید پرونده را ثبت کنید، کارشناس فایل را بررسی می‌کند.');
                 }
             };
-            
-            xhr.onerror = function() {
-                extractButton.innerHTML = originalText;
-                extractButton.disabled = false;
+            xhr.onerror = function () {
+                button.innerHTML = originalText;
+                button.disabled = false;
                 alert('خطا در ارتباط با سرور');
             };
-            
             xhr.send(formData);
         }
 
         // Geographic Cascade
-        document.addEventListener('DOMContentLoaded', function() {
-            const cascade = new GeographicCascade({
+        document.addEventListener('DOMContentLoaded', function () {
+            new GeographicCascade({
                 provinceId: 'id_province_bp',
                 countyId: 'id_county_bp',
                 districtId: 'id_district_bp',
@@ -342,10 +352,19 @@
             });
         });
 
-        document.getElementById('case-creation-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            // Redirect to step 2
-            window.location.href = '/services/building-permit/step2/';
+        // The browser's own check for the files the chosen paper needs (the server checks again)
+        document.getElementById('case-creation-form').addEventListener('submit', function (event) {
+            const status = (document.querySelector('input[name="ownership_type"]:checked') || {}).value;
+            const need = ['birth_cert', 'national_card', 'shamim'].concat(status ? [status === 'bonyad' ? 'bonyad_contract' : status] : []);
+            for (const name of need) {
+                const input = document.querySelector('input[type=file][name="' + name + '"]');
+                if (input && input.files.length === 0) {
+                    event.preventDefault();
+                    input.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    alert('فایل «' + (document.querySelector('label[for="' + input.id + '"]') || {textContent: name}).textContent.replace('*', '') + '» را انتخاب کنید.');
+                    return;
+                }
+            }
         });
     </script>
 </body>

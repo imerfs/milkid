@@ -1,0 +1,6 @@
+<div class="mp-pane" data-url="{% url 'main:mayor_panel' 'permits' %}">
+    <header class="mp-head"><div><h2>پرونده‌های پروانه ساختمان</h2><p>پرونده‌هایی که مردم روستا باز کرده‌اند: مدارک هویتی، سند یا قرارداد، فایل شمیم و کد نوسازی. {% if permitlist.waiting %}<b>{{ permitlist.waiting }} پرونده منتظر افتتاح است.</b>{% endif %}</p></div></header>
+    <section class="mp-card" aria-label="پرونده‌های پروانه">
+        {% include 'partials/permit_files.html' %}
+    </section>
+</div>

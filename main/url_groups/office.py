@@ -28,6 +28,12 @@ urlpatterns = [
     path('messenger/thread/<str:key>/send/', views.messenger_send, name='messenger_send'),
     path('my-municipality/', views.my_municipality, name='my_municipality'),
     path('my-municipality/switch/', views.switch_municipality, name='switch_municipality'),
+    path('permits/<int:file_id>/', views.permit_file, name='permit_file'),
+    path('permits/<int:file_id>/open/', views.permit_open, name='permit_open'),
+    path('permits/<int:file_id>/send-back/', views.permit_send_back, name='permit_send_back'),
+    path('permits/<int:file_id>/refuse/', views.permit_refuse, name='permit_refuse'),
+    path('permits/<int:file_id>/supplement/', views.permit_supplement, name='permit_supplement'),
+    path('permits/documents/<int:doc_id>/', views.permit_document, name='permit_document'),
     path('dashboard/clerk/', views.clerk_dashboard, name='clerk_dashboard'),
     path('dashboard/clerk/remind/<int:request_id>/', views.clerk_remind, name='clerk_remind'),
 ]

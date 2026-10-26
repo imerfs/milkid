@@ -112,6 +112,11 @@
                         <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-indigo-800 text-white font-mono">{{ stats.total_requests }}</span>
                     </a>
 
+                    <a href="#permits-section" onclick="var d=document.getElementById('permits-section'); if (d) d.open = true;" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fas fa-folder-plus text-emerald-400 text-sm"></i>
+                        <span>پرونده‌های پروانه</span>
+                        {% if permitlist.waiting %}<span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 font-mono">{{ permitlist.waiting }}</span>{% endif %}
+                    </a>
                     {% if visits.mode %}
                     <a href="#visits-section" onclick="var d=document.getElementById('visits-section'); if (d) d.open = true;" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
                         <i class="fas fa-calendar-check text-indigo-400 text-sm"></i>
@@ -432,6 +437,16 @@
                 </details>
                 <script>(function () { var d = document.getElementById('visits-section'); if (d && location.hash === '#visits-section') { d.open = true; d.scrollIntoView(); } })();</script>
                 {% endif %}
+
+                <!-- Building-permit files (step 1: opening the file); the list opens by itself when one waits -->
+                <details id="permits-section" class="bg-white rounded-2xl border border-slate-200/80 shadow-xs mb-6" {% if permitlist.waiting %}open{% endif %}>
+                    <summary class="p-5 cursor-pointer flex items-center gap-3 font-extrabold text-slate-800 text-base">
+                        <i class="fas fa-folder-plus text-indigo-500"></i>پرونده‌های پروانه ساختمان
+                        {% if permitlist.waiting %}<span class="px-2 py-0.5 rounded-full text-[11px] bg-amber-100 text-amber-800 font-semibold">{{ permitlist.waiting }} پرونده منتظر افتتاح</span>{% endif %}
+                    </summary>
+                    <div class="p-5 pt-0">{% include 'partials/permit_files.html' %}</div>
+                </details>
+                <script>(function () { var d = document.getElementById('permits-section'); if (d && location.hash === '#permits-section') { d.open = true; d.scrollIntoView(); } })();</script>
 
                 <!-- Main Requests Management Table -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden" id="requests-section">
@@ -1382,4 +1397,5 @@
         }
     </script>
     {% include 'partials/office_dock.html' %}
+    {% include 'partials/permit_drawer.html' %}
 {% endblock %}
