@@ -155,7 +155,7 @@ class Confirming(AtStepThree):
         self.assertIsNotNone(permit.bonyad_checked_at)
         self.assertTrue(any('تایید صحت پاسخ بنیاد' in h['action'] for h in permit.request.workflow_history))
         self.assertTrue(Notification.objects.filter(user=self.citizen, title='پاسخ بنیاد مسکن تایید شد').exists())
-        self.assertEqual(permit.status_text, 'پاسخ بنیاد تایید شد')
+        self.assertEqual(permit.status_text, 'نقشه‌ها در حال تهیه (متقاضی)')
 
     def test_the_expert_and_the_dehyari_may_too(self):
         from main.tests.helpers import make_user

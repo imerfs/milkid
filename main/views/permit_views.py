@@ -10,17 +10,22 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, Http404
 from django.shortcuts import redirect, render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permits
+from main.office import permit_form, permit_step2, permit_step3, permit_step4, permits
+from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
 
 INLINE_TYPES = {'.pdf', '.jpg', '.jpeg', '.png'}
+PERSON_LABELS = (('name', 'نام و نام خانوادگی'), ('father', 'فرزند'), ('grade', 'پایه‌ی پروانه‌ی اشتغال'), ('field', 'رشته'), ('license', 'شماره‌ی پروانه / عضویت'))
+FORM_LABELS = (('f04', 'فرم ۰۴ (دستور تهیه‌ی نقشه)'), ('f05', 'فرم ۰۵ (تعهد سازه)'), ('f06', 'فرم ۰۶ (تعهد معماری)'), ('f07', 'فرم ۰۷ (تعهد نظارت)'))
+SIDE_LABELS = (('length', 'طول موجود'), ('after', 'ابعاد پس از اصلاح'), ('passage', 'عرض گذر موجود'), ('approved', 'عرض گذر مصوب'))
 
 
 def _file_url(permit, embed=False):
@@ -242,3 +247,91 @@ def permit_answer_verify(request, file_id):
 def permit_answer_return(request, file_id):
     return _step2_action(request, file_id, lambda p: permit_step3.send_back(request.user, p, request.POST.get('notes', '')),
                          'پاسخ برای اصلاح به متقاضی برگشت داده شد.', page='permit_file')
+
+
+@login_required
+def permit_design(request, file_id):
+    """Step 4: engineers, forms 04-07, plan upload, review and the dehyari's signature, all on one page."""
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    if permit.stage_no < 4:
+        messages.error(request, 'این بخش پس از تایید پاسخ بنیاد در دسترس است.')
+        return redirect(_file_url(permit, bool(request.GET.get('embed'))))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    data = permit_step4.payload(permit)
+    open_for_owner = mine and permit.stage_no == 4 and permit.design_state in permit_step4.OPEN_STATES
+    docs = {kind: list(permit.documents.filter(kind=kind)) for kind in permit_step4.PLAN_KINDS}
+    return render(request, 'main/permits/design.html', {
+        'permit': permit, 'd': data, 'embed': bool(request.GET.get('embed')), 'mine': mine, 'staff': staff,
+        'can_sign': staff and can(request.user, 'permit.sign') and permit.stage_no == 4 and permit.design_state in ('submitted', 'reviewed'),
+        'can_review': staff and permit.stage_no == 4 and permit.design_state == 'submitted',
+        'can_return': staff and permit.stage_no == 4 and permit.design_state in ('submitted', 'reviewed'),
+        'can_staff_edit': staff and permit.stage_no == 4 and permit.design_state != 'signed',
+        'owner_open': open_for_owner, 'people_editable': open_for_owner or (staff and permit.design_state != 'signed' and permit.stage_no == 4),
+        'plan_docs': docs, 'plan_kinds': permit_step4.PLAN_KINDS.items(), 'counts': permit_step4.counts(permit),
+        'people_rows': [(role, label, [(key, text, data['people'][role].get(key, '')) for key, text in PERSON_LABELS])
+                        for role, label in permit_step4.ROLES.items()],
+        'form_rows': [(key, label, data['forms'][key]['number'], data['forms'][key]['date']) for key, label in FORM_LABELS],
+        'side_rows': [(side, label, [(key, text, data['order']['sides'][side].get(key, '')) for key, text in SIDE_LABELS])
+                      for side, label in (('north', 'شمال'), ('south', 'جنوب'), ('east', 'شرق'), ('west', 'غرب'))],
+        'tampered': permit_step4.tampered(permit), 'payload': {**data, 'blank': {
+            'f04': static('forms/permit/form04_blank.jpg'), 'f07': static('forms/permit/form07_blank.jpg'),
+            'letter': static('forms/permit/letterhead.jpg')}, 'file': permit.pk, 'owner': permit.people.first().full_name},
+    })
+
+
+def _design_action(request, file_id, action, ok):
+    return _step2_action(request, file_id, action, ok, page='permit_design')
+
+
+@login_required
+@require_POST
+def permit_design_people(request, file_id):
+    return _design_action(request, file_id, lambda p: permit_step4.save_people(request.user, p, request.POST), 'مشخصات مهندسان ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_design_forms(request, file_id):
+    return _design_action(request, file_id, lambda p: permit_step4.save_forms(request.user, p, request.POST), 'اطلاعات فرم‌ها ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_design_upload(request, file_id):
+    def act(p):
+        count = permit_step4.upload_plans(request.user, p, request.POST.get('kind', ''), request.FILES.getlist('plans'))
+        messages.info(request, f'{count} فایل نقشه بارگذاری شد.')
+    return _design_action(request, file_id, act, 'نقشه‌ها بارگذاری شد.')
+
+
+@login_required
+@require_POST
+def permit_design_delete(request, file_id, doc_id):
+    return _design_action(request, file_id, lambda p: permit_step4.delete_plan(request.user, p, doc_id), 'نقشه حذف شد.')
+
+
+@login_required
+@require_POST
+def permit_design_submit(request, file_id):
+    return _design_action(request, file_id, lambda p: permit_step4.submit(request.user, p), 'نقشه‌ها برای بررسی فرستاده شد.')
+
+
+@login_required
+@require_POST
+def permit_design_return(request, file_id):
+    return _design_action(request, file_id, lambda p: permit_step4.send_back(request.user, p, request.POST.get('notes', '')), 'نقشه‌ها برای اصلاح برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_design_review(request, file_id):
+    return _design_action(request, file_id, lambda p: permit_step4.review(request.user, p, request.POST), 'نقشه‌ها بررسی شد و منتظر امضای دهیار است.')
+
+
+@login_required
+@require_POST
+def permit_design_sign(request, file_id):
+    return _design_action(request, file_id, lambda p: permit_step4.sign(request.user, p, request.POST), 'نقشه‌ها امضا شد و پرونده به مرحله‌ی ۵ رفت.')

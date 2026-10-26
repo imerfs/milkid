@@ -28,6 +28,7 @@ POLICY = {
     # building-permit files (step 1): the staff who see the identity papers / who may open a file
     'permit.view': {'dehyari', 'engineer', 'clerk', 'inspector'},
     'permit.open': {'dehyari', 'engineer', 'clerk'},
+    'permit.sign': {'dehyari'},                  # the dehyari's own signature on the plans (step 4)
     # the administrative expert's desk (letters and follow-ups of the village)
     'clerk.desk': {'clerk', 'dehyari'},
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed
