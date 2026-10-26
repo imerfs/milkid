@@ -129,3 +129,9 @@
 .pf-checks li.ok { background: #d1fae5; color: #065f46; }
 .pf-checks li.warn { background: #fef3c7; color: #92400e; }
 .pff-check { flex-direction: row !important; align-items: center; gap: 8px !important; }
+
+/* step 4 */
+.pf-docs li { display: flex; align-items: center; gap: 6px; }
+.pf-docs li > a { flex: 1; min-width: 0; }
+.pfd-del { margin: 0; }
+.pfd-del button { border: 0; background: #fee2e2; color: #b91c1c; border-radius: 8px; padding: 6px 9px; cursor: pointer; }

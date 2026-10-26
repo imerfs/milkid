@@ -52,3 +52,15 @@ brings the answer back.
   the letter's plot centre and the plot on the map. They check the code on the Bonyad's site, may correct a figure, tick «صحت را بررسی
   کردم» and confirm, or send the file back with a reason (the owner uploads again).
 - A confirmed «مجاز» answer moves the file to step 4 and is written in the map plot's permit notes; a confirmed «غیرمجاز» ends the file.
+
+## Step 4: engineers, plans, forms 04-07 and the dehyari's signature
+After the Bonyad's answer the Bonyad introduces the owner to the drawing offices and a supervising engineer (outside this system).
+- **Forms** (`permits/<id>/design/`, `static/js/permit-design-forms.js`): 04 دستور تهیه‌ی نقشه (from the Bonyad's answer and form 1:
+  allowed floors and area, the four sides, passage widths), 05 تعهد محاسبات سازه, 06 تعهد معماری, 07 تعهد نظارت. Filled from the file
+  and the engineers the owner enters; drawn in the browser (04 and 07 over their blank forms, 05 and 06 typeset on the dehyari's
+  letterhead), downloaded as PDF or printed. The engineers and the dehyari sign them on paper.
+- **Plans:** the owner uploads every sheet except the signed forms (architecture, structure, other; pdf/jpg/png/dwg/dxf), can delete
+  until sending, and sends the set. Each sheet's SHA-256 is kept on arrival.
+- **Review:** clerk / expert / dehyari tick that the signed forms 05-07 reached the office and confirm, or send the set back with a
+  reason. **Signature:** only the dehyari (`permit.sign`) signs, from «reviewed» (or in one go from «submitted» by ticking the forms):
+  the file records who, when and a fingerprint over all sheets; sheets changed afterwards are flagged. Signing moves the file to step 5.

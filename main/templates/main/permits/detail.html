@@ -81,6 +81,11 @@
             {% endif %}
           {% endif %}
           {% endif %}
+          {% if permit.stage_no >= 4 %}
+          <p>مرحله‌ی ۴: نقشه‌های معماری و سازه را (با دفاتر نقشه‌کشی و ناظر معرفی‌شده از بنیاد) تهیه کنید، فرم‌های تعهد ۰۴ تا ۰۷ را چاپ و امضا بگیرید و نقشه‌ها را بارگذاری کنید تا دهیار امضا کند.</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          <a class="pf-btn pf-btn-main" href="{% url 'main:permit_design' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-compass-drafting" aria-hidden="true"></i>نقشه‌ها و فرم‌های تعهد</a>
+          {% endif %}
           {% if permit.stage_no >= 4 and permit.bonyad.verdict %}
           <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> پاسخ بنیاد (نامه {{ permit.bonyad.letter_no|persian_numbers }}، کد رهگیری <bdi dir="ltr">{{ permit.bonyad.tracking_code|persian_numbers }}</bdi>) تایید شد: مجاز، {{ permit.bonyad.floors|persian_numbers }} طبقه، زیربنای مجاز {{ permit.bonyad.floor_area|persian_numbers }} م².</p>
           {% endif %}

@@ -1,0 +1,191 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}نقشه‌ها و فرم‌های تعهد - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-compass-drafting" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۴: نقشه‌ها و فرم‌های تعهد</h1>
+      <p>{{ d.common.owner }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.design_state == 'signed' or permit.stage_no > 4 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li><b>۱</b><span>بنیاد شما را به دفاتر نقشه‌کشی و ناظر معرفی می‌کند؛ مهندسان را در بخش «مهندسان» ثبت کنید.</span></li>
+    <li><b>۲</b><span>فرم‌های ۰۴ تا ۰۷ از اطلاعات پرونده پر شده؛ چاپ کنید و مهر و امضای مهندسان و دهیار را بگیرید.</span></li>
+    <li><b>۳</b><span>همه‌ی نقشه‌های معماری و سازه را (به‌جز فرم‌های امضادار) اینجا بارگذاری کنید.</span></li>
+    <li class="{% if permit.design_state == 'signed' %}ok{% endif %}"><b>۴</b><span>دهیاری نقشه‌ها را بررسی می‌کند و دهیار امضا می‌کند.</span></li>
+  </ol>
+
+  {% if permit.design_state == 'returned' and permit.staff_notes %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری نقشه‌ها را برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
+  {% if d.signed.sha256 %}
+  <div class="pf-card pf-shamim"><b><i class="fas fa-signature" aria-hidden="true"></i> امضای دهیار</b>
+    <p>{{ d.signed.by }} در {{ d.signed.at|persian_numbers }} نقشه‌ها ({{ d.signed.files|persian_numbers }} فایل) را امضا کرد.</p>
+    <p class="pf-hint">اثر انگشت نقشه‌ها: <bdi dir="ltr">{{ d.signed.sha256|slice:":24" }}…</bdi></p>
+    {% if tampered %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> فایل‌های نقشه پس از امضا تغییر کرده‌اند!</p>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+
+      {# ---------- engineers ---------- #}
+      <form method="post" action="{% url 'main:permit_design_people' permit.pk %}" class="pf-card pf-form pff-form" id="pfd-people">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-user-gear" aria-hidden="true"></i>مهندسان</h2>
+        {% for role, label, fields in people_rows %}
+        <h3>{{ label }}</h3>
+        <div class="pff-fields">
+          {% for key, text, value in fields %}<label>{{ text }}<input name="{{ role }}_{{ key }}" value="{{ value }}" {% if not people_editable %}readonly{% endif %}></label>{% endfor %}
+        </div>
+        {% endfor %}
+        {% if people_editable %}<button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی مشخصات مهندسان</button>{% endif %}
+      </form>
+
+      {# ---------- staff: form 04 and the numbers ---------- #}
+      <form method="post" action="{% url 'main:permit_design_forms' permit.pk %}" class="pf-card pf-form pff-form" id="pfd-forms">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-file-lines" aria-hidden="true"></i>دستور تهیه‌ی نقشه (فرم ۰۴) و شماره‌ی فرم‌ها</h2>
+        {% if can_staff_edit %}<p class="pf-hint">از پاسخ بنیاد و فرم ۱ پر شده است. شماره‌ی ثبت هر فرم و تاریخش را دهیاری می‌دهد.</p>{% endif %}
+        <div class="pff-fields">
+          {% for key, label, number, date in form_rows %}
+          <label>شماره‌ی {{ label }}<input name="{{ key }}_number" value="{{ number }}" {% if not can_staff_edit %}readonly{% endif %} dir="ltr"></label>
+          <label>تاریخ {{ label }}<input name="{{ key }}_date" value="{{ date }}" {% if not can_staff_edit %}readonly{% endif %} dir="ltr"></label>
+          {% endfor %}
+        </div>
+        <details {% if can_staff_edit %}open{% endif %}>
+          <summary class="pf-hint">اطلاعات ملک و ضوابط (فرم‌های ۰۴ تا ۰۷)</summary>
+          <div class="pff-fields">
+            <label>مالک<input name="c_owner" value="{{ d.common.owner }}" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>پلاک (کد نوسازی)<input name="c_plot" value="{{ d.common.plot }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>قطعه<input name="c_lot" value="{{ d.common.lot }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>بخش (بخشداری)<input name="c_district" value="{{ d.common.district }}" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>کلاسه‌ی پرونده<input name="c_file_class" value="{{ d.common.file_class }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>شماره‌ی ثبتی<input name="c_reg_no" value="{{ d.common.reg_no }}" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>تعداد سقف/طبقه<input name="c_floors" value="{{ d.common.floors }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>زیربنای مجاز کل (م²)<input name="c_area" value="{{ d.common.area }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label class="wide">نشانی پلاک<input name="c_address" value="{{ d.common.address }}" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>نوع درخواست<select name="o_kind" {% if not can_staff_edit %}disabled{% endif %}>
+              <option value="construct" {% if d.order.kind == 'construct' %}selected{% endif %}>احداث بنا یا تاسیسات</option>
+              <option value="demolish" {% if d.order.kind == 'demolish' %}selected{% endif %}>تخریب و نوسازی</option>
+              <option value="repair" {% if d.order.kind == 'repair' %}selected{% endif %}>تعمیر و مرمت بنا</option></select></label>
+            <label>مبنای ضوابط<select name="o_basis" {% if not can_staff_edit %}disabled{% endif %}>
+              <option value="hadi" {% if d.order.basis == 'hadi' %}selected{% endif %}>ضوابط طرح هادی</option>
+              <option value="urf" {% if d.order.basis == 'urf' %}selected{% endif %}>عرف محلی</option></select></label>
+            <label>تعداد طبقه‌ی مجاز<input name="o_floors" value="{{ d.order.floors }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>حداکثر زیربنای هر طبقه (م²)<input name="o_floor_area" value="{{ d.order.floor_area }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>مساحت ملک<input name="o_area" value="{{ d.order.area }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>اصلی<input name="o_asli" value="{{ d.order.asli }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>فرعی<input name="o_fari" value="{{ d.order.fari }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>شماره‌ی برگه‌ی واگذاری<input name="o_lease_no" value="{{ d.order.lease_no }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>تاریخ واگذاری<input name="o_lease_date" value="{{ d.order.lease_date }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>شماره‌ی درخواست<input name="o_request_no" value="{{ d.order.request_no }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+            <label>تاریخ درخواست<input name="o_request_date" value="{{ d.order.request_date }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>
+          </div>
+          <h3>ابعاد و گذر هر طرف (متر)</h3>
+          <div class="pff-limits">
+            {% for side, label, fields in side_rows %}
+            <div><b>{{ label }}</b>
+              {% for key, text, value in fields %}<label>{{ text }}<input name="s_{{ side }}_{{ key }}" value="{{ value }}" dir="ltr" {% if not can_staff_edit %}readonly{% endif %}></label>{% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+        </details>
+        {% if can_staff_edit %}<button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی اطلاعات فرم‌ها</button>{% endif %}
+      </form>
+
+      {# ---------- plans ---------- #}
+      <section class="pf-card" id="pfd-plans">
+        <h2><i class="fas fa-layer-group" aria-hidden="true"></i>نقشه‌ها <em class="pf-tag {% if counts.total %}ok{% endif %}">{{ counts.total|persian_numbers }} فایل</em></h2>
+        <p class="pf-hint">همه‌ی برگه‌های نقشه را بفرستید؛ فرم‌های تعهد و دستور تهیه‌ی نقشه که مهر و امضای کاغذی می‌گیرند اینجا بارگذاری نمی‌شوند. فرمت: pdf، jpg، png، dwg یا dxf (هر فایل تا ۱۰ مگابایت).</p>
+        {% for kind, label in plan_kinds %}
+        <h3>{{ label }}</h3>
+        <ul class="pf-docs">
+          {% for pk_kind, items in plan_docs.items %}{% if pk_kind == kind %}{% for doc in items %}
+          <li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }} <small>{{ doc.size|filesizeformat }}</small></a>
+            {% if owner_open %}<form method="post" action="{% url 'main:permit_design_delete' permit.pk doc.pk %}" class="pfd-del" onsubmit="return confirm('این فایل حذف شود؟')">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}<button type="submit" aria-label="حذف"><i class="fas fa-trash" aria-hidden="true"></i></button></form>{% endif %}</li>
+          {% empty %}<li class="pf-none">هنوز فایلی نیست.</li>{% endfor %}{% endif %}{% endfor %}
+        </ul>
+        {% if owner_open %}
+        <form method="post" action="{% url 'main:permit_design_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form" data-once>{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}<input type="hidden" name="kind" value="{{ kind }}">
+          <label>انتخاب فایل‌ها (چندتایی)<input type="file" name="plans" multiple required accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf"></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-upload" aria-hidden="true"></i>بارگذاری</button>
+        </form>
+        {% endif %}
+        {% endfor %}
+        {% if owner_open %}
+        <form method="post" action="{% url 'main:permit_design_submit' permit.pk %}" class="pf-form pf-open" onsubmit="return confirm('نقشه‌ها برای بررسی دهیاری فرستاده شود؟')">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>ارسال برای بررسی</h3>
+          <p class="pf-hint">لازم است مشخصات سه مهندس ذخیره و دست‌کم یک برگه‌ی معماری و یک برگه‌ی سازه بارگذاری شده باشد.</p>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>{% if permit.design_state == 'returned' %}ارسال دوباره‌ی نقشه‌ها{% else %}ارسال نقشه‌ها به دهیاری{% endif %}</button>
+        </form>
+        {% endif %}
+      </section>
+
+      {# ---------- staff review and the dehyari's signature ---------- #}
+      {% if can_review or can_sign or can_return %}
+      <section class="pf-card" id="pfd-review">
+        <h2><i class="fas fa-clipboard-check" aria-hidden="true"></i>بررسی و امضا</h2>
+        <ul class="pf-checks">
+          <li class="{% if counts.plan_arch %}ok{% else %}warn{% endif %}">برگه‌های معماری: {{ counts.plan_arch|persian_numbers }}</li>
+          <li class="{% if counts.plan_struct %}ok{% else %}warn{% endif %}">برگه‌های سازه: {{ counts.plan_struct|persian_numbers }}</li>
+          <li class="{% if d.people.architect.name and d.people.structure.name and d.people.supervisor.name %}ok{% else %}warn{% endif %}">مهندس طراح، محاسب و ناظر: {% if d.people.architect.name and d.people.structure.name and d.people.supervisor.name %}ثبت شده{% else %}ناقص{% endif %}</li>
+        </ul>
+        {% if can_review or can_sign %}
+        <form method="post" action="{% url 'main:permit_design_review' permit.pk %}" class="pf-form pff-form" id="pfd-decide">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          {% if permit.design_state == 'submitted' %}
+          <div class="pff-checks">
+            <label><input type="checkbox" name="signed_f05"> فرم ۰۵ (تعهد محاسبات سازه) با مهر و امضای مهندس و دهیار رسید</label>
+            <label><input type="checkbox" name="signed_f06"> فرم ۰۶ (تعهد معماری) با مهر و امضای مهندس و دهیار رسید</label>
+            <label><input type="checkbox" name="signed_f07"> فرم ۰۷ (تعهد نظارت) با مهر و امضای مهندس ناظر و دهیار رسید</label>
+          </div>
+          <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+          {% endif %}
+          {% if can_review %}<button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_design_review' permit.pk %}"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید بررسی نقشه‌ها</button>{% endif %}
+          {% if can_sign %}<button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_design_sign' permit.pk %}" onclick="return confirm('نقشه‌ها با امضای شما نهایی شود و پرونده به مرحله‌ی ۵ برود؟')"><i class="fas fa-signature" aria-hidden="true"></i>امضای دهیار و رفتن به مرحله‌ی ۵</button>{% endif %}
+        </form>
+        {% endif %}
+        {% if can_return %}
+        <form method="post" action="{% url 'main:permit_design_return' permit.pk %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>برگشت برای اصلاح</h3>
+          <label>چه چیزی باید اصلاح شود؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist">
+        <button type="button" class="is-on" data-page="f04" role="tab">۰۴ دستور نقشه</button>
+        <button type="button" data-page="f05" role="tab">۰۵ سازه</button>
+        <button type="button" data-page="f06" role="tab">۰۶ معماری</button>
+        <button type="button" data-page="f07" role="tab">۰۷ نظارت</button>
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pfd-dl-this"><i class="fas fa-download" aria-hidden="true"></i>دانلود این فرم (PDF)</button>
+        <button type="button" class="pf-btn pf-btn-main" id="pfd-dl-all"><i class="fas fa-download" aria-hidden="true"></i>دانلود هر ۴ فرم (PDF)</button>
+        <button type="button" class="pf-btn" id="pff-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ هر ۴ فرم</button>
+      </div>
+      <p class="pf-hint">فرم‌ها را چاپ کنید؛ فرم‌های ۰۵ و ۰۶ و ۰۷ را مهندس مربوط و دهیار مهر و امضا می‌کنند و فرم ۰۴ را مسئول فنی و دهیار. پیش‌نمایش با تغییر خانه‌ها به‌روز می‌شود.</p>
+    </aside>
+  </div>
+</div>
+{{ payload|json_script:"pfd-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/office.js' %}" defer></script>
+<script src="{% static 'js/permit-design-forms.js' %}" defer></script>
+{% endblock %}

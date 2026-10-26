@@ -287,7 +287,7 @@ def refuse(actor, permit, reason):
 
 def panel_rows(user, limit=60):
     rows = files_for(user).filter(request__request_type='building_permit')
-    waiting = rows.filter(Q(state='submitted') | Q(stage_no=3, bonyad_state='uploaded')).count()
+    waiting = rows.filter(Q(state='submitted') | Q(stage_no=3, bonyad_state='uploaded') | Q(stage_no=4, design_state__in=('submitted', 'reviewed'))).count()
     ordered = sorted(rows[:300], key=lambda f: (not f.needs_staff, -f.created_at.timestamp()))[:limit]
     return {'rows': ordered, 'waiting': waiting, 'total': rows.count(), 'can_open': can(user, 'permit.open')}
 
