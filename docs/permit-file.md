@@ -40,3 +40,15 @@ filled forms, gets the dehyari's stamp and signature, and takes them to the Bony
   is shaped by the browser, and saves PDF (form 1 + map; form 2) or prints. Field positions are in `static/js/permit-forms.js`.
 - **Handing over** (`permit_deliver`): when both forms are saved and the signed copies are given to the owner, the staff mark it
   and the file moves to step 3 (the Bonyad's answer).
+
+## Step 3: the Bonyad's answer
+The Bonyad-e Maskan answers on paper (form الف۲-۱ with a tracking code and a QR); it has no access to the system, so the owner
+brings the answer back.
+- **Owner** (file page, step 3): uploads the scan (pdf/jpg/png) and types the figures from it (`main/office/permit_step3.py: clean`):
+  letter number, tracking code, date, the request number the letter names, allowed / denied, validity, floors, occupancy, allowed
+  floor area, heights, and optionally the plot centre's UTM X/Y.
+- **Staff** (clerk, expert or dehyari): see the scan beside the system's own comparison (`checks`): the request number against form 1's,
+  the area against the file's, dates (after form 1, not expired), a tracking code already used in another file, and the distance between
+  the letter's plot centre and the plot on the map. They check the code on the Bonyad's site, may correct a figure, tick «صحت را بررسی
+  کردم» and confirm, or send the file back with a reason (the owner uploads again).
+- A confirmed «مجاز» answer moves the file to step 4 and is written in the map plot's permit notes; a confirmed «غیرمجاز» ends the file.

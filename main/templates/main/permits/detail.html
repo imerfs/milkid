@@ -47,6 +47,43 @@
           <p>مرحله‌ی ۲: فرم ۱ (استعلام از بنیاد مسکن) را دهیاری و فرم ۲ (تقاضای پروانه) را متقاضی پر می‌کند؛ هر دو را دانلود و چاپ کنید، فرم ۱ مهر و امضای دهیار می‌گیرد و با نقشه‌ی ملک به بنیاد مسکن می‌روید.</p>
           <p><b>فرم ۱:</b> {% if permit.form1_at %}آماده است{% else %}منتظر دهیاری{% endif %} · <b>فرم ۲:</b> {% if permit.form2_at %}پر شده{% else %}منتظر متقاضی{% endif %}</p>
           {% endif %}
+          {% if permit.stage_no == 3 %}
+          <p>مرحله‌ی ۳: فرم‌های امضاشده را به بنیاد مسکن ببرید. پاسخ بنیاد (فرم الف۲-۱، همه‌ی صفحه‌ها) را اینجا بارگذاری و ارقامش را وارد کنید تا دهیاری صحت آن را تایید کند.</p>
+          {% if permit.bonyad_state == 'rejected' and permit.staff_notes %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری پاسخ را برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote>{% endif %}
+          {% if mine and not permit.bonyad_state or mine and permit.bonyad_state == 'rejected' %}
+          <form method="post" action="{% url 'main:permit_answer' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form">{% csrf_token %}
+            {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+            <h3>پاسخ بنیاد مسکن</h3>
+            <label>تصویر نامه (pdf یا عکس؛ همه‌ی صفحه‌ها)<input type="file" name="answer" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+            {% include 'main/permits/_answer_fields.html' %}
+            <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال پاسخ بنیاد به دهیاری</button>
+          </form>
+          {% elif permit.bonyad_state == 'uploaded' %}
+            <p class="pf-code">پاسخ بنیاد دریافت شد؛ منتظر تایید صحت توسط دهیاری.</p>
+            {% if can_decide %}
+            <h3>بررسی خودکار</h3>
+            <ul class="pf-checks">{% for c in checks %}<li class="{{ c.status }}">{{ c.text }}</li>{% endfor %}</ul>
+            <ul class="pf-docs">{% for d in answer_docs %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ d.get_kind_display }} <small>{{ d.original_name }}</small></a></li>{% endfor %}</ul>
+            <p class="pf-hint">کد رهگیری را در سامانه‌ی بنیاد مسکن (svs.bonyadmaskan.ir، یا با اسکن QR نامه) بررسی کنید؛ اگر رقمی را شهروند اشتباه زده، همین‌جا اصلاح کنید.</p>
+            <form method="post" action="{% url 'main:permit_answer_verify' permit.pk %}" class="pf-form pff-form pf-open">{% csrf_token %}
+              {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+              {% include 'main/permits/_answer_fields.html' %}
+              <label class="pff-check"><input type="checkbox" name="confirm" required> صحت نامه و کد رهگیری را بررسی کردم</label>
+              <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="2000"></textarea></label>
+              <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید صحت و رفتن به مرحله‌ی ۴</button>
+            </form>
+            <form method="post" action="{% url 'main:permit_answer_return' permit.pk %}" class="pf-form">{% csrf_token %}
+              {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+              <h3>برگشت به متقاضی</h3>
+              <label>مشکل چیست؟ (ناخوانا، ناقص، با کد رهگیری نمی‌خواند ...)<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+              <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت برای بارگذاری دوباره</button>
+            </form>
+            {% endif %}
+          {% endif %}
+          {% endif %}
+          {% if permit.stage_no >= 4 and permit.bonyad.verdict %}
+          <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> پاسخ بنیاد (نامه {{ permit.bonyad.letter_no|persian_numbers }}، کد رهگیری <bdi dir="ltr">{{ permit.bonyad.tracking_code|persian_numbers }}</bdi>) تایید شد: مجاز، {{ permit.bonyad.floors|persian_numbers }} طبقه، زیربنای مجاز {{ permit.bonyad.floor_area|persian_numbers }} م².</p>
+          {% endif %}
           {% if permit.stage_no >= 2 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_forms' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-file-signature" aria-hidden="true"></i>{% if permit.delivered_at %}مشاهده‌ی فرم‌ها{% else %}فرم‌ها، نقشه‌ی ملک و دانلود{% endif %}</a>{% endif %}
         {% else %}
           <p class="pf-bad">این پرونده رد شد.</p>

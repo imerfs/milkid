@@ -70,6 +70,13 @@ class PermitFile(models.Model):
     form1_at = models.DateTimeField(null=True, blank=True)
     form2_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True, verbose_name='تحویل فرم‌های امضاشده')
+    # step 3: the Bonyad-e Maskan's answer (form الف۲-۱) as the owner typed it from the letter, and where it stands
+    BONYAD_STATES = [('', 'منتظر پاسخ بنیاد'), ('uploaded', 'منتظر تایید صحت'), ('rejected', 'برگشت‌خورده'), ('verified', 'تایید شد')]
+    bonyad = models.JSONField(default=dict, blank=True)
+    bonyad_state = models.CharField(max_length=10, choices=BONYAD_STATES, blank=True, default='')
+    bonyad_at = models.DateTimeField(null=True, blank=True, verbose_name='ارسال پاسخ بنیاد')
+    bonyad_checked_at = models.DateTimeField(null=True, blank=True)
+    bonyad_checked_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -86,6 +93,10 @@ class PermitFile(models.Model):
         """One line for the lists: where the file stands now."""
         if self.state != 'done':
             return self.get_state_display()
+        if self.stage_no >= 4:
+            return 'پاسخ بنیاد تایید شد'
+        if self.stage_no == 3:
+            return {'': 'منتظر پاسخ بنیاد (از متقاضی)', 'uploaded': 'پاسخ بنیاد منتظر تایید صحت', 'rejected': 'پاسخ بنیاد برگشت خورد'}.get(self.bonyad_state, '')
         if self.delivered_at:
             return 'فرم‌ها تحویل شد'
         if self.stage_no == 2:
@@ -93,6 +104,11 @@ class PermitFile(models.Model):
                 return 'فرم‌ها آماده‌ی امضا'
             return 'فرم ۱ ' + ('آماده' if self.form1_at else 'منتظر دهیاری') + ' · فرم ۲ ' + ('پر شد' if self.form2_at else 'منتظر متقاضی')
         return self.get_state_display()
+
+    @property
+    def needs_staff(self):
+        """True while the staff have something to decide on this file."""
+        return self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
 
     @property
     def stage_title(self):
@@ -137,7 +153,7 @@ def permit_upload_path(instance, filename):
 class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
-        ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('other', 'سایر'),
+        ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'), ('other', 'سایر'),
     ]
 
     file = models.ForeignKey(PermitFile, on_delete=models.CASCADE, related_name='documents')

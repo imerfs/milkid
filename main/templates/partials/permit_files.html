@@ -15,7 +15,7 @@
         <td>{{ f.stage_no|persian_numbers }}. {{ f.stage_title }}</td>
         <td><span class="pl-state pl-state-{{ f.state }}">{{ f.status_text }}</span></td>
         <td>{{ f.created_at|persian_date:"Y/m/d"|persian_numbers }}</td>
-        <td><a class="pl-open" data-open-permit href="{% url 'main:permit_file' f.pk %}">{% if f.state == 'submitted' and permitlist.can_open %}بررسی{% else %}مشاهده{% endif %}</a></td>
+        <td><a class="pl-open" data-open-permit href="{% url 'main:permit_file' f.pk %}">{% if f.needs_staff and permitlist.can_open %}بررسی{% else %}مشاهده{% endif %}</a></td>
       </tr>
     {% endfor %}
     </tbody>
