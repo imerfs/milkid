@@ -91,3 +91,34 @@
 .pd-box { position: absolute; top: 0; bottom: 0; inset-inline-start: 0; width: min(1100px, 100%); background: #f4f6f8; box-shadow: 0 0 40px rgba(0, 0, 0, .35); }
 .pd-box iframe { width: 100%; height: 100%; border: 0; }
 .pd-close { position: absolute; top: 10px; inset-inline-end: 10px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .3); cursor: pointer; font-size: 18px; line-height: 1; }
+
+/* step 2: the forms page */
+.pff-how { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.pff-how li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: #fff; border: 1px solid var(--line); border-radius: 12px; font-size: .84rem; }
+.pff-how b { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #e5e7eb; color: #4b5563; }
+.pff-how .ok b { background: #10b981; color: #fff; }
+.pff-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .pff-grid { grid-template-columns: 1fr; } .pff-view { order: -1; } }
+.pff-edit { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pff-view { position: sticky; top: 10px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pff-tabs { display: flex; gap: 6px; }
+.pff-tabs button { flex: 1; font: inherit; font-weight: 700; padding: 8px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; }
+.pff-tabs button.is-on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.pff-canvas { position: relative; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+.pff-canvas canvas { display: block; width: 100%; height: auto; }
+.pff-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--mute); }
+.pff-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pff-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.pff-fields .wide { grid-column: 1 / -1; }
+.pff-fields label, .pff-limits label { display: flex; flex-direction: column; gap: 3px; font-size: .78rem; font-weight: 600; }
+.pff-form input:not([type=checkbox]), .pff-form select { font: inherit; font-weight: 400; padding: 7px 9px; border: 1.5px solid var(--line); border-radius: 9px; background: #fff; min-width: 0; }
+.pff-form input[readonly], .pff-form select[disabled] { background: #f3f4f6; color: #4b5563; }
+.pff-limits { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.pff-limits > div { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+.pff-checks { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; }
+.pff-checks label { flex-direction: row !important; align-items: center; gap: 8px !important; font-weight: 400 !important; }
+.pf-tag { font-style: normal; font-size: .72rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #f3f4f6; color: #4b5563; }
+.pf-tag.ok { background: #d1fae5; color: #065f46; }
+.pf-shamim { margin: 0 0 10px; padding: 10px 12px; border: 1px solid #99f6e4; border-radius: 12px; background: #f0fdfa; font-size: .85rem; }
+.pf-shamim.bad { border-color: #fcd34d; background: #fffbeb; }
+.pf-shamim ul { margin: 6px 0 0; padding-inline-start: 18px; }

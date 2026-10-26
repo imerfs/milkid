@@ -1,0 +1,146 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}فرم‌های پرونده‌ی پروانه {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-file-signature" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۲: فرم‌ها و نقشه‌ی ملک</h1>
+      <p>{{ f1.name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    {% if permit.delivered_at %}<span class="pf-state pf-state-done">تحویل شد</span>{% endif %}
+  </header>
+
+  <ol class="pff-how">
+    <li class="{% if payload.form1_saved %}ok{% endif %}"><b>۱</b><span>دهیاری فرم ۱ (استعلام از بنیاد مسکن) و نقشه‌ی ملک را آماده می‌کند.</span></li>
+    <li class="{% if payload.form2_saved %}ok{% endif %}"><b>۲</b><span>شما فرم ۲ (تقاضای پروانه) را کامل می‌کنید.</span></li>
+    <li><b>۳</b><span>هر دو را دانلود و چاپ کنید؛ فرم ۱ را دهیار مهر و امضا می‌کند و شما فرم ۲ را امضا می‌کنید.</span></li>
+    <li class="{% if permit.delivered_at %}ok{% endif %}"><b>۴</b><span>فرم‌ها و نقشه را به بنیاد مسکن ببرید؛ پاسخ بنیاد مرحله‌ی ۳ است.</span></li>
+  </ol>
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+
+      {# ---------- form 1 ---------- #}
+      <form method="post" action="{% url 'main:permit_form1_save' permit.pk %}" class="pf-card pf-form pff-form" id="pff-f1" data-form="f1">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-file-lines" aria-hidden="true"></i>فرم ۱ — استعلام ضوابط ساخت‌وساز {% if payload.form1_saved %}<em class="pf-tag ok">ذخیره شد</em>{% elif not can_form1 %}<em class="pf-tag">منتظر دهیاری</em>{% endif %}</h2>
+        {% if can_form1 %}<p class="pf-hint">همه‌ی مقدارها از پرونده و نقشه‌ی روستا پر شده؛ هر چه لازم است اصلاح و ذخیره کنید. طول و همسایه‌ی چهار طرف از روی نقشه اندازه‌گیری شده است.</p>{% endif %}
+        <div class="pff-fields">
+          <label>شماره ثبت فرم ۱<input name="number" value="{{ f1.number }}" data-f1="number" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>تاریخ<input name="date" value="{{ f1.date }}" data-f1="date" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>شماره ثبت درخواست (فرم ۲)<input name="request_no" value="{{ f1.request_no }}" data-f1="request_no" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>تاریخ درخواست<input name="request_date" value="{{ f1.request_date }}" data-f1="request_date" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>بنیاد مسکن شهرستان<input name="bonyad_city" value="{{ f1.bonyad_city }}" data-f1="bonyad_city" {% if not can_form1 %}readonly{% endif %}></label>
+          <label>نام و نام خانوادگی مالک<input name="name" value="{{ f1.name }}" data-f1="name" {% if not can_form1 %}readonly{% endif %}></label>
+          <label>فرزند<input name="father" value="{{ f1.father }}" data-f1="father" {% if not can_form1 %}readonly{% endif %}></label>
+          <label>شماره شناسنامه<input name="id_number" value="{{ f1.id_number }}" data-f1="id_number" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>صادره از<input name="issued_at" value="{{ f1.issued_at }}" data-f1="issued_at" {% if not can_form1 %}readonly{% endif %}></label>
+          <label>کد ملی<input name="national_id" value="{{ f1.national_id }}" data-f1="national_id" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>شماره برگه‌ی وکالت (اگر وکیل است)<input name="wakalat_no" value="{{ f1.wakalat_no }}" data-f1="wakalat_no" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>پلاک ثبتی<input name="plot" value="{{ f1.plot }}" data-f1="plot" {% if not can_form1 %}readonly{% endif %}></label>
+          <label>مساحت (مترمربع)<input name="area" value="{{ f1.area }}" data-f1="area" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+          <label>روستا<input name="village" value="{{ f1.village }}" data-f1="village" {% if not can_form1 %}readonly{% endif %}></label>
+          <label>بخش<input name="district" value="{{ f1.district }}" data-f1="district" {% if not can_form1 %}readonly{% endif %}></label>
+          <label>شهرستان<input name="county" value="{{ f1.county }}" data-f1="county" {% if not can_form1 %}readonly{% endif %}></label>
+          <label class="wide">آدرس<input name="address" value="{{ f1.address }}" data-f1="address" {% if not can_form1 %}readonly{% endif %}></label>
+        </div>
+        <h3>حدود اربعه</h3>
+        <div class="pff-limits">
+          {% for key, label in sides %}
+          <div><b>{{ label }}</b>
+            <label>به طول (متر)<input name="{{ key }}_length" value="{% for k, v in f1.limits.items %}{% if k == key %}{{ v.length }}{% endif %}{% endfor %}" data-limit="{{ key }}.length" {% if not can_form1 %}readonly{% endif %} dir="ltr"></label>
+            <label>محدود به<input name="{{ key }}_to" value="{% for k, v in f1.limits.items %}{% if k == key %}{{ v.to }}{% endif %}{% endfor %}" data-limit="{{ key }}.to" {% if not can_form1 %}readonly{% endif %}></label>
+          </div>
+          {% endfor %}
+        </div>
+        {% if can_form1 %}<button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی فرم ۱</button>{% endif %}
+      </form>
+
+      {# ---------- form 2 ---------- #}
+      <form method="post" action="{% url 'main:permit_form2_save' permit.pk %}" class="pf-card pf-form pff-form" id="pff-f2" data-form="f2">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-file-pen" aria-hidden="true"></i>فرم ۲ — تقاضای صدور پروانه ساختمان روستایی {% if payload.form2_saved %}<em class="pf-tag ok">ذخیره شد</em>{% elif not can_form2 %}<em class="pf-tag">منتظر متقاضی</em>{% endif %}</h2>
+        {% if can_form2 %}<p class="pf-hint">اطلاعات پرونده‌ی شما اینجا پر شده است؛ کم‌وکاست را کامل و ذخیره کنید. شماره و تاریخ ثبت را دهیاری می‌دهد.</p>{% endif %}
+        <div class="pff-fields">
+          <label>نام و نام خانوادگی<input name="name" value="{{ f2.name }}" data-f2="name" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>فرزند<input name="father" value="{{ f2.father }}" data-f2="father" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>شماره شناسنامه<input name="id_number" value="{{ f2.id_number }}" data-f2="id_number" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label>صادره از<input name="issued_at" value="{{ f2.issued_at }}" data-f2="issued_at" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>ساکن روستای<input name="village" value="{{ f2.village }}" data-f2="village" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>دهستان<input name="dehestan" value="{{ f2.dehestan }}" data-f2="dehestan" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>بخش<input name="district" value="{{ f2.district }}" data-f2="district" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>مساحت (مترمربع)<input name="area" value="{{ f2.area }}" data-f2="area" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label>درخواست<select name="purpose" data-f2="purpose" {% if not can_form2 %}disabled{% endif %}>{% for code, label in purposes %}<option value="{{ code }}" {% if f2.purpose == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          <label>وضعیت مالکیت<select name="ownership" data-f2="ownership" {% if not can_form2 %}disabled{% endif %}>
+            <option value="deed" {% if f2.ownership == 'deed' %}selected{% endif %}>زمین دارای سند رسمی</option>
+            <option value="bonyad" {% if f2.ownership == 'bonyad' %}selected{% endif %}>زمین واگذار شده (قرارداد بنیاد)</option>
+            <option value="agreement" {% if f2.ownership == 'agreement' %}selected{% endif %}>فاقد سند (قولنامه)</option></select></label>
+        </div>
+        <h3>زمین دارای سند رسمی</h3>
+        <div class="pff-fields">
+          <label>بخش ثبتی<input name="section" value="{{ f2.section }}" data-f2="section" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>پلاک ثبتی<input name="plot" value="{{ f2.plot }}" data-f2="plot" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label>قطعه<input name="qate" value="{{ f2.qate }}" data-f2="qate" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label>اصلی<input name="asli" value="{{ f2.asli }}" data-f2="asli" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label>فرعی<input name="fari" value="{{ f2.fari }}" data-f2="fari" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label class="wide">نشانی دقیق ملک<input name="exact_address" value="{{ f2.exact_address }}" data-f2="exact_address" {% if not can_form2 %}readonly{% endif %}></label>
+        </div>
+        <h3>زمین واگذار شده</h3>
+        <div class="pff-fields">
+          <label>شماره قرارداد واگذاری<input name="lease_no" value="{{ f2.lease_no }}" data-f2="lease_no" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label>واگذار کننده<input name="lessor" value="{{ f2.lessor }}" data-f2="lessor" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>تاریخ واگذاری<input name="lease_date" value="{{ f2.lease_date }}" data-f2="lease_date" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+        </div>
+        <h3>وکیل (اگر وکیل معرفی می‌کنید)</h3>
+        <div class="pff-fields">
+          <label>در ضمن آقای/خانم<input name="rep_name" value="{{ f2.rep_name }}" data-f2="rep_name" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>فرزند<input name="rep_father" value="{{ f2.rep_father }}" data-f2="rep_father" {% if not can_form2 %}readonly{% endif %}></label>
+          <label>شماره شناسنامه<input name="rep_id" value="{{ f2.rep_id }}" data-f2="rep_id" {% if not can_form2 %}readonly{% endif %} dir="ltr"></label>
+          <label>صادره از<input name="rep_issued" value="{{ f2.rep_issued }}" data-f2="rep_issued" {% if not can_form2 %}readonly{% endif %}></label>
+        </div>
+        <h3>مدارک پیوست</h3>
+        <div class="pff-checks">
+          <label><input type="checkbox" name="attach1" data-f2="attach1" {% if f2.attach1 %}checked{% endif %} {% if not can_form2 %}disabled{% endif %}> فتوکپی شناسنامه</label>
+          <label><input type="checkbox" name="attach2" data-f2="attach2" {% if f2.attach2 %}checked{% endif %} {% if not can_form2 %}disabled{% endif %}> فتوکپی سند مالکیت یا قرارداد واگذاری یا مدرک دال بر مالکیت</label>
+          <label><input type="checkbox" name="attach3" data-f2="attach3" {% if f2.attach3 %}checked{% endif %} {% if not can_form2 %}disabled{% endif %}> گواهی مالکیت (زمین فاقد سند، با تعهد محضری)</label>
+          <label><input type="checkbox" name="attach4" data-f2="attach4" {% if f2.attach4 %}checked{% endif %} {% if not can_form2 %}disabled{% endif %}> وکالتنامه محضری</label>
+        </div>
+        {% if can_form2 %}<button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی فرم ۲</button>{% endif %}
+      </form>
+
+      {% if can_deliver %}
+      <form method="post" action="{% url 'main:permit_deliver' permit.pk %}" class="pf-card pf-form" onsubmit="return confirm('فرم‌های مهر و امضاشده تحویل شد و پرونده به مرحله‌ی ۳ برود؟')">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-handshake" aria-hidden="true"></i>تحویل فرم‌های امضاشده</h2>
+        <p class="pf-hint">وقتی فرم ۱ مهر و امضای دهیار گرفت و فرم ۲ را متقاضی امضا کرد و هر دو به او تحویل شد، این دکمه را بزنید.</p>
+        <button class="pf-btn pf-btn-main" type="submit" {% if not payload.form1_saved or not payload.form2_saved %}disabled{% endif %}><i class="fas fa-circle-check" aria-hidden="true"></i>تحویل شد؛ برو به مرحله‌ی ۳</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist">
+        <button type="button" class="is-on" data-page="f1" role="tab">فرم ۱</button>
+        <button type="button" data-page="sheet" role="tab">نقشه‌ی ملک</button>
+        <button type="button" data-page="f2" role="tab">فرم ۲</button>
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pff-dl1"{% if not payload.form1_saved %} title="هنوز ذخیره نشده؛ پیش‌نویس است"{% endif %}><i class="fas fa-download" aria-hidden="true"></i>دانلود فرم ۱ + نقشه (PDF)</button>
+        <button type="button" class="pf-btn pf-btn-main" id="pff-dl2"{% if not payload.form2_saved %} title="هنوز ذخیره نشده؛ پیش‌نویس است"{% endif %}><i class="fas fa-download" aria-hidden="true"></i>دانلود فرم ۲ (PDF)</button>
+        <button type="button" class="pf-btn" id="pff-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ هر دو</button>
+      </div>
+      <p class="pf-hint">پیش‌نمایش با هر تغییر در فرم به‌روز می‌شود. فرم‌های ذخیره‌نشده «پیش‌نویس» هستند؛ پیش از چاپ ذخیره کنید.</p>
+    </aside>
+  </div>
+</div>
+{{ payload|json_script:"pff-data" }}
+<script src="{% static 'js/permit-forms.js' %}" defer></script>
+{% endblock %}

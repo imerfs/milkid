@@ -19,7 +19,7 @@
       <h1>پرونده‌ی پروانه ساختمان <bdi>{{ permit.pk|persian_numbers }}</bdi></h1>
       <p>{{ permit.get_permit_kind_display }} · {{ people.0.full_name }} · ثبت‌شده در {{ permit.created_at|persian_date:"Y/m/d"|persian_numbers }}</p>
     </div>
-    <span class="pf-state pf-state-{{ permit.state }}">{{ permit.get_state_display }}</span>
+    <span class="pf-state pf-state-{{ permit.state }}">{{ permit.status_text }}</span>
   </header>
 
   <ol class="pf-steps" aria-label="مراحل پروانه ساختمان">
@@ -43,6 +43,11 @@
           <p>مرحله‌ی ۱ انجام شد؛ پرونده در مرحله‌ی «{{ permit.stage_title }}» است.</p>
           <p class="pf-code">کد نوسازی: <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi></p>
           {% if permit.staff_notes and staff_view %}<blockquote>{{ permit.staff_notes }}</blockquote>{% endif %}
+          {% if permit.stage_no == 2 %}
+          <p>مرحله‌ی ۲: فرم ۱ (استعلام از بنیاد مسکن) را دهیاری و فرم ۲ (تقاضای پروانه) را متقاضی پر می‌کند؛ هر دو را دانلود و چاپ کنید، فرم ۱ مهر و امضای دهیار می‌گیرد و با نقشه‌ی ملک به بنیاد مسکن می‌روید.</p>
+          <p><b>فرم ۱:</b> {% if permit.form1_at %}آماده است{% else %}منتظر دهیاری{% endif %} · <b>فرم ۲:</b> {% if permit.form2_at %}پر شده{% else %}منتظر متقاضی{% endif %}</p>
+          {% endif %}
+          {% if permit.stage_no >= 2 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_forms' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-file-signature" aria-hidden="true"></i>{% if permit.delivered_at %}مشاهده‌ی فرم‌ها{% else %}فرم‌ها، نقشه‌ی ملک و دانلود{% endif %}</a>{% endif %}
         {% else %}
           <p class="pf-bad">این پرونده رد شد.</p>
           {% if permit.staff_notes %}<blockquote>{{ permit.staff_notes }}</blockquote>{% endif %}
@@ -59,6 +64,17 @@
         {% endif %}
 
         {% if can_decide and permit.state == 'submitted' %}
+        <div class="pf-shamim{% if not permit.shamim_info.ok %} bad{% endif %}">
+          <b><i class="fas fa-drafting-compass" aria-hidden="true"></i> بررسی خودکار فایل شمیم</b>
+          {% if permit.shamim_info.ok %}
+          <ul>
+            <li>مساحت خط ملک در فایل: <b>{{ permit.shamim_info.area|persian_numbers }}</b> م² · {{ permit.shamim_info.vertices|persian_numbers }} گوشه{% if permit.shamim_info.area_diff_pct != None %} · اختلاف با مساحت اعلام‌شده {{ permit.shamim_info.area_diff_pct|persian_numbers }}٪{% endif %}</li>
+            {% if permit.shamim_info.matches %}<li>روی نقشه‌ی روستا: {% for m in permit.shamim_info.matches %}<bdi dir="ltr">{{ m.code|default:'بدون کد'|persian_numbers }}</bdi>{% if not forloop.last %}، {% endif %}{% endfor %} (در فهرست پایین پیشنهاد شده)</li>{% endif %}
+          </ul>
+          {% endif %}
+          {% for note in permit.shamim_info.notes %}<p class="pf-hint">{{ note }}</p>{% endfor %}
+          <form method="post" action="{% url 'main:permit_shamim' permit.pk %}">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}<button class="pf-btn" type="submit"><i class="fas fa-rotate" aria-hidden="true"></i>بررسی دوباره</button></form>
+        </div>
         <div class="pf-actions">
           <form method="post" action="{% url 'main:permit_open' permit.pk %}" class="pf-form pf-open">{% csrf_token %}
             {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
@@ -67,9 +83,9 @@
             <label>کد نوسازی
               <input name="renewal_code" id="pf-code" dir="ltr" required placeholder="۰-۰-۸-۱۸۲-۲" value="{{ permit.renewal_code }}" autocomplete="off"></label>
             {% if suggestions %}
-            <div class="pf-sugg"><span>قطعه‌های نقشه با شماره‌ی تفکیکی {{ permit.lot_number|persian_numbers }}:</span>
+            <div class="pf-sugg"><span>قطعه‌های پیشنهادی نقشه:</span>
               {% for s in suggestions %}<label class="pf-chip"><input type="radio" name="parcel_id" value="{{ s.id }}" data-code="{{ s.code }}"{% if forloop.first %} checked{% endif %}>
-                <span dir="ltr">{{ s.code|default:'بدون کد'|persian_numbers }}</span> <small>ملک {{ s.number|persian_numbers }} · بلوک {{ s.block|persian_numbers }} · {{ s.area|persian_numbers }} م²</small></label>{% endfor %}
+                <span dir="ltr">{{ s.code|default:'بدون کد'|persian_numbers }}</span> <small>ملک {{ s.number|persian_numbers }} · بلوک {{ s.block|persian_numbers }} · {{ s.area|persian_numbers }} م² · {% if s.source == 'shamim' %}از روی مختصات شمیم{% else %}از روی شماره‌ی تفکیکی{% endif %}</small></label>{% endfor %}
             </div>
             {% endif %}
             <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="2000"></textarea></label>

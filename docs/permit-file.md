@@ -22,3 +22,21 @@ The permit process has nine steps (the pages in `main/templates/main/services/bu
 - Identity papers live in `PRIVATE_MEDIA_ROOT/permit_files/` (never `/media/`), served only to the applicant and the village's
   staff through `permits/documents/<id>/` (`nosniff`, shamim files as downloads).
 - The site-wide upload guard (`main/upload_guard.py`) allows zip / geojson / kml only on the permit form and its supplement URL.
+
+## Step 2: forms 1 and 2 and the plot map
+Our system is for the dehyaris only; the Bonyad-e Maskan has no access, so step 2 saves trips instead: the owner downloads
+filled forms, gets the dehyari's stamp and signature, and takes them to the Bonyad.
+
+- **The shamim file is an AutoCAD file.** On arrival `main/office/shamim.py` reads it (DXF; also GeoJSON, KML, or a zip of
+  one; a DWG is explained, not guessed): the closed outline closest to the declared area is the plot, its UTM zone-40 (or
+  lat/lng) coordinates are laid on the village map, and the plot under it is suggested to the clerk with its renewal code
+  (file page, «بررسی خودکار فایل شمیم»). Area differences over 5 % are pointed out.
+- **Form 1** (`استعلام ضوابط ساخت‌وساز`): filled by the clerk / expert / dehyari from the file; the four limits (length and
+  neighbour lot or «معبر») are measured on the map outline (`main/office/plotmap.py`). Its second page is the plot map
+  drawn from the village map. Form 1's registration number continues the village's own pattern.
+- **Form 2** (`تقاضای صدور پروانه ساختمان روستایی`): filled by the owner, prefilled from the file (deed box or lease box by the
+  ownership paper, purpose, attachments). Its registration number is given by the staff on form 1's editor.
+- **Download:** `permits/<id>/forms/` draws the data over the blank forms (`static/forms/permit/`) in the browser, so Persian
+  is shaped by the browser, and saves PDF (form 1 + map; form 2) or prints. Field positions are in `static/js/permit-forms.js`.
+- **Handing over** (`permit_deliver`): when both forms are saved and the signed copies are given to the owner, the staff mark it
+  and the file moves to step 3 (the Bonyad's answer).

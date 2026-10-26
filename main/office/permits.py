@@ -94,7 +94,8 @@ def submit(user, data):
         doc_number=fields['doc_number'], doc_date=fields['doc_date'], doc_issuer=fields['doc_issuer'],
         project_code=fields['project_code'], registry_plot=fields['registry_plot'], lot_number=fields['lot_number'],
         share_dang=fields['share_dang'], area_m2=fields['area_m2'], land_use=fields['land_use'],
-        address=fields['address'], postal_code=fields['postal_code'], details=fields['details'])
+        address=fields['address'], postal_code=fields['postal_code'],
+        details={**fields['details'], **({'dehestan': fields['dehestan'].name} if fields.get('dehestan') else {})})
     people = {}
     for order, person in enumerate(data['people']):
         row = PermitPerson.objects.create(
@@ -105,6 +106,11 @@ def submit(user, data):
         people[person.get('prefix', '')] = row
     _save_documents(permit, data['files'], people, user)
     _remember(user, applicant)
+    try:
+        from main.office import permit_step2
+        permit_step2.refresh_shamim(permit)           # the clerk finds the plot of the map already suggested
+    except Exception:                                 # pylint: disable=broad-except   # reading the drawing must never lose an application
+        pass
     village = (sr.city_village.name if sr.city_village else '') or village_of(user)
     for staff in _staff_to_tell(village):
         notify(staff, 'پرونده‌ی پروانه ساختمان تازه', f'{applicant["first_name"]} {applicant["last_name"]} پرونده‌ی پروانه '
@@ -181,11 +187,9 @@ def tracker(permit):
 # ---------- the staff ----------
 
 def suggestions(permit):
-    """Plots of the village map the shamim / lot number points to (the clerk still decides)."""
-    if not permit.lot_number:
-        return []
-    rows = MapParcel.objects.filter(lot_no=permit.lot_number).select_related('village_map')
-    return [{'id': p.pk, 'code': p.renewal_code, 'block': p.block_no, 'number': p.number, 'area': round(p.area_m2)} for p in rows[:6]]
+    """Plots of the village map the shamim outline / lot number points to (the clerk still decides)."""
+    from main.office import permit_step2
+    return permit_step2.parcel_choices(permit)
 
 
 def parcels_for_code(code):

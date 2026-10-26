@@ -13,7 +13,7 @@
         <td>{{ f.get_permit_kind_display }}</td>
         <td>{% if f.renewal_code %}<bdi dir="ltr">{{ f.renewal_code|persian_numbers }}</bdi>{% else %}{{ f.area_m2|persian_numbers }} م²{% if f.lot_number %} · قطعه‌ی تفکیکی {{ f.lot_number|persian_numbers }}{% endif %}{% endif %}</td>
         <td>{{ f.stage_no|persian_numbers }}. {{ f.stage_title }}</td>
-        <td><span class="pl-state pl-state-{{ f.state }}">{{ f.get_state_display }}</span></td>
+        <td><span class="pl-state pl-state-{{ f.state }}">{{ f.status_text }}</span></td>
         <td>{{ f.created_at|persian_date:"Y/m/d"|persian_numbers }}</td>
         <td><a class="pl-open" data-open-permit href="{% url 'main:permit_file' f.pk %}">{% if f.state == 'submitted' and permitlist.can_open %}بررسی{% else %}مشاهده{% endif %}</a></td>
       </tr>
