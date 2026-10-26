@@ -1,0 +1,34 @@
+{# The figures of the Bonyad's answer (form الف۲-۱). `b` holds the values; shared by the owner's form and the staff's check. #}
+<div class="pff-fields">
+  <label>شماره‌ی نامه<input name="letter_no" value="{{ b.letter_no }}" dir="ltr" required></label>
+  <label>کد رهگیری (بالای نامه)<input name="tracking_code" value="{{ b.tracking_code }}" dir="ltr" required inputmode="numeric"></label>
+  <label>تاریخ نامه<input name="letter_date" value="{{ b.letter_date }}" dir="ltr" placeholder="۱۴۰۴/۰۳/۲۰" required></label>
+  <label>شماره‌ی درخواست ذکرشده در نامه<input name="request_ref" value="{{ b.request_ref }}" dir="ltr" placeholder="۱۸/۱۸۳۵"></label>
+  <label>نتیجه
+    <select name="verdict" required>
+      <option value="">انتخاب کنید</option>
+      <option value="allowed" {% if b.verdict == 'allowed' %}selected{% endif %}>مجاز</option>
+      <option value="denied" {% if b.verdict == 'denied' %}selected{% endif %}>غیرمجاز</option>
+    </select></label>
+  <label>اعتبار پاسخ تا<input name="valid_until" value="{{ b.valid_until }}" dir="ltr" placeholder="۱۴۰۴/۰۹/۱۶"></label>
+</div>
+<h3>ضوابط مجاز (جدول نامه)</h3>
+<div class="pff-fields">
+  <label>مساحت کل ملک (م²)<input name="total_area" value="{{ b.total_area }}" dir="ltr" inputmode="decimal"></label>
+  <label>مساحت پس از رعایت کاربری و ابعاد اصلاحی<input name="area_after" value="{{ b.area_after }}" dir="ltr" inputmode="decimal"></label>
+  <label>کاربری<input name="usage" value="{{ b.usage }}" placeholder="مسکونی"></label>
+  <label>محل استقرار ساختمان در ملک<input name="position" value="{{ b.position }}" placeholder="شمال"></label>
+  <label>سطح اشغال (درصد)<input name="occupancy_pct" value="{{ b.occupancy_pct }}" dir="ltr" inputmode="decimal"></label>
+  <label>سطح اشغال (مترمربع)<input name="occupancy_m2" value="{{ b.occupancy_m2 }}" dir="ltr" inputmode="decimal"></label>
+  <label>تعداد طبقات<input name="floors" value="{{ b.floors }}" dir="ltr" inputmode="numeric"></label>
+  <label>تراکم (درصد)<input name="density_pct" value="{{ b.density_pct }}" dir="ltr" inputmode="decimal"></label>
+  <label>مجموع زیربنای مجاز (م²)<input name="floor_area" value="{{ b.floor_area }}" dir="ltr" inputmode="decimal"></label>
+  <label>ارتفاع کل مجاز (متر)<input name="height_total" value="{{ b.height_total }}" dir="ltr" inputmode="decimal"></label>
+  <label>ارتفاع کف ساختمان (متر)<input name="height_base" value="{{ b.height_base }}" dir="ltr" inputmode="decimal"></label>
+  <label>امکان صدور پروانه (نوع)<input name="permit_type" value="{{ b.permit_type }}" placeholder="نوسازی"></label>
+</div>
+<h3>موقعیت مرکز ملک (برگ دوم نامه؛ اختیاری)</h3>
+<div class="pff-fields">
+  <label>X مرکز (UTM، زون ۴۰)<input name="center_x" value="{{ b.center_x }}" dir="ltr" inputmode="numeric" placeholder="۷۱۳۵۴۰"></label>
+  <label>Y مرکز<input name="center_y" value="{{ b.center_y }}" dir="ltr" inputmode="numeric" placeholder="۳۶۴۵۸۸۳"></label>
+</div>

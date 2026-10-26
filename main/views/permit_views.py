@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permits
+from main.office import permit_form, permit_step2, permit_step3, permits
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
 
@@ -81,6 +81,8 @@ def permit_file(request, file_id):
         'history': list(reversed(permit.request.workflow_history or [])),
         'other_requests': permits.applicant_history(permit) if can_decide else [],
         'doc_kinds': PermitDocument.KINDS, 'details': permit.details or {},
+        'b': permit.bonyad or {}, 'answer_docs': permit.documents.filter(kind='bonyad_answer'),
+        'checks': permit_step3.checks(permit) if permit.stage_no == 3 and permit.bonyad_state == 'uploaded' and can_decide else [],
     })
 
 
@@ -178,7 +180,7 @@ def permit_forms(request, file_id):
     })
 
 
-def _step2_action(request, file_id, action, ok):
+def _step2_action(request, file_id, action, ok, page='permit_forms'):
     permit = permits.find(request.user, file_id)
     if permit is None:
         raise Http404('پرونده پیدا نشد.')
@@ -187,7 +189,7 @@ def _step2_action(request, file_id, action, ok):
         messages.success(request, ok)
     except (OfficeError, lifecycle.TransitionError) as exc:
         messages.error(request, str(exc))
-    target = reverse('main:permit_forms', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else '')
+    target = reverse(f'main:{page}', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else '')
     return redirect(target)
 
 
@@ -218,3 +220,25 @@ def permit_shamim(request, file_id):
     info = permit_step2.refresh_shamim(permit)
     messages.success(request, 'فایل شمیم دوباره بررسی شد.' if info.get('ok') else 'فایل شمیم خوانده نشد: ' + ' '.join(info.get('notes', [])))
     return redirect(_file_url(permit, bool(request.POST.get('embed'))))
+
+
+@login_required
+@require_POST
+def permit_answer(request, file_id):
+    """Step 3: the owner uploads the Bonyad's answer."""
+    return _step2_action(request, file_id, lambda p: permit_step3.submit_answer(request.user, p, request.POST, request.FILES),
+                         'پاسخ بنیاد فرستاده شد؛ دهیاری صحت آن را بررسی می‌کند.', page='permit_file')
+
+
+@login_required
+@require_POST
+def permit_answer_verify(request, file_id):
+    return _step2_action(request, file_id, lambda p: permit_step3.verify(request.user, p, request.POST),
+                         'صحت پاسخ بنیاد تایید شد.', page='permit_file')
+
+
+@login_required
+@require_POST
+def permit_answer_return(request, file_id):
+    return _step2_action(request, file_id, lambda p: permit_step3.send_back(request.user, p, request.POST.get('notes', '')),
+                         'پاسخ برای اصلاح به متقاضی برگشت داده شد.', page='permit_file')

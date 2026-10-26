@@ -8,6 +8,7 @@ applicant typed stays in the profile, so the next application starts filled in.
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 
@@ -286,8 +287,8 @@ def refuse(actor, permit, reason):
 
 def panel_rows(user, limit=60):
     rows = files_for(user).filter(request__request_type='building_permit')
-    waiting = rows.filter(state='submitted').count()
-    ordered = sorted(rows[:300], key=lambda f: (f.state != 'submitted', -f.created_at.timestamp()))[:limit]
+    waiting = rows.filter(Q(state='submitted') | Q(stage_no=3, bonyad_state='uploaded')).count()
+    ordered = sorted(rows[:300], key=lambda f: (not f.needs_staff, -f.created_at.timestamp()))[:limit]
     return {'rows': ordered, 'waiting': waiting, 'total': rows.count(), 'can_open': can(user, 'permit.open')}
 
 

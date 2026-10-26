@@ -122,3 +122,10 @@
 .pf-shamim { margin: 0 0 10px; padding: 10px 12px; border: 1px solid #99f6e4; border-radius: 12px; background: #f0fdfa; font-size: .85rem; }
 .pf-shamim.bad { border-color: #fcd34d; background: #fffbeb; }
 .pf-shamim ul { margin: 6px 0 0; padding-inline-start: 18px; }
+
+/* step 3: the automatic comparison of the Bonyad's answer */
+.pf-checks { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: .85rem; }
+.pf-checks li { padding: 6px 10px; border-radius: 8px; background: #f3f4f6; }
+.pf-checks li.ok { background: #d1fae5; color: #065f46; }
+.pf-checks li.warn { background: #fef3c7; color: #92400e; }
+.pff-check { flex-direction: row !important; align-items: center; gap: 8px !important; }
