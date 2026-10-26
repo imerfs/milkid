@@ -81,19 +81,16 @@ def sheet_for(permit):
 
 def _next_number(village, after=None):
     """The next registration number in the village's own pattern («18/1836»), or a year/serial one when it is the first."""
-    best = None
+    prefix, serial = '', -1
     here = Q(request__city_village__name=village) | Q(request__city_village__isnull=True, request__user__profile__city_village=village)
-    for f in PermitFile.objects.filter(here).exclude(step2={}):
-        for key in ('form1', 'form2'):
-            m = _NUMBER.match(((f.step2 or {}).get(key) or {}).get('number', ''))
-            if m and (best is None or int(m.group(2)) > best[1]):
-                best = (m.group(1), int(m.group(2)))
-    if after:
-        m = _NUMBER.match(after)
-        if m and (best is None or int(m.group(2)) >= best[1]):
-            best = (m.group(1), int(m.group(2)))
-    if best:
-        return f'{best[0]}/{best[1] + 1}'
+    seen = [((f.step2 or {}).get(key) or {}).get('number', '') for f in PermitFile.objects.filter(here).exclude(step2={})
+            for key in ('form1', 'form2')]
+    for text in seen + ([after] if after else []):
+        m = _NUMBER.match(text or '')
+        if m and int(m.group(2)) > serial:
+            prefix, serial = m.group(1), int(m.group(2))
+    if serial >= 0:
+        return f'{prefix}/{serial + 1}'
     return f'{jdatetime.date.today().year}/1'
 
 
