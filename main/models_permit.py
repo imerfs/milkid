@@ -87,6 +87,17 @@ class PermitFile(models.Model):
     design_reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     design_signed_at = models.DateTimeField(null=True, blank=True)
     design_signed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    # step 5: the fee rows the financial officer defines for the owner, and the owner's answer (main/office/permit_step5.py)
+    FEES_STATES = [('', 'منتظر تعیین عوارض'), ('offered', 'منتظر تایید متقاضی'), ('objected', 'اعتراض متقاضی'), ('approved', 'تایید شد')]
+    fees = models.JSONField(default=dict, blank=True)
+    fees_state = models.CharField(max_length=10, choices=FEES_STATES, blank=True, default='')
+    fees_at = models.DateTimeField(null=True, blank=True, verbose_name='ارسال عوارض به متقاضی')
+    fees_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    fees_approved_at = models.DateTimeField(null=True, blank=True)
+    # step 6: the fee payments received and the introduction letter to the Social Security Organisation
+    insurance = models.JSONField(default=dict, blank=True)
+    insurance_state = models.CharField(max_length=10, blank=True, default='')       # '' or 'introduced'
+    insurance_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -99,12 +110,26 @@ class PermitFile(models.Model):
         return f'پرونده {self.pk} - {self.request.user.get_full_name() or self.request.user.username}'
 
     @property
+    def paid_up(self):
+        """True when the confirmed payments cover the fees the owner approved."""
+        pay = (self.insurance or {}).get('payments') or []
+        total = (self.fees or {}).get('total') or 0
+        return bool(total) and sum(p.get('amount', 0) for p in pay if p.get('ok')) >= total
+
+    @property
     def status_text(self):
         """One line for the lists: where the file stands now."""
         if self.state != 'done':
             return self.get_state_display()
-        if self.stage_no >= 5:
-            return 'نقشه‌ها امضا شد'
+        if self.stage_no >= 7:
+            return 'پرونده در مرحله‌ی بعد است'
+        if self.stage_no == 6:
+            if self.insurance_state == 'introduced':
+                return 'معرفی‌نامه‌ی تامین اجتماعی صادر شد'
+            return 'منتظر صدور معرفی‌نامه‌ی تامین اجتماعی' if self.paid_up else 'منتظر پرداخت عوارض'
+        if self.stage_no == 5:
+            return {'': 'منتظر تعیین عوارض (مسئول مالی)', 'offered': 'عوارض منتظر تایید متقاضی',
+                    'objected': 'متقاضی به عوارض اعتراض کرد'}.get(self.fees_state, '')
         if self.stage_no == 4:
             return {'': 'نقشه‌ها در حال تهیه (متقاضی)', 'submitted': 'نقشه‌ها منتظر بررسی', 'returned': 'نقشه‌ها برگشت خورد',
                     'reviewed': 'منتظر امضای دهیار'}.get(self.design_state, '')
@@ -120,9 +145,15 @@ class PermitFile(models.Model):
 
     @property
     def needs_staff(self):
-        """True while the staff have something to decide on this file."""
+        """True while the village staff (clerk / expert / dehyari) have something to decide on this file."""
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
-                or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed')))
+                or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
+                or (self.stage_no == 6 and self.insurance_state != 'introduced'
+                    and (self.paid_up or any(not p.get('ok') for p in (self.insurance or {}).get('payments') or []))))
+
+    @property
+    def needs_accountant(self):
+        return self.stage_no == 5 and self.fees_state in ('', 'objected')
 
     @property
     def stage_title(self):
@@ -168,7 +199,8 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('other', 'سایر'),
+        ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'),
+        ('other', 'سایر'),
     ]
 
     file = models.ForeignKey(PermitFile, on_delete=models.CASCADE, related_name='documents')

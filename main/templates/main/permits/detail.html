@@ -34,6 +34,7 @@
       {# ---------- what happens now ---------- #}
       <section class="pf-card pf-now" aria-labelledby="pf-now">
         <h2 id="pf-now"><i class="fas fa-flag" aria-hidden="true"></i>وضعیت پرونده</h2>
+        {% if mine and permit.state != 'rejected' %}{% include 'main/permits/_paper.html' with stage=permit.stage_no %}{% endif %}
         {% if permit.state == 'submitted' %}
           <p>مرحله‌ی ۱ («افتتاح پرونده»): مدارک شما رسیده و منتظر بررسی کارشناس اداری، کارشناس فنی یا دهیار است. پس از بررسی، بر اساس فایل شمیم یک <b>کد نوسازی</b> به ملک شما داده می‌شود و پرونده به مرحله‌ی بعد می‌رود.</p>
         {% elif permit.state == 'needs_docs' %}
@@ -82,9 +83,14 @@
           {% endif %}
           {% endif %}
           {% if permit.stage_no >= 4 %}
-          <p>مرحله‌ی ۴: نقشه‌های معماری و سازه را (با دفاتر نقشه‌کشی و ناظر معرفی‌شده از بنیاد) تهیه کنید، فرم‌های تعهد ۰۴ تا ۰۷ را چاپ و امضا بگیرید و نقشه‌ها را بارگذاری کنید تا دهیار امضا کند.</p>
-          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          {% if permit.stage_no == 4 %}<p>مرحله‌ی ۴: نقشه‌های معماری و سازه را (با دفاتر نقشه‌کشی و ناظر معرفی‌شده از بنیاد) تهیه کنید، فرم‌های تعهد ۰۴ تا ۰۷ را چاپ و امضا بگیرید و نقشه‌ها را بارگذاری کنید تا دهیار امضا کند.</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>{% endif %}
           <a class="pf-btn pf-btn-main" href="{% url 'main:permit_design' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-compass-drafting" aria-hidden="true"></i>نقشه‌ها و فرم‌های تعهد</a>
+          {% endif %}
+          {% if permit.stage_no >= 5 %}
+          <p>{% if permit.stage_no == 5 %}مرحله‌ی ۵: مسئول مالی عوارض و بهای خدمات پرونده را (از میان ۳۱ ردیف فرم محاسبه) تعیین می‌کند و شما تایید می‌کنید.{% else %}مرحله‌ی ۶: عوارض را بپردازید و فیش را ثبت کنید؛ دهیاری شما را با نامه به تامین اجتماعی معرفی می‌کند.{% endif %}</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          <a class="pf-btn pf-btn-main" href="{% url 'main:permit_fees' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-coins" aria-hidden="true"></i>{% if permit.stage_no == 5 %}عوارض و بهای خدمات{% else %}پرداخت و معرفی‌نامه‌ی تامین اجتماعی{% endif %}</a>
           {% endif %}
           {% if permit.stage_no >= 4 and permit.bonyad.verdict %}
           <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> پاسخ بنیاد (نامه {{ permit.bonyad.letter_no|persian_numbers }}، کد رهگیری <bdi dir="ltr">{{ permit.bonyad.tracking_code|persian_numbers }}</bdi>) تایید شد: مجاز، {{ permit.bonyad.floors|persian_numbers }} طبقه، زیربنای مجاز {{ permit.bonyad.floor_area|persian_numbers }} م².</p>

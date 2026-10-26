@@ -69,3 +69,13 @@ def persian_date_verbose(value):
 def dict_get(mapping, key):
     """{{ mapping|dict_get:key }} for dict lookups with a variable key."""
     return mapping.get(key, '') if mapping else ''
+
+
+@register.filter
+def rials(value):
+    """A whole amount with thousands separators in Persian digits (blank when it is not a number)."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return ''
+    return f'{number:,}'.translate(str.maketrans('0123456789,', '۰۱۲۳۴۵۶۷۸۹٬'))

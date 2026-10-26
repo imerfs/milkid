@@ -218,7 +218,7 @@ class Signing(AtStepFour):
         self.assertEqual(permit.design['signed']['files'], 4)
         self.assertEqual(len(permit.design['signed']['sha256']), 64)
         self.assertTrue(Notification.objects.filter(user=self.citizen, title='نقشه‌های شما امضا شد').exists())
-        self.assertEqual(permit.status_text, 'نقشه‌ها امضا شد')
+        self.assertEqual(permit.status_text, 'منتظر تعیین عوارض (مسئول مالی)')
 
     def test_the_dehyari_may_review_and_sign_in_one_go_but_must_tick_the_forms(self):
         PermitFile.objects.filter(pk=self.permit.pk).update(design_state='submitted')

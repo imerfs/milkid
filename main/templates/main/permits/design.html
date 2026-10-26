@@ -23,6 +23,7 @@
     <li><b>۳</b><span>همه‌ی نقشه‌های معماری و سازه را (به‌جز فرم‌های امضادار) اینجا بارگذاری کنید.</span></li>
     <li class="{% if permit.design_state == 'signed' %}ok{% endif %}"><b>۴</b><span>دهیاری نقشه‌ها را بررسی می‌کند و دهیار امضا می‌کند.</span></li>
   </ol>
+  {% if mine %}{% include 'main/permits/_paper.html' with stage=4 %}{% endif %}
 
   {% if permit.design_state == 'returned' and permit.staff_notes %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری نقشه‌ها را برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
   {% if d.signed.sha256 %}
@@ -145,8 +146,8 @@
           {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
           {% if permit.design_state == 'submitted' %}
           <div class="pff-checks">
-            <label><input type="checkbox" name="signed_f05"> فرم ۰۵ (تعهد محاسبات سازه) با مهر و امضای مهندس و دهیار رسید</label>
-            <label><input type="checkbox" name="signed_f06"> فرم ۰۶ (تعهد معماری) با مهر و امضای مهندس و دهیار رسید</label>
+            <label><input type="checkbox" name="signed_f05"> فرم ۰۵ (تعهد معماری) با مهر و امضای مهندس و دهیار رسید</label>
+            <label><input type="checkbox" name="signed_f06"> فرم ۰۶ (تعهد محاسبات سازه) با مهر و امضای مهندس و دهیار رسید</label>
             <label><input type="checkbox" name="signed_f07"> فرم ۰۷ (تعهد نظارت) با مهر و امضای مهندس ناظر و دهیار رسید</label>
           </div>
           <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
@@ -170,8 +171,8 @@
     <aside class="pff-view">
       <div class="pff-tabs" role="tablist">
         <button type="button" class="is-on" data-page="f04" role="tab">۰۴ دستور نقشه</button>
-        <button type="button" data-page="f05" role="tab">۰۵ سازه</button>
-        <button type="button" data-page="f06" role="tab">۰۶ معماری</button>
+        <button type="button" data-page="f05" role="tab">۰۵ معماری</button>
+        <button type="button" data-page="f06" role="tab">۰۶ سازه</button>
         <button type="button" data-page="f07" role="tab">۰۷ نظارت</button>
       </div>
       <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>

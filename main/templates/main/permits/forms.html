@@ -23,6 +23,7 @@
     <li><b>۳</b><span>هر دو را دانلود و چاپ کنید؛ فرم ۱ را دهیار مهر و امضا می‌کند و شما فرم ۲ را امضا می‌کنید.</span></li>
     <li class="{% if permit.delivered_at %}ok{% endif %}"><b>۴</b><span>فرم‌ها و نقشه را به بنیاد مسکن ببرید؛ پاسخ بنیاد مرحله‌ی ۳ است.</span></li>
   </ol>
+  {% if can_form2 %}{% include 'main/permits/_paper.html' with stage=2 %}{% endif %}
 
   <div class="pff-grid">
     <div class="pff-edit">

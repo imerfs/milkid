@@ -1,4 +1,4 @@
-/* Permit file, step 4: forms 04 (order to prepare the plans), 05 (structure undertaking), 06 (architecture undertaking) and 07
+/* Permit file, step 4: forms 04 (order to prepare the plans), 05 (architecture undertaking), 06 (structure undertaking) and 07
    (supervision undertaking), drawn in the browser from the file's data (json_script #pfd-data) and downloaded as PDF / printed.
    04 and 07 are drawn over their blank forms; 05 and 06 are typeset on the dehyari's blank letterhead. */
 (function () {
@@ -94,9 +94,9 @@
     ctx.restore();
   }
   function drawUndertaking(kind) {
-    var c = data.common, f = data.forms[kind], p = data.people[kind === 'f05' ? 'structure' : 'architect'];
-    var structure = kind === 'f05';
-    letter(f.number, f.date, structure ? 'برگ تعهد محاسبات سازه' : 'برگ تعهد معماری', structure ? 'فرم شماره ۵' : 'فرم شماره ۶');
+    var c = data.common, f = data.forms[kind], p = data.people[kind === 'f06' ? 'structure' : 'architect'];
+    var structure = kind === 'f06';
+    letter(f.number, f.date, structure ? 'برگ تعهد محاسبات سازه' : 'برگ تعهد معماری', structure ? 'فرم شماره ۶' : 'فرم شماره ۵');
     var parts = [
       { t: 'اینجانب' }, { v: p.name, w: 22 }, { t: 'فرزند' }, { v: p.father, w: 20 }, { t: 'دارای پرونده اشتغال پایه' }, { v: p.grade, w: 12 },
       { t: 'در رشته' }, { v: p.field, w: 22 }, { t: 'به شماره' }, { v: p.license, w: 22 }, { t: 'صادر از وزارت مسکن و شهرسازی' },
@@ -110,12 +110,12 @@
     ];
     paragraph(parts, 1245, 160, 520, 78, 31);
     if (structure) signatures(['محل مهر و امضاء', 'واحد کنترل ظرفیت اشتغال', 'سازمان نظام مهندسی استان'], ['مهر و امضاء', 'مهندس محاسب', 'سازمان نظام مهندسی استان'], 'نام و امضای مالک');
-    else signatures(['محل مهر و امضاء واحد کنترل ظرفیت', 'اشتغال به کار سازمان', 'نظام مهندسی استان'], ['محل مهر و امضاء', 'مهندس طراح', 'نقشه‌های معماری'], 'امضاء مالک');
+    else signatures(['محل مهر و امضاء', 'مهندس طراح نقشه‌های معماری'], ['محل امضاء واحد کنترل ظرفیت', 'اشتغال به کار سازمان', 'نظام مهندسی استان'], 'امضاء مالک');
     paragraph([{ t: 'نشانی پلاک:' }, { v: c.address, w: 70 }], 1245, 160, 1300, 56, 28);
   }
 
   var DRAW = { f04: drawF04, f05: function () { drawUndertaking('f05'); }, f06: function () { drawUndertaking('f06'); }, f07: drawF07 };
-  var NAMES = { f04: 'form04-order', f05: 'form05-structure', f06: 'form06-architecture', f07: 'form07-supervision' };
+  var NAMES = { f04: 'form04-order', f05: 'form05-architecture', f06: 'form06-structure', f07: 'form07-supervision' };
   function draw(which) { page = which || page; ctx.clearRect(0, 0, W, H); DRAW[page](); }
   function pageCanvas(which) { var keep = page; draw(which); var c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(canvas, 0, 0); draw(keep); return c; }
 

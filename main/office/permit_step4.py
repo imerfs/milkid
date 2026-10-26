@@ -299,7 +299,9 @@ def sign(actor, permit, post):
     sr = permit.request
     sr.add_workflow_step(action=f'امضای دهیار بر نقشه‌ها ({files} فایل) - پایان مرحله ۴', from_user=actor, to_role='citizen')
     sr.save(update_fields=['workflow_history', 'updated_at'])
-    notify(sr.user, 'نقشه‌های شما امضا شد', 'دهیار نقشه‌های معماری و سازه‌ی پرونده را امضا کرد؛ پرونده به مرحله‌ی ۵ رفت.', request=sr)
+    notify(sr.user, 'نقشه‌های شما امضا شد', 'دهیار نقشه‌های معماری و سازه‌ی پرونده را امضا کرد؛ پرونده به مرحله‌ی ۵ (عوارض) رفت.', request=sr)
+    from main.office import permit_step5       # pylint: disable=import-outside-toplevel
+    permit_step5.tell_the_officer(permit)
     return permit
 
 

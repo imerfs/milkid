@@ -49,6 +49,7 @@
             <main class="ac-content" id="main-content">
                 {% csrf_token %}
                 <!-- Every operation of the accountant opens in a dialog or swaps a page of this workspace (HTMX fragments). -->
+                {% if permit_fees.rows %}{% include 'partials/permit_fee_files.html' %}{% endif %}
                 <section id="acc-workspace" aria-label="حسابداری {{ acc_muni_name }}">
                     {% if acc_ready %}
                     <div id="acc-panel" hx-get="{% url 'main:acc_panel' %}" hx-trigger="load" hx-swap="innerHTML" data-base="{% url 'main:acc_panel' %}" aria-live="polite">
