@@ -3,6 +3,7 @@ import json
 from datetime import date
 
 from django.contrib.auth.models import User
+from django.contrib.sessions.models import Session
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -156,6 +157,14 @@ class Monitoring(TestCase):
         html = client_for(self.admin).get(reverse('main:admin_monitoring_chat', args=[self.chat.id])).content.decode()
         self.assertIn('سلام دهیار', html)
 
+    def test_the_monitoring_lives_inside_the_admin_dashboard(self):
+        html = client_for(self.admin).get(reverse('main:admin_monitoring')).content.decode()
+        self.assertIn('id="monitor-tab"', html)
+        self.assertIn('پنل مدیر سیستم', html)
+        detail = client_for(self.admin).get(reverse('main:admin_monitoring_chat', args=[self.chat.id])).content.decode()
+        self.assertIn('id="monitor-tab"', detail)
+        self.assertIn('پنل مدیر سیستم', detail)
+
     def test_search_filters(self):
         html = client_for(self.admin).get(reverse('main:admin_monitoring') + '?q=چیزی-که-نیست').content.decode()
         self.assertNotIn('موضوع محرمانه', html)
@@ -164,7 +173,7 @@ class Monitoring(TestCase):
         Message.objects.create(conversation=self.chat, sender=self.b, body='جواب')
         html = client_for(self.admin).get(reverse('main:admin_monitoring') + '?tab=chats&q=سلام').content.decode()
         self.assertIn('گفتگوی آزمایشی', html)
-        self.assertRegex(html, r'<td>2</td>')
+        self.assertRegex(html, r'<td class="py-3 px-4">2</td>')
 
     def test_drafts_are_not_listed(self):
         Letter.objects.create(sender=self.a, village='x', subject='پیش‌نویس مخفی', body='b', status='draft')
@@ -178,3 +187,38 @@ class Monitoring(TestCase):
                         reverse('main:admin_monitoring_chat', args=[self.chat.id])):
                 self.assertEqual(client_for(user).get(url).status_code, 302, url)
         self.assertEqual(self.client.get(reverse('main:admin_monitoring')).status_code, 302)
+
+
+class TemporaryPasswords(TestCase):
+    """Passwords are hashes and cannot be shown; the admin may give a user a fresh temporary one."""
+
+    def setUp(self):
+        self.admin = make_user('admin')
+        self.user = make_user('citizen')
+
+    def reset(self, who=None, target=None):
+        return client_for(who or self.admin).post(reverse('main:api_admin_reset_user_password', args=[(target or self.user).id]))
+
+    def test_the_admin_gets_a_one_time_password_that_works_and_must_be_changed(self):
+        data = self.reset().json()
+        self.assertTrue(data['success'])
+        self.assertEqual(len(data['password']), 10)
+        user = User.objects.get(pk=self.user.pk)
+        self.assertTrue(user.check_password(data['password']))
+        self.assertTrue(user.profile.must_change_password)
+
+    def test_sessions_of_the_user_end(self):
+        client = client_for(self.user)
+        self.assertEqual(client.get(reverse('main:dashboard')).status_code, 302)       # a signed-in page answers
+        self.reset()
+        self.assertEqual(Session.objects.count() and sum(1 for s in Session.objects.all() if s.get_decoded().get('_auth_user_id') == str(self.user.id)), 0)
+
+    def test_nobody_else_and_no_admin(self):
+        self.assertEqual(self.reset(who=self.user).status_code, 403)
+        self.assertEqual(self.reset(target=self.admin).status_code, 400)
+        self.assertEqual(self.reset(target=make_user('citizen'), who=make_user('dehyari')).status_code, 403)
+
+    def test_the_dashboard_says_passwords_cannot_be_shown(self):
+        html = client_for(self.admin).get(reverse('main:admin_dashboard')).content.decode()
+        self.assertIn('قابل نمایش نیست', html)
+        self.assertIn('resetUserPassword', html)

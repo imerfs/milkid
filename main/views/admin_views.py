@@ -1363,3 +1363,33 @@ def api_delete_user(request, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'خطا در حذف کاربر: {str(e)}'}, status=500)
 
+
+
+TEMP_PASSWORD_ALPHABET = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+
+@policy_required('admin.manage', api=True)
+@login_required
+@require_http_methods(["POST"])
+def api_reset_user_password(request, user_id):
+    """Give a user a new temporary password (shown to the admin once; the user must change it at the next sign-in).
+
+    Passwords are stored only as salted hashes, so an existing password can never be shown; this is the way to hand one over.
+    """
+    import secrets
+    target = get_object_or_404(User.objects.select_related('profile'), id=user_id)
+    if target.id == request.user.id or target.is_superuser or getattr(target.profile, 'role', '') == 'admin':
+        return JsonResponse({'success': False, 'message': 'رمز مدیر سیستم از این بخش تغییر نمی‌کند.'}, status=400)
+    password = ''.join(secrets.choice(TEMP_PASSWORD_ALPHABET) for _ in range(10))
+    target.set_password(password)
+    target.save(update_fields=['password'])
+    target.profile.must_change_password = True
+    target.profile.save(update_fields=['must_change_password'])
+    from django.contrib.sessions.models import Session
+    for session in Session.objects.all():                      # sign the user out everywhere: the old password is gone
+        if str(session.get_decoded().get('_auth_user_id')) == str(target.id):
+            session.delete()
+    response = JsonResponse({'success': True, 'password': password, 'user_name': target.get_full_name() or target.username,
+                             'message': 'رمز موقت ساخته شد؛ فقط همین یک بار نمایش داده می‌شود و کاربر باید در ورود بعدی آن را عوض کند.'})
+    response['Cache-Control'] = 'no-store'
+    return response

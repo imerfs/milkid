@@ -1,11 +1,12 @@
 """Admin oversight of official letters and chats (read-only)."""
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 
 from main.access import policy_required
 from main.models import Conversation, Message
 from main.models_office import Letter
+from main.views.admin_views import admin_dashboard
 
 PER_PAGE = 25
 
@@ -31,7 +32,7 @@ def admin_monitoring(request):
                                    Q(user__username__icontains=q) | Q(user__last_name__icontains=q)
                                ).values('conversation')))
     page = Paginator(rows, PER_PAGE).get_page(request.GET.get('page'))
-    return render(request, 'main/admin/monitoring.html', {'tab': tab, 'q': q, 'page': page})
+    return admin_dashboard(request, server_panel={'monitor_open': True, 'mon_tab': tab, 'mon_q': q, 'mon_page': page})
 
 
 @policy_required('admin.manage')
@@ -39,11 +40,10 @@ def admin_monitoring_letter(request, letter_id):
     letter = get_object_or_404(
         Letter.objects.select_related('sender').prefetch_related('recipients__user', 'attachments'),
         id=letter_id, status='sent')
-    return render(request, 'main/admin/monitoring_detail.html', {'kind': 'letter', 'letter': letter})
+    return admin_dashboard(request, server_panel={'monitor_open': True, 'mon_detail': {'kind': 'letter', 'letter': letter}})
 
 
 @policy_required('admin.manage')
 def admin_monitoring_chat(request, conversation_id):
     chat = get_object_or_404(Conversation.objects.prefetch_related('participants'), id=conversation_id)
-    return render(request, 'main/admin/monitoring_detail.html',
-                  {'kind': 'chat', 'chat': chat, 'chat_messages': chat.messages.select_related('sender')})
+    return admin_dashboard(request, server_panel={'monitor_open': True, 'mon_detail': {'kind': 'chat', 'chat': chat, 'messages': chat.messages.select_related('sender')}})

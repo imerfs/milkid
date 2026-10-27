@@ -144,6 +144,7 @@ urlpatterns = [
     path('api/admin/property-edits/<int:edit_id>/reject/', views.api_reject_ad_edit, name='api_admin_reject_ad_edit'),
     path('api/admin/users/<int:user_id>/toggle-access/', views.api_toggle_user_access, name='api_admin_toggle_user_access'),
     path('api/admin/users/<int:user_id>/delete/', views.api_delete_user, name='api_admin_delete_user'),
+    path('api/admin/users/<int:user_id>/temp-password/', views.api_reset_user_password, name='api_admin_reset_user_password'),
     path('api/admin/users/monitoring-stats/', views.api_users_monitoring_stats, name='api_admin_users_monitoring_stats'),
     
     # Technical Staff - Inspections
