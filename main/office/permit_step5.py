@@ -254,7 +254,7 @@ def add_payment(actor, permit, post, uploads=()):
     if not (mine or _may_record(actor, permit)):
         raise Forbidden('اجازه‌ی ثبت پرداخت را ندارید.')
     _step(permit, 6)
-    if permit.insurance_state == 'introduced':
+    if permit.insurance_state:
         raise Conflict('معرفی‌نامه صادر شده است.')
     amount = _money(post.get('amount'), 'مبلغ')
     if not amount:
@@ -313,7 +313,7 @@ def confirm_payment(actor, permit, payment_id):
 def remove_payment(actor, permit, payment_id):
     """An unconfirmed slip may be removed by whoever typed it (the owner) or by the staff; a confirmed one only by the staff."""
     _step(permit, 6)
-    if permit.insurance_state == 'introduced':
+    if permit.insurance_state:
         raise Conflict('معرفی‌نامه صادر شده است.')
     data = dict(permit.insurance or {})
     rows = list(data.get('payments') or [])
@@ -357,7 +357,7 @@ def issue_letter(actor, permit, post):
     if not may_open(actor, permit):
         raise Forbidden('معرفی‌نامه را کارکنان دهیاری صادر می‌کنند.')
     _step(permit, 6)
-    if permit.insurance_state == 'introduced':
+    if permit.insurance_state:
         raise Conflict('معرفی‌نامه قبلا صادر شده است.')
     if not permit.paid_up:
         raise Conflict('پرداخت‌های تاییدشده هنوز کل عوارض را نمی‌پوشاند.')

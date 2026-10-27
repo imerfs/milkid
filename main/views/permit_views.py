@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permits
+from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_step6, permit_step7, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
@@ -364,11 +364,15 @@ def permit_fees(request, file_id):
         'groups': _group_rows(rows), 'chosen': [r for r in rows if r['on']], 'extras': permit_step5.extras(permit),
         'extra_chosen': fees.get('extra') or [], 'payments': pays, 'paid': paid, 'remaining': max((fees.get('total') or 0) - paid, 0),
         'can_answer': mine and permit.stage_no == 5 and permit.fees_state == 'offered',
-        'can_pay': (mine or staff or officer) and permit.stage_no == 6 and permit.insurance_state != 'introduced',
-        'can_confirm': (staff or officer) and permit.stage_no == 6 and permit.insurance_state != 'introduced',
-        'can_issue': staff and permit.stage_no == 6 and permit.insurance_state != 'introduced' and permit.paid_up,
+        'can_pay': (mine or staff or officer) and permit.stage_no == 6 and not permit.insurance_state,
+        'can_confirm': (staff or officer) and permit.stage_no == 6 and not permit.insurance_state,
+        'can_issue': staff and permit.stage_no == 6 and not permit.insurance_state and permit.paid_up,
         'letter': letter, 'letter_saved': (permit.insurance or {}).get('letter') or {},
-        'show_letter': permit.stage_no == 6 and ((staff and permit.paid_up) or permit.insurance_state == 'introduced'),
+        'show_letter': permit.stage_no >= 6 and ((staff and permit.paid_up) or permit.insurance_state),
+        'cert': {**permit_step6.defaults(permit), **((permit.insurance or {}).get('cert') or {})},
+        'cert_docs': permit.documents.filter(kind='insurance_cert'), 'cert_checks': permit_step6.checks(permit) if staff and permit.insurance_state == 'uploaded' else [],
+        'can_cert': mine and permit.stage_no == 6 and permit.insurance_state in permit_step6.OPEN_STATES,
+        'can_cert_verify': staff and permit.stage_no == 6 and permit.insurance_state == 'uploaded',
         'payload': {'letter': letter, 'file': permit.pk, 'blank': {'letter': static('forms/permit/letterhead.jpg')}},
     })
 
@@ -441,3 +445,102 @@ def permit_pay_remove(request, file_id, pay_id):
 @require_POST
 def permit_letter_issue(request, file_id):
     return _fees_action(request, file_id, lambda p: permit_step5.issue_letter(request.user, p, request.POST), 'معرفی‌نامه‌ی تامین اجتماعی صادر شد.')
+
+
+@login_required
+@require_POST
+def permit_cert_submit(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step6.submit(request.user, p, request.POST, request.FILES.getlist('cert')),
+                        'گواهی فرستاده شد؛ اصل آن را به دهیاری ببرید تا صحت آن بررسی شود.')
+
+
+@login_required
+@require_POST
+def permit_cert_verify(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step6.verify(request.user, p, request.POST), 'گواهی تایید شد و پرونده به مرحله‌ی ۷ (صدور پروانه) رفت.')
+
+
+@login_required
+@require_POST
+def permit_cert_return(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step6.send_back(request.user, p, request.POST.get('notes', '')), 'گواهی برای اصلاح به متقاضی برگشت داده شد.')
+
+
+# ---------- step 7: the building permit form ----------
+
+def _licence_groups(data):
+    """The form fields grouped for the page: (title, [(key, label, value, choices or None)])."""
+    def field(key, label):
+        return (key, label, data.get(key, ''), permit_step7.CHOICES.get(key))
+    sections = [
+        ('مشخصات پروانه', [('kind', 'نوع پروانه'), ('permit_no', 'شماره‌ی پروانه'), ('issue_date', 'تاریخ صدور'),
+                           ('fee_slip_no', 'عوارض زیربنا: شماره‌ی فیش'), ('fee_slip_date', 'تاریخ فیش'),
+                           ('entry_slip_no', 'عوارض پذیره: شماره‌ی فیش'), ('entry_slip_date', 'تاریخ فیش پذیره'),
+                           ('ins_slip_no', 'بیمه‌ی کارگران: شماره‌ی فیش'), ('ins_code', 'کد (شماره‌ی کارگاه)'),
+                           ('finish_date', 'تاریخ اتمام عملیات ساختمانی'), ('finish_year', 'سال')]),
+        ('ملک و مالک', [('registry_plot', 'شماره‌ی پلاک ثبتی'), ('section', 'بخش'), ('lot', 'قطعه'), ('zone', 'حوزه'), ('owner', 'نام و نام خانوادگی مالک'),
+                        ('father', 'فرزند'), ('id_number', 'شماره‌ی شناسنامه'), ('issued_at', 'صادره از'), ('national_id', 'کد ملی'),
+                        ('lawyer', 'وکیل قانونی'), ('lawyer_no', 'شماره‌ی وکالتنامه'), ('ownership', 'نوع مالکیت'), ('address', 'نشانی ملک'),
+                        ('alley', 'کوچه'), ('plot_no', 'پلاک'), ('postal_code', 'کد پستی')]),
+        ('مهندسان', [('sup_name', 'ناظر ساختمانی'), ('sup_license', 'شماره‌ی پروانه‌ی اشتغال'), ('sup_sign', 'شماره‌ی امضا'),
+                     ('calc_name', 'محاسب'), ('calc_license', 'شماره‌ی پروانه‌ی محاسب'), ('calc_sign', 'شماره‌ی امضای محاسب'),
+                     ('inst_name', 'تاسیسات'), ('inst_license', 'شماره‌ی پروانه‌ی تاسیسات'), ('inst_sign', 'شماره‌ی امضای تاسیسات'),
+                     ('arch_name', 'ناظر معماری'), ('arch_license', 'شماره‌ی پروانه‌ی ناظر معماری'), ('arch_sign', 'شماره‌ی امضای ناظر معماری')]),
+        ('وضعیت ملک (صفحه‌ی ۲)', [('existing', 'وضعیت موجود'), ('land', 'زمین'), ('trees', 'تعداد درخت'), ('deed_area', 'مساحت مطابق سند (م²)'),
+                                  ('area_after', 'مساحت پس از اصلاحی (م²)'), ('density_pct', 'تراکم مجاز (٪)'), ('built_allowed', 'مساحت مجاز ساخت (م²)'),
+                                  ('occupancy_m2', 'سطح اشغال (م²)'), ('aerial_code', 'کد نقشه‌ی هوایی')]),
+        ('مشخصات ساختمان (صفحه‌ی ۳)', [('usage', 'نوع استفاده‌ی مجاز'), ('usage_other', 'سایر (توضیح)'), ('position', 'محل احداث بنا'), ('structure', 'نوع اسکلت'),
+                                       ('roof', 'نوع سقف'), ('energy', 'گروه صرفه‌جویی انرژی'), ('checklist', 'چک لیست آیین‌نامه‌ی ۲۸۰۰ تکمیل شده'),
+                                       ('material', 'مصالح'), ('material_other', 'مصالح دیگر'), ('trees_cut', 'تعداد درخت قابل قطع'), ('parking', 'تعداد پارکینگ'),
+                                       ('bonyad_ref', 'یادداشت مجوز بنیاد'), ('notes_extra', 'یادداشت دیگر'),
+                                       ('dehyari_name', 'نام دهیار'), ('tech_name', 'نام مسئول فنی')]),
+    ]
+    return [(title, [field(key, label) for key, label in rows]) for title, rows in sections]
+
+
+@login_required
+def permit_licence(request, file_id):
+    """Step 7: the building permit form, prefilled for the staff to change, print and have signed by hand."""
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 7:
+        messages.error(request, 'پروانه پس از تایید گواهی تامین اجتماعی صادر می‌شود.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    data = permit_step7.payload(permit)
+    editing = staff and permit.licence_state != 'issued'
+    return render(request, 'main/permits/licence.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'editing': editing, 'f': data, 'groups': _licence_groups(data),
+        'sides': [(side, label, [(f'sd_{side}_{key}', text, data.get(f'sd_{side}_{key}', '')) for key, text in permit_step7.SIDE_FIELDS]) for side, label in permit_step7.SIDES],
+        'floors': [(floor, label, [(f'fl_{floor}_{key}', text, data.get(f'fl_{floor}_{key}', '')) for key, text in permit_step7.FLOOR_FIELDS]) for floor, label in permit_step7.FLOORS],
+        'issued': (permit.licence or {}).get('issued') or {},
+        'payload': {'f': data, 'file': permit.pk, 'floors': [k for k, _ in permit_step7.FLOORS], 'sides': [k for k, _ in permit_step7.SIDES],
+                    'choices': {k: dict(v) for k, v in permit_step7.CHOICES.items()}, 'letterhead': static('forms/permit/letterhead.jpg')},
+    })
+
+
+def _licence_action(request, file_id, action, ok):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_licence', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_licence_save(request, file_id):
+    return _licence_action(request, file_id, lambda p: permit_step7.save(request.user, p, request.POST), 'اطلاعات فرم پروانه ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_licence_issue(request, file_id):
+    return _licence_action(request, file_id, lambda p: permit_step7.issue(request.user, p, request.POST), 'صدور پروانه ثبت شد.')
