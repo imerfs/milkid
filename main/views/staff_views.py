@@ -141,6 +141,7 @@ def accountant_dashboard(request):
     from main.models import Notification
     from main.accounting import ledger
     from main.office.errors import OfficeError
+    from main.office import permits
 
     # The workspace needs a municipality; without one the page says so instead of failing.
     try:
@@ -153,6 +154,7 @@ def accountant_dashboard(request):
         'user_profile': request.user.profile,
         'notifications': Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5],
         'acc_soon': ACCOUNTANT_SOON,
+        'permit_fees': permits.fee_rows_for(request.user),
     })
 
 

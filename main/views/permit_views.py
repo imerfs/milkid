@@ -17,14 +17,14 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permit_step4, permits
+from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
 
 INLINE_TYPES = {'.pdf', '.jpg', '.jpeg', '.png'}
 PERSON_LABELS = (('name', 'نام و نام خانوادگی'), ('father', 'فرزند'), ('grade', 'پایه‌ی پروانه‌ی اشتغال'), ('field', 'رشته'), ('license', 'شماره‌ی پروانه / عضویت'))
-FORM_LABELS = (('f04', 'فرم ۰۴ (دستور تهیه‌ی نقشه)'), ('f05', 'فرم ۰۵ (تعهد سازه)'), ('f06', 'فرم ۰۶ (تعهد معماری)'), ('f07', 'فرم ۰۷ (تعهد نظارت)'))
+FORM_LABELS = (('f04', 'فرم ۰۴ (دستور تهیه‌ی نقشه)'), ('f05', 'فرم ۰۵ (تعهد معماری)'), ('f06', 'فرم ۰۶ (تعهد سازه)'), ('f07', 'فرم ۰۷ (تعهد نظارت)'))
 SIDE_LABELS = (('length', 'طول موجود'), ('after', 'ابعاد پس از اصلاح'), ('passage', 'عرض گذر موجود'), ('approved', 'عرض گذر مصوب'))
 
 
@@ -95,7 +95,8 @@ def permit_file(request, file_id):
 def permit_document(request, doc_id):
     """An identity paper or the shamim file: only its owner and the village's staff, never through /media/."""
     doc = PermitDocument.objects.select_related('file').filter(pk=doc_id).first()
-    if doc is None or permits.find(request.user, doc.file_id) is None:
+    if doc is None or (permits.find(request.user, doc.file_id) is None
+                       and not (doc.kind == 'fee_receipt' and permit_step5.find(request.user, doc.file_id))):
         raise Http404('مدرک پیدا نشد.')
     ext = os.path.splitext(doc.original_name)[1].lower()
     inline = ext in INLINE_TYPES and not request.GET.get('download')
@@ -335,3 +336,108 @@ def permit_design_review(request, file_id):
 @require_POST
 def permit_design_sign(request, file_id):
     return _design_action(request, file_id, lambda p: permit_step4.sign(request.user, p, request.POST), 'نقشه‌ها امضا شد و پرونده به مرحله‌ی ۵ رفت.')
+
+
+# ---------- steps 5 and 6: the fees, the payments and the introduction letter ----------
+
+@login_required
+def permit_fees(request, file_id):
+    """Step 5 (the fee rows, the owner's answer) and step 6 (the payments and the Social Security letter) on one page."""
+    permit = permit_step5.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 5:
+        messages.error(request, 'عوارض پس از امضای نقشه‌ها توسط دهیار تعیین می‌شود.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    officer = permit_step5.can_define(request.user) and permits.files_for(request.user).filter(pk=permit.pk).exists()
+    fees = permit.fees or {}
+    editing = officer and permit.stage_no == 5 and permit.fees_state in permit_step5.OBJECTION_STATES
+    rows = permit_step5.fee_rows(permit)
+    pays = [{**p, 'docs': list(permit.documents.filter(pk__in=p.get('docs') or [], kind='fee_receipt'))} for p in permit_step5.payments(permit)]
+    letter = permit_step5.letter_defaults(permit)
+    paid = permit_step5.paid_total(permit)
+    return render(request, 'main/permits/fees.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'officer': officer, 'editing': editing, 'fees': fees,
+        'groups': _group_rows(rows), 'chosen': [r for r in rows if r['on']], 'extras': permit_step5.extras(permit),
+        'extra_chosen': fees.get('extra') or [], 'payments': pays, 'paid': paid, 'remaining': max((fees.get('total') or 0) - paid, 0),
+        'can_answer': mine and permit.stage_no == 5 and permit.fees_state == 'offered',
+        'can_pay': (mine or staff or officer) and permit.stage_no == 6 and permit.insurance_state != 'introduced',
+        'can_confirm': (staff or officer) and permit.stage_no == 6 and permit.insurance_state != 'introduced',
+        'can_issue': staff and permit.stage_no == 6 and permit.insurance_state != 'introduced' and permit.paid_up,
+        'letter': letter, 'letter_saved': (permit.insurance or {}).get('letter') or {},
+        'show_letter': permit.stage_no == 6 and ((staff and permit.paid_up) or permit.insurance_state == 'introduced'),
+        'payload': {'letter': letter, 'file': permit.pk, 'blank': {'letter': static('forms/permit/letterhead.jpg')}},
+    })
+
+
+def _group_rows(rows):
+    groups = []
+    for row in rows:
+        if not groups or groups[-1]['name'] != row['group']:
+            groups.append({'name': row['group'], 'rows': []})
+        groups[-1]['rows'].append(row)
+    return groups
+
+
+def _fees_action(request, file_id, action, ok):
+    permit = permit_step5.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_fees', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_fees_save(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.save_fees(request.user, p, request.POST), 'ردیف‌های عوارض ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_fees_offer(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.offer(request.user, p, request.POST), 'عوارض برای تایید متقاضی فرستاده شد.')
+
+
+@login_required
+@require_POST
+def permit_fees_object(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.object_to(request.user, p, request.POST.get('notes', '')),
+                        'اعتراض شما برای مسئول مالی فرستاده شد.')
+
+
+@login_required
+@require_POST
+def permit_fees_approve(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.approve(request.user, p), 'عوارض تایید شد؛ پرونده به مرحله‌ی ۶ (تامین اجتماعی) رفت.')
+
+
+@login_required
+@require_POST
+def permit_pay_add(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.add_payment(request.user, p, request.POST, request.FILES.getlist('slip')), 'پرداخت ثبت شد.')
+
+
+@login_required
+@require_POST
+def permit_pay_confirm(request, file_id, pay_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.confirm_payment(request.user, p, pay_id), 'پرداخت تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_pay_remove(request, file_id, pay_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.remove_payment(request.user, p, pay_id), 'پرداخت حذف شد.')
+
+
+@login_required
+@require_POST
+def permit_letter_issue(request, file_id):
+    return _fees_action(request, file_id, lambda p: permit_step5.issue_letter(request.user, p, request.POST), 'معرفی‌نامه‌ی تامین اجتماعی صادر شد.')

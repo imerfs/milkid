@@ -8,7 +8,6 @@ applicant typed stays in the profile, so the next application starts filled in.
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 
@@ -287,9 +286,18 @@ def refuse(actor, permit, reason):
 
 def panel_rows(user, limit=60):
     rows = files_for(user).filter(request__request_type='building_permit')
-    waiting = rows.filter(Q(state='submitted') | Q(stage_no=3, bonyad_state='uploaded') | Q(stage_no=4, design_state__in=('submitted', 'reviewed'))).count()
-    ordered = sorted(rows[:300], key=lambda f: (not f.needs_staff, -f.created_at.timestamp()))[:limit]
-    return {'rows': ordered, 'waiting': waiting, 'total': rows.count(), 'can_open': can(user, 'permit.open')}
+    listed = list(rows[:300])
+    ordered = sorted(listed, key=lambda f: (not f.needs_staff, -f.created_at.timestamp()))[:limit]
+    return {'rows': ordered, 'waiting': sum(1 for f in listed if f.needs_staff), 'total': rows.count(), 'can_open': can(user, 'permit.open')}
+
+
+def fee_rows_for(user, limit=60):
+    """The financial officer's list: files in step 5 waiting for fees, and files in step 6 with a payment to confirm."""
+    rows = [f for f in files_for(user).filter(request__request_type='building_permit', stage_no__in=(5, 6))[:300]]
+    todo = [f for f in rows if f.needs_accountant or (f.stage_no == 6 and f.insurance_state != 'introduced'
+                                                      and any(not p.get('ok') for p in (f.insurance or {}).get('payments') or []))]
+    ordered = sorted(rows, key=lambda f: (f not in todo, -f.created_at.timestamp()))[:limit]
+    return {'rows': ordered, 'waiting': len(todo)}
 
 
 def applicant_history(permit):

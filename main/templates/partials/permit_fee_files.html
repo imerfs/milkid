@@ -1,0 +1,23 @@
+{% load static jalali_tags persian_filters %}
+{# The financial officer's list of building-permit files (context `permit_fees` from main.office.permits.fee_rows_for). #}
+<link rel="stylesheet" href="{% static 'css/permits.css' %}">
+<section class="ac-card pl" id="permit-fees-card" aria-label="عوارض پرونده‌های پروانه ساختمان" style="margin-bottom:16px">
+  <h3 style="margin:0 0 8px"><i class="fas fa-building-circle-check" aria-hidden="true"></i> عوارض پروانه‌های ساختمان{% if permit_fees.waiting %} <span class="pl-state pl-state-submitted">{{ permit_fees.waiting|persian_numbers }} پرونده منتظر شماست</span>{% endif %}</h3>
+  <p style="margin:0 0 8px;color:#6b7280;font-size:.9rem">بعد از امضای نقشه‌ها توسط دهیار، ردیف‌های عوارض هر پرونده را شما تعیین می‌کنید؛ پس از تایید متقاضی، فیش پرداختی‌ها را اینجا تایید کنید.</p>
+  <div style="overflow-x:auto">
+  <table>
+    <thead><tr><th>متقاضی</th><th>مرحله</th><th>وضعیت</th><th>جمع عوارض (ریال)</th><th><span class="sr-only">پرونده</span></th></tr></thead>
+    <tbody>
+    {% for f in permit_fees.rows %}
+      <tr>
+        <td><b>{{ f.request.user.get_full_name|default:f.request.user.username }}</b></td>
+        <td>{{ f.stage_no|persian_numbers }}. {{ f.stage_title }}</td>
+        <td><span class="pl-state pl-state-{{ f.state }}">{{ f.status_text }}</span></td>
+        <td>{{ f.fees.total|rials|default:"—" }}</td>
+        <td><a class="pl-open" href="{% url 'main:permit_fees' f.pk %}">{% if f.needs_accountant %}تعیین عوارض{% else %}مشاهده{% endif %}</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>

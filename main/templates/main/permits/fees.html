@@ -1,0 +1,182 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}عوارض و تامین اجتماعی - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff pfe">
+  {% if not embed %}<nav class="pf-top"><a href="{% if mine or staff %}{% url 'main:permit_file' permit.pk %}{% else %}{% url 'main:dashboard' %}{% endif %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-coins" aria-hidden="true"></i></span>
+    <div>
+      <h1>{% if permit.stage_no == 5 %}مرحله‌ی ۵: عوارض و بهای خدمات{% else %}مرحله‌ی ۶: پرداخت و معرفی به تامین اجتماعی{% endif %}</h1>
+      <p>{{ letter.owner }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-submitted">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li class="{% if permit.stage_no > 5 %}ok{% endif %}"><b>۱</b><span>مسئول مالی ردیف‌های عوارض را برای شما تعیین می‌کند.</span></li>
+    <li class="{% if permit.stage_no > 5 %}ok{% endif %}"><b>۲</b><span>شما فهرست را می‌بینید و تایید می‌کنید (یا اعتراض می‌کنید).</span></li>
+    <li class="{% if permit.paid_up %}ok{% endif %}"><b>۳</b><span>عوارض را به حساب دهیاری می‌پردازید و فیش ثبت و تایید می‌شود.</span></li>
+    <li class="{% if permit.insurance_state == 'introduced' %}ok{% endif %}"><b>۴</b><span>دهیاری شما را با نامه به تامین اجتماعی معرفی می‌کند.</span></li>
+  </ol>
+
+  {% include 'main/permits/_paper.html' with stage=permit.stage_no %}
+
+  <div class="pf-card pfe-wrap">
+  {# ---------- the fees: the officer edits, everyone else reads ---------- #}
+  {% if editing %}
+    <form method="post" action="{% url 'main:permit_fees_save' permit.pk %}" class="pf-form pff-form pfe-form" id="pfe-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <h2><i class="fas fa-list-check" aria-hidden="true"></i>ردیف‌های عوارض و بهای خدمات</h2>
+      {% if permit.fees_state == 'objected' and fees.objection %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> متقاضی اعتراض کرد:</p><blockquote>{{ fees.objection }}</blockquote>{% endif %}
+      <p class="pf-hint">ردیف‌هایی را که برای این پرونده لازم است تیک بزنید و مبلغ (ریال) هر کدام را بنویسید. «محاسبه‌ی کمکی» عوامل فرم محاسبه (اعیان، ضریب شورا، ارزش معاملاتی، ضریب P، ارتفاع ...) را نگه می‌دارد و حاصل‌ضرب خانه‌های پر را پیشنهاد می‌دهد؛ مبلغ نهایی را شما تعیین می‌کنید.</p>
+      {% for g in groups %}
+      <h3>{{ g.name }}</h3>
+      <table class="pfe-table">
+        <tbody>
+        {% for r in g.rows %}
+          <tr class="{% if r.on %}on{% endif %}" data-row>
+            <td class="pfe-ck"><input type="checkbox" name="r{{ r.no }}_on" {% if r.on %}checked{% endif %} aria-label="ردیف {{ r.no|persian_numbers }}"></td>
+            <td class="pfe-no">{{ r.no|persian_numbers }}</td>
+            <td class="pfe-title">{{ r.title }}
+              <details><summary>محاسبه‌ی کمکی</summary>
+                <div class="pfe-fac">
+                  {% for key, label, value in r.factors %}<label>{{ label }}<input name="r{{ r.no }}_{{ key }}" value="{{ value }}" inputmode="decimal" data-fac="{{ key }}"></label>{% endfor %}
+                  <button type="button" class="pf-btn" data-suggest>پیشنهاد: حاصل‌ضرب خانه‌های پر</button>
+                </div>
+              </details>
+            </td>
+            <td class="pfe-amt"><input name="r{{ r.no }}_amount" value="{{ r.amount }}" inputmode="numeric" placeholder="ریال" aria-label="مبلغ ردیف {{ r.no|persian_numbers }}" data-amount></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endfor %}
+      <h3>ردیف‌های دیگر</h3>
+      <table class="pfe-table"><tbody>
+        {% for x in extras %}
+        <tr><td class="pfe-title"><input name="x{{ forloop.counter }}_title" value="{{ x.title }}" placeholder="عنوان (مثلا عوارض تفکیک عرصه)" maxlength="120"></td>
+            <td class="pfe-amt"><input name="x{{ forloop.counter }}_amount" value="{{ x.amount }}" inputmode="numeric" placeholder="ریال" data-amount data-extra></td></tr>
+        {% endfor %}
+      </tbody></table>
+      <label>توضیح برای متقاضی (اختیاری)<textarea name="notes" rows="2" maxlength="600">{{ fees.notes }}</textarea></label>
+      <p class="pfe-total">جمع: <b id="pfe-total">۰</b> ریال</p>
+      <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره (هنوز برای متقاضی نرفته)</button>
+      <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_fees_offer' permit.pk %}" onclick="return confirm('فهرست برای متقاضی فرستاده شود؟')"><i class="fas fa-paper-plane" aria-hidden="true"></i>ذخیره و ارسال برای تایید متقاضی</button>
+    </form>
+  {% elif fees.total %}
+    <div class="pfe-sheet">
+      <h2><i class="fas fa-receipt" aria-hidden="true"></i>فرم محاسبه‌ی عوارض و بهای خدمات</h2>
+      <p class="pfe-meta">{{ letter.owner }}{% if letter.father %} · فرزند {{ letter.father }}{% endif %} · روستای {{ letter.village }}{% if permit.lot_number %} · قطعه‌ی {{ permit.lot_number|persian_numbers }}{% endif %}</p>
+      <table class="pfe-table pfe-read">
+        <thead><tr><th>ردیف</th><th>شرح</th><th>مبلغ (ریال)</th></tr></thead>
+        <tbody>
+        {% for r in chosen %}<tr><td>{{ r.no|persian_numbers }}</td><td>{{ r.group }} — {{ r.title }}</td><td>{{ r.amount|rials }}</td></tr>{% endfor %}
+        {% for x in extra_chosen %}<tr><td>—</td><td>{{ x.title }}</td><td>{{ x.amount|rials }}</td></tr>{% endfor %}
+        </tbody>
+        <tfoot><tr><th colspan="2">جمع</th><th>{{ fees.total|rials }}</th></tr></tfoot>
+      </table>
+      {% if fees.notes %}<p class="pf-hint">{{ fees.notes }}</p>{% endif %}
+      <p class="pf-hint">تعیین‌کننده: {{ permit.fees_by.get_full_name|default:permit.fees_by.username }}{% if permit.fees_at %} · {{ permit.fees_at|persian_date:"Y/m/d"|persian_numbers }}{% endif %}</p>
+      <button type="button" class="pf-btn" id="pfe-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ فرم عوارض</button>
+    </div>
+    {% if can_answer %}
+    <div class="pfe-answer">
+      <form method="post" action="{% url 'main:permit_fees_approve' permit.pk %}" class="pf-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <button class="pf-btn pf-btn-main" type="submit" onclick="return confirm('مجموع {{ fees.total|rials }} ریال را تایید می‌کنید؟')"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید عوارض و رفتن به مرحله‌ی تامین اجتماعی</button>
+      </form>
+      <form method="post" action="{% url 'main:permit_fees_object' permit.pk %}" class="pf-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <label>با کدام ردیف مشکل دارید؟<textarea name="notes" rows="2" maxlength="800" required></textarea></label>
+        <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>اعتراض و بازگشت به مسئول مالی</button>
+      </form>
+    </div>
+    {% elif permit.fees_state == 'offered' %}<p class="pf-hint">منتظر تایید متقاضی.</p>
+    {% elif permit.fees_state == 'objected' %}<p class="pf-warn">متقاضی اعتراض کرد؛ منتظر اصلاح مسئول مالی.{% if fees.objection %}</p><blockquote>{{ fees.objection }}</blockquote>{% else %}</p>{% endif %}
+    {% endif %}
+  {% else %}
+    <p class="pf-hint"><i class="fas fa-hourglass-half" aria-hidden="true"></i> مسئول مالی هنوز عوارض را تعیین نکرده است.</p>
+  {% endif %}
+  </div>
+
+  {# ---------- step 6: the payments ---------- #}
+  {% if permit.stage_no == 6 %}
+  <section class="pf-card pfe-pay" aria-labelledby="pfe-pay-h">
+    <h2 id="pfe-pay-h"><i class="fas fa-money-check-dollar" aria-hidden="true"></i>پرداخت عوارض</h2>
+    <p>جمع عوارض: <b>{{ fees.total|rials }}</b> ریال · پرداخت‌های تاییدشده: <b>{{ paid|rials|default:"۰" }}</b> ریال · مانده: <b>{{ remaining|rials|default:"۰" }}</b> ریال</p>
+    {% if payments %}
+    <table class="pfe-table pfe-read">
+      <thead><tr><th>شماره‌ی فیش</th><th>تاریخ</th><th>مبلغ (ریال)</th><th>وضعیت</th><th><span class="sr-only">کار</span></th></tr></thead>
+      <tbody>
+      {% for p in payments %}
+        <tr>
+          <td><bdi>{{ p.slip_no|persian_numbers }}</bdi>{% for d in p.docs %} <a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener" title="{{ d.original_name }}"><i class="fas fa-paperclip" aria-hidden="true"></i></a>{% endfor %}</td>
+          <td>{{ p.date|persian_numbers }}</td><td>{{ p.amount|rials }}</td>
+          <td>{% if p.ok %}<span class="pfe-ok">تایید شد</span>{% else %}<span class="pfe-wait">منتظر تایید</span>{% endif %}</td>
+          <td class="pfe-acts">
+            {% if can_confirm and not p.ok %}<form method="post" action="{% url 'main:permit_pay_confirm' permit.pk p.id %}">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}<button class="pf-btn pf-btn-main" type="submit">تایید</button></form>{% endif %}
+            {% if can_confirm or mine and not p.ok %}<form method="post" action="{% url 'main:permit_pay_remove' permit.pk p.id %}" onsubmit="return confirm('این پرداخت حذف شود؟')">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}<button class="pf-btn" type="submit">حذف</button></form>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="pf-hint">هنوز پرداختی ثبت نشده است.</p>{% endif %}
+    {% if can_pay %}
+    <form method="post" action="{% url 'main:permit_pay_add' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <h3>ثبت فیش پرداخت</h3>
+      <div class="pff-fields">
+        <label>شماره‌ی فیش یا پیگیری<input name="slip_no" required maxlength="40" inputmode="numeric"></label>
+        <label>تاریخ فیش (شمسی)<input name="date" required placeholder="۱۴۰۵/۰۷/۲۶" inputmode="numeric"></label>
+        <label>مبلغ (ریال)<input name="amount" required inputmode="numeric"></label>
+        <label>توضیح (اختیاری)<input name="note" maxlength="150"></label>
+      </div>
+      <label>تصویر فیش (اختیاری؛ pdf یا عکس)<input type="file" name="slip" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-plus" aria-hidden="true"></i>ثبت پرداخت</button>
+      {% if not mine %}<p class="pf-hint">پرداختی که کارکنان ثبت می‌کنند بلافاصله تایید‌شده حساب می‌شود.</p>{% endif %}
+    </form>
+    {% endif %}
+  </section>
+
+  {# ---------- step 6: the letter ---------- #}
+  {% if show_letter or permit.insurance_state == 'introduced' %}
+  <section class="pf-card pfe-letter" aria-labelledby="pfe-letter-h">
+    <h2 id="pfe-letter-h"><i class="fas fa-file-lines" aria-hidden="true"></i>نامه‌ی معرفی به تامین اجتماعی</h2>
+    {% if permit.insurance_state == 'introduced' %}
+      <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> نامه‌ی شماره‌ی <bdi>{{ letter_saved.number|persian_numbers }}</bdi> برای شعبه‌ی {{ letter_saved.branch }} صادر شد ({{ letter_saved.by }}، {{ letter_saved.at|persian_numbers }}). نامه را چاپ کنید و برای مهر و امضای دهیار به دهیاری ببرید.</p>
+    {% elif can_issue %}
+    <form method="post" action="{% url 'main:permit_letter_issue' permit.pk %}" class="pf-form pff-form" id="pfi-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <p class="pf-hint">عوارض پرداخت شد؛ نامه را از اطلاعات پرونده پر کنیم. «مبلغ عوارض صدور پروانه» همان مبنای حق بیمه است (جمع ردیف‌های احداث بنا: <b>{{ letter.building_fees|rials }}</b> ریال)؛ در صورت نیاز اصلاح کنید.</p>
+      <div class="pff-fields">
+        <label>شماره‌ی نامه<input name="number" value="{{ letter.number }}" required maxlength="40"></label>
+        <label>تاریخ نامه<input name="date" value="{{ letter.date }}" required inputmode="numeric"></label>
+        <label>شعبه‌ی تامین اجتماعی<input name="branch" value="{{ letter.branch }}" required maxlength="80" placeholder="مثلا بیرجند"></label>
+        <label>مبلغ عوارض صدور پروانه (ریال)<input name="base" value="{{ letter.base }}" required inputmode="numeric"></label>
+        <label>زیربنا (م²)<input name="area" value="{{ letter.area }}" maxlength="20"></label>
+        <label>عرض معبر (متر)<input name="street" value="{{ letter.street }}" maxlength="10"></label>
+      </div>
+      <label class="pff-check"><input type="checkbox" name="no_formula" {% if letter.no_formula %}checked{% endif %}> افزودن جمله‌ی «این دهیاری فاقد فرمول محاسبه عوارض می‌باشد»</label>
+      <button class="pf-btn pf-btn-main" type="submit" onclick="return confirm('معرفی‌نامه صادر شود؟ پس از آن پرداخت‌ها قابل تغییر نیست.')"><i class="fas fa-stamp" aria-hidden="true"></i>صدور معرفی‌نامه</button>
+    </form>
+    {% endif %}
+    <div class="pff-canvas"><canvas id="pfi-canvas" width="1400" height="2000" aria-label="پیش‌نمایش نامه"></canvas><p class="pff-loading" id="pfi-loading">در حال آماده‌سازی…</p></div>
+    <div class="pff-actions">
+      <button type="button" class="pf-btn pf-btn-main" id="pfi-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود نامه (PDF)</button>
+      <button type="button" class="pf-btn" id="pfi-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ نامه</button>
+    </div>
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
+{% if permit.stage_no == 6 and show_letter %}{{ payload|json_script:"pfi-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/permit-insurance-letter.js' %}" defer></script>{% endif %}
+<script src="{% static 'js/permit-fees.js' %}" defer></script>
+{% endblock %}

@@ -56,7 +56,7 @@ brings the answer back.
 ## Step 4: engineers, plans, forms 04-07 and the dehyari's signature
 After the Bonyad's answer the Bonyad introduces the owner to the drawing offices and a supervising engineer (outside this system).
 - **Forms** (`permits/<id>/design/`, `static/js/permit-design-forms.js`): 04 دستور تهیه‌ی نقشه (from the Bonyad's answer and form 1:
-  allowed floors and area, the four sides, passage widths), 05 تعهد محاسبات سازه, 06 تعهد معماری, 07 تعهد نظارت. Filled from the file
+  allowed floors and area, the four sides, passage widths), 05 تعهد معماری, 06 تعهد محاسبات سازه, 07 تعهد نظارت. Filled from the file
   and the engineers the owner enters; drawn in the browser (04 and 07 over their blank forms, 05 and 06 typeset on the dehyari's
   letterhead), downloaded as PDF or printed. The engineers and the dehyari sign them on paper.
 - **Plans:** the owner uploads every sheet except the signed forms (architecture, structure, other; pdf/jpg/png/dwg/dxf), can delete
@@ -64,3 +64,27 @@ After the Bonyad's answer the Bonyad introduces the owner to the drawing offices
 - **Review:** clerk / expert / dehyari tick that the signed forms 05-07 reached the office and confirm, or send the set back with a
   reason. **Signature:** only the dehyari (`permit.sign`) signs, from «reviewed» (or in one go from «submitted» by ticking the forms):
   the file records who, when and a fingerprint over all sheets; sheets changed afterwards are flagged. Signing moves the file to step 5.
+
+## Step 5: the fees (the financial officer)
+After the dehyari signs the plans, the village's financial officer (`accountant`, or the dehyari: action `permit.fees`) is notified and
+opens `permits/<id>/fees/` (also listed on the accountant dashboard, `permits.fee_rows_for`).
+- The page lists the **31 rows** of the «فرم محاسبه عوارض و بهای خدمات» (`permit_step5.ROWS`: residential, commercial, service/workshop,
+  industrial building fees by floor, fence, annexed land, added value, expert / fire-service / file / yearly fees) plus three free rows
+  (e.g. تفکیک عرصه). The officer ticks the rows that apply and sets each amount in rials; no formula is enforced (the dehyari has none).
+  Each row can keep the form's factors (area, built area, council factor B, value P, factor P, height, floors, expert price difference);
+  the page only offers their product as a suggestion (120 × 220000 × 1.3 × 5 × 0.5 = 85,800,000 as in the sample).
+- «Save» keeps the draft; «Save and send» (`fees_state` `offered`) tells the owner. The owner sees only the chosen rows and the total,
+  can print the sheet, and **approves** (the file moves to step 6) or **objects** with a note (`objected`: the officer revises and resends).
+
+## Step 6: payment and the introduction to the Social Security Organisation
+- The owner pays at the dehyari's bank account and records each slip (number, Jalali date, amount, optional scan kept privately as
+  `fee_receipt`); clerk / expert / dehyari / the officer confirm it. A slip the staff record is confirmed at once. When the confirmed
+  total covers the approved total the file is «paid up» (`PermitFile.paid_up`).
+- Then clerk / expert / dehyari **issue the letter** (number, date, branch, the building fees the insurance share is taken from — default
+  the sum of rows 1-5, 7-11, 13-17, 18-22 —, built area, street width, optional «this dehyari has no fee formula» sentence). The letter
+  is drawn in the browser on the dehyari letterhead (`static/js/permit-insurance-letter.js`) and downloaded or printed; the dehyari
+  stamps and signs it on paper. Issuing freezes the payments (`insurance_state` `introduced`).
+
+## On paper at every step
+The forms are still signed and handed to the dehyari by hand. `main/templates/main/permits/_paper.html` tells the owner, at each step,
+what to print, who signs it and what to bring.
