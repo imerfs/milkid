@@ -17,13 +17,15 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import permit_commission, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
 
 INLINE_TYPES = {'.pdf', '.jpg', '.jpeg', '.png'}
 PERSON_LABELS = (('name', 'نام و نام خانوادگی'), ('father', 'فرزند'), ('grade', 'پایه‌ی پروانه‌ی اشتغال'), ('field', 'رشته'), ('license', 'شماره‌ی پروانه / عضویت'))
+COMMISSION_FIELDS = (('name', 'نام و نام خانوادگی'), ('father', 'نام پدر'), ('id_number', 'شماره شناسنامه'), ('national_id', 'کد ملی'),
+                     ('street', 'خیابان / آدرس'), ('phone', 'شماره تماس'), ('date', 'تاریخ فرم'))
 FORM_LABELS = (('f04', 'فرم ۰۴ (دستور تهیه‌ی نقشه)'), ('f05', 'فرم ۰۵ (تعهد معماری)'), ('f06', 'فرم ۰۶ (تعهد سازه)'), ('f07', 'فرم ۰۷ (تعهد نظارت)'))
 SIDE_LABELS = (('length', 'طول موجود'), ('after', 'ابعاد پس از اصلاح'), ('passage', 'عرض گذر موجود'), ('approved', 'عرض گذر مصوب'))
 
@@ -872,3 +874,69 @@ def permit_endwork_reject(request, file_id):
 @require_POST
 def permit_endwork_issue(request, file_id):
     return _end_action(request, file_id, lambda p: permit_endwork.issue(request.user, p, request.POST), 'صدور گواهی پایان ساخت ثبت شد.')
+
+
+# ---------- construction without a permit, step 2: the request form and the undertaking ----------
+
+@login_required
+def permit_commission_page(request, file_id):
+    permit = permit_commission.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 2 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۱ در دسترس است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    data = permit_commission.payload(permit)
+    at_step = permit_commission.at_step(permit)
+    return render(request, 'main/permits/commission.html', {
+        'permit': permit, 'd': data, 'embed': embed, 'mine': mine, 'staff': staff,
+        'scan_rows': [(key, permit_commission.LABELS[key], docs) for key, docs in permit_commission.scans(permit).items()],
+        'can_edit': at_step and permit_commission._may_edit(request.user, permit),          # pylint: disable=protected-access
+        'owner_open': at_step and mine and permit.commission_state in permit_commission.OPEN_STATES,
+        'can_decide': at_step and staff and permit.commission_state == 'uploaded',
+        'field_rows': [(key, label, data['form'].get(key, '')) for key, label in COMMISSION_FIELDS],
+        'payload': {**data, 'owner': data['form']['name']},
+    })
+
+
+def _commission_action(request, file_id, action, ok):
+    permit = permit_commission.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_commission', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_commission_save(request, file_id):
+    return _commission_action(request, file_id, lambda p: permit_commission.save_form(request.user, p, request.POST), 'اطلاعات فرم‌ها ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_commission_upload(request, file_id):
+    return _commission_action(request, file_id, lambda p: permit_commission.upload(request.user, p, request.POST, request.FILES),
+                              'فرم‌های امضاشده فرستاده شد؛ دهیاری آن‌ها را بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_commission_verify(request, file_id):
+    return _commission_action(request, file_id, lambda p: permit_commission.verify(request.user, p, request.POST),
+                              'فرم‌ها تایید شد و پرونده به مرحله‌ی ۳ رفت.')
+
+
+@login_required
+@require_POST
+def permit_commission_return(request, file_id):
+    return _commission_action(request, file_id, lambda p: permit_commission.send_back(request.user, p, request.POST.get('notes', '')),
+                              'فرم‌ها برای اصلاح به متقاضی برگشت داده شد.')
+

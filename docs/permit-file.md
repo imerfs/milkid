@@ -175,3 +175,16 @@ services, end of work). **Only step 1 is built; steps 2-6 are still the static p
 - Everything of the permit track after step 1 (forms, plans, fees, permit, supervision, services, end of work) is closed to this track:
   `permits.find` returns nothing for an unlicensed file unless the caller passes `any_track=True` (the file page, its papers, step-1 decisions and the
   shamim re-read). The staff lists show these files with their own label; the owner's notification and the history say «ساخت‌وساز بدون پروانه».
+
+## Construction without a permit: step 2 (the request form and the undertaking)
+`permits/<id>/commission/` (`permit_commission.py`, `static/js/permit-commission-forms.js`, `permits/commission.html`), open once step 1 is confirmed
+(file at stage 2). Two papers for the Article 99 commission file, from the dehyari's samples:
+- **«فرم درخواست»**: asks the dehyari to form the commission file and take the village's fees and the commission's fine in instalments (owner, father,
+  ID-card number, street, phone, date). **«تعهدنامه»**: the owner's ten undertakings (sewage, animals in the street, pavement, facade, parking,
+  neighbours' consent, missed fees, materials left in the street, occupation fee, safety). Both are filled from the file, typeset in the browser on a
+  plain bordered page, downloaded as PDF or printed; the owner may correct the values (`commission.form`) and the preview follows.
+- The owner **signs and leaves a fingerprint by hand** and uploads the scan of each paper (`comm_request` / `comm_undertake`, private storage), ticking
+  that both are signed; a new scan replaces the one the staff sent back. `commission_state`: '' → `uploaded` → `verified` (or `returned`).
+- **Any of the clerk / technical expert / dehyari** (`permit.open`) ticks that both signed papers arrived and confirms (the file moves to step 3,
+  who and when are kept in `commission.checked`), or sends them back with a reason. Waiting files count in the three panels (`needs_staff`).
+  Step 3 onwards is not built yet.
