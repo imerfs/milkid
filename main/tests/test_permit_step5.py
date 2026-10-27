@@ -230,7 +230,7 @@ class TheLetter(AtStepFive):
         permit = self.reload()
         self.assertEqual(permit.insurance_state, 'introduced')
         self.assertEqual((permit.insurance['letter']['branch'], permit.insurance['letter']['base']), ('بیرجند', 85800000))
-        self.assertEqual(permit.status_text, 'معرفی‌نامه‌ی تامین اجتماعی صادر شد')
+        self.assertEqual(permit.status_text, 'منتظر گواهی تامین اجتماعی (از متقاضی)')
         self.assertTrue(Notification.objects.filter(user=self.citizen, title='معرفی‌نامه‌ی تامین اجتماعی آماده است').exists())
         self.letter(branch='دیگر')
         self.assertEqual(self.reload().insurance['letter']['branch'], 'بیرجند')

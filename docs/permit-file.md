@@ -88,3 +88,29 @@ opens `permits/<id>/fees/` (also listed on the accountant dashboard, `permits.fe
 ## On paper at every step
 The forms are still signed and handed to the dehyari by hand. `main/templates/main/permits/_paper.html` tells the owner, at each step,
 what to print, who signs it and what to bring.
+
+## Step 6 (end): the Social Security certificate
+After the introduction letter (`insurance_state` `introduced`) the owner pays the insurance share at the Social Security branch and
+uploads the certificate with the hologram (`permit_step6.py`: scan + number, date, workshop number, area, the fees it names, the
+premium, the payment slip). The original goes to the dehyari. Clerk / expert / dehyari see the system's comparison (fees and area against
+the introduction letter, date after the letter, duplicate certificate number, owner name), tick that the original's hologram was seen,
+may correct a figure and confirm (`verified`, the file moves to step 7) or send it back with a reason (`returned`).
+
+## Step 7: the building permit form (پروانه ساختمان)
+`permits/<id>/licence/` (`permit_step7.py`, `static/js/permit-licence-form.js`). The three pages of the permit (permit and fee slip
+numbers, owner, plot, engineers, existing state, the four sides, areas and density, usage, structure, floors table, parking, notes,
+signature names) are drawn in the browser, prefilled from the file: owner, plot, Bonyad's allowed figures and Bonyad permit number,
+the sides from form 1 / step 4, the engineers of step 4, the fee slip and the insurance slip, the next registration number. The
+clerk / expert / dehyari change any field, save, download or print. The dehyari and the supervising engineer sign and stamp the printed
+form **by hand**; the staff then tick «signed and handed to the owner» and issue (`licence_state` `issued`), which freezes the form
+and tells the owner. The plot sketch is not drawn: the plot map printed from the step-2 forms page is glued on page 2.
+
+## Renewal of the permit's term (تمدید مهلت پروانه)
+A permit is valid **one year** from its issue date (`permit_extension.expiry`: valid / soon (≤30 days) / expired), renewable at most twice
+(«نوبت اول / دوم»); the next term starts where the previous one ended. `permits/<id>/extension/` (linked from the file page):
+- The owner (or the clerk / expert / dehyari for a walk-in owner) opens a request once the permit is in its last 30 days or past it.
+- The page prefills the owner's «فرم درخواست» and the renewal form from the file and the permit form; the staff change, save, download
+  or print them. The owner **signs and puts a fingerprint** on the request; the **dehyari and the technical manager (technical expert)
+  sign and stamp** the renewal, all by hand. The staff tick both and record the renewal.
+- `python manage.py permit_expiry_notices` (run daily, e.g. cron) tells owners once per term when a permit is about to end or has ended.
+- The file's status line and the panels show «N days left» / «renewal needed» / «renewal request waiting».

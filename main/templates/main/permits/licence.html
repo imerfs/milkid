@@ -1,0 +1,95 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}پروانه ساختمان - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-stamp" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۷: پروانه‌ی ساختمان</h1>
+      <p>{{ f.owner }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.licence_state == 'issued' %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li class="ok"><b>۱</b><span>گواهی تامین اجتماعی تایید شد و اصل آن نزد دهیاری است.</span></li>
+    <li><b>۲</b><span>دهیاری فرم پروانه را از اطلاعات پرونده پر می‌کند و چاپ می‌گیرد.</span></li>
+    <li><b>۳</b><span>دهیار و مهندس ناظر فرم چاپی را <u>دستی امضا و مهر</u> می‌کنند.</span></li>
+    <li class="{% if permit.licence_state == 'issued' %}ok{% endif %}"><b>۴</b><span>اصل پروانه به متقاضی تحویل و در سامانه ثبت می‌شود.</span></li>
+  </ol>
+  {% if mine %}{% include 'main/permits/_paper.html' with stage=7 %}{% endif %}
+
+  {% if issued %}<div class="pf-card pf-shamim"><b><i class="fas fa-circle-check" aria-hidden="true"></i> پروانه صادر شد</b>
+    <p>شماره‌ی پروانه {{ f.permit_no|persian_numbers }} · تاریخ {{ f.issue_date|persian_numbers }} · ثبت توسط {{ issued.by }} ({{ issued.at|persian_numbers }}).</p></div>{% endif %}
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+      <form method="post" action="{% url 'main:permit_licence_save' permit.pk %}" class="pf-card pf-form pff-form" id="pfl-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        {% if editing %}<p class="pf-hint">همه‌ی خانه‌ها از اطلاعات پرونده پر شده‌اند؛ آنچه نادرست یا خالی است را اصلاح کنید. پیش‌نمایش با تغییر خانه‌ها به‌روز می‌شود.</p>{% endif %}
+        {% for title, rows in groups %}
+        <h3>{{ title }}</h3>
+        <div class="pff-fields">
+          {% for key, label, value, choices in rows %}
+          <label{% if key == 'address' or key == 'bonyad_ref' or key == 'notes_extra' %} class="wide"{% endif %}>{{ label }}
+            {% if choices %}<select name="f_{{ key }}" {% if not editing %}disabled{% endif %}>{% for v, text in choices %}<option value="{{ v }}"{% if v == value|stringformat:"s" %} selected{% endif %}>{{ text }}</option>{% endfor %}</select>
+            {% else %}<input name="f_{{ key }}" value="{{ value }}" {% if not editing %}readonly{% endif %} maxlength="120">{% endif %}
+          </label>
+          {% endfor %}
+        </div>
+        {% endfor %}
+
+        <h3>ابعاد زمین</h3>
+        {% for side, label, cells in sides %}
+        <div class="pff-fields"><b>{{ label }}</b>
+          {% for key, text, value in cells %}<label>{{ text }}<input name="f_{{ key }}" value="{{ value }}" {% if not editing %}readonly{% endif %} maxlength="20"></label>{% endfor %}
+        </div>
+        {% endfor %}
+
+        <h3>طبقات</h3>
+        {% for floor, label, cells in floors %}
+        <div class="pff-fields"><b>{{ label }}</b>
+          {% for key, text, value in cells %}<label>{{ text }}<input name="f_{{ key }}" value="{{ value }}" {% if not editing %}readonly{% endif %} maxlength="20"></label>{% endfor %}
+        </div>
+        {% endfor %}
+
+        {% if editing %}
+        <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی فرم</button>
+        <div class="pfe-issue">
+          <label class="pff-check"><input type="checkbox" name="signed"> پروانه‌ی چاپی با مهر و امضای دستی دهیار و ناظر به متقاضی تحویل شد</label>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_licence_issue' permit.pk %}" onclick="return confirm('صدور پروانه ثبت شود؟ پس از آن فرم قابل ویرایش نیست.')"><i class="fas fa-stamp" aria-hidden="true"></i>ثبت صدور و تحویل پروانه</button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist">
+        <button type="button" class="is-on" data-page="1" role="tab">صفحه‌ی ۱</button>
+        <button type="button" data-page="2" role="tab">صفحه‌ی ۲</button>
+        <button type="button" data-page="3" role="tab">صفحه‌ی ۳</button>
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم پروانه"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      {% if staff %}
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pfl-dl-this"><i class="fas fa-download" aria-hidden="true"></i>دانلود این صفحه (PDF)</button>
+        <button type="button" class="pf-btn pf-btn-main" id="pfl-dl-all"><i class="fas fa-download" aria-hidden="true"></i>دانلود هر ۳ صفحه (PDF)</button>
+        <button type="button" class="pf-btn" id="pfl-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ هر ۳ صفحه</button>
+      </div>
+      <p class="pf-hint">پس از چاپ، دهیار و مهندس ناظر فرم را مهر و امضا می‌کنند. کروکی ملک را از صفحه‌ی «فرم‌ها» (مرحله‌ی ۲) چاپ و در صفحه‌ی ۲ بچسبانید.</p>
+      {% else %}
+      <p class="pf-hint">فرم پروانه را دهیاری چاپ می‌کند؛ پس از مهر و امضای دهیار و ناظر، اصل آن به شما تحویل می‌شود.</p>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{{ payload|json_script:"pfl-data" }}
+{% if staff %}<script src="{% static 'js/pdf-lite.js' %}" defer></script>{% endif %}
+<script src="{% static 'js/permit-licence-form.js' %}" defer></script>
+{% endblock %}

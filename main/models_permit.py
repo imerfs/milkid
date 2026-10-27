@@ -96,8 +96,17 @@ class PermitFile(models.Model):
     fees_approved_at = models.DateTimeField(null=True, blank=True)
     # step 6: the fee payments received and the introduction letter to the Social Security Organisation
     insurance = models.JSONField(default=dict, blank=True)
-    insurance_state = models.CharField(max_length=10, blank=True, default='')       # '' or 'introduced'
+    # '' (paying) -> 'introduced' (letter issued) -> 'uploaded' (the owner's insurance certificate) -> 'verified' (step 7) / 'returned'
+    INSURANCE_STATES = [('', 'پرداخت عوارض'), ('introduced', 'معرفی‌نامه صادر شد'), ('uploaded', 'گواهی منتظر تایید'), ('returned', 'گواهی برگشت‌خورده'), ('verified', 'گواهی تایید شد')]
+    insurance_state = models.CharField(max_length=10, choices=INSURANCE_STATES, blank=True, default='')
     insurance_at = models.DateTimeField(null=True, blank=True)
+    # step 7: the building permit form the dehyari prints (main/office/permit_step7.py)
+    licence = models.JSONField(default=dict, blank=True)
+    licence_state = models.CharField(max_length=8, blank=True, default='')           # '' or 'issued'
+    licence_at = models.DateTimeField(null=True, blank=True)
+    licence_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    # the permit lasts one year; each renewal (at most two) is a request + a renewal form (main/office/permit_extension.py)
+    extensions = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -122,10 +131,14 @@ class PermitFile(models.Model):
         if self.state != 'done':
             return self.get_state_display()
         if self.stage_no >= 7:
-            return 'پرونده در مرحله‌ی بعد است'
+            if self.licence_state != 'issued':
+                return 'پروانه در حال تهیه (دهیاری)'
+            from main.office import permit_extension       # pylint: disable=import-outside-toplevel
+            return permit_extension.status_line(self)
         if self.stage_no == 6:
-            if self.insurance_state == 'introduced':
-                return 'معرفی‌نامه‌ی تامین اجتماعی صادر شد'
+            if self.insurance_state:
+                return {'introduced': 'منتظر گواهی تامین اجتماعی (از متقاضی)', 'uploaded': 'گواهی تامین اجتماعی منتظر تایید',
+                        'returned': 'گواهی تامین اجتماعی برگشت خورد'}.get(self.insurance_state, '')
             return 'منتظر صدور معرفی‌نامه‌ی تامین اجتماعی' if self.paid_up else 'منتظر پرداخت عوارض'
         if self.stage_no == 5:
             return {'': 'منتظر تعیین عوارض (مسئول مالی)', 'offered': 'عوارض منتظر تایید متقاضی',
@@ -148,7 +161,10 @@ class PermitFile(models.Model):
         """True while the village staff (clerk / expert / dehyari) have something to decide on this file."""
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
-                or (self.stage_no == 6 and self.insurance_state != 'introduced'
+                or (self.stage_no == 6 and self.insurance_state == 'uploaded')
+                or (self.stage_no >= 7 and self.licence_state != 'issued')
+                or (self.stage_no >= 7 and any(e.get('state') == 'requested' for e in self.extensions or []))
+                or (self.stage_no == 6 and not self.insurance_state
                     and (self.paid_up or any(not p.get('ok') for p in (self.insurance or {}).get('payments') or []))))
 
     @property
@@ -199,7 +215,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'),
+        ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'),
         ('other', 'سایر'),
     ]
 

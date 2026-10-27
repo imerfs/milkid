@@ -21,7 +21,7 @@
     <li class="{% if permit.stage_no > 5 %}ok{% endif %}"><b>۱</b><span>مسئول مالی ردیف‌های عوارض را برای شما تعیین می‌کند.</span></li>
     <li class="{% if permit.stage_no > 5 %}ok{% endif %}"><b>۲</b><span>شما فهرست را می‌بینید و تایید می‌کنید (یا اعتراض می‌کنید).</span></li>
     <li class="{% if permit.paid_up %}ok{% endif %}"><b>۳</b><span>عوارض را به حساب دهیاری می‌پردازید و فیش ثبت و تایید می‌شود.</span></li>
-    <li class="{% if permit.insurance_state == 'introduced' %}ok{% endif %}"><b>۴</b><span>دهیاری شما را با نامه به تامین اجتماعی معرفی می‌کند.</span></li>
+    <li class="{% if permit.insurance_state %}ok{% endif %}"><b>۴</b><span>دهیاری شما را با نامه به تامین اجتماعی معرفی می‌کند.</span></li>
   </ol>
 
   {% include 'main/permits/_paper.html' with stage=permit.stage_no %}
@@ -105,7 +105,7 @@
   </div>
 
   {# ---------- step 6: the payments ---------- #}
-  {% if permit.stage_no == 6 %}
+  {% if permit.stage_no >= 6 %}
   <section class="pf-card pfe-pay" aria-labelledby="pfe-pay-h">
     <h2 id="pfe-pay-h"><i class="fas fa-money-check-dollar" aria-hidden="true"></i>پرداخت عوارض</h2>
     <p>جمع عوارض: <b>{{ fees.total|rials }}</b> ریال · پرداخت‌های تاییدشده: <b>{{ paid|rials|default:"۰" }}</b> ریال · مانده: <b>{{ remaining|rials|default:"۰" }}</b> ریال</p>
@@ -145,10 +145,10 @@
   </section>
 
   {# ---------- step 6: the letter ---------- #}
-  {% if show_letter or permit.insurance_state == 'introduced' %}
+  {% if show_letter or permit.insurance_state %}
   <section class="pf-card pfe-letter" aria-labelledby="pfe-letter-h">
     <h2 id="pfe-letter-h"><i class="fas fa-file-lines" aria-hidden="true"></i>نامه‌ی معرفی به تامین اجتماعی</h2>
-    {% if permit.insurance_state == 'introduced' %}
+    {% if permit.insurance_state %}
       <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> نامه‌ی شماره‌ی <bdi>{{ letter_saved.number|persian_numbers }}</bdi> برای شعبه‌ی {{ letter_saved.branch }} صادر شد ({{ letter_saved.by }}، {{ letter_saved.at|persian_numbers }}). نامه را چاپ کنید و برای مهر و امضای دهیار به دهیاری ببرید.</p>
     {% elif can_issue %}
     <form method="post" action="{% url 'main:permit_letter_issue' permit.pk %}" class="pf-form pff-form" id="pfi-form">{% csrf_token %}
@@ -173,9 +173,49 @@
     </div>
   </section>
   {% endif %}
+  {# ---------- step 6: the Social Security certificate ---------- #}
+  {% if permit.insurance_state %}
+  <section class="pf-card pfe-cert" aria-labelledby="pfe-cert-h">
+    <h2 id="pfe-cert-h"><i class="fas fa-certificate" aria-hidden="true"></i>گواهی تامین اجتماعی</h2>
+    {% if permit.insurance_state == 'verified' %}
+      <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> گواهی شماره‌ی <bdi>{{ cert.number|persian_numbers }}</bdi> ({{ cert.date|persian_numbers }}) تایید شد؛ حق بیمه {{ cert.premium|rials }} ریال. {{ cert.checked_by }} · {{ cert.checked_at|persian_numbers }}</p>
+      {% if permit.stage_no >= 7 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_licence' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-stamp" aria-hidden="true"></i>پروانه‌ی ساختمان</a>{% endif %}
+    {% else %}
+      <p class="pf-hint">با نامه‌ی معرفی به شعبه‌ی تامین اجتماعی بروید و حق بیمه را بپردازید. گواهی (دارای هولوگرام) را اینجا بارگذاری و ارقامش را وارد کنید، <b>اصل گواهی را هم به دهیاری ببرید</b>.</p>
+      {% if permit.insurance_state == 'returned' and permit.staff_notes %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری گواهی را برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote>{% endif %}
+      {% if can_cert %}
+      <form method="post" action="{% url 'main:permit_cert_submit' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <label>تصویر گواهی (pdf یا عکس؛ همه‌ی صفحه‌ها)<input type="file" name="cert" multiple required accept=".pdf,.jpg,.jpeg,.png"></label>
+        {% include 'main/permits/_cert_fields.html' %}
+        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال گواهی به دهیاری</button>
+      </form>
+      {% elif permit.insurance_state == 'uploaded' %}
+        <p class="pf-code">گواهی دریافت شد؛ منتظر بررسی اصل آن توسط دهیاری.</p>
+        <ul class="pf-docs">{% for d in cert_docs %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ d.get_kind_display }} <small>{{ d.original_name }}</small></a></li>{% endfor %}</ul>
+        {% if can_cert_verify %}
+        <h3>بررسی خودکار</h3>
+        <ul class="pf-checks">{% for c in cert_checks %}<li class="{{ c.status }}">{{ c.text }}</li>{% endfor %}</ul>
+        <form method="post" action="{% url 'main:permit_cert_verify' permit.pk %}" class="pf-form pff-form pf-open">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          {% include 'main/permits/_cert_fields.html' %}
+          <label class="pff-check"><input type="checkbox" name="confirm" required> اصل گواهی را دیدم (هولوگرام و مهر برجسته) و ارقام درست است</label>
+          <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="500"></textarea></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید گواهی و رفتن به مرحله‌ی ۷ (پروانه)</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_cert_return' permit.pk %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>مشکل گواهی چیست؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  </section>
+  {% endif %}
   {% endif %}
 </div>
-{% if permit.stage_no == 6 and show_letter %}{{ payload|json_script:"pfi-data" }}
+{% if permit.stage_no >= 6 and show_letter %}{{ payload|json_script:"pfi-data" }}
 <script src="{% static 'js/pdf-lite.js' %}" defer></script>
 <script src="{% static 'js/permit-insurance-letter.js' %}" defer></script>{% endif %}
 <script src="{% static 'js/permit-fees.js' %}" defer></script>

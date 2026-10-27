@@ -1,0 +1,12 @@
+{# The figures of the Social Security certificate (context `cert`); the owner types them, the staff correct them. #}
+<div class="pff-fields">
+  <label>شماره‌ی گواهی (بالای نامه)<input name="number" value="{{ cert.number }}" required inputmode="numeric" maxlength="30"></label>
+  <label>تاریخ گواهی<input name="date" value="{{ cert.date }}" required inputmode="numeric" placeholder="۱۴۰۴/۰۴/۰۴"></label>
+  <label>شماره‌ی کارگاه<input name="workshop_no" value="{{ cert.workshop_no }}" inputmode="numeric" maxlength="30"></label>
+  <label>نام مالک در گواهی<input name="owner" value="{{ cert.owner }}" maxlength="80"></label>
+  <label>متراژ (م²)<input name="area" value="{{ cert.area }}" inputmode="decimal"></label>
+  <label>مجموع عوارض ذکرشده (ریال)<input name="fees_base" value="{{ cert.fees_base }}" required inputmode="numeric"></label>
+  <label>حق بیمه (ریال)<input name="premium" value="{{ cert.premium }}" required inputmode="numeric"></label>
+  <label>شماره‌ی برگ پرداخت<input name="slip_no" value="{{ cert.slip_no }}" required inputmode="numeric" maxlength="30"></label>
+  <label>تاریخ پرداخت<input name="slip_date" value="{{ cert.slip_date }}" required inputmode="numeric" placeholder="۱۴۰۴/۰۴/۰۴"></label>
+</div>

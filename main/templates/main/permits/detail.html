@@ -92,6 +92,14 @@
           <p><b>وضعیت:</b> {{ permit.status_text }}</p>
           <a class="pf-btn pf-btn-main" href="{% url 'main:permit_fees' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-coins" aria-hidden="true"></i>{% if permit.stage_no == 5 %}عوارض و بهای خدمات{% else %}پرداخت و معرفی‌نامه‌ی تامین اجتماعی{% endif %}</a>
           {% endif %}
+          {% if permit.stage_no >= 7 %}
+          <p>مرحله‌ی ۷: دهیاری فرم پروانه‌ی ساختمان را از اطلاعات پرونده پر و چاپ می‌کند؛ دهیار و مهندس ناظر آن را دستی امضا و مهر می‌کنند و اصل پروانه به شما تحویل می‌شود.</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          <a class="pf-btn pf-btn-main" href="{% url 'main:permit_licence' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-stamp" aria-hidden="true"></i>فرم پروانه‌ی ساختمان</a>
+          {% endif %}
+          {% if permit.licence_state == 'issued' %}
+          <p><a class="pf-btn" href="{% url 'main:permit_extension' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-calendar-plus" aria-hidden="true"></i>مهلت پروانه و تمدید</a></p>
+          {% endif %}
           {% if permit.stage_no >= 4 and permit.bonyad.verdict %}
           <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> پاسخ بنیاد (نامه {{ permit.bonyad.letter_no|persian_numbers }}، کد رهگیری <bdi dir="ltr">{{ permit.bonyad.tracking_code|persian_numbers }}</bdi>) تایید شد: مجاز، {{ permit.bonyad.floors|persian_numbers }} طبقه، زیربنای مجاز {{ permit.bonyad.floor_area|persian_numbers }} م².</p>
           {% endif %}
