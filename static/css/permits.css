@@ -161,3 +161,18 @@
 .pfe-acts{white-space:nowrap}.pfe-acts form{display:inline}
 .pfe-meta{color:#4b5563;margin:0 0 6px}
 @media (max-width:640px){.pfe-table .pfe-amt{width:110px}}
+
+/* ---- supervision: forms 8-13 ---- */
+.pfs-steps{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:0;margin:0 0 14px}
+.pfs-steps li{border:1.5px solid #e5e7eb;border-radius:12px;padding:8px 10px;background:#fff;display:flex;flex-direction:column;gap:2px;font-size:.82rem;position:relative}
+.pfs-steps li b{font-size:1.05rem}.pfs-steps li em{font-style:normal;color:#6b7280}
+.pfs-steps li.approved{background:#f0fdf4;border-color:#86efac}
+.pfs-steps li.now{border-color:#0b7a3b;box-shadow:0 0 0 2px #bbf7d0}
+.pfs-steps li.violation,.pfs-steps li.commission{background:#fef2f2;border-color:#fca5a5}
+.pfs-steps li.uploaded{background:#fffbeb;border-color:#fcd34d}
+.pfs-item{border:1px solid #e5e7eb;border-radius:10px;padding:6px 10px;margin:6px 0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem}
+.pfs-item legend{font-weight:600;padding:0 4px;font-size:.84rem}
+.pfs-result{display:flex;flex-direction:column;gap:6px;margin:8px 0;font-weight:600}
+.pfs-msg{margin:4px 0;padding:6px 10px;background:#f9fafb;border-radius:8px}.pfs-msg small{color:#6b7280;margin-inline-start:8px}
+.pfs-assign{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.pfs-tabs button{min-width:42px}

@@ -183,3 +183,56 @@ def issue(actor, permit, post):
     sr.save(update_fields=['workflow_history', 'updated_at'])
     notify(sr.user, 'پروانه‌ی ساختمان شما صادر شد', f'پروانه‌ی ساختمان شماره {data["permit_no"]} صادر شد. پروانه را نگه دارید و پیش از شروع کار به ناظر فنی اطلاع دهید.', request=sr)
     return permit
+
+
+# ---------- the amendments sheet (اصلاحات و تغییرات پروانه) ----------
+
+AM_TEXT = ('date', 'fee_slip_no', 'code', 'entry_slip_no', 'ins_slip_no', 'parking_slip_no', 'deed_area', 'area_after', 'density_pct', 'built', 'occupancy', 'notes')
+AM_SIDES = (('north', 'شمالاً'), ('east', 'شرقاً'), ('south', 'جنوباً'), ('west', 'غرباً'))
+AM_LABELS = {'date': 'تاریخ انجام تغییرات', 'fee_slip_no': 'عوارض زیربنا: شماره‌ی فیش', 'code': 'کد', 'entry_slip_no': 'عوارض پذیره: شماره‌ی فیش',
+             'ins_slip_no': 'بیمه‌ی کارگران: شماره‌ی فیش', 'parking_slip_no': 'عوارض پارکینگ: شماره‌ی فیش', 'deed_area': 'مساحت مطابق سند (م²)',
+             'area_after': 'مساحت پس از اصلاحی (م²)', 'density_pct': 'تراکم مجاز (٪)', 'built': 'مساحت مجاز ساخت (م²)', 'occupancy': 'سطح اشغال (م²)',
+             'notes': 'ملاحظات'}
+
+
+def am_keys():
+    keys = [f'am_{k}' for k in AM_TEXT]
+    for side, _ in AM_SIDES:
+        keys += [f'am_sd_{side}_{f}' for f, _ in SIDE_FIELDS]
+    for floor, _ in FLOORS:
+        keys += [f'am_fl_{floor}_{f}' for f, _ in FLOOR_FIELDS]
+    return keys
+
+
+def am_defaults(permit):
+    """The sheet starts from what the permit says: the changes are typed over it."""
+    base = payload(permit)
+    out = {'am_date': permit_step2.today(), 'am_fee_slip_no': base.get('fee_slip_no', ''), 'am_code': base.get('ins_code', ''),
+           'am_entry_slip_no': base.get('entry_slip_no', ''), 'am_ins_slip_no': base.get('ins_slip_no', ''), 'am_parking_slip_no': '',
+           'am_deed_area': base.get('deed_area', ''), 'am_area_after': base.get('area_after', ''), 'am_density_pct': base.get('density_pct', ''),
+           'am_built': base.get('built_allowed', ''), 'am_occupancy': base.get('occupancy_m2', ''), 'am_notes': ''}
+    for side, _ in AM_SIDES:
+        for field, _label in SIDE_FIELDS:
+            out[f'am_sd_{side}_{field}'] = base.get(f'sd_{side}_{field}', '')
+    for floor, _ in FLOORS:
+        for field, _label in FLOOR_FIELDS:
+            out[f'am_fl_{floor}_{field}'] = base.get(f'fl_{floor}_{field}', '')
+    return out
+
+
+def am_payload(permit):
+    return {**am_defaults(permit), **((permit.licence or {}).get('amend') or {})}
+
+
+@transaction.atomic
+def save_amendment(actor, permit, post):
+    """The staff fill the sheet when the owner changes the plans after the permit was issued; printed and signed by hand."""
+    if not may_open(actor, permit):
+        raise Forbidden('فرم اصلاحات را کارکنان دهیاری پر می‌کنند.')
+    if permit.licence_state != 'issued':
+        raise Conflict('اصلاحات پس از صدور پروانه ثبت می‌شود.')
+    licence = dict(permit.licence or {})
+    licence['amend'] = {key: _clean(post.get(f'f_{key}', '')) for key in am_keys()}
+    permit.licence = licence
+    permit.save(update_fields=['licence', 'updated_at'])
+    return permit

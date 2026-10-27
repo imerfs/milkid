@@ -67,6 +67,20 @@
         </div>
         {% endif %}
       </form>
+
+      {% if staff and permit.licence_state == 'issued' %}
+      <form method="post" action="{% url 'main:permit_licence_amend' permit.pk %}" class="pf-card pf-form pff-form" id="pfl-amend">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-pen-ruler" aria-hidden="true"></i>اصلاحات و تغییرات پروانه (صفحه‌ی ۴)</h2>
+        <p class="pf-hint">اگر مالک پس از صدور پروانه نقشه را تغییر بدهد (افزایش یا کاهش واحد، تغییر سطح یا کاربری)، این برگ را از روی اطلاعات پروانه پر و چاپ کنید؛ دهیار و مسئول فنی دستی مهر و امضا می‌کنند.</p>
+        <div class="pff-fields">{% for key, label, value in am_fields %}<label{% if key == 'am_notes' %} class="wide"{% endif %}>{{ label }}<input name="f_{{ key }}" value="{{ value }}" maxlength="120"></label>{% endfor %}</div>
+        <h3>ابعاد زمین</h3>
+        {% for side, label, cells in am_sides %}<div class="pff-fields"><b>{{ label }}</b>{% for key, text, value in cells %}<label>{{ text }}<input name="f_{{ key }}" value="{{ value }}" maxlength="20"></label>{% endfor %}</div>{% endfor %}
+        <h3>طبقات</h3>
+        {% for floor, label, cells in am_floors %}<div class="pff-fields"><b>{{ label }}</b>{% for key, text, value in cells %}<label>{{ text }}<input name="f_{{ key }}" value="{{ value }}" maxlength="20"></label>{% endfor %}</div>{% endfor %}
+        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی برگ اصلاحات</button>
+      </form>
+      {% endif %}
     </div>
 
     <aside class="pff-view">
@@ -74,6 +88,7 @@
         <button type="button" class="is-on" data-page="1" role="tab">صفحه‌ی ۱</button>
         <button type="button" data-page="2" role="tab">صفحه‌ی ۲</button>
         <button type="button" data-page="3" role="tab">صفحه‌ی ۳</button>
+        {% if staff and permit.licence_state == 'issued' %}<button type="button" data-page="4" role="tab">اصلاحات</button>{% endif %}
       </div>
       <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم پروانه"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
       {% if staff %}

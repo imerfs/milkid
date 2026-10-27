@@ -114,3 +114,24 @@ A permit is valid **one year** from its issue date (`permit_extension.expiry`: v
   sign and stamp** the renewal, all by hand. The staff tick both and record the renewal.
 - `python manage.py permit_expiry_notices` (run daily, e.g. cron) tells owners once per term when a permit is about to end or has ended.
 - The file's status line and the panels show «N days left» / «renewal needed» / «renewal request waiting».
+
+## Supervision: forms 8-13, the technical supervisor, the Article 99 commission
+`permits/<id>/supervision/` (`permit_supervision.py`, `static/js/permit-supervision-form.js`, blanks `static/forms/permit/form08..13_blank.jpg`).
+After the permit is issued the owner takes six forms to the supervising engineer one at a time: 8 start of work, 9 after the foundation
+concrete, 10 columns and beams, 11 roof and partitions, 12 final report, 13 the progress report with the request for the end-of-work
+certificate. Each is filled from the file (permit, owner, engineer, pledge number of form 07, floors, structure, area) and drawn over the blank.
+- The owner prints it, the engineer inspects and **signs and stamps by hand**, the owner signs, uploads the scan; one of the clerk /
+  technical expert / dehyari confirms (or returns it with a reason), which opens the next form. Form 13 closes the supervision and moves the
+  file to stage 9 (the end-of-work request).
+- **Technical supervisor (inspector):** the staff link one of the village's inspectors to the file (`PermitFile.supervisor`). His dashboard
+  lists his files; he sees the file (not the identity papers), fills the inspection ticks of forms 9-12 and the result, and talks with the
+  owner and the staff in the file's message thread (notifications go both ways). An inspector sees only the files linked to him.
+- **Violation:** a result «وقوع تخلف» (notes required) stops the form (`violation`), tells the owner and staff; the dehyari refers it to the
+  Article 99 commission (`commission`), later records the vote number, date and decision, and the stage is inspected again. The votes are kept
+  (`supervision.commission`); the last vote number is prefilled on form 13.
+- The forms 9-12 cannot be uploaded until the inspection result without violation is recorded.
+
+## Amendments sheet (اصلاحات و تغییرات پروانه)
+On the permit page (staff, after issue) a fourth sheet is prefilled from the permit (dates, slips, sides, areas, floors) for changes the owner
+makes after the permit was issued; saved under `licence.amend`, downloaded or printed, signed and stamped by the dehyari and the technical
+manager by hand.

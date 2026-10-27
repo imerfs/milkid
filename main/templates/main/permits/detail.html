@@ -98,6 +98,7 @@
           <a class="pf-btn pf-btn-main" href="{% url 'main:permit_licence' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-stamp" aria-hidden="true"></i>فرم پروانه‌ی ساختمان</a>
           {% endif %}
           {% if permit.licence_state == 'issued' %}
+          <p><a class="pf-btn pf-btn-main" href="{% url 'main:permit_supervision' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-helmet-safety" aria-hidden="true"></i>نظارت بر ساخت (فرم‌های ۸ تا ۱۳)</a></p>
           <p><a class="pf-btn" href="{% url 'main:permit_extension' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-calendar-plus" aria-hidden="true"></i>مهلت پروانه و تمدید</a></p>
           {% endif %}
           {% if permit.stage_no >= 4 and permit.bonyad.verdict %}
@@ -164,6 +165,7 @@
       </section>
 
       {# ---------- people and their papers ---------- #}
+      {% if not supervisor_view %}
       <section class="pf-card" aria-labelledby="pf-people">
         <h2 id="pf-people"><i class="fas fa-users" aria-hidden="true"></i>متقاضی و مالکان</h2>
         {% for p in people %}
@@ -184,6 +186,7 @@
         </article>
         {% endfor %}
       </section>
+      {% endif %}
 
       {# ---------- the property ---------- #}
       <section class="pf-card" aria-labelledby="pf-prop">
