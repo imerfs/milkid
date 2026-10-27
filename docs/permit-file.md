@@ -104,3 +104,13 @@ the sides from form 1 / step 4, the engineers of step 4, the fee slip and the in
 clerk / expert / dehyari change any field, save, download or print. The dehyari and the supervising engineer sign and stamp the printed
 form **by hand**; the staff then tick «signed and handed to the owner» and issue (`licence_state` `issued`), which freezes the form
 and tells the owner. The plot sketch is not drawn: the plot map printed from the step-2 forms page is glued on page 2.
+
+## Renewal of the permit's term (تمدید مهلت پروانه)
+A permit is valid **one year** from its issue date (`permit_extension.expiry`: valid / soon (≤30 days) / expired), renewable at most twice
+(«نوبت اول / دوم»); the next term starts where the previous one ended. `permits/<id>/extension/` (linked from the file page):
+- The owner (or the clerk / expert / dehyari for a walk-in owner) opens a request once the permit is in its last 30 days or past it.
+- The page prefills the owner's «فرم درخواست» and the renewal form from the file and the permit form; the staff change, save, download
+  or print them. The owner **signs and puts a fingerprint** on the request; the **dehyari and the technical manager (technical expert)
+  sign and stamp** the renewal, all by hand. The staff tick both and record the renewal.
+- `python manage.py permit_expiry_notices` (run daily, e.g. cron) tells owners once per term when a permit is about to end or has ended.
+- The file's status line and the panels show «N days left» / «renewal needed» / «renewal request waiting».

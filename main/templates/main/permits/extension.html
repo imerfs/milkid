@@ -1,0 +1,99 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}تمدید مهلت پروانه - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-calendar-plus" aria-hidden="true"></i></span>
+    <div>
+      <h1>مهلت پروانه و تمدید</h1>
+      <p>{{ q.name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi></p>
+    </div>
+    {% if info %}<span class="pf-state pf-state-{% if info.state == 'expired' %}rejected{% elif info.state == 'soon' %}needs_docs{% else %}done{% endif %}">{{ permit.status_text }}</span>{% endif %}
+  </header>
+
+  <div class="pf-card">
+    <p>هر پروانه‌ی ساختمان <b>یک سال</b> از تاریخ صدور مهلت شروع و اتمام دارد و حداکثر دو بار (نوبت اول و دوم) تمدید می‌شود.</p>
+    {% if info %}
+    <p>پایان مهلت فعلی: <b>{{ info.date|persian_numbers }}</b>
+      {% if info.state == 'expired' %}<span class="pf-bad">— مهلت {{ info.days|stringformat:"d"|cut:"-"|persian_numbers }} روز پیش تمام شده است؛ پروانه باید تمدید شود.</span>
+      {% elif info.state == 'soon' %}<span class="pf-warn">— {{ info.days|persian_numbers }} روز دیگر.</span>
+      {% else %}— {{ info.days|persian_numbers }} روز دیگر.{% endif %}
+      · تمدیدهای انجام‌شده: {{ info.renewals|persian_numbers }} از {{ max_renewals|persian_numbers }}</p>
+    {% endif %}
+    {% for ext in done %}<p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> {{ ext.term|stringformat:"d" }}. تمدید ({% if ext.term == 1 %}نوبت اول{% else %}نوبت دوم{% endif %}): نامه‌ی {{ ext.form.number|persian_numbers }} · از {{ ext.form.from_date|persian_numbers }} · {{ ext.form.period }} — {{ ext.issued_by }} ({{ ext.issued_at|persian_numbers }})</p>{% endfor %}
+    {% if can_request %}
+    <form method="post" action="{% url 'main:permit_extension_request' permit.pk %}" class="pf-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-calendar-plus" aria-hidden="true"></i>باز کردن درخواست تمدید</button>
+    </form>
+    {% elif not open_ext and info and info.state == 'valid' %}<p class="pf-hint">تمدید در ۳۰ روز آخر مهلت یا پس از آن ممکن است.</p>{% endif %}
+  </div>
+
+  {% if open_ext %}
+  {% if mine %}{% include 'main/permits/_paper.html' with stage=8 %}{% endif %}
+  <div class="pff-grid">
+    <div class="pff-edit">
+      <form method="post" action="{% url 'main:permit_extension_save' permit.pk %}" class="pf-card pf-form pff-form" id="pfx-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h3>درخواست متقاضی</h3>
+        <div class="pff-fields">
+          <label>نام و نام خانوادگی<input name="q_name" value="{{ q.name }}" {% if not editing %}readonly{% endif %}></label>
+          <label>فرزند<input name="q_father" value="{{ q.father }}" {% if not editing %}readonly{% endif %}></label>
+          <label>شناسنامه / کد ملی<input name="q_id_number" value="{{ q.id_number }}" {% if not editing %}readonly{% endif %}></label>
+          <label>تلفن تماس<input name="q_phone" value="{{ q.phone }}" {% if not editing %}readonly{% endif %}></label>
+          <label>شماره‌ی درخواست<input name="q_request_no" value="{{ q.request_no }}" {% if not editing %}readonly{% endif %}></label>
+          <label>تاریخ درخواست<input name="q_request_date" value="{{ q.request_date }}" {% if not editing %}readonly{% endif %}></label>
+          <label class="wide">نشانی<input name="q_address" value="{{ q.address }}" {% if not editing %}readonly{% endif %}></label>
+        </div>
+        <h3>فرم تمدید ({% if open_ext.term == 1 %}نوبت اول{% else %}نوبت دوم{% endif %})</h3>
+        <div class="pff-fields">
+          <label>شماره‌ی نامه<input name="e_number" value="{{ e.number }}" {% if not editing %}readonly{% endif %}></label>
+          <label>تاریخ نامه<input name="e_date" value="{{ e.date }}" {% if not editing %}readonly{% endif %}></label>
+          <label>روستای<input name="e_village" value="{{ e.village }}" {% if not editing %}readonly{% endif %}></label>
+          <label>بخش<input name="e_section" value="{{ e.section }}" {% if not editing %}readonly{% endif %}></label>
+          <label>کد<input name="e_code" value="{{ e.code }}" {% if not editing %}readonly{% endif %}></label>
+          <label>عوارض زیربنا: شماره‌ی فیش<input name="e_fee_slip_no" value="{{ e.fee_slip_no }}" {% if not editing %}readonly{% endif %}></label>
+          <label>تاریخ اتمام عملیات ساختمانی<input name="e_finish_date" value="{{ e.finish_date }}" {% if not editing %}readonly{% endif %}></label>
+          <label>بیمه‌ی کارگران: شماره‌ی فیش<input name="e_ins_slip_no" value="{{ e.ins_slip_no }}" {% if not editing %}readonly{% endif %}></label>
+          <label>مالک<input name="e_owner" value="{{ e.owner }}" {% if not editing %}readonly{% endif %}></label>
+          <label>پلاک ثبتی<input name="e_registry_plot" value="{{ e.registry_plot }}" {% if not editing %}readonly{% endif %}></label>
+          <label>تمدید از تاریخ<input name="e_from_date" value="{{ e.from_date }}" {% if not editing %}readonly{% endif %}></label>
+          <label>برای مدت<input name="e_period" value="{{ e.period }}" {% if not editing %}readonly{% endif %}></label>
+          <label>نام دهیار<input name="e_dehyari_name" value="{{ e.dehyari_name }}" {% if not editing %}readonly{% endif %}></label>
+          <label>نام مسئول فنی دهیاری<input name="e_tech_name" value="{{ e.tech_name }}" {% if not editing %}readonly{% endif %}></label>
+        </div>
+        {% if editing %}
+        <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button>
+        <div class="pfe-issue">
+          <label class="pff-check"><input type="checkbox" name="req_signed"> درخواست با امضا و <b>اثر انگشت متقاضی</b> رسید</label>
+          <label class="pff-check"><input type="checkbox" name="signed"> فرم تمدید با مهر و امضای <b>دهیار</b> و <b>مسئول فنی</b> به متقاضی تحویل شد</label>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_extension_issue' permit.pk %}" onclick="return confirm('تمدید ثبت شود؟')"><i class="fas fa-stamp" aria-hidden="true"></i>ثبت تمدید</button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist">
+        <button type="button" class="is-on" data-page="1" role="tab">درخواست</button>
+        <button type="button" data-page="2" role="tab">فرم تمدید</button>
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pfx-dl-all"><i class="fas fa-download" aria-hidden="true"></i>دانلود هر دو فرم (PDF)</button>
+        <button type="button" class="pf-btn" id="pfx-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ هر دو فرم</button>
+      </div>
+      <p class="pf-hint">درخواست را متقاضی امضا و اثر انگشت می‌کند؛ فرم تمدید را دهیار و مسئول فنی دستی مهر و امضا می‌کنند.</p>
+    </aside>
+  </div>
+  {{ payload|json_script:"pfx-data" }}
+  <script src="{% static 'js/pdf-lite.js' %}" defer></script>
+  <script src="{% static 'js/permit-extension-form.js' %}" defer></script>
+  {% endif %}
+</div>
+{% endblock %}

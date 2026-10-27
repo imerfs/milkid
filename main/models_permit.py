@@ -105,6 +105,8 @@ class PermitFile(models.Model):
     licence_state = models.CharField(max_length=8, blank=True, default='')           # '' or 'issued'
     licence_at = models.DateTimeField(null=True, blank=True)
     licence_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    # the permit lasts one year; each renewal (at most two) is a request + a renewal form (main/office/permit_extension.py)
+    extensions = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -128,10 +130,11 @@ class PermitFile(models.Model):
         """One line for the lists: where the file stands now."""
         if self.state != 'done':
             return self.get_state_display()
-        if self.stage_no >= 8:
-            return 'پرونده در مرحله‌ی بعد است'
-        if self.stage_no == 7:
-            return 'پروانه صادر و تحویل شد' if self.licence_state == 'issued' else 'پروانه در حال تهیه (دهیاری)'
+        if self.stage_no >= 7:
+            if self.licence_state != 'issued':
+                return 'پروانه در حال تهیه (دهیاری)'
+            from main.office import permit_extension       # pylint: disable=import-outside-toplevel
+            return permit_extension.status_line(self)
         if self.stage_no == 6:
             if self.insurance_state:
                 return {'introduced': 'منتظر گواهی تامین اجتماعی (از متقاضی)', 'uploaded': 'گواهی تامین اجتماعی منتظر تایید',
@@ -159,7 +162,8 @@ class PermitFile(models.Model):
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
-                or (self.stage_no == 7 and self.licence_state != 'issued')
+                or (self.stage_no >= 7 and self.licence_state != 'issued')
+                or (self.stage_no >= 7 and any(e.get('state') == 'requested' for e in self.extensions or []))
                 or (self.stage_no == 6 and not self.insurance_state
                     and (self.paid_up or any(not p.get('ok') for p in (self.insurance or {}).get('payments') or []))))
 
