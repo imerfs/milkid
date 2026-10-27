@@ -168,7 +168,7 @@ class InternalLinks(TestCase):
         footer = page[page.index('<footer'):page.index('</footer>')]
         self.assertIn(reverse('main:service_detail', args=[service.slug]), footer)
         self.assertIn(reverse('main:login'), footer)
-        self.assertIn('/sitemap.xml', footer)
+        self.assertNotIn('/sitemap.xml', footer)  # the XML map is for crawlers (robots.txt), not a link for people
         self.assertNotIn('<li><a href="#"', footer)  # menu items must be real links (social icons are separate)
 
     def test_home_footer_contact_and_about_are_real_links(self):

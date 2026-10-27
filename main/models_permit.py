@@ -23,8 +23,20 @@ STAGES = [
     (9, 'درخواست پایان کار'),
 ]
 
+# Construction without a permit (ساخت‌وساز بدون پروانه) follows the Article 99 commission instead (the pages in
+# main/templates/main/services/construction-without-permit/). Only step 1 is handled by the system so far.
+UNLICENSED_STAGES = [
+    (1, 'ایجاد پرونده اولیه'),
+    (2, 'تأیید مالکیت و مدارک مکان‌محور'),
+    (3, 'درخواست کمیسیون ماده ۹۹ و بازدید'),
+    (4, 'تعهد، استحکام بنا، رأی و جریمه'),
+    (5, 'خدمات و اختتامیه'),
+    (6, 'درخواست پایان کار'),
+]
+
 
 class PermitFile(models.Model):
+    TRACKS = [('permit', 'پروانه ساختمان'), ('unlicensed', 'ساخت‌وساز بدون پروانه')]
     OWNERSHIP = [
         ('deed', 'سند مالکیت'),
         ('agreement', 'قولنامه (بنگاهی / عادی)'),
@@ -40,6 +52,7 @@ class PermitFile(models.Model):
     stage_no = models.PositiveSmallIntegerField(default=1, verbose_name='مرحله فعلی')
     state = models.CharField(max_length=12, choices=STATES, default='submitted', verbose_name='وضعیت مرحله')
     permit_kind = models.CharField(max_length=14, choices=KINDS, default='construction', verbose_name='نوع پروانه')
+    track = models.CharField(max_length=10, choices=TRACKS, default='permit', db_index=True, verbose_name='مسیر پرونده')
 
     ownership_type = models.CharField(max_length=10, choices=OWNERSHIP, verbose_name='مدرک مالکیت')
     doc_number = models.CharField(max_length=60, blank=True, verbose_name='شماره سند / قرارداد')
@@ -134,10 +147,20 @@ class PermitFile(models.Model):
         return bool(total) and sum(p.get('amount', 0) for p in pay if p.get('ok')) >= total
 
     @property
+    def unlicensed(self):
+        return self.track == 'unlicensed'
+
+    @property
+    def stages(self):
+        return UNLICENSED_STAGES if self.unlicensed else STAGES
+
+    @property
     def status_text(self):
         """One line for the lists: where the file stands now."""
         if self.state != 'done':
             return self.get_state_display()
+        if self.unlicensed:
+            return 'مرحله‌ی ۱ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
             return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
                     'issued': 'گواهی پایان کار صادر شد', 'rejected': 'درخواست پایان کار رد شد'}.get(self.endwork_state, '')
@@ -170,6 +193,8 @@ class PermitFile(models.Model):
     @property
     def needs_staff(self):
         """True while the village staff (clerk / expert / dehyari) have something to decide on this file."""
+        if self.unlicensed:
+            return self.state == 'submitted'
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -183,11 +208,11 @@ class PermitFile(models.Model):
 
     @property
     def needs_accountant(self):
-        return self.stage_no == 5 and self.fees_state in ('', 'objected')
+        return not self.unlicensed and self.stage_no == 5 and self.fees_state in ('', 'objected')
 
     @property
     def stage_title(self):
-        return dict(STAGES).get(self.stage_no, '')
+        return dict(self.stages).get(self.stage_no, '')
 
 
 class PermitPerson(models.Model):

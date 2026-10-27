@@ -217,8 +217,9 @@ def permit_opened(sr, actor, *, code, notes=''):
     _ensure_not_locked(sr)
     _finish(sr, actor, status='in_review', stage='expert_review',
             action=f'افتتاح پرونده پروانه و ثبت کد نوسازی {code}', notes=notes, to_role='engineer')
-    notify(sr.user, f'پرونده شما افتتاح شد: {sr.title}',
-           f'پرونده‌ی پروانه ساختمان شما افتتاح شد و کد نوسازی ملک شما {code} است. مرحله‌ی بعد را در پرونده ببینید.', request=sr)
+    what = 'ساخت‌وساز بدون پروانه' if sr.request_type == 'no_permit' else 'پروانه ساختمان'
+    notify(sr.user, f'پرونده شما تایید شد: {sr.title}' if sr.request_type == 'no_permit' else f'پرونده شما افتتاح شد: {sr.title}',
+           f'مرحله‌ی ۱ پرونده‌ی {what} شما تایید شد و کد نوسازی ملک شما {code} است. مرحله‌ی بعد را در پرونده ببینید.', request=sr)
 
 
 def permit_resubmitted(sr, actor):

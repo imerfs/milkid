@@ -45,34 +45,45 @@ def _co_rows(values, errors):
     return rows
 
 
-@login_required
-def building_permit_form(request):
+def _application(request, track):
     """Step 1: the applicant fills in the file (owner, property, ownership paper, identity papers, shamim file)."""
+    unlicensed = track == 'unlicensed'
     if role_of(request.user) not in CITIZEN_ROLES:
-        messages.error(request, 'درخواست پروانه ساختمان را شهروند ثبت می‌کند.')
+        messages.error(request, 'درخواست ساخت‌وساز بدون پروانه را شهروند ثبت می‌کند.' if unlicensed else 'درخواست پروانه ساختمان را شهروند ثبت می‌کند.')
         return redirect('main:dashboard')
     values, errors = permits.prefill(request.user), {}
     if request.method == 'POST':
-        data, errors = permit_form.parse(request.POST, request.FILES)
+        data, errors = permit_form.parse(request.POST, request.FILES, track)
         if not errors:
             try:
                 permit = permits.submit(request.user, data)
             except lifecycle.TransitionError as exc:        # the plot is locked: lifecycle words the refusal
                 errors = {'renewal_code': str(exc)}
             else:
-                messages.success(request, 'پرونده‌ی پروانه ساختمان ثبت شد؛ کارشناس مدارک را بررسی و پرونده را افتتاح می‌کند.')
+                messages.success(request, ('پرونده‌ی ساخت‌وساز بدون پروانه ثبت شد؛ کارشناس مدارک را بررسی و مرحله‌ی ۱ را تایید می‌کند.' if unlicensed
+                                           else 'پرونده‌ی پروانه ساختمان ثبت شد؛ کارشناس مدارک را بررسی و پرونده را افتتاح می‌کند.'))
                 return redirect(_file_url(permit, embed=bool(request.GET.get('embed'))))
         values = permit_form.keep_for_redisplay(request.POST)
     return render(request, 'main/services/building-permits/step1.html', {
         'v': values, 'errors': errors, 'profile': request.user.profile, 'co_rows': _co_rows(values, errors),
-        'land_uses': PermitFile.LAND_USES, 'kinds': PermitFile.KINDS,
+        'land_uses': PermitFile.LAND_USES, 'kinds': PermitFile.KINDS, 'unlicensed': unlicensed,
         'co_roles': [(r, label) for r, label in PermitPerson.ROLES if r != 'applicant'],
     }, status=400 if errors else 200)
 
 
 @login_required
+def building_permit_form(request):
+    return _application(request, 'permit')
+
+
+@login_required
+def without_permit_form(request):
+    return _application(request, 'unlicensed')
+
+
+@login_required
 def permit_file(request, file_id):
-    permit = permits.find(request.user, file_id)
+    permit = permits.find(request.user, file_id, any_track=True)
     if permit is None:
         raise Http404('پرونده پیدا نشد.')
     mine = permit.request.user_id == request.user.id
@@ -96,7 +107,7 @@ def permit_file(request, file_id):
 def permit_document(request, doc_id):
     """An identity paper or the shamim file: only its owner and the village's staff, never through /media/."""
     doc = PermitDocument.objects.select_related('file').filter(pk=doc_id).first()
-    if doc is None or (permits.find(request.user, doc.file_id) is None
+    if doc is None or (permits.find(request.user, doc.file_id, any_track=True) is None
                        and not (doc.kind == 'fee_receipt' and permit_step5.find(request.user, doc.file_id))):
         raise Http404('مدرک پیدا نشد.')
     ext = os.path.splitext(doc.original_name)[1].lower()
@@ -112,7 +123,7 @@ def permit_document(request, doc_id):
 
 
 def _decide(request, file_id, action):
-    permit = permits.find(request.user, file_id)
+    permit = permits.find(request.user, file_id, any_track=True)
     if permit is None:
         raise Http404('پرونده پیدا نشد.')
     embed = bool(request.POST.get('embed'))
@@ -154,7 +165,7 @@ def permit_refuse(request, file_id):
 @login_required
 @require_POST
 def permit_supplement(request, file_id):
-    permit = permits.find(request.user, file_id)
+    permit = permits.find(request.user, file_id, any_track=True)
     if permit is None:
         raise Http404('پرونده پیدا نشد.')
     kind = request.POST.get('kind', '')
@@ -221,7 +232,7 @@ def permit_deliver(request, file_id):
 @policy_required('permit.open')
 @require_POST
 def permit_shamim(request, file_id):
-    permit = permits.find(request.user, file_id)
+    permit = permits.find(request.user, file_id, any_track=True)
     if permit is None or not permits.may_open(request.user, permit):
         raise Http404('پرونده پیدا نشد.')
     info = permit_step2.refresh_shamim(permit)

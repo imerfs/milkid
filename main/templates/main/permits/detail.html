@@ -1,6 +1,6 @@
 {% extends 'main/dashboards/_base.html' %}
 {% load static jalali_tags persian_filters %}
-{% block title %}پرونده‌ی پروانه ساختمان {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block title %}{% if permit.unlicensed %}پرونده‌ی ساخت‌وساز بدون پروانه{% else %}پرونده‌ی پروانه ساختمان{% endif %} {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
 {% block body_class %}pf-body{% endblock %}
 {% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
 {% block content %}
@@ -16,13 +16,13 @@
   <header class="pf-head">
     <span class="pf-ic"><i class="fas fa-folder-open" aria-hidden="true"></i></span>
     <div>
-      <h1>پرونده‌ی پروانه ساختمان <bdi>{{ permit.pk|persian_numbers }}</bdi></h1>
-      <p>{{ permit.get_permit_kind_display }} · {{ people.0.full_name }} · ثبت‌شده در {{ permit.created_at|persian_date:"Y/m/d"|persian_numbers }}</p>
+      <h1>{% if permit.unlicensed %}پرونده‌ی ساخت‌وساز بدون پروانه{% else %}پرونده‌ی پروانه ساختمان{% endif %} <bdi>{{ permit.pk|persian_numbers }}</bdi></h1>
+      <p>{% if not permit.unlicensed %}{{ permit.get_permit_kind_display }} · {% endif %}{{ people.0.full_name }} · ثبت‌شده در {{ permit.created_at|persian_date:"Y/m/d"|persian_numbers }}</p>
     </div>
     <span class="pf-state pf-state-{{ permit.state }}">{{ permit.status_text }}</span>
   </header>
 
-  <ol class="pf-steps" aria-label="مراحل پروانه ساختمان">
+  <ol class="pf-steps" aria-label="{% if permit.unlicensed %}مراحل ساخت‌وساز بدون پروانه{% else %}مراحل پروانه ساختمان{% endif %}">
     {% for s in tracker %}
     <li class="{{ s.state }}"{% if s.state == 'current' %} aria-current="step"{% endif %}><b>{{ s.no|persian_numbers }}</b><span>{{ s.title }}</span></li>
     {% endfor %}
@@ -34,9 +34,10 @@
       {# ---------- what happens now ---------- #}
       <section class="pf-card pf-now" aria-labelledby="pf-now">
         <h2 id="pf-now"><i class="fas fa-flag" aria-hidden="true"></i>وضعیت پرونده</h2>
-        {% if mine and permit.state != 'rejected' %}{% include 'main/permits/_paper.html' with stage=permit.stage_no %}{% endif %}
+        {% if mine and permit.state != 'rejected' and permit.stage_no == 1 or mine and permit.state != 'rejected' and not permit.unlicensed %}{% include 'main/permits/_paper.html' with stage=permit.stage_no %}{% endif %}
         {% if permit.state == 'submitted' %}
-          <p>مرحله‌ی ۱ («افتتاح پرونده»): مدارک شما رسیده و منتظر بررسی کارشناس اداری، کارشناس فنی یا دهیار است. پس از بررسی، بر اساس فایل شمیم یک <b>کد نوسازی</b> به ملک شما داده می‌شود و پرونده به مرحله‌ی بعد می‌رود.</p>
+          {% if permit.unlicensed %}<p>مرحله‌ی ۱ («ایجاد پرونده اولیه»): مدارک شما رسیده و منتظر بررسی کارشناس اداری، کارشناس فنی یا دهیار است. هر یک از این سه نفر می‌تواند مرحله را تایید کند؛ با تایید، بر اساس فایل شمیم یک <b>کد نوسازی</b> به ملک شما داده می‌شود و پرونده به مرحله‌ی بعد می‌رود.</p>
+          {% else %}<p>مرحله‌ی ۱ («افتتاح پرونده»): مدارک شما رسیده و منتظر بررسی کارشناس اداری، کارشناس فنی یا دهیار است. پس از بررسی، بر اساس فایل شمیم یک <b>کد نوسازی</b> به ملک شما داده می‌شود و پرونده به مرحله‌ی بعد می‌رود.</p>{% endif %}
         {% elif permit.state == 'needs_docs' %}
           <p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> پرونده برای رفع نقص برگشت داده شد.</p>
           {% if permit.staff_notes %}<blockquote>{{ permit.staff_notes }}</blockquote>{% endif %}
@@ -44,6 +45,9 @@
           <p>مرحله‌ی ۱ انجام شد؛ پرونده در مرحله‌ی «{{ permit.stage_title }}» است.</p>
           <p class="pf-code">کد نوسازی: <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi></p>
           {% if permit.staff_notes and staff_view %}<blockquote>{{ permit.staff_notes }}</blockquote>{% endif %}
+          {% if permit.unlicensed %}
+          <p class="pf-hint">مرحله‌ی ۲ («تأیید مالکیت و مدارک مکان‌محور») و مرحله‌های بعد (کمیسیون ماده ۹۹، جریمه، خدمات و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>
+          {% else %}
           {% if permit.stage_no == 2 %}
           <p>مرحله‌ی ۲: فرم ۱ (استعلام از بنیاد مسکن) را دهیاری و فرم ۲ (تقاضای پروانه) را متقاضی پر می‌کند؛ هر دو را دانلود و چاپ کنید، فرم ۱ مهر و امضای دهیار می‌گیرد و با نقشه‌ی ملک به بنیاد مسکن می‌روید.</p>
           <p><b>فرم ۱:</b> {% if permit.form1_at %}آماده است{% else %}منتظر دهیاری{% endif %} · <b>فرم ۲:</b> {% if permit.form2_at %}پر شده{% else %}منتظر متقاضی{% endif %}</p>
@@ -109,6 +113,7 @@
           <p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> پاسخ بنیاد (نامه {{ permit.bonyad.letter_no|persian_numbers }}، کد رهگیری <bdi dir="ltr">{{ permit.bonyad.tracking_code|persian_numbers }}</bdi>) تایید شد: مجاز، {{ permit.bonyad.floors|persian_numbers }} طبقه، زیربنای مجاز {{ permit.bonyad.floor_area|persian_numbers }} م².</p>
           {% endif %}
           {% if permit.stage_no >= 2 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_forms' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-file-signature" aria-hidden="true"></i>{% if permit.delivered_at %}مشاهده‌ی فرم‌ها{% else %}فرم‌ها، نقشه‌ی ملک و دانلود{% endif %}</a>{% endif %}
+          {% endif %}
         {% else %}
           <p class="pf-bad">این پرونده رد شد.</p>
           {% if permit.staff_notes %}<blockquote>{{ permit.staff_notes }}</blockquote>{% endif %}
@@ -139,7 +144,7 @@
         <div class="pf-actions">
           <form method="post" action="{% url 'main:permit_open' permit.pk %}" class="pf-form pf-open">{% csrf_token %}
             {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
-            <h3>افتتاح پرونده و دادن کد نوسازی</h3>
+            <h3>{% if permit.unlicensed %}تایید مرحله‌ی ۱ و دادن کد نوسازی{% else %}افتتاح پرونده و دادن کد نوسازی{% endif %}</h3>
             <p class="pf-hint">کد را از روی فایل شمیم بدهید: صنف - آپارتمان - ملک - بلوک - محله (برای زمین، صنف و آپارتمان صفر است).</p>
             <label>کد نوسازی
               <input name="renewal_code" id="pf-code" dir="ltr" required placeholder="۰-۰-۸-۱۸۲-۲" value="{{ permit.renewal_code }}" autocomplete="off"></label>
@@ -150,7 +155,7 @@
             </div>
             {% endif %}
             <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="2000"></textarea></label>
-            <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>افتتاح پرونده</button>
+            <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>{% if permit.unlicensed %}تایید مرحله‌ی ۱{% else %}افتتاح پرونده{% endif %}</button>
           </form>
           <form method="post" action="{% url 'main:permit_send_back' permit.pk %}" class="pf-form">{% csrf_token %}
             {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
@@ -207,6 +212,10 @@
           {% if permit.lot_number %}<div><dt>قطعه‌ی تفکیکی</dt><dd>{{ permit.lot_number|persian_numbers }}</dd></div>{% endif %}
           {% if permit.registry_plot %}<div><dt>پلاک ثبتی</dt><dd>{{ permit.registry_plot|persian_numbers }}</dd></div>{% endif %}
           {% if permit.postal_code %}<div><dt>کد پستی</dt><dd dir="ltr">{{ permit.postal_code|persian_numbers }}</dd></div>{% endif %}
+          {% if details.built_area %}<div><dt>زیربنای ساخته‌شده</dt><dd>{{ details.built_area|persian_numbers }} م²</dd></div>{% endif %}
+          {% if details.floors %}<div><dt>تعداد طبقات</dt><dd>{{ details.floors|persian_numbers }}</dd></div>{% endif %}
+          {% if details.built_year %}<div><dt>سال ساخت</dt><dd>{{ details.built_year|persian_numbers }}</dd></div>{% endif %}
+          {% if details.built_note %}<div><dt>توضیح مالک</dt><dd>{{ details.built_note }}</dd></div>{% endif %}
           {% if details.limit_north %}<div><dt>حد شمالی</dt><dd>{{ details.limit_north|persian_numbers }}</dd></div>{% endif %}
           {% if details.limit_south %}<div><dt>حد جنوبی</dt><dd>{{ details.limit_south|persian_numbers }}</dd></div>{% endif %}
           {% if details.limit_east %}<div><dt>حد شرقی</dt><dd>{{ details.limit_east|persian_numbers }}</dd></div>{% endif %}

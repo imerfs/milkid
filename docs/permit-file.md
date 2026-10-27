@@ -161,3 +161,17 @@ Three certificates (kinds `nov_1`..`nov_3` of the services page) follow the supe
 owner (or the staff) may ask for the certificate of that stage, which says the building built so far (per the supervising engineer's report of
 that date) has no violation and the work may go on. Same flow as the other letters: the clerk / technical expert / dehyari edit and approve it
 (number and date), the owner prints it, the **dehyari and the technical manager sign and stamp it by hand**, the staff record the handover.
+
+## Construction without a permit (ساخت‌وساز بدون پروانه): step 1
+A second track on the same `PermitFile` (`track = 'unlicensed'`, the request type is `no_permit`; `models_permit.UNLICENSED_STAGES` lists its six
+steps: initial file, ownership and location papers, Article 99 commission request and visit, undertaking / structural check / ruling and fine,
+services, end of work). **Only step 1 is built; steps 2-6 are still the static pages under `services/construction-without-permit/`.**
+- **The owner** files `services/construction-without-permit/` (`permit_views._application`, the same template and parser as the permit form with
+  `track='unlicensed'`): identity, the plot, the ownership paper (deed or agreement; the Bonyad lease is not offered), the other owners, the shamim
+  file, and, instead of the permit kind, the **building that stands**: built area, floors, year (optional), a note (kept in `details`).
+- **The staff** (clerk, technical expert or dehyari, `permit.open`) check the papers and the shamim reading exactly as for a permit file and
+  **confirm step 1** (`permits.open_file`: renewal code, plot of the village map, owner written on the plot) or send it back / refuse it. The file
+  then rests at step 2 and the page says the next steps are not set up yet.
+- Everything of the permit track after step 1 (forms, plans, fees, permit, supervision, services, end of work) is closed to this track:
+  `permits.find` returns nothing for an unlicensed file unless the caller passes `any_track=True` (the file page, its papers, step-1 decisions and the
+  shamim re-read). The staff lists show these files with their own label; the owner's notification and the history say «ساخت‌وساز بدون پروانه».
