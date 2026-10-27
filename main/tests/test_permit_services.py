@@ -1,6 +1,7 @@
 """Building permit services: the letters for electricity, gas and water the dehyari signs."""
 from main.models import Notification
-from main.office import permit_services
+from main.office import permit_services, permit_supervision
+from main.tests.test_permit_supervision import Supervised
 from main.tests.helpers import client_for
 from main.tests.test_permit_extension import Issued
 
@@ -121,3 +122,37 @@ class Deciding(Letters):
         self.assertIn('امضا و تحویل دستی', owner)
         self.assertNotIn('تایید نامه (شماره‌دار', owner)
         self.assertEqual(client_for(self.neighbour).get(self.url('services')).status_code, 404)
+
+
+class Clearances(Supervised):
+    """The non-violation certificates of the supervision stages."""
+
+    def ask_nov(self, kind='nov_1', who=None):
+        return client_for(who or self.citizen).post(self.url('service_request'), {'kind': kind})
+
+    def test_a_certificate_waits_for_its_supervision_form(self):
+        self.ask_nov()
+        self.assertFalse(permit_services.services(self.reload()))
+        self.run_form(8)
+        self.run_form(9)
+        self.ask_nov('nov_2')
+        self.assertFalse(permit_services.services(self.reload()))
+        self.ask_nov('nov_1')
+        item = permit_services.services(self.reload())[0]
+        self.assertEqual((item['kind'], item['state']), ('nov_1', 'requested'))
+        self.assertTrue(item['f']['req_no'])
+
+    def test_it_is_filled_from_the_file_and_approved_like_any_letter(self):
+        self.run_form(8)
+        self.run_form(9)
+        self.ask_nov()
+        data = permit_services.payload(self.reload(), permit_services.services(self.permit)[0])
+        self.assertEqual((data['permit_no'], data['sup_name'], data['stage_text'][:3]), ('18/1286', 'سعید احمدی', 'اول'))
+        self.assertEqual(data['report_date'], permit_supervision.forms(self.permit)[9]['f']['date'])
+        self.assertTrue(data['tech_name'] is not None)
+        post = {f'f_{k}': v for k, v in data.items()}
+        post.update({'f_number': '19/3000', 'f_date': '1405/08/21'})
+        client_for(self.clerk).post(self.url('service_approve', 1), post)
+        self.assertEqual(permit_services.services(self.reload())[0]['state'], 'approved')
+        client_for(self.expert).post(self.url('service_issue', 1), {'signed': 'on'})
+        self.assertEqual(permit_services.services(self.reload())[0]['state'], 'issued')
