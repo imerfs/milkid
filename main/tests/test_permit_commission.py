@@ -175,11 +175,11 @@ class Deciding(Commission):
         self.assertEqual(PermitDocument.objects.filter(file=permit, kind='comm_undertake').count(), 1)
         self.assertEqual(PermitDocument.objects.get(file=permit, kind='comm_undertake').original_name, 'new.png')
 
-    def test_after_confirming_step_three_is_not_built_yet_and_the_form_is_locked(self):
+    def test_after_confirming_the_forms_are_locked_and_step_three_opens(self):
         self.decide(self.dehyari, confirm='on')
-        self.assertEqual(self.reload().status_text, 'مرحله‌ی ۲ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است')
+        self.assertEqual(self.reload().status_text, 'منتظر تصویر اخطاریه‌ی دریافتی (از متقاضی)')
         client_for(self.citizen).post(self.url('permit_commission_save'), {'name': 'کس دیگر', 'national_id': self.permit.people.first().national_id,
                                                                             'date': '1405/01/01'})
         self.assertEqual(self.reload().commission.get('form', {}).get('name'), None)
         page = client_for(self.citizen).get(reverse('main:permit_file', args=[self.permit.pk])).content.decode()
-        self.assertIn('هنوز در سامانه راه‌اندازی نشده', page)
+        self.assertIn(reverse('main:permit_notice', args=[self.permit.pk]), page)

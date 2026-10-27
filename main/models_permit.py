@@ -134,6 +134,11 @@ class PermitFile(models.Model):
     commission = models.JSONField(default=dict, blank=True)
     commission_state = models.CharField(max_length=10, choices=COMMISSION_STATES, blank=True, default='')
     commission_at = models.DateTimeField(null=True, blank=True)
+    # construction without a permit, step 3: the warning notice (اخطاریه به مالک) the owner already received, uploaded
+    # (main/office/permit_notice.py): '' (waiting for the owner) / uploaded / returned / verified
+    notice = models.JSONField(default=dict, blank=True)
+    notice_state = models.CharField(max_length=10, choices=COMMISSION_STATES, blank=True, default='')
+    notice_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -169,7 +174,10 @@ class PermitFile(models.Model):
             if self.stage_no == 2:
                 return {'': 'منتظر فرم درخواست و تعهدنامه‌ی امضاشده (از متقاضی)', 'uploaded': 'فرم درخواست و تعهدنامه منتظر تایید',
                         'returned': 'فرم‌های امضاشده برگشت خورد'}.get(self.commission_state, '')
-            return 'مرحله‌ی ۲ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
+            if self.stage_no == 3:
+                return {'': 'منتظر تصویر اخطاریه‌ی دریافتی (از متقاضی)', 'uploaded': 'اخطاریه منتظر تایید',
+                        'returned': 'اخطاریه برگشت خورد'}.get(self.notice_state, '')
+            return 'مرحله‌ی ۳ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
             return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
                     'issued': 'گواهی پایان کار صادر شد', 'rejected': 'درخواست پایان کار رد شد'}.get(self.endwork_state, '')
@@ -203,7 +211,8 @@ class PermitFile(models.Model):
     def needs_staff(self):
         """True while the village staff (clerk / expert / dehyari) have something to decide on this file."""
         if self.unlicensed:
-            return self.state == 'submitted' or (self.stage_no == 2 and self.commission_state == 'uploaded')
+            return (self.state == 'submitted' or (self.stage_no == 2 and self.commission_state == 'uploaded')
+                    or (self.stage_no == 3 and self.notice_state == 'uploaded'))
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -263,7 +272,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
+        ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
         ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]

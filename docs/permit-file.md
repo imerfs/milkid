@@ -188,3 +188,15 @@ services, end of work). **Only step 1 is built; steps 2-6 are still the static p
 - **Any of the clerk / technical expert / dehyari** (`permit.open`) ticks that both signed papers arrived and confirms (the file moves to step 3,
   who and when are kept in `commission.checked`), or sends them back with a reason. Waiting files count in the three panels (`needs_staff`).
   Step 3 onwards is not built yet.
+
+## Construction without a permit: step 3 (the warning notice the owner already received)
+`permits/<id>/notice/` (`permit_notice.py`, `permits/notice.html`), open once step 2 is confirmed (file at stage 3). The dehyari's warning notice
+to the owner (form 14, «اخطاریه به مالک»: building without a permit, inside or outside the village master plan, handed to the owner or his
+relatives or posted on the building) was issued before the file; the owner only brings it in.
+- The owner uploads the scan (`warning_notice`, private storage) and types its figures from the paper: number, date (not in the future), the name
+  on it, inside / outside the master plan, handed over / posted.
+- **Any of the clerk / technical expert / dehyari** (`permit.open`) sees the scan beside the figures and the system's comparison (the name against
+  the file's owner, a number already used in another file), may correct a figure, ticks that the notice was compared with the original and
+  confirms (the file moves to step 4; who and when are kept in `notice.checked`), or sends it back with a reason (the owner uploads again, or just
+  fixes the figures: the old scan is kept unless a new one is sent). Step 4 onwards is not built yet.
+- The blank form 14 is not drawn by the system yet (the dehyari issues it on paper); the system can issue it later if wanted.

@@ -1,0 +1,83 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}اخطاریه‌ی مالک - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۳: اخطاریه‌ی مالک</h1>
+      <p>{{ n.addressee }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.notice_state == 'verified' or permit.stage_no > 3 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li><b>۱</b><span>اخطاریه‌ای (فرم ۱۴) که دهیاری برای ساختمان بدون پروانه به شما ابلاغ کرده را بردارید.</span></li>
+    <li><b>۲</b><span>تصویر خوانای همه‌ی صفحه‌های آن را بارگذاری کنید و مشخصاتش را از روی برگه بنویسید.</span></li>
+    <li><b>۳</b><span>اصل اخطاریه (با امضای شما) را همراه ببرید و به دهیاری نشان دهید.</span></li>
+    <li class="{% if permit.stage_no > 3 %}ok{% endif %}"><b>۴</b><span>دهیار، کارشناس فنی یا کارشناس اداری مشخصات را با اصل مقایسه و تایید می‌کند.</span></li>
+  </ol>
+
+  {% if permit.notice_state == 'returned' and permit.staff_notes %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری اخطاریه را برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
+  {% if checked.by %}<div class="pf-card pf-shamim"><b><i class="fas fa-circle-check" aria-hidden="true"></i> تایید اخطاریه</b><p>{{ checked.by }} در {{ checked.at|persian_numbers }} اخطاریه را تایید کرد.</p></div>{% endif %}
+
+  <div class="pff-edit">
+    <section class="pf-card" id="pnt-scans">
+      <h2><i class="fas fa-file-image" aria-hidden="true"></i>تصویر اخطاریه</h2>
+      <ul class="pf-docs">
+        {% for doc in scans %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }} <small>{{ doc.size|filesizeformat }}</small></a></li>
+        {% empty %}<li class="pf-none">هنوز فایلی نیست.</li>{% endfor %}
+      </ul>
+    </section>
+
+    {% if owner_open %}
+    <form method="post" action="{% url 'main:permit_notice_upload' permit.pk %}" enctype="multipart/form-data" class="pf-card pf-form pff-form" data-once>{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <h2><i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>{% if permit.notice_state == 'returned' %}بارگذاری دوباره{% else %}بارگذاری اخطاریه{% endif %}</h2>
+      <label>تصویر اخطاریه (همه‌ی صفحه‌ها؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not scans %}required{% endif %}></label>
+      {% include 'main/permits/_notice_fields.html' %}
+      <p class="pf-hint">مشخصات را از روی خود برگه بنویسید؛ دهیاری آن‌ها را با اصل اخطاریه مقایسه می‌کند.</p>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال به دهیاری</button>
+    </form>
+    {% elif permit.notice_state and not can_decide %}
+    <section class="pf-card">
+      <h2><i class="fas fa-list" aria-hidden="true"></i>مشخصات اخطاریه</h2>
+      {% include 'main/permits/_notice_fields.html' %}
+    </section>
+    {% endif %}
+
+    {% if checks %}
+    <section class="pf-card"><h2><i class="fas fa-circle-check" aria-hidden="true"></i>مقایسه‌ی سامانه</h2>
+      <ul class="pf-checks">{% for level, text in checks %}<li class="{{ level }}">{{ text }}</li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+
+    {% if can_decide %}
+    <section class="pf-card" id="pnt-review">
+      <h2><i class="fas fa-clipboard-check" aria-hidden="true"></i>بررسی و تایید</h2>
+      <form method="post" action="{% url 'main:permit_notice_verify' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <p class="pf-hint">اگر مشخصاتی با اصل برگه فرق دارد، همین‌جا اصلاح کنید.</p>
+        {% include 'main/permits/_notice_fields.html' %}
+        <div class="pff-checks"><label><input type="checkbox" name="confirm"> اخطاریه را با اصل آن مقایسه و صحت مشخصاتش را بررسی کردم</label></div>
+        <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۴</button>
+      </form>
+      <form method="post" action="{% url 'main:permit_notice_return' permit.pk %}" class="pf-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h3>برگشت برای اصلاح</h3>
+        <label>چه چیزی باید اصلاح شود؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+        <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}
