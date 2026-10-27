@@ -708,11 +708,6 @@
                     <p class="text-light">
                         سامانه جامع خدمات شهری و روستایی برای تسهیل در ارائه خدمات الکترونیک به شهروندان عزیز
                     </p>
-                    <div class="d-flex gap-3">
-                        <a href="#" class="text-light"><i class="fab fa-telegram fa-lg"></i></a>
-                        <a href="#" class="text-light"><i class="fab fa-instagram fa-lg"></i></a>
-                        <a href="#" class="text-light"><i class="fab fa-whatsapp fa-lg"></i></a>
-                    </div>
                 </div>
                 <div class="col-md-2 footer-section">
                     <h5>خدمات</h5>
@@ -728,7 +723,7 @@
                 <div class="col-md-3 footer-section">
                     <h5>دسترسی سریع</h5>
                     <ul>
-                        <li><a href="{% url 'main:about' %}">درباره ما</a></li>
+                        <li><a href="{% url 'main:about' %}">درباره‌ی ملک آیدی</a></li>
                         <li><a href="{% url 'main:contact' %}">تماس با ما</a></li>
                         <li><a href="{% url 'main:login' %}">ورود</a></li>
                         <li><a href="{% url 'main:register' %}">ثبت‌نام</a></li>
@@ -738,20 +733,18 @@
                 <div class="col-md-3 footer-section">
                     <h5>اطلاعات تماس</h5>
                     <ul>
-                        <li><i class="fas fa-phone ms-1"></i> <a href="tel:{{ support_phone }}">{{ support_phone_fa }}</a></li>
-                        <li><i class="fas fa-envelope ms-1"></i> info@behrangaar.ir</li>
-                        <li><i class="fas fa-map-marker-alt ms-1"></i> سمندآباد، خیابان اصلی</li>
-                        <li><i class="fas fa-clock ms-1"></i> ۸:۰۰ تا ۱۶:۰۰</li>
+                        {% if support_phone %}<li><i class="fas fa-phone ms-1"></i> <a href="tel:{{ support_phone }}">{{ support_phone_fa }}</a></li>{% endif %}
+                        {% if support_email %}<li><i class="fas fa-envelope ms-1"></i> <a href="mailto:{{ support_email }}" dir="ltr">{{ support_email }}</a></li>{% endif %}
                     </ul>
                 </div>
             </div>
             <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
             <div class="row">
                 <div class="col-md-6">
-                    <p class="mb-0">© ۱۴۰۳ سامانه ملک آیدی. تمامی حقوق محفوظ است.</p>
+                    <p class="mb-0">سامانه ملک آیدی. تمامی حقوق محفوظ است.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <p class="mb-0">نسخه ۱.۰.۰ | طراحی شده با ❤️ برای شهروندان</p>
+                    <p class="mb-0">پیگیری آنلاین خدمات دهیاری و املاک روستایی</p>
                 </div>
             </div>
         </div>

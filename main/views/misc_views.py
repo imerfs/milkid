@@ -42,18 +42,33 @@ def about(request):
 
 
 def contact(request):
-    """Contact page"""
+    """Public contact page: the message goes to the admin mailbox («صندوق ایمیل» of the admin panel) and, when SITE_EMAIL is set, to that address."""
+    from django.conf import settings as django_settings
+    from django.core.mail import send_mail
+    from main.models import MailMessage
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
-            # Process contact form
-            messages.success(request, 'پیام شما با موفقیت ارسال شد.')
+            data = form.cleaned_data
+            if data['website']:                               # a bot filled the hidden field: pretend it worked
+                return redirect('main:contact')
+            way = ' | '.join(x for x in (data['email'], data['phone']) if x)
+            subject = dict(ContactForm.SUBJECTS)[data['subject']]
+            body = f'نام: {data["name"]}\nایمیل: {data["email"] or "—"}\nموبایل: {data["phone"] or "—"}\n\n{data["message"]}'
+            MailMessage.objects.create(folder='inbox', source='support', sender=f'{data["name"]} <{data["email"] or data["phone"]}>'[:320],
+                                       subject=f'[فرم تماس] {subject}', body=body, user=request.user if request.user.is_authenticated else None)
+            if django_settings.SITE_EMAIL:
+                send_mail(f'[تماس با ما] {subject}', body, None, [django_settings.SITE_EMAIL], fail_silently=True)
+            messages.success(request, f'پیام شما ثبت شد و پاسخ از راه «{way}» داده می‌شود.')
             return redirect('main:contact')
     else:
-        form = ContactForm()
+        initial = {}
+        if request.user.is_authenticated:
+            initial = {'name': request.user.get_full_name(), 'email': request.user.email,
+                       'phone': getattr(getattr(request.user, 'profile', None), 'mobile_number', '') or ''}
+        form = ContactForm(initial=initial)
 
-    context = {'form': form}
-    return render(request, 'main/contact.html', context)
+    return render(request, 'main/contact.html', {'form': form})
 
 
 def ai_fraud_detection(request):

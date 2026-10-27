@@ -1,332 +1,83 @@
-
 {% extends 'base.html' %}
 
 {% block title %}تماس با ما - ملک آیدی{% endblock %}
 
-{% block extra_css %}
-<style>
-.contact-card {
-    border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
 
-.contact-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-}
-
-.contact-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    margin: 0 auto 1rem;
-}
-
-.office-hours {
-    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-    color: white;
-    border-radius: 15px;
-    padding: 30px;
-}
-</style>
-{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Header -->
-    <div class="row mb-5">
-        <div class="col-12 text-center">
-            <h1 class="display-5 fw-bold">📞 تماس با ما</h1>
-            <p class="lead">راه‌های مختلف ارتباط با ما و دریافت پشتیبانی</p>
-        </div>
+<style>
+.contact-card { border: 0; box-shadow: 0 4px 14px rgba(15, 23, 42, .08); }
+.contact-ic { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+.contact-ic svg { width: 28px; height: 28px; }
+.contact-honey { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+</style>
+<div class="container mt-4 mb-5" style="max-width: 920px">
+    <div class="text-center mb-4">
+        <h1 class="h2 fw-bold">تماس با ما</h1>
+        <p class="text-muted mb-0">پرسش، مشکل یا پیشنهادتان را بنویسید؛ پیام شما به مدیر سامانه می‌رسد.</p>
     </div>
 
-    <!-- Contact Methods -->
-    <div class="row mb-5">
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="contact-card card h-100">
-                <div class="card-body text-center">
-                    <div class="contact-icon bg-primary text-white">📞</div>
-                    <h5>تماس تلفنی</h5>
-                    <p class="text-muted">پاسخگویی در ساعات اداری</p>
-                    <div class="contact-details">
-                        <p class="mb-1"><strong>پشتیبانی:</strong></p>
-                        <p class="text-primary" dir="ltr"><a href="tel:{{ support_phone }}">{{ support_phone }}</a></p>
-                    </div>
-                </div>
-            </div>
+    {% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags|default:'info' }}{% endif %}" role="status">{{ m }}</div>{% endfor %}{% endif %}
+
+    <div class="row g-3 mb-4 justify-content-center">
+        {% if support_phone %}
+        <div class="col-md-5">
+            <div class="card contact-card h-100"><div class="card-body text-center">
+                <span class="contact-ic bg-primary-subtle text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4C2 2.8954 2.8954 2 4 2L7 2C8.1046 2 9 2.8954 9 4L9 7C9 7.6295 8.7036 8.2223 8.2 8.6L7.7388 8.9459C7.487 9.1348 7.3388 9.4312 7.3388 9.7459C7.3388 9.8992 7.374 10.0504 7.4417 10.1879C8.8053 12.9552 11.0448 15.1947 13.8121 16.5583C13.9496 16.626 14.1008 16.6612 14.2541 16.6612C14.5688 16.6612 14.8652 16.513 15.0541 16.2612L15.4 15.8C15.7777 15.2964 16.3705 15 17 15L20 15C21.1046 15 22 15.8954 22 17L22 20C22 21.1046 21.1046 22 20 22C10.0589 22 2 13.9411 2 4Z"/></svg>
+                </span>
+                <h2 class="h6 fw-bold">تلفن پشتیبانی</h2>
+                <a class="fs-5 text-decoration-none" dir="ltr" href="tel:{{ support_phone }}">{{ support_phone_fa }}</a>
+            </div></div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="contact-card card h-100">
-                <div class="card-body text-center">
-                    <div class="contact-icon bg-success text-white">✉️</div>
-                    <h5>ایمیل</h5>
-                    <p class="text-muted">پاسخ در کمتر از 24 ساعت</p>
-                    <div class="contact-details">
-                        <p class="mb-1"><strong>پشتیبانی عمومی:</strong></p>
-                        <p class="text-success" dir="ltr">info@municipality.ir</p>
-                        <p class="mb-1"><strong>پشتیبانی فنی:</strong></p>
-                        <p class="text-success" dir="ltr">{{ support_email }}</p>
-                    </div>
-                </div>
-            </div>
+        {% endif %}
+        {% if support_email %}
+        <div class="col-md-5">
+            <div class="card contact-card h-100"><div class="card-body text-center">
+                <span class="contact-ic bg-success-subtle text-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4H19C20.6569 4 22 5.34315 22 7V17C22 18.6569 20.6569 20 19 20H5C3.34315 20 2 18.6569 2 17V7C2 5.34315 3.34315 4 5 4ZM2 7L11.2929 11C11.7154 11.2817 12.2846 11.2817 12.7071 11L22 7"/></svg>
+                </span>
+                <h2 class="h6 fw-bold">ایمیل</h2>
+                <a class="fs-6 text-decoration-none" dir="ltr" href="mailto:{{ support_email }}">{{ support_email }}</a>
+            </div></div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="contact-card card h-100">
-                <div class="card-body text-center">
-                    <div class="contact-icon bg-info text-white">📍</div>
-                    <h5>آدرس دفتر</h5>
-                    <p class="text-muted">مراجعه حضوری</p>
-                    <div class="contact-details">
-                        <p>تهران، میدان آزادی</p>
-                        <p>ساختمان شهرداری مرکزی</p>
-                        <p>طبقه سوم، واحد خدمات الکترونیک</p>
-                        <p class="text-info">کد پستی: 1234567890</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="contact-card card h-100">
-                <div class="card-body text-center">
-                    <div class="contact-icon bg-warning text-white">💬</div>
-                    <h5>پشتیبانی آنلاین</h5>
-                    <p class="text-muted">گفتگوی زنده</p>
-                    <div class="contact-details">
-                        <p>پاسخگویی فوری</p>
-                        <p class="text-warning">ساعات ۸ تا ۲۰</p>
-                        <button class="btn btn-warning btn-sm mt-2">شروع گفتگو</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% endif %}
     </div>
 
-    <!-- Contact Form and Office Hours -->
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">📝 فرم تماس</h5>
-                </div>
-                <div class="card-body">
-                    {% if user.is_authenticated %}
-                        <div class="alert alert-info">
-                            <strong>کاربر گرامی {{ user.get_full_name }}،</strong> اطلاعات شما از حساب کاربری‌تان بارگذاری شده است.
-                        </div>
-                    {% endif %}
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6">
-                                {% for field in form %}
-                                    {% if field.name == 'name' or field.name == 'email' %}
-                                        <div class="mb-3">
-                                            <label class="form-label">{{ field.label }}</label>
-                                            {% if user.is_authenticated and field.name == 'name' %}
-                                                <input type="text" class="form-control" value="{{ user.get_full_name }}" readonly>
-                                                {{ field.as_hidden }}
-                                            {% elif user.is_authenticated and field.name == 'email' %}
-                                                <input type="email" class="form-control" value="{{ user.email }}" readonly>
-                                                {{ field.as_hidden }}
-                                            {% else %}
-                                                {{ field }}
-                                            {% endif %}
-                                            {% if field.help_text %}
-                                                <small class="form-text text-muted">{{ field.help_text }}</small>
-                                            {% endif %}
-                                            {% if field.errors %}
-                                                <div class="text-danger">
-                                                    {% for error in field.errors %}
-                                                        <small>{{ error }}</small>
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6">
-                                {% for field in form %}
-                                    {% if field.name == 'phone' %}
-                                        <div class="mb-3">
-                                            <label class="form-label">{{ field.label }}</label>
-                                            {% if user.is_authenticated %}
-                                                <input type="text" class="form-control" value="{{ user.profile.mobile_number }}" readonly>
-                                                {{ field.as_hidden }}
-                                            {% else %}
-                                                {{ field }}
-                                            {% endif %}
-                                            {% if field.help_text %}
-                                                <small class="form-text text-muted">{{ field.help_text }}</small>
-                                            {% endif %}
-                                            {% if field.errors %}
-                                                <div class="text-danger">
-                                                    {% for error in field.errors %}
-                                                        <small>{{ error }}</small>
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                <!-- Subject/Category Selection -->
-                                <div class="mb-3">
-                                    <label class="form-label">موضوع پیام</label>
-                                    <select class="form-control" name="subject" required>
-                                        <option value="">انتخاب کنید</option>
-                                        <option value="technical">مسائل فنی سیستم</option>
-                                        <option value="service">سوال در مورد خدمات</option>
-                                        <option value="request">پیگیری درخواست</option>
-                                        <option value="complaint">شکایت</option>
-                                        <option value="suggestion">پیشنهاد</option>
-                                        <option value="other">سایر موارد</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            {% for field in form %}
-                                {% if field.name == 'message' %}
-                                    <label class="form-label">{{ field.label }}</label>
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <small class="form-text text-muted">{{ field.help_text }}</small>
-                                    {% endif %}
-                                    {% if field.errors %}
-                                        <div class="text-danger">
-                                            {% for error in field.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        
-                        <!-- Priority Level -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">اولویت پیام</label>
-                                <select class="form-control" name="priority">
-                                    <option value="normal">عادی</option>
-                                    <option value="high">مهم</option>
-                                    <option value="urgent">فوری</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">روش پاسخ مطلوب</label>
-                                <select class="form-control" name="response_method">
-                                    <option value="email">ایمیل</option>
-                                    <option value="sms">پیامک</option>
-                                    <option value="call">تماس تلفنی</option>
-                                    <option value="system">پیام سیستم</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                📤 ارسال پیام
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4">
-            <!-- Office Hours -->
-            <div class="office-hours mb-4">
-                <h5 class="mb-3">🕐 ساعات کاری</h5>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>شنبه تا چهارشنبه:</span>
-                        <span class="fw-bold">۸:۰۰ - ۱۶:۰۰</span>
+    <div class="card contact-card">
+        <div class="card-body p-4">
+            <h2 class="h5 fw-bold mb-3">فرم پیام</h2>
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="contact-honey" aria-hidden="true"><label>وب‌سایت (خالی بگذارید){{ form.website }}</label></div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>{{ form.name }}
+                        {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <span>پنج‌شنبه:</span>
-                        <span class="fw-bold">۸:۰۰ - ۱۳:۰۰</span>
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>{{ form.subject }}
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <span>جمعه:</span>
-                        <span class="fw-bold text-warning">تعطیل</span>
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>{{ form.phone }}
+                        {% for e in form.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>{{ form.email }}
+                        {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-12"><p class="form-text mb-0">برای دریافت پاسخ، دست‌کم یکی از «ایمیل» یا «شماره‌ی موبایل» را بنویسید.</p></div>
+                    <div class="col-12">
+                        <label class="form-label" for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>{{ form.message }}
+                        {% for e in form.message.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        {% if user.is_authenticated %}<a href="{% url 'main:support' %}" class="small">یا از بخش پشتیبانی حساب کاربری پیام بدهید</a>{% else %}<span></span>{% endif %}
+                        <button class="btn btn-primary px-4" type="submit">ارسال پیام</button>
                     </div>
                 </div>
-                <hr class="text-white-50">
-                <p class="mb-0">
-                    <small>پشتیبانی آنلاین: ۲۴ ساعته</small>
-                </p>
-            </div>
-            
-            <!-- Quick Links -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">🔗 لینک‌های مفید</h6>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <a href="{% url 'main:about' %}" class="list-group-item list-group-item-action">
-                            ❓ سوالات متداول
-                        </a>
-                        <a href="{% url 'main:services_catalog' %}" class="list-group-item list-group-item-action">
-                            📋 راهنمای خدمات
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action">
-                            💰 تعرفه‌های خدمات
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action">
-                            📖 قوانین و مقررات
-                        </a>
-                        {% if user.is_authenticated %}
-                        <a href="{% url 'main:my_requests' %}" class="list-group-item list-group-item-action">
-                            📊 پیگیری درخواست‌ها
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Emergency Contact -->
-            <div class="card mt-4 border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h6 class="mb-0">🚨 تماس اضطراری</h6>
-                </div>
-                <div class="card-body">
-                    <p>برای موارد اضطراری و فوری:</p>
-                    <p class="text-danger fw-bold" dir="ltr"><a class="text-danger" href="tel:{{ support_phone }}">{{ support_phone }}</a></p>
-                    <small class="text-muted">این شماره فقط برای موارد اضطراری استفاده شود</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Location Map Placeholder -->
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">🗺️ موقعیت دفتر مرکزی</h5>
-                </div>
-                <div class="card-body">
-                    <div class="bg-light p-5 text-center rounded">
-                        <h4 class="text-muted">نقشه محل دفتر</h4>
-                        <p class="text-muted">در اینجا نقشه تعاملی محل دفتر مرکزی نمایش داده خواهد شد</p>
-                        <p><strong>آدرس:</strong> تهران، میدان آزادی، ساختمان شهرداری مرکزی</p>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>
