@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_step6, permit_step7, permits
+from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
@@ -544,3 +544,57 @@ def permit_licence_save(request, file_id):
 @require_POST
 def permit_licence_issue(request, file_id):
     return _licence_action(request, file_id, lambda p: permit_step7.issue(request.user, p, request.POST), 'صدور پروانه ثبت شد.')
+
+
+# ---------- renewal of the permit's one-year term ----------
+
+@login_required
+def permit_extension_page(request, file_id):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.licence_state != 'issued':
+        messages.error(request, 'تمدید پس از صدور پروانه ممکن است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    open_ext = permit_extension.open_extension(permit)
+    data = permit_extension.defaults(permit, open_ext or {})
+    editing = bool(staff and open_ext)
+    return render(request, 'main/permits/extension.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'editing': editing, 'info': permit_extension.expiry(permit),
+        'open_ext': open_ext, 'done': permit_extension.issued_extensions(permit), 'can_request': (mine or staff) and permit_extension.can_request(permit),
+        'max_renewals': permit_extension.MAX_RENEWALS, 'terms': permit_extension.TERMS, 'q': data['req'], 'e': data['form'],
+        'payload': {**data, 'file': permit.pk, 'term': (open_ext or {}).get('term', 1), 'letterhead': static('forms/permit/letterhead.jpg')},
+    })
+
+
+def _extension_action(request, file_id, action, ok):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_extension', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_extension_request(request, file_id):
+    return _extension_action(request, file_id, lambda p: permit_extension.request(request.user, p), 'درخواست تمدید باز شد؛ فرم را چاپ، امضا و با اثر انگشت به دهیاری بدهید.')
+
+
+@login_required
+@require_POST
+def permit_extension_save(request, file_id):
+    return _extension_action(request, file_id, lambda p: permit_extension.save(request.user, p, request.POST), 'فرم تمدید ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_extension_issue(request, file_id):
+    return _extension_action(request, file_id, lambda p: permit_extension.issue(request.user, p, request.POST), 'تمدید ثبت شد.')
