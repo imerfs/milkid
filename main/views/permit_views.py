@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_supervision, permits
+from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
@@ -711,3 +711,85 @@ def permit_sup_message(request, file_id):
 @require_POST
 def permit_licence_amend(request, file_id):
     return _licence_action(request, file_id, lambda p: permit_step7.save_amendment(request.user, p, request.POST), 'فرم اصلاحات و تغییرات ذخیره شد.')
+
+
+# ---------- services: letters for electricity, gas and water ----------
+
+@login_required
+def permit_services_page(request, file_id):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.licence_state != 'issued':
+        messages.error(request, 'نامه‌ی خدمات پس از صدور پروانه ممکن است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    items = permit_services.services(permit)
+    wanted = request.GET.get('s', '')
+    chosen = next((s for s in items if str(s['id']) == wanted), None) or next((s for s in reversed(items) if s['state'] in ('requested', 'approved')), None)
+    rows = [{**s, 'title': permit_services.KINDS[s['kind']]['title'], 'text': permit_services.STATE_TEXT.get(s['state'], ''), 'on': chosen is not None and s['id'] == chosen['id']}
+            for s in reversed(items)]
+    data = permit_services.payload(permit, chosen) if chosen else {}
+    kind = permit_services.KINDS[chosen['kind']] if chosen else None
+    return render(request, 'main/permits/services.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'rows': rows, 'chosen': chosen, 'kind': kind,
+        'kinds': [(k, v['title']) for k, v in permit_services.KINDS.items()], 'can_request': mine or staff,
+        'fields': [(key, permit_services.LABELS[key], data.get(key, '')) for key in (kind['fields'] + ('number', 'date', 'dehyari_name') if kind else ())],
+        'editing': bool(chosen and staff and chosen['state'] in ('requested', 'approved')), 'printable': bool(chosen and chosen['state'] in ('approved', 'issued')),
+        'extra': [(key, permit_services.LABELS[key]) for key in ('permit_no', 'permit_date', 'endwork_no', 'endwork_date', 'ref_no', 'ref_date', 'slip_no', 'slip_date')],
+        'payload': {'f': data, 'kind': chosen['kind'] if chosen else '', 'title': kind['title'] if kind else '', 'company': kind['company'] if kind else '',
+                    'pages': kind['pages'] if kind else 1, 'what': kind['what'] if kind else '', 'file': permit.pk, 'letterhead': static('forms/permit/letterhead.jpg'),
+                    'state': chosen['state'] if chosen else ''},
+    })
+
+
+def _svc_action(request, file_id, action, ok, sid=None):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    params = ([f's={sid}'] if sid else []) + (['embed=1'] if request.POST.get('embed') else [])
+    suffix = ('?' + '&'.join(params)) if params else ''
+    return redirect(reverse('main:permit_services', args=[permit.pk]) + suffix)
+
+
+@login_required
+@require_POST
+def permit_service_request(request, file_id):
+    return _svc_action(request, file_id, lambda p: permit_services.request(request.user, p, request.POST.get('kind', ''), request.POST), 'درخواست ثبت شد؛ دهیاری آن را بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_service_save(request, file_id, sid):
+    return _svc_action(request, file_id, lambda p: permit_services.save(request.user, p, sid, request.POST), 'نامه ذخیره شد.', sid)
+
+
+@login_required
+@require_POST
+def permit_service_approve(request, file_id, sid):
+    return _svc_action(request, file_id, lambda p: permit_services.approve(request.user, p, sid, request.POST), 'نامه تایید شد؛ متقاضی می‌تواند آن را چاپ کند.', sid)
+
+
+@login_required
+@require_POST
+def permit_service_reject(request, file_id, sid):
+    return _svc_action(request, file_id, lambda p: permit_services.reject(request.user, p, sid, request.POST.get('reason', '')), 'درخواست رد شد.', sid)
+
+
+@login_required
+@require_POST
+def permit_service_cancel(request, file_id, sid):
+    return _svc_action(request, file_id, lambda p: permit_services.cancel(request.user, p, sid), 'درخواست لغو شد.')
+
+
+@login_required
+@require_POST
+def permit_service_issue(request, file_id, sid):
+    return _svc_action(request, file_id, lambda p: permit_services.issue(request.user, p, sid, request.POST), 'تحویل نامه ثبت شد.', sid)

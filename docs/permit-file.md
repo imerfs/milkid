@@ -135,3 +135,13 @@ certificate. Each is filled from the file (permit, owner, engineer, pledge numbe
 On the permit page (staff, after issue) a fourth sheet is prefilled from the permit (dates, slips, sides, areas, floors) for changes the owner
 makes after the permit was issued; saved under `licence.amend`, downloaded or printed, signed and stamped by the dehyari and the technical
 manager by hand.
+
+## Services: letters for electricity, gas and water (step 10)
+`permits/<id>/services/` (`permit_services.py`, `static/js/permit-service-letter.js`), available after the permit is issued. Letter kinds
+(from the dehyari's samples): electricity and gas **status inquiry** (form 2: the owner's request with a plot sketch box + the dehyari's reply
+with areas, limits, street width, basis and UTM coordinates), **introduction for a connection** (electricity with the permit, electricity with the
+end-of-work certificate, water with the permit), **gas meter placement** and the **dig permission** after the asphalt-cutting fee slip (needs the gas
+company's letter number and the slip). The letter is typeset on the dehyari letterhead from the file.
+- The owner (or the staff for a walk-in owner) asks; the clerk / technical expert / dehyari edit the fields, **approve** (number and date,
+  which lets the owner print) or reject with a reason; the owner prints, the dehyari **signs and stamps by hand**; the staff record the handover.
+- Requests waiting for approval count in the staff panels (`needs_staff`); the owner may cancel a waiting request.

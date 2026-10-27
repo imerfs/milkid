@@ -1,0 +1,87 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}نامه‌های خدمات - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff pfs">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-plug" aria-hidden="true"></i></span>
+    <div>
+      <h1>نامه‌های دهیاری برای دریافت خدمات</h1>
+      <p>برق، گاز و آب · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi></p>
+    </div>
+  </header>
+
+  {% if mine %}{% include 'main/permits/_paper.html' with stage=10 %}{% endif %}
+
+  {% if can_request %}
+  <form method="post" action="{% url 'main:permit_service_request' permit.pk %}" class="pf-card pf-form pff-form">{% csrf_token %}
+    {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+    <h2><i class="fas fa-file-circle-plus" aria-hidden="true"></i>درخواست نامه‌ی تازه</h2>
+    <label>نامه‌ی مورد نیاز<select name="kind" required>{% for key, title in kinds %}<option value="{{ key }}">{{ title }}</option>{% endfor %}</select></label>
+    <details><summary>اطلاعات لازم برای برخی نامه‌ها (پایان‌کار، آسفالت شکافی)</summary>
+      <div class="pff-fields">{% for key, label in extra %}<label>{{ label }}<input name="f_{{ key }}" maxlength="60"></label>{% endfor %}</div>
+      <p class="pf-hint">شماره و تاریخ پروانه خودکار از پرونده می‌آید. برای نامه‌ی «اجازه‌ی حفاری» شماره‌ی نامه‌ی شرکت گاز و فیش آسفالت شکافی لازم است؛ برای «با پایان‌کار» شماره و تاریخ پایان‌کار.</p></details>
+    <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ثبت درخواست</button>
+  </form>
+  {% endif %}
+
+  <section class="pf-card" aria-label="درخواست‌ها">
+    <h2><i class="fas fa-list" aria-hidden="true"></i>درخواست‌ها</h2>
+    {% for r in rows %}
+    <p class="pfs-msg{% if r.on %} on{% endif %}"><a href="{% url 'main:permit_services' permit.pk %}?s={{ r.id }}{% if embed %}&embed=1{% endif %}"><b>{{ r.title }}</b></a> — {{ r.text }}{% if r.f.number %} · نامه‌ی {{ r.f.number|persian_numbers }}{% endif %}{% if r.reason %} ({{ r.reason }}){% endif %}
+      {% if mine and r.state == 'requested' %}<form method="post" action="{% url 'main:permit_service_cancel' permit.pk r.id %}" style="display:inline">{% csrf_token %}<button class="pf-btn" type="submit">لغو</button></form>{% endif %}</p>
+    {% empty %}<p class="pf-hint">هنوز درخواستی ندارید.</p>{% endfor %}
+  </section>
+
+  {% if chosen %}
+  <div class="pff-grid">
+    <div class="pff-edit">
+      <form method="post" action="{% url 'main:permit_service_save' permit.pk chosen.id %}" class="pf-card pf-form pff-form" id="pfv-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-envelope-open-text" aria-hidden="true"></i>{{ kind.title }}</h2>
+        {% if editing %}<p class="pf-hint">همه‌ی خانه‌ها از پرونده پر شده‌اند؛ آنچه نادرست یا خالی است را اصلاح کنید.</p>{% endif %}
+        <div class="pff-fields">{% for key, label, value in fields %}<label{% if key == 'address' or key == 'basis' or key == 'notes' %} class="wide"{% endif %}>{{ label }}<input name="f_{{ key }}" value="{{ value }}" maxlength="150" {% if not editing %}readonly{% endif %}></label>{% endfor %}</div>
+        {% if editing %}
+        <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button>
+        {% if chosen.state == 'requested' %}
+        <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_service_approve' permit.pk chosen.id %}"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید نامه (شماره‌دار و قابل چاپ)</button>
+        {% else %}
+        <div class="pfe-issue">
+          <label class="pff-check"><input type="checkbox" name="signed"> نامه‌ی چاپی با مهر و امضای دهیار به متقاضی تحویل شد</label>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_service_issue' permit.pk chosen.id %}"><i class="fas fa-stamp" aria-hidden="true"></i>ثبت تحویل نامه</button>
+        </div>
+        {% endif %}
+        {% endif %}
+      </form>
+      {% if staff and chosen.state == 'requested' %}
+      <form method="post" action="{% url 'main:permit_service_reject' permit.pk chosen.id %}" class="pf-card pf-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <label>دلیل رد درخواست<textarea name="reason" rows="2" required maxlength="500"></textarea></label>
+        <button class="pf-btn" type="submit"><i class="fas fa-ban" aria-hidden="true"></i>رد درخواست</button>
+      </form>
+      {% endif %}
+    </div>
+    <aside class="pff-view">
+      <div class="pff-tabs pfs-tabs" role="tablist"><button type="button" class="is-on" data-page="1" role="tab">نامه</button>{% if kind.pages == 2 %}<button type="button" data-page="2" role="tab">فرم ۲ (درخواست)</button>{% endif %}</div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش نامه"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      {% if printable %}
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pfv-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود (PDF)</button>
+        <button type="button" class="pf-btn" id="pfv-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ</button>
+      </div>
+      <p class="pf-hint">نامه را چاپ کنید و برای مهر و امضای دهیار به دهیاری ببرید.</p>
+      {% else %}<p class="pf-hint">پس از تایید دهیاری می‌توانید نامه را چاپ کنید؛ پیش‌نمایش پایین پیش از تایید فقط برای بررسی است.</p>
+      <div class="pff-actions" hidden><button type="button" id="pfv-dl"></button><button type="button" id="pfv-print"></button></div>{% endif %}
+    </aside>
+  </div>
+  {{ payload|json_script:"pfv-data" }}
+  <script src="{% static 'js/pdf-lite.js' %}" defer></script>
+  <script src="{% static 'js/permit-service-letter.js' %}" defer></script>
+  {% endif %}
+</div>
+{% endblock %}

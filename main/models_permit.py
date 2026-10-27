@@ -109,6 +109,8 @@ class PermitFile(models.Model):
     extensions = models.JSONField(default=list, blank=True)
     # the supervision: the technical supervisor (inspector) following the work and forms 8-13 (main/office/permit_supervision.py)
     supervisor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='supervised_permits')
+    # the owner's requests for utility letters (electricity, gas, water) the dehyari signs (main/office/permit_services.py)
+    services = models.JSONField(default=list, blank=True)
     supervision = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -169,6 +171,7 @@ class PermitFile(models.Model):
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
                 or (self.stage_no >= 7 and self.licence_state != 'issued')
                 or (self.stage_no >= 7 and any(e.get('state') == 'requested' for e in self.extensions or []))
+                or (self.stage_no >= 7 and any(s.get('state') == 'requested' for s in self.services or []))
                 or (self.stage_no == 7 and any(f.get('state') in ('uploaded', 'violation') for f in (self.supervision or {}).get('forms', {}).values()))
                 or (self.stage_no == 6 and not self.insurance_state
                     and (self.paid_up or any(not p.get('ok') for p in (self.insurance or {}).get('payments') or []))))
