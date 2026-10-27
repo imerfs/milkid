@@ -20,6 +20,9 @@ STATUS = ('area', 'built', 'n', 's', 'e', 'w', 'street', 'hadi_date', 'basis', '
 PERMIT = ('permit_no', 'permit_date')
 ENDWORK = ('endwork_no', 'endwork_date')
 DIG = ('ref_no', 'ref_date', 'slip_no', 'slip_date')
+CLEAR = ('village', 'section', 'name', 'plot', 'address', 'permit_no', 'permit_date', 'req_no', 'req_date', 'report_date', 'sup_name', 'stage_text', 'notes', 'tech_name')
+# the non-violation certificates (گواهی عدم خلاف) of the permit booklet: kind -> (supervision form that must be confirmed first, the stage's name)
+CLEARANCES = {'nov_1': (9, 'اول (بعد از بتن‌ریزی پی)'), 'nov_2': (10, 'دوم (اجرای اسکلت و عملیات سازه‌ای)'), 'nov_3': (11, 'سوم (اجرای سفت‌کاری و نازک‌کاری)')}
 KINDS = {
     'elec_status': {'title': 'برق: استعلام وضعیت ملک (فرم ۲)', 'company': 'مدیر محترم شرکت توزیع نیروی برق شهرستان بیرجند', 'fields': BASE + STATUS, 'pages': 2, 'what': 'برق'},
     'elec_permit': {'title': 'برق: معرفی برای انشعاب (با پروانه)', 'company': 'مدیریت محترم توزیع نیروی برق شهرستان بیرجند', 'fields': BASE + PERMIT, 'pages': 1, 'what': 'برق'},
@@ -27,6 +30,9 @@ KINDS = {
     'gas_status': {'title': 'گاز: استعلام وضعیت ملک (فرم ۲)', 'company': 'مدیر محترم شرکت گاز شهرستان بیرجند', 'fields': BASE + STATUS, 'pages': 2, 'what': 'گاز'},
     'gas_meter': {'title': 'گاز: جانمایی و نصب علمک', 'company': 'رئیس محترم شرکت گاز شهرستان بیرجند', 'fields': BASE, 'pages': 1, 'what': 'گاز'},
     'gas_dig': {'title': 'گاز: اجازه‌ی حفاری (پس از پرداخت آسفالت شکافی)', 'company': 'رئیس محترم شرکت گاز شهرستان بیرجند', 'fields': BASE + DIG, 'pages': 1, 'what': 'گاز'},
+    'nov_1': {'title': 'گواهی عدم خلاف: مرحله‌ی اول (بعد از بتن‌ریزی پی)', 'company': '', 'fields': CLEAR, 'pages': 1, 'what': ''},
+    'nov_2': {'title': 'گواهی عدم خلاف: مرحله‌ی دوم (اسکلت)', 'company': '', 'fields': CLEAR, 'pages': 1, 'what': ''},
+    'nov_3': {'title': 'گواهی عدم خلاف: مرحله‌ی سوم (سفت‌کاری و نازک‌کاری)', 'company': '', 'fields': CLEAR, 'pages': 1, 'what': ''},
     'water_permit': {'title': 'آب: معرفی برای انشعاب (با پروانه)', 'company': 'رئیس محترم اداره آب و فاضلاب روستایی شهرستان بیرجند', 'fields': BASE + PERMIT, 'pages': 1, 'what': 'آب'},
 }
 LABELS = {
@@ -36,7 +42,8 @@ LABELS = {
     'hadi_date': 'تاریخ ابلاغ طرح هادی', 'basis': 'مبنای تایید (پروانه یا رای کمیسیون)', 'utm_x': 'مختصات X', 'utm_y': 'مختصات Y', 'notes': 'توضیحات',
     'permit_no': 'شماره‌ی پروانه', 'permit_date': 'تاریخ پروانه', 'endwork_no': 'شماره‌ی پایان‌کار', 'endwork_date': 'تاریخ پایان‌کار',
     'ref_no': 'شماره‌ی نامه‌ی شرکت', 'ref_date': 'تاریخ نامه‌ی شرکت', 'slip_no': 'شماره‌ی فیش آسفالت شکافی', 'slip_date': 'تاریخ فیش',
-    'number': 'شماره‌ی نامه', 'date': 'تاریخ نامه', 'dehyari_name': 'نام دهیار'}
+    'number': 'شماره‌ی نامه', 'date': 'تاریخ نامه', 'dehyari_name': 'نام دهیار', 'req_no': 'شماره‌ی درخواست', 'req_date': 'تاریخ درخواست',
+    'report_date': 'تاریخ گزارش ناظر', 'sup_name': 'ناظر فنی (مهندس ناظر)', 'stage_text': 'مرحله‌ی ساختمان', 'tech_name': 'نام مسئول فنی دهیاری'}
 STATE_TEXT = {'requested': 'منتظر تایید دهیاری', 'approved': 'تایید شد؛ چاپ و امضای دهیار', 'issued': 'امضا و تحویل شد', 'rejected': 'رد شد', 'cancelled': 'لغو شد'}
 REQUIRED = {'elec_endwork': ('endwork_no', 'endwork_date'), 'gas_dig': ('ref_no', 'slip_no', 'slip_date'), 'elec_permit': ('permit_no',), 'water_permit': ('permit_no',)}
 
@@ -65,6 +72,15 @@ def _street(address, village):
     return text
 
 
+def _report_date(permit, kind):
+    """The date of the supervision report the clearance rests on."""
+    form = CLEARANCES.get(kind, (0, ''))[0]
+    if not form:
+        return ''
+    from main.office import permit_supervision       # pylint: disable=import-outside-toplevel
+    return permit_supervision.forms(permit)[form]['f'].get('date', '')
+
+
 def defaults(permit, kind):
     """The letter's fields the file already knows."""
     lic = permit_step7.payload(permit) if permit.licence_state == 'issued' else {}
@@ -83,6 +99,8 @@ def defaults(permit, kind):
         'notes': '', 'permit_no': permit_no, 'permit_date': permit_date, 'endwork_no': (permit.endwork or {}).get('f', {}).get('number', '') if permit.endwork_state == 'issued' else '',
         'endwork_date': (permit.endwork or {}).get('f', {}).get('date', '') if permit.endwork_state == 'issued' else '', 'ref_no': '', 'ref_date': '', 'slip_no': '', 'slip_date': '',
         'number': '', 'date': permit_step2.today(), 'dehyari_name': permit_step7._signers(village)[0],         # pylint: disable=protected-access
+        'tech_name': permit_step7._signers(village)[1], 'sup_name': lic.get('sup_name', ''), 'req_no': '', 'req_date': '',          # pylint: disable=protected-access
+        'stage_text': CLEARANCES.get(kind, (0, ''))[1], 'report_date': _report_date(permit, kind),
     }
     return {key: data.get(key, '') for key in KINDS[kind]['fields'] + ('number', 'date', 'dehyari_name')}
 
@@ -120,7 +138,14 @@ def request(actor, permit, kind, post):
     items = services(permit)
     if any(s['kind'] == kind and s['state'] in ('requested', 'approved') for s in items):
         raise Conflict('برای این نامه درخواست بازی دارید.')
+    if kind in CLEARANCES:
+        from main.office import permit_supervision       # pylint: disable=import-outside-toplevel
+        if permit_supervision.forms(permit)[CLEARANCES[kind][0]]['state'] != 'approved':
+            raise Conflict('گواهی عدم خلاف پس از تایید فرم نظارت همان مرحله ممکن است.')
     given = {key: _clean(post.get(f'f_{key}')) for key in KINDS[kind]['fields'] if post.get(f'f_{key}')}
+    if kind in CLEARANCES:
+        given.setdefault('req_no', permit_step2._next_number(permit_step2._village(permit)))       # pylint: disable=protected-access
+        given.setdefault('req_date', permit_step2.today())
     shown = {**defaults(permit, kind), **given}
     missing = [LABELS[key] for key in REQUIRED.get(kind, ()) if not shown.get(key)]
     if missing:

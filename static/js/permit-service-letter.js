@@ -58,7 +58,20 @@
     ctx.save(); ctx.fillStyle = BLACK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl'; ctx.font = 'bold 32px ' + FONT;
     ctx.fillText('با تشکر', 430, y); ctx.fillText(fa(F.dehyari_name || ''), 430, y + 55); ctx.fillText(fa('دهیار ' + (F.village || '')), 430, y + 110); ctx.fillText('مهر و امضاء', 430, y + 175); ctx.restore();
   }
+  // the non-violation certificate (گواهی عدم خلاف): title, village / section, one paragraph, the two signatures
+  function certificate() {
+    head();
+    txt('گواهی عدم خلاف', 700, 470, 56, BLACK, 'center', true);
+    txt('روستای: ' + (F.village || ''), XR, 560, 31, BLACK, 'right', true); txt('بخش: ' + (F.section || ''), 560, 560, 31, BLACK, 'right', true);
+    var y = paragraph('با توجه به پیرو پروانه ساختمانی شماره {permit_no} مورخ {permit_date} مربوط به پلاک ثبتی شماره {plot} در پاسخ به درخواست شماره {req_no} مورخ {req_date} خانم/آقای {name} و به نشانی {address} بر حسب گزارش مورخ {report_date} ناظر فنی {sup_name} اعلام می‌دارد که ساختمان احداث شده در مرحله {stage_text} می‌باشد و ادامه عملیات ساختمانی آن بلامانع است.', XR, XL, 650, 68, 31);
+    txt('ملاحظات:', XR, y + 110, 30, BLACK, 'right', true);
+    paragraph('{notes}', XR, XL, y + 170, 60, 29);
+    ctx.save(); ctx.fillStyle = BLACK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl'; ctx.font = 'bold 30px ' + FONT;
+    ctx.fillText('نام و امضاء مسئول فنی دهیاری', 960, 1500); ctx.fillText('نام و امضاء دهیار', 400, 1500);
+    ctx.fillStyle = INK; ctx.font = '30px ' + FONT; ctx.fillText(fa(F.tech_name || ''), 960, 1445); ctx.fillText(fa(F.dehyari_name || ''), 400, 1445); ctx.restore();
+  }
   function letter() {
+    if (/^nov_/.test(data.kind)) { certificate(); return; }
     head();
     txt(data.company, XR, 470, 34, BLACK, 'right', true);
     txt('با سلام و احترام؛', XR, 540, 31, BLACK, 'right', true);

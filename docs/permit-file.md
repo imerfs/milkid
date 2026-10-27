@@ -155,3 +155,9 @@ company's letter number and the slip). The letter is typeset on the dehyari lett
 - The owner / staff print it; the **dehyari and the technical manager (technical expert) sign and stamp by hand**; the staff tick the handover
   and issue (`issued`), which ends the file (step 9 is shown done) and tells the owner. The certificate number and date are then prefilled in the
   «electricity with end-of-work» service letter.
+
+## Non-violation certificates (گواهی عدم خلاف)
+Three certificates (kinds `nov_1`..`nov_3` of the services page) follow the supervision stages: after supervision form 9 / 10 / 11 is confirmed the
+owner (or the staff) may ask for the certificate of that stage, which says the building built so far (per the supervising engineer's report of
+that date) has no violation and the work may go on. Same flow as the other letters: the clerk / technical expert / dehyari edit and approve it
+(number and date), the owner prints it, the **dehyari and the technical manager sign and stamp it by hand**, the staff record the handover.
