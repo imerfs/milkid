@@ -10,7 +10,7 @@
     {% for f in permitlist.rows %}
       <tr>
         <td><b>{{ f.request.user.get_full_name|default:f.request.user.username }}</b></td>
-        <td>{{ f.get_permit_kind_display }}</td>
+        <td>{% if f.unlicensed %}ساخت‌وساز بدون پروانه{% else %}{{ f.get_permit_kind_display }}{% endif %}</td>
         <td>{% if f.renewal_code %}<bdi dir="ltr">{{ f.renewal_code|persian_numbers }}</bdi>{% else %}{{ f.area_m2|persian_numbers }} م²{% if f.lot_number %} · قطعه‌ی تفکیکی {{ f.lot_number|persian_numbers }}{% endif %}{% endif %}</td>
         <td>{{ f.stage_no|persian_numbers }}. {{ f.stage_title }}</td>
         <td><span class="pl-state pl-state-{{ f.state }}">{{ f.status_text }}</span></td>

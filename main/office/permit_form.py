@@ -101,9 +101,39 @@ def _person(post, prefix, errors, role):
     return person
 
 
-def parse(post, files):
+# What the owner tells about the building that already stands (construction without a permit)
+BUILT_FIELDS = (('built_area', 'زیربنای ساخته‌شده (متر مربع)'), ('floors', 'تعداد طبقات'))
+
+
+def _built(post, fields, errors):
+    """The building that was put up without a permit: its built area, floors and (optionally) the year it was built."""
+    try:
+        built = float(digits(post.get('built_area', '')).replace('٫', '.').replace(',', '.'))
+        if not 0 < built < 1_000_000:
+            raise ValueError
+        fields['details']['built_area'] = str(round(built, 2))
+    except ValueError:
+        errors['built_area'] = 'زیربنای ساخته‌شده را به متر مربع و به‌صورت عدد وارد کنید.'
+    floors = digits(post.get('floors', ''))
+    if floors.isdigit() and 1 <= int(floors) <= 30:
+        fields['details']['floors'] = floors
+    else:
+        errors['floors'] = 'تعداد طبقات را به‌صورت عدد (۱ تا ۳۰) وارد کنید.'
+    year = digits(post.get('built_year', ''))
+    if year:
+        if re.fullmatch(r'1[34]\d{2}', year):
+            fields['details']['built_year'] = year
+        else:
+            errors['built_year'] = 'سال ساخت را به شکل ۱۳۹۵ وارد کنید.'
+    note = text(post, 'built_note', 300)
+    if note:
+        fields['details']['built_note'] = note
+
+
+def parse(post, files, track='permit'):
+    unlicensed = track == 'unlicensed'
     errors = {}
-    data = {'people': [], 'files': {}}
+    data = {'people': [], 'files': {}, 'track': track}
 
     applicant = _person(post, '', errors, 'applicant')
     if not applicant['birth_place']:
@@ -141,14 +171,14 @@ def parse(post, files):
     fields['address'] = text(post, 'address', 500)
     if not fields['address']:
         errors['address'] = 'آدرس دقیق ملک را وارد کنید.'
-    fields['permit_kind'] = post.get('permit_kind', '')
+    fields['permit_kind'] = 'construction' if unlicensed else post.get('permit_kind', '')
     if fields['permit_kind'] not in dict(PermitFile.KINDS):
         errors['permit_kind'] = 'نوع درخواست را انتخاب کنید.'
 
     # ---- the ownership paper
     ownership = post.get('ownership_type', '')
     fields['ownership_type'] = ownership
-    if ownership not in OWNERSHIP_DOC:
+    if ownership not in OWNERSHIP_DOC or (unlicensed and ownership == 'bonyad'):
         errors['ownership_type'] = 'وضعیت سند ملک را انتخاب کنید.'
     fields['doc_number'] = text(post, 'doc_number', 60)
     fields['doc_issuer'] = text(post, 'doc_issuer', 150)
@@ -170,6 +200,8 @@ def parse(post, files):
         errors['renewal_code'] = 'کد نوسازی را به شکل ۰-۰-۸-۱۸۲-۲ وارد کنید.'
     fields['details'] = {key: text(post, key, 120) for key in
                          ('limit_north', 'limit_south', 'limit_east', 'limit_west', 'lease_years', 'unit_count') if text(post, key, 120)}
+    if unlicensed:
+        _built(post, fields, errors)
 
     # ---- the other owners
     for n in range(1, CO_OWNERS + 1):

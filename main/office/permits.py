@@ -79,18 +79,21 @@ def _staff_to_tell(village):
 def submit(user, data):
     """File the application. ``data`` is what ``permit_form.parse`` returned without errors."""
     fields, applicant = data['fields'], data['people'][0]
-    kind_label = dict(PermitFile.KINDS)[fields['permit_kind']]
+    track = data.get('track', 'permit')
+    unlicensed = track == 'unlicensed'
+    kind_label = 'ساخت‌وساز بدون پروانه' if unlicensed else dict(PermitFile.KINDS)[fields['permit_kind']]
+    what = 'ساخت‌وساز بدون پروانه' if unlicensed else 'پروانه ساختمان'
     geography = {name: fields[name] for name in ('province', 'county', 'district', 'city_village') if fields.get(name)}
     sr = lifecycle.submit(
-        user, action='ثبت درخواست پروانه ساختمان (مرحله ۱: افتتاح پرونده) توسط متقاضی - ارجاع به کارشناس',
-        request_type='building_permit', title=f'درخواست {kind_label}',
+        user, action=f'ثبت درخواست {what} (مرحله ۱: {"ایجاد پرونده اولیه" if unlicensed else "افتتاح پرونده"}) توسط متقاضی - ارجاع به کارشناس',
+        request_type='no_permit' if unlicensed else 'building_permit', title=kind_label if unlicensed else f'درخواست {kind_label}',
         description=f'{kind_label} - مساحت {fields["area_m2"]} مترمربع - {fields["address"]}',
         property_address=fields['address'], property_area=fields['area_m2'],
         property_usage=dict(PermitFile.LAND_USES)[fields['land_use']], deed_number=fields['doc_number'],
-        parcel_number=fields['renewal_code'], form_data={'permit': True, 'ownership_type': fields['ownership_type']},
+        parcel_number=fields['renewal_code'], form_data={'permit': True, 'track': track, 'ownership_type': fields['ownership_type']},
         **geography)
     permit = PermitFile.objects.create(
-        request=sr, permit_kind=fields['permit_kind'], ownership_type=fields['ownership_type'],
+        request=sr, track=track, permit_kind=fields['permit_kind'], ownership_type=fields['ownership_type'],
         doc_number=fields['doc_number'], doc_date=fields['doc_date'], doc_issuer=fields['doc_issuer'],
         project_code=fields['project_code'], registry_plot=fields['registry_plot'], lot_number=fields['lot_number'],
         share_dang=fields['share_dang'], area_m2=fields['area_m2'], land_use=fields['land_use'],
@@ -113,8 +116,8 @@ def submit(user, data):
         pass
     village = (sr.city_village.name if sr.city_village else '') or village_of(user)
     for staff in _staff_to_tell(village):
-        notify(staff, 'پرونده‌ی پروانه ساختمان تازه', f'{applicant["first_name"]} {applicant["last_name"]} پرونده‌ی پروانه '
-               f'ساختمان ثبت کرد و منتظر افتتاح پرونده است (کد پرونده {permit.pk}).', request=sr)
+        notify(staff, f'پرونده‌ی {what} تازه', f'{applicant["first_name"]} {applicant["last_name"]} پرونده‌ی {what} '
+               f'ثبت کرد و منتظر بررسی و تایید مرحله‌ی ۱ است (کد پرونده {permit.pk}).', request=sr)
     return permit
 
 
@@ -157,11 +160,16 @@ def files_for(user):
     return rows.filter(request__in=ServiceRequest.objects.filter(requests_for(village)))
 
 
-def find(user, file_id):
-    """The file if ``user`` is its owner or the village's staff, else None."""
+def find(user, file_id, any_track=False):
+    """The file if ``user`` is its owner or the village's staff, else None.
+
+    The later steps (forms, plans, fees, the permit ...) exist for the building-permit track only; a file of the
+    construction-without-permit track is found for them only when ``any_track`` is set (its own file page, papers
+    and step-1 decisions).
+    """
     rows = PermitFile.objects.select_related('request', 'request__user', 'request__user__profile', 'parcel', 'opened_by')
     permit = rows.filter(pk=file_id).first()
-    if permit is None:
+    if permit is None or (permit.unlicensed and not any_track):
         return None
     if permit.request.user_id == user.id:
         return permit
@@ -177,10 +185,10 @@ def may_open(user, permit):
 
 
 def tracker(permit):
-    """The nine steps with where the file is: done / current / waiting."""
+    """The steps of the file's track with where it is: done / current / waiting."""
     rows = []
-    for number, title in STAGES:
-        done = number < permit.stage_no or (number == 9 and permit.stage_no == 9 and permit.endwork_state == 'issued')
+    for number, title in permit.stages:
+        done = number < permit.stage_no or (number == 9 and permit.stage_no == 9 and permit.endwork_state == 'issued' and not permit.unlicensed)
         state = 'done' if done else 'current' if number == permit.stage_no else 'todo'
         rows.append({'no': number, 'title': title, 'state': state})
     return rows
@@ -217,7 +225,8 @@ def sync_parcel(permit, actor):
         _fill_blank(archive, owner_name=BONYAD_NAME)
     else:
         _fill_blank(archive, owner_name=person.full_name, owner_national_id=person.national_id, owner_phone=person.phone)
-    line = f'پرونده پروانه {permit.pk}: {permit.get_permit_kind_display()} - {person.full_name} - در جریان'
+    label = 'ساخت‌وساز بدون پروانه' if permit.unlicensed else permit.get_permit_kind_display()
+    line = f'پرونده پروانه {permit.pk}: {label} - {person.full_name} - در جریان'
     if f'پرونده پروانه {permit.pk}:' not in archive.permit_notes:
         archive.permit_notes = f'{archive.permit_notes}\n{line}'.strip()
     archive.updated_by = actor
@@ -229,7 +238,10 @@ def sync_parcel(permit, actor):
 
 @transaction.atomic
 def open_file(actor, permit, *, code, parcel_id=None, notes=''):
-    """Step 1 done: the file gets its renewal code (and its plot of the map) and moves to step 2."""
+    """Step 1 done: the file gets its renewal code (and its plot of the map) and moves to step 2.
+
+    The same check serves both tracks: the clerk, the technical expert or the dehyari confirm it.
+    """
     if not may_open(actor, permit):
         raise Forbidden('اجازه‌ی افتتاح این پرونده را ندارید.')
     if permit.state != 'submitted':
@@ -287,7 +299,7 @@ def refuse(actor, permit, reason):
 # ---------- what the panels and the map show ----------
 
 def panel_rows(user, limit=60):
-    rows = files_for(user).filter(request__request_type='building_permit')
+    rows = files_for(user).filter(request__request_type__in=('building_permit', 'no_permit'))
     listed = list(rows[:300])
     ordered = sorted(listed, key=lambda f: (not f.needs_staff, -f.created_at.timestamp()))[:limit]
     return {'rows': ordered, 'waiting': sum(1 for f in listed if f.needs_staff), 'total': rows.count(), 'can_open': can(user, 'permit.open')}

@@ -230,11 +230,6 @@ def building_permit_step9(request):
     return render(request, 'main/services/building-permits/step9.html')
 
 
-def without_permit_form(request):
-    """Construction without permit step 1"""
-    return render(request, 'main/services/construction-without-permit/step1.html')
-
-
 def without_permit_step2(request):
     """Construction without permit step 2"""
     return render(request, 'main/services/construction-without-permit/step2.html')

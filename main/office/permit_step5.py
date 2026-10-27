@@ -120,7 +120,7 @@ def find(user, file_id):
     permit = permits.find(user, file_id)
     if permit is not None:
         return permit
-    permit = PermitFile.objects.select_related('request', 'request__user', 'request__user__profile', 'parcel').filter(pk=file_id).first()
+    permit = PermitFile.objects.select_related('request', 'request__user', 'request__user__profile', 'parcel').filter(pk=file_id, track='permit').first()
     if permit and can(user, 'permit.fees') and permit.stage_no >= 5 and permits.files_for(user).filter(pk=permit.pk).exists():
         return permit
     return None
