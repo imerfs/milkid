@@ -163,14 +163,57 @@
     txt('نام و امضاء مسئول فنی دهیاری', 1030, 1880, 26, BLACK, 'center', true); txt(val('tech_name'), 1030, 1840, 26, INK, 'center');
   }
 
-  var DRAW = { 1: page1, 2: page2, 3: page3 };
+  // ---------- page 4: amendments and changes of the permit ----------
+  function page4() {
+    head(4);
+    txt('اصلاحات و تغییرات پروانه ساختمان', W / 2, 150, 54, BLACK, 'center', true);
+    box(210, 330);
+    paragraph([{ t: 'در صورت درخواست مالک به تغییر نقشه و پروانه صادره از نظر افزایش یا کاهش واحدها در سطح، تغییر سطوح داخلی، تغییر کاربری و سایر تغییرات و اصلاحات مجاز در چارچوب قوانین، مقررات و ضوابط مصوب طرح هادی روستا این قسمت توسط دهیاری تکمیل می‌شود.' }], XR - 22, XL + 20, 250, 44, 24);
+    row(390, [['تاریخ انجام تغییرات:', 'am_date', 700]]);
+    row(450, [['عوارض زیربنا طبق فیش شماره:', 'am_fee_slip_no', 700], ['کد:', 'am_code', 360]]);
+    row(510, [['عوارض پذیره طبق فیش شماره:', 'am_entry_slip_no', 700]]);
+    row(570, [['بیمه کارگران طبق فیش شماره:', 'am_ins_slip_no', 620], ['عوارض پارکینگ:', 'am_parking_slip_no', 420]]);
+    var cols = [[1310, 1150], [1150, 880], [880, 610], [610, 340], [340, 90]], heads = ['', 'ابعاد مندرج در سند', 'ابعاد موجود روی زمین', 'عرض گذر و شماره پروفیل', 'ابعاد باقی‌مانده بعد از رعایت برهای اصلاحی'], y0 = 630;
+    ctx.save(); ctx.strokeStyle = BLACK; ctx.lineWidth = 2.5; ctx.strokeRect(XL, y0, XR - XL, 80 + 4 * 62); ctx.restore();
+    cols.forEach(function (c, i) { if (i) { ctx.save(); ctx.strokeStyle = BLACK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(c[0], y0); ctx.lineTo(c[0], y0 + 80 + 4 * 62); ctx.stroke(); ctx.restore(); } if (heads[i]) txt(heads[i], (c[0] + c[1]) / 2, y0 + 40, 20, BLACK, 'center', true); });
+    var nm = { north: 'شمالاً', east: 'شرقاً', south: 'جنوباً', west: 'غرباً' }, y = y0 + 80;
+    ['north', 'east', 'south', 'west'].forEach(function (s) {
+      ctx.save(); ctx.strokeStyle = BLACK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(XL, y); ctx.lineTo(XR, y); ctx.stroke(); ctx.restore();
+      txt(nm[s], 1230, y + 31, 26, BLACK, 'center', true);
+      ['deed', 'actual', 'passage', 'after'].forEach(function (k, i) { var v = val('am_sd_' + s + '_' + k); if (v !== '') txt(v + ' متر', (cols[i + 1][0] + cols[i + 1][1]) / 2, y + 31, 25, INK, 'center'); });
+      y += 62;
+    });
+    var yy = paragraph([{ t: 'مساحت زمین مطابق سند' }, { v: val('am_deed_area') || '......' }, { t: 'متر مربع / مساحت زمین بعد از رعایت برهای اصلاحی' }, { v: val('am_area_after') || '......' }, { t: 'متر مربع / میزان تراکم مجاز' }, { v: val('am_density_pct') || '......' }, { t: 'درصد' }], XR - 22, XL + 20, y0 + 80 + 4 * 62 + 60, 52, 26) + 60;
+    paragraph([{ t: 'مساحت مجاز ساخت' }, { v: val('am_built') || '......' }, { t: 'متر مربع / میزان مجاز اشغال زمین' }, { v: val('am_occupancy') || '......' }, { t: 'متر مربع.' }], XR - 22, XL + 20, yy, 52, 26);
+    var tx = [[1310, 1090], [1090, 920], [920, 760], [760, 600], [600, 340], [340, 90]], head3 = ['', 'تعداد', 'مساحت (م²)', 'ارتفاع (م)', 'مسکونی (م²)', 'سایر (م²)'];
+    var names = { basement: 'زیرزمین', ground: 'همکف', mezz: 'نیم‌طبقه', first: 'اول', attic: 'خرپشته' }, t0 = 1290, rh = 54, rows = data.floors.length + 2;
+    ctx.save(); ctx.strokeStyle = BLACK; ctx.lineWidth = 2.5; ctx.strokeRect(XL, t0, XR - XL, rh * rows); ctx.restore();
+    tx.forEach(function (c, i) { if (i) { ctx.save(); ctx.strokeStyle = BLACK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(c[0], t0); ctx.lineTo(c[0], t0 + rh * rows); ctx.stroke(); ctx.restore(); } if (head3[i]) txt(head3[i], (c[0] + c[1]) / 2, t0 + rh / 2, 23, BLACK, 'center', true); });
+    var sum = { count: 0, area: 0, res: 0, other: 0 };
+    data.floors.forEach(function (fl, r) {
+      var yr = t0 + rh * (r + 1);
+      ctx.save(); ctx.strokeStyle = BLACK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(XL, yr); ctx.lineTo(XR, yr); ctx.stroke(); ctx.restore();
+      txt(names[fl], 1200, yr + rh / 2, 25, BLACK, 'center', true);
+      ['count', 'area', 'height', 'res', 'other'].forEach(function (k, i) { var v = val('am_fl_' + fl + '_' + k); if (v === '') return; txt(v, (tx[i + 1][0] + tx[i + 1][1]) / 2, yr + rh / 2, 25, INK, 'center'); var n = parseFloat(String(v).replace(/[^\d.]/g, '')); if (sum[k] != null && isFinite(n)) sum[k] += n; });
+    });
+    var ys = t0 + rh * (rows - 1);
+    ctx.save(); ctx.strokeStyle = BLACK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(XL, ys); ctx.lineTo(XR, ys); ctx.stroke(); ctx.restore();
+    txt('جمع', 1200, ys + rh / 2, 25, BLACK, 'center', true);
+    ['count', 'area', null, 'res', 'other'].forEach(function (k, i) { if (k && sum[k]) txt(Math.round(sum[k] * 100) / 100, (tx[i + 1][0] + tx[i + 1][1]) / 2, ys + rh / 2, 25, INK, 'center'); });
+    txt('ملاحظات:', XR - 22, t0 + rh * rows + 50, 26, BLACK, 'right', true);
+    paragraph([{ v: val('am_notes') }], XR - 22, XL + 20, t0 + rh * rows + 105, 44, 25);
+    txt('نام و امضاء دهیار', 360, 1880, 26, BLACK, 'center', true); txt(val('dehyari_name'), 360, 1840, 26, INK, 'center');
+    txt('نام و امضاء مسئول فنی دهیاری', 1030, 1880, 26, BLACK, 'center', true); txt(val('tech_name'), 1030, 1840, 26, INK, 'center');
+  }
+
+  var DRAW = { 1: page1, 2: page2, 3: page3, 4: page4 };
   function draw(n) { page = n || page; ctx.clearRect(0, 0, W, H); DRAW[page](); }
   function pageCanvas(n) { var keep = page; draw(n); var c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(canvas, 0, 0); draw(keep); return c; }
 
   var form = document.getElementById('pfl-form');
-  function read() { form.querySelectorAll('[name^="f_"]').forEach(function (el) { F[el.name.slice(2)] = el.value; }); }
+  function read() { document.querySelectorAll('#pfl-form [name^="f_"], #pfl-amend [name^="f_"]').forEach(function (el) { F[el.name.slice(2)] = el.value; }); }
   function refresh() { read(); draw(); }
-  form.addEventListener('input', refresh); form.addEventListener('change', refresh);
+  [form, document.getElementById('pfl-amend')].forEach(function (f) { if (f) { f.addEventListener('input', refresh); f.addEventListener('change', refresh); } });
   function setTab(n) { document.querySelectorAll('.pff-tabs button').forEach(function (b) { b.classList.toggle('is-on', b.getAttribute('data-page') === String(n)); }); draw(n); }
   document.querySelectorAll('.pff-tabs button').forEach(function (b) { b.addEventListener('click', function () { setTab(parseInt(b.getAttribute('data-page'), 10)); }); });
 

@@ -81,7 +81,8 @@ def status_line(permit):
         return 'مهلت پروانه تمام شده؛ تمدید لازم است'
     if info and info['state'] == 'soon':
         return f'پروانه صادر شد؛ {info["days"]} روز تا پایان مهلت'
-    return 'پروانه صادر و تحویل شد'
+    from main.office import permit_supervision       # pylint: disable=import-outside-toplevel
+    return permit_supervision.status(permit) or 'پروانه صادر و تحویل شد'
 
 
 def defaults(permit, ext):

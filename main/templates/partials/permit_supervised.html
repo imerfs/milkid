@@ -1,0 +1,23 @@
+{% load static jalali_tags persian_filters %}
+{# The building-permit files whose supervision this technical supervisor was given (context `supervised`, from permit_supervision.inspector_rows). #}
+<link rel="stylesheet" href="{% static 'css/permits.css' %}">
+<section class="pl" id="permit-supervised" aria-label="پرونده‌های ساخت تحت نظارت" style="background:#fff;border-radius:16px;padding:16px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+  <h3 style="margin:0 0 6px"><i class="fas fa-helmet-safety" aria-hidden="true"></i> پرونده‌های ساخت تحت نظارت من</h3>
+  <p style="margin:0 0 8px;color:#6b7280;font-size:.9rem">پیشرفت کار را مرحله به مرحله ببینید، نتیجه‌ی بازدید هر فرم (۹ تا ۱۲) را ثبت کنید و با متقاضی و دهیاری پیام بدهید.</p>
+  {% if supervised %}
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>متقاضی</th><th>ملک</th><th>وضعیت</th><th>فرم فعلی</th><th><span class="sr-only">پرونده</span></th></tr></thead>
+    <tbody>
+    {% for r in supervised %}
+      <tr>
+        <td><b>{{ r.file.request.user.get_full_name|default:r.file.request.user.username }}</b></td>
+        <td>{% if r.file.renewal_code %}<bdi dir="ltr">{{ r.file.renewal_code|persian_numbers }}</bdi>{% else %}{{ r.file.area_m2|persian_numbers }} م²{% endif %}</td>
+        <td><span class="pl-state pl-state-{{ r.file.state }}">{{ r.status }}</span></td>
+        <td>{% if r.form %}فرم {{ r.form|persian_numbers }}{% else %}—{% endif %}</td>
+        <td>{% if r.file.licence_state == 'issued' %}<a class="pl-open" href="{% url 'main:permit_supervision' r.file.pk %}">نظارت و فرم‌ها</a>{% else %}<a class="pl-open" href="{% url 'main:permit_file' r.file.pk %}">مشاهده</a>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="pl-empty">هنوز پرونده‌ای به شما سپرده نشده است.</p>{% endif %}
+</section>

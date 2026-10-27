@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permits
+from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_supervision, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
@@ -82,6 +82,7 @@ def permit_file(request, file_id):
         'permit': permit, 'sr': permit.request, 'people': people, 'tracker': permits.tracker(permit),
         'file_documents': permit.documents.filter(person__isnull=True), 'mine': mine, 'can_decide': can_decide,
         'staff_view': not mine, 'embed': bool(request.GET.get('embed')),
+        'supervisor_view': permit.supervisor_id == request.user.id and not mine and not can_decide,
         'suggestions': permits.suggestions(permit) if can_decide else [],
         'history': list(reversed(permit.request.workflow_history or [])),
         'other_requests': permits.applicant_history(permit) if can_decide else [],
@@ -517,7 +518,10 @@ def permit_licence(request, file_id):
         'sides': [(side, label, [(f'sd_{side}_{key}', text, data.get(f'sd_{side}_{key}', '')) for key, text in permit_step7.SIDE_FIELDS]) for side, label in permit_step7.SIDES],
         'floors': [(floor, label, [(f'fl_{floor}_{key}', text, data.get(f'fl_{floor}_{key}', '')) for key, text in permit_step7.FLOOR_FIELDS]) for floor, label in permit_step7.FLOORS],
         'issued': (permit.licence or {}).get('issued') or {},
-        'payload': {'f': data, 'file': permit.pk, 'floors': [k for k, _ in permit_step7.FLOORS], 'sides': [k for k, _ in permit_step7.SIDES],
+        'am': permit_step7.am_payload(permit), 'am_fields': [(f'am_{k}', permit_step7.AM_LABELS[k], permit_step7.am_payload(permit).get(f'am_{k}', '')) for k in permit_step7.AM_TEXT],
+        'am_sides': [(side, label, [(f'am_sd_{side}_{k}', text, permit_step7.am_payload(permit).get(f'am_sd_{side}_{k}', '')) for k, text in permit_step7.SIDE_FIELDS]) for side, label in permit_step7.AM_SIDES],
+        'am_floors': [(floor, label, [(f'am_fl_{floor}_{k}', text, permit_step7.am_payload(permit).get(f'am_fl_{floor}_{k}', '')) for k, text in permit_step7.FLOOR_FIELDS]) for floor, label in permit_step7.FLOORS],
+        'payload': {'f': {**data, **permit_step7.am_payload(permit)}, 'file': permit.pk, 'floors': [k for k, _ in permit_step7.FLOORS], 'sides': [k for k, _ in permit_step7.SIDES],
                     'choices': {k: dict(v) for k, v in permit_step7.CHOICES.items()}, 'letterhead': static('forms/permit/letterhead.jpg')},
     })
 
@@ -598,3 +602,112 @@ def permit_extension_save(request, file_id):
 @require_POST
 def permit_extension_issue(request, file_id):
     return _extension_action(request, file_id, lambda p: permit_extension.issue(request.user, p, request.POST), 'تمدید ثبت شد.')
+
+
+# ---------- supervision: forms 8-13, the technical supervisor, messages ----------
+
+@login_required
+def permit_supervision_page(request, file_id):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.licence_state != 'issued':
+        messages.error(request, 'نظارت پس از صدور پروانه آغاز می‌شود.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    is_supervisor = permit.supervisor_id == request.user.id
+    data = permit_supervision.payload(permit)
+    now = permit_supervision.current(permit)
+    active = permit.stage_no == 7 and now is not None
+    steps = []
+    for n in permit_supervision.NUMBERS:
+        info = data[n]
+        steps.append({'n': n, 'title': permit_supervision.TITLES[n], 'state': info['state'], 'text': permit_supervision.STATE_TEXT.get(info['state'], ''),
+                      'now': n == now, 'docs': list(permit.documents.filter(pk__in=info['docs'], kind='supervision_form')),
+                      'approved': info['state'] == 'approved' and info.get('approved_at', '')})
+    cur = data.get(now) if now else None
+    items = []
+    if now in permit_supervision.ITEMS:
+        for i, (label, a, b) in enumerate(permit_supervision.ITEMS[now], start=1):
+            items.append({'i': i, 'label': label, 'a': a, 'b': b, 'v': cur['c'].get(str(i), '')})
+    fields = [(key, permit_supervision.LABELS.get(key, key), cur['f'].get(key, '')) for key in ('number', 'date') + permit_supervision.FIELDS[now]] if cur else []
+    return render(request, 'main/permits/supervision.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'is_supervisor': is_supervisor, 'steps': steps, 'now': now, 'cur': cur, 'items': items,
+        'fields': fields, 'active': active, 'can_fill': active and permit_supervision.may_fill(request.user, permit) and cur['state'] in permit_supervision.OPEN_STATES,
+        'can_upload': active and mine and cur['state'] in permit_supervision.OPEN_STATES, 'can_decide': active and staff,
+        'supervisor': permit.supervisor, 'supervisors': permit_supervision.supervisors_for(permit) if staff else [],
+        'commission': (permit.supervision or {}).get('commission') or [], 'thread': permit_supervision.thread(permit),
+        'can_talk': mine or staff or is_supervisor, 'owner_name': permit.people.first().full_name,
+        'payload': {'forms': {str(n): {'f': d['f'], 'c': d['c'], 'result': d['result'], 'notes': d['notes']} for n, d in data.items()}, 'file': permit.pk,
+                    'now': now or 13, 'blank': {str(n): static(f'forms/permit/form{n:02d}_blank.jpg') for n in permit_supervision.NUMBERS},
+                    'counts': {str(n): len(v) for n, v in permit_supervision.ITEMS.items()}},
+    })
+
+
+def _sup_action(request, file_id, action, ok):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_supervision', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_sup_fill(request, file_id, n):
+    return _sup_action(request, file_id, lambda p: permit_supervision.fill(request.user, p, n, request.POST), 'اطلاعات فرم ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_sup_upload(request, file_id, n):
+    return _sup_action(request, file_id, lambda p: permit_supervision.upload(request.user, p, n, request.FILES.getlist('signed')),
+                       'فرم امضاشده فرستاده شد؛ دهیاری آن را تایید می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_sup_approve(request, file_id, n):
+    return _sup_action(request, file_id, lambda p: permit_supervision.approve(request.user, p, n), 'فرم تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_sup_return(request, file_id, n):
+    return _sup_action(request, file_id, lambda p: permit_supervision.send_back(request.user, p, n, request.POST.get('notes', '')), 'فرم برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_sup_refer(request, file_id, n):
+    return _sup_action(request, file_id, lambda p: permit_supervision.refer(request.user, p, n, request.POST), 'تخلف به کمیسیون ماده ۹۹ ارجاع شد.')
+
+
+@login_required
+@require_POST
+def permit_sup_decide(request, file_id, n):
+    return _sup_action(request, file_id, lambda p: permit_supervision.decide(request.user, p, n, request.POST), 'رای کمیسیون ثبت شد.')
+
+
+@login_required
+@require_POST
+def permit_sup_assign(request, file_id):
+    return _sup_action(request, file_id, lambda p: permit_supervision.assign(request.user, p, request.POST.get('supervisor') or None), 'ناظر فنی پرونده ثبت شد.')
+
+
+@login_required
+@require_POST
+def permit_sup_message(request, file_id):
+    return _sup_action(request, file_id, lambda p: permit_supervision.post_message(request.user, p, request.POST.get('text', '')), 'پیام فرستاده شد.')
+
+
+@login_required
+@require_POST
+def permit_licence_amend(request, file_id):
+    return _licence_action(request, file_id, lambda p: permit_step7.save_amendment(request.user, p, request.POST), 'فرم اصلاحات و تغییرات ذخیره شد.')

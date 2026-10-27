@@ -1,0 +1,134 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}نظارت بر ساخت - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff pfs">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-helmet-safety" aria-hidden="true"></i></span>
+    <div>
+      <h1>نظارت بر ساخت: فرم‌های ۸ تا ۱۳</h1>
+      <p>{{ owner_name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi> · ناظر فنی: {% if supervisor %}{{ supervisor.get_full_name|default:supervisor.username }}{% else %}تعیین نشده{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-submitted">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pfs-steps" aria-label="فرم‌های نظارت">
+    {% for s in steps %}
+    <li class="{{ s.state }}{% if s.now %} now{% endif %}"><b>{{ s.n|persian_numbers }}</b><span>{{ s.title }}</span><em>{{ s.text }}</em>
+      {% for d in s.docs %}<a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener" title="{{ d.original_name }}"><i class="fas fa-paperclip" aria-hidden="true"></i></a>{% endfor %}</li>
+    {% endfor %}
+  </ol>
+
+  {% if mine %}{% include 'main/permits/_paper.html' with stage=9 %}{% endif %}
+
+  {% if permit.stage_no >= 9 %}<div class="pf-card pf-shamim"><b><i class="fas fa-circle-check" aria-hidden="true"></i> همه‌ی فرم‌های نظارت تایید شد</b>
+    <p>گزارش پیشرفت (فرم ۱۳) و درخواست گواهی پایان کار ثبت شد.</p></div>{% endif %}
+
+  {% if staff %}
+  <form method="post" action="{% url 'main:permit_sup_assign' permit.pk %}" class="pf-card pf-form pfs-assign">{% csrf_token %}
+    {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+    <label>ناظر فنی سامانه برای این پرونده (پیشرفت کار و فرم‌ها را در پنل خودش می‌بیند و با متقاضی پیام می‌دهد)
+      <select name="supervisor"><option value="">— بدون ناظر —</option>{% for p in supervisors %}<option value="{{ p.user_id }}"{% if p.user_id == supervisor.pk %} selected{% endif %}>{{ p.user.get_full_name|default:p.user.username }}</option>{% endfor %}</select></label>
+    <button class="pf-btn" type="submit"><i class="fas fa-user-check" aria-hidden="true"></i>ثبت ناظر</button>
+  </form>
+  {% endif %}
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+      {% if cur %}
+      <section class="pf-card pf-form pff-form">
+        <h2><i class="fas fa-clipboard-list" aria-hidden="true"></i>فرم {{ now|persian_numbers }}: {{ cur.title }}</h2>
+        <p class="pf-hint">وضعیت: <b>{% for s in steps %}{% if s.now %}{{ s.text }}{% endif %}{% endfor %}</b></p>
+        {% if cur.state == 'returned' and cur.return_notes %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری برگرداند:</p><blockquote>{{ cur.return_notes }}</blockquote>{% endif %}
+        {% if cur.state == 'violation' %}<p class="pf-bad"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> تخلف گزارش شد: {{ cur.notes }}</p>
+          {% if can_decide %}<form method="post" action="{% url 'main:permit_sup_refer' permit.pk now %}" class="pf-form">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+            <div class="pff-fields"><label>شماره‌ی پرونده در کمیسیون (اختیاری)<input name="case_ref" maxlength="60"></label><label>تاریخ ارجاع<input name="case_date" placeholder="۱۴۰۵/۰۸/۰۱"></label></div>
+            <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-gavel" aria-hidden="true"></i>ارجاع به کمیسیون ماده ۹۹</button></form>{% endif %}
+        {% elif cur.state == 'commission' %}<p class="pf-warn"><i class="fas fa-gavel" aria-hidden="true"></i> تخلف در کمیسیون ماده ۹۹ است{% if cur.case.ref %} (پرونده {{ cur.case.ref|persian_numbers }}){% endif %}.</p>
+          {% if can_decide %}<form method="post" action="{% url 'main:permit_sup_decide' permit.pk now %}" class="pf-form">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+            <div class="pff-fields"><label>شماره‌ی رای<input name="vote_no" required maxlength="40"></label><label>تاریخ رای<input name="vote_date" placeholder="۱۴۰۵/۰۸/۱۰"></label><label class="wide">تصمیم کمیسیون<textarea name="decision" rows="2" required maxlength="500"></textarea></label></div>
+            <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-file-signature" aria-hidden="true"></i>ثبت رای و بازدید دوباره</button></form>{% endif %}
+        {% endif %}
+
+        {% if can_fill %}
+        <form method="post" action="{% url 'main:permit_sup_fill' permit.pk now %}" id="pfs-form" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>مشخصات فرم (از پرونده پر شده؛ اصلاح کنید)</h3>
+          <div class="pff-fields">{% for key, label, value in fields %}<label>{{ label }}<input name="f_{{ key }}" value="{{ value }}" maxlength="120"></label>{% endfor %}</div>
+          {% if items %}
+          <h3>گزارش بازدید ناظر</h3>
+          {% for it in items %}
+          <fieldset class="pfs-item"><legend>{{ it.label }}</legend>
+            <label><input type="radio" name="c_{{ it.i }}" value="a"{% if it.v == 'a' %} checked{% endif %}> {{ it.a }}</label>
+            <label><input type="radio" name="c_{{ it.i }}" value="b"{% if it.v == 'b' %} checked{% endif %}> {{ it.b }}</label>
+          </fieldset>
+          {% endfor %}
+          <label>توضیحات<textarea name="notes" rows="2" maxlength="500">{{ cur.notes }}</textarea></label>
+          <div class="pfs-result">
+            <label><input type="radio" name="result" value="ok"{% if cur.result == 'ok' %} checked{% endif %}> عدم وقوع تخلف</label>
+            <label><input type="radio" name="result" value="violation"{% if cur.result == 'violation' %} checked{% endif %}> وقوع تخلف (گزارش به دهیاری برای کمیسیون ماده ۹۹)</label>
+          </div>
+          {% endif %}
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button>
+        </form>
+        {% endif %}
+
+        {% if can_upload %}
+        <form method="post" action="{% url 'main:permit_sup_upload' permit.pk now %}" enctype="multipart/form-data" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>بارگذاری فرم امضاشده</h3>
+          <p class="pf-hint">فرم را چاپ کنید، مهندس ناظر بازدید و مهر و امضا کند و شما هم امضا کنید؛ سپس تصویرش را اینجا بفرستید.</p>
+          <label>تصویر فرم (pdf یا عکس)<input type="file" name="signed" multiple required accept=".pdf,.jpg,.jpeg,.png"></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال برای تایید دهیاری</button>
+        </form>
+        {% endif %}
+
+        {% if can_decide and cur.state == 'uploaded' %}
+        <div class="pfs-decide">
+          <ul class="pf-docs">{% for s in steps %}{% if s.now %}{% for d in s.docs %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ d.original_name }}</a></li>{% endfor %}{% endif %}{% endfor %}</ul>
+          <form method="post" action="{% url 'main:permit_sup_approve' permit.pk now %}" class="pf-form">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+            <button class="pf-btn pf-btn-main" type="submit" onclick="return confirm('امضا و مهر ناظر روی فرم دیده شد و تایید شود؟')"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید فرم و رفتن به فرم بعد</button></form>
+          <form method="post" action="{% url 'main:permit_sup_return' permit.pk now %}" class="pf-form">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+            <label>مشکل فرم چیست؟<textarea name="notes" rows="2" required maxlength="1000"></textarea></label>
+            <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button></form>
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if commission %}
+      <section class="pf-card"><h2><i class="fas fa-gavel" aria-hidden="true"></i>سوابق کمیسیون ماده ۹۹</h2>
+        {% for c in commission %}<p>فرم {{ c.form|persian_numbers }} · رای {{ c.vote_no|persian_numbers }} ({{ c.vote_date|persian_numbers }}): {{ c.decision }} <small>— تخلف: {{ c.violation }}</small></p>{% endfor %}
+      </section>
+      {% endif %}
+
+      {% if can_talk %}
+      <section class="pf-card pfs-chat" aria-labelledby="pfs-chat-h"><h2 id="pfs-chat-h"><i class="fas fa-comments" aria-hidden="true"></i>گفت‌وگوی پرونده (متقاضی، ناظر فنی، دهیاری)</h2>
+        {% for m in thread %}<p class="pfs-msg"><b>{{ m.who }}:</b> {{ m.text }} <small>{{ m.by }} · {{ m.at|persian_numbers }}</small></p>{% empty %}<p class="pf-hint">هنوز پیامی نیست.</p>{% endfor %}
+        <form method="post" action="{% url 'main:permit_sup_message' permit.pk %}" class="pf-form">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>پیام<textarea name="text" rows="2" maxlength="600" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال</button></form>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="pff-view">
+      <div class="pff-tabs pfs-tabs" role="tablist">{% for s in steps %}<button type="button" data-page="{{ s.n }}" role="tab"{% if s.now %} class="is-on"{% endif %}>{{ s.n|persian_numbers }}</button>{% endfor %}</div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pfs-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود این فرم (PDF)</button>
+        <button type="button" class="pf-btn" id="pfs-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ این فرم</button>
+      </div>
+      <p class="pf-hint">فرم را چاپ کنید؛ مهندس ناظر بازدید می‌کند و فرم را مهر و امضا می‌کند، مالک هم امضا می‌کند.</p>
+    </aside>
+  </div>
+</div>
+{{ payload|json_script:"pfs-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/permit-supervision-form.js' %}" defer></script>
+{% endblock %}

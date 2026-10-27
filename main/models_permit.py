@@ -18,7 +18,7 @@ STAGES = [
     (4, 'نقشه‌ها و برآورد هزینه'),
     (5, 'پرداخت یکپارچه'),
     (6, 'بیمه تأمین اجتماعی'),
-    (7, 'پروانه، نظارت و خدمات'),
+    (7, 'پروانه و نظارت بر ساخت'),
     (8, 'خدمات و اختتامیه'),
     (9, 'درخواست پایان کار'),
 ]
@@ -107,6 +107,9 @@ class PermitFile(models.Model):
     licence_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     # the permit lasts one year; each renewal (at most two) is a request + a renewal form (main/office/permit_extension.py)
     extensions = models.JSONField(default=list, blank=True)
+    # the supervision: the technical supervisor (inspector) following the work and forms 8-13 (main/office/permit_supervision.py)
+    supervisor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='supervised_permits')
+    supervision = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -130,6 +133,8 @@ class PermitFile(models.Model):
         """One line for the lists: where the file stands now."""
         if self.state != 'done':
             return self.get_state_display()
+        if self.stage_no >= 9:
+            return 'گزارش‌های نظارت کامل شد؛ درخواست گواهی پایان کار'
         if self.stage_no >= 7:
             if self.licence_state != 'issued':
                 return 'پروانه در حال تهیه (دهیاری)'
@@ -164,6 +169,7 @@ class PermitFile(models.Model):
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
                 or (self.stage_no >= 7 and self.licence_state != 'issued')
                 or (self.stage_no >= 7 and any(e.get('state') == 'requested' for e in self.extensions or []))
+                or (self.stage_no == 7 and any(f.get('state') in ('uploaded', 'violation') for f in (self.supervision or {}).get('forms', {}).values()))
                 or (self.stage_no == 6 and not self.insurance_state
                     and (self.paid_up or any(not p.get('ok') for p in (self.insurance or {}).get('payments') or []))))
 
@@ -215,7 +221,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'),
+        ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]
 

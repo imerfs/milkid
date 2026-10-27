@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from main import lifecycle
 from main.accounting.parse import jalali_str
-from main.access import can
+from main.access import can, role_of
 from main.gis import locks
 from main.models import (MapParcel, Municipality, ParcelArchive, PermitDocument, PermitFile, PermitPerson, ServiceRequest,
                          UserProfile)
@@ -165,6 +165,8 @@ def find(user, file_id):
         return None
     if permit.request.user_id == user.id:
         return permit
+    if role_of(user) == 'inspector':             # the technical supervisor sees the files he was linked to, not the village's
+        return permit if permit.supervisor_id == user.id else None
     if can(user, 'permit.view') and files_for(user).filter(pk=file_id).exists():
         return permit
     return None
