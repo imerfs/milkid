@@ -80,7 +80,8 @@ def defaults(permit, kind):
         'n': lic.get('sd_north_actual', ''), 's': lic.get('sd_south_actual', ''), 'e': lic.get('sd_east_actual', ''), 'w': lic.get('sd_west_actual', ''),
         'street': next((lic.get(f'sd_{x}_passage') for x in ('north', 'south', 'east', 'west') if lic.get(f'sd_{x}_passage')), ''), 'hadi_date': '',
         'basis': f'شماره پروانه {permit_no} مورخ {permit_date}' if permit_no else '', 'utm_x': answer.get('center_x', ''), 'utm_y': answer.get('center_y', ''),
-        'notes': '', 'permit_no': permit_no, 'permit_date': permit_date, 'endwork_no': '', 'endwork_date': '', 'ref_no': '', 'ref_date': '', 'slip_no': '', 'slip_date': '',
+        'notes': '', 'permit_no': permit_no, 'permit_date': permit_date, 'endwork_no': (permit.endwork or {}).get('f', {}).get('number', '') if permit.endwork_state == 'issued' else '',
+        'endwork_date': (permit.endwork or {}).get('f', {}).get('date', '') if permit.endwork_state == 'issued' else '', 'ref_no': '', 'ref_date': '', 'slip_no': '', 'slip_date': '',
         'number': '', 'date': permit_step2.today(), 'dehyari_name': permit_step7._signers(village)[0],         # pylint: disable=protected-access
     }
     return {key: data.get(key, '') for key in KINDS[kind]['fields'] + ('number', 'date', 'dehyari_name')}

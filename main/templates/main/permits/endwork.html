@@ -1,0 +1,91 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}گواهی پایان ساخت - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-flag-checkered" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی آخر: درخواست و گواهی پایان ساخت</h1>
+      <p>پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi> · {{ state_text }}</p>
+    </div>
+    <span class="pf-state pf-state-{% if state == 'issued' %}done{% elif state == 'rejected' %}rejected{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li class="ok"><b>۱</b><span>فرم‌های نظارت (۸ تا ۱۳) تایید شد.</span></li>
+    <li class="{% if state and state != 'rejected' %}ok{% endif %}"><b>۲</b><span>مالک درخواست گواهی پایان ساخت می‌دهد.</span></li>
+    <li class="{% if state == 'approved' or state == 'issued' %}ok{% endif %}"><b>۳</b><span>کارشناس اداری، کارشناس فنی یا دهیار پاسخ می‌دهند و گواهی شماره می‌گیرد.</span></li>
+    <li class="{% if state == 'issued' %}ok{% endif %}"><b>۴</b><span>دهیار و مسئول فنی گواهی چاپی را دستی مهر و امضا می‌کنند.</span></li>
+  </ol>
+  {% if mine %}{% include 'main/permits/_paper.html' with stage=11 %}{% endif %}
+
+  <div class="pf-card">
+    {% if state == 'rejected' and info.reason %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> درخواست رد شد:</p><blockquote>{{ info.reason }}</blockquote>{% endif %}
+    {% if state == 'issued' %}<p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> گواهی شماره‌ی {{ info.f.number|persian_numbers }} صادر شد ({{ info.issued_by }}، {{ info.issued_at|persian_numbers }}). پرونده به پایان رسید.</p>
+    {% elif state == 'requested' %}<p class="pf-code">درخواست {{ info.req_no|persian_numbers }} ({{ info.req_date|persian_numbers }}) ثبت شد؛ منتظر پاسخ دهیاری.</p>
+    {% elif state == 'approved' %}<p class="pf-ok">درخواست تایید شد؛ گواهی را چاپ کنید و برای مهر و امضای دهیار و مسئول فنی ببرید.</p>
+    {% elif not state or state == 'rejected' %}<p>همه‌ی فرم‌های نظارت تایید شده است. برای دریافت گواهی پایان ساخت درخواست بدهید.</p>{% endif %}
+    {% if can_request %}
+    <form method="post" action="{% url 'main:permit_endwork_request' permit.pk %}" class="pf-form">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>درخواست گواهی پایان ساخت</button></form>
+    {% endif %}
+  </div>
+
+  {% if state in 'requested approved issued' and state %}
+  <div class="pff-grid">
+    <div class="pff-edit">
+      <form method="post" action="{% url 'main:permit_endwork_save' permit.pk %}" class="pf-card pf-form pff-form" id="pfw-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        {% if editing %}<p class="pf-hint">گواهی از اطلاعات پرونده، پروانه و نظارت پر شده است؛ هر خانه را که لازم است اصلاح کنید.</p>{% endif %}
+        <div class="pff-fields">{% for key, label, value in fields %}<label{% if key == 'address' or key == 'notes' %} class="wide"{% endif %}>{{ label }}<input name="f_{{ key }}" value="{{ value }}" maxlength="150" {% if not editing %}readonly{% endif %}></label>{% endfor %}</div>
+        <h3>ابعاد ملک (مطابق سند / وضع موجود ← پس از رعایت برهای اصلاحی)</h3>
+        {% for side, label, deed, after in sides %}<div class="pff-fields"><b>{{ label }}</b>
+          <label>ابعاد مطابق سند / موجود<input name="f_sd_{{ side }}_deed" value="{{ deed }}" maxlength="20" {% if not editing %}readonly{% endif %}></label>
+          <label>پس از رعایت برها<input name="f_sd_{{ side }}_after" value="{{ after }}" maxlength="20" {% if not editing %}readonly{% endif %}></label></div>{% endfor %}
+        <h3>طبقات</h3>
+        {% for floor, label, count, area, use in floors %}<div class="pff-fields"><b>{{ label }}</b>
+          <label>تعداد واحد<input name="f_fl_{{ floor }}_count" value="{{ count }}" maxlength="20" {% if not editing %}readonly{% endif %}></label>
+          <label>مساحت (م²)<input name="f_fl_{{ floor }}_area" value="{{ area }}" maxlength="20" {% if not editing %}readonly{% endif %}></label>
+          <label>نوع استفاده<input name="f_fl_{{ floor }}_use" value="{{ use }}" maxlength="40" {% if not editing %}readonly{% endif %}></label></div>{% endfor %}
+        {% if editing %}
+        <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره</button>
+        {% if state == 'requested' %}
+        <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_endwork_approve' permit.pk %}"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید درخواست (شماره‌دار و قابل چاپ)</button>
+        {% else %}
+        <div class="pfe-issue">
+          <label class="pff-check"><input type="checkbox" name="signed"> گواهی چاپی با مهر و امضای <b>دهیار</b> و <b>مسئول فنی</b> به متقاضی تحویل شد</label>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_endwork_issue' permit.pk %}" onclick="return confirm('صدور گواهی ثبت شود؟ پرونده به پایان می‌رسد.')"><i class="fas fa-stamp" aria-hidden="true"></i>ثبت صدور و تحویل گواهی</button>
+        </div>
+        {% endif %}
+        {% endif %}
+      </form>
+      {% if staff and state == 'requested' %}
+      <form method="post" action="{% url 'main:permit_endwork_reject' permit.pk %}" class="pf-card pf-form">{% csrf_token %}{% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <label>دلیل رد درخواست<textarea name="reason" rows="2" required maxlength="600"></textarea></label>
+        <button class="pf-btn" type="submit"><i class="fas fa-ban" aria-hidden="true"></i>رد درخواست</button></form>
+      {% endif %}
+    </div>
+    <aside class="pff-view">
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش گواهی"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      {% if printable %}
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pfw-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود (PDF)</button>
+        <button type="button" class="pf-btn" id="pfw-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ</button>
+      </div>
+      <p class="pf-hint">گواهی را چاپ کنید؛ دهیار و مسئول فنی دهیاری آن را دستی مهر و امضا می‌کنند.</p>
+      {% else %}<p class="pf-hint">پس از تایید دهیاری می‌توانید گواهی را چاپ کنید؛ پیش‌نمایش فقط برای بررسی است.</p>
+      <div hidden><button type="button" id="pfw-dl"></button><button type="button" id="pfw-print"></button></div>{% endif %}
+    </aside>
+  </div>
+  {{ payload|json_script:"pfw-data" }}
+  <script src="{% static 'js/pdf-lite.js' %}" defer></script>
+  <script src="{% static 'js/permit-endwork-form.js' %}" defer></script>
+  {% endif %}
+</div>
+{% endblock %}

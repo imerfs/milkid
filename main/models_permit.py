@@ -111,6 +111,9 @@ class PermitFile(models.Model):
     supervisor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='supervised_permits')
     # the owner's requests for utility letters (electricity, gas, water) the dehyari signs (main/office/permit_services.py)
     services = models.JSONField(default=list, blank=True)
+    # the end-of-work request and certificate (main/office/permit_endwork.py): '' / requested / approved / issued / rejected
+    endwork = models.JSONField(default=dict, blank=True)
+    endwork_state = models.CharField(max_length=10, blank=True, default='')
     supervision = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -136,7 +139,8 @@ class PermitFile(models.Model):
         if self.state != 'done':
             return self.get_state_display()
         if self.stage_no >= 9:
-            return 'گزارش‌های نظارت کامل شد؛ درخواست گواهی پایان کار'
+            return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
+                    'issued': 'گواهی پایان کار صادر شد', 'rejected': 'درخواست پایان کار رد شد'}.get(self.endwork_state, '')
         if self.stage_no >= 7:
             if self.licence_state != 'issued':
                 return 'پروانه در حال تهیه (دهیاری)'
@@ -172,6 +176,7 @@ class PermitFile(models.Model):
                 or (self.stage_no >= 7 and self.licence_state != 'issued')
                 or (self.stage_no >= 7 and any(e.get('state') == 'requested' for e in self.extensions or []))
                 or (self.stage_no >= 7 and any(s.get('state') == 'requested' for s in self.services or []))
+                or (self.stage_no >= 9 and self.endwork_state in ('requested', 'approved'))
                 or (self.stage_no == 7 and any(f.get('state') in ('uploaded', 'violation') for f in (self.supervision or {}).get('forms', {}).values()))
                 or (self.stage_no == 6 and not self.insurance_state
                     and (self.paid_up or any(not p.get('ok') for p in (self.insurance or {}).get('payments') or []))))

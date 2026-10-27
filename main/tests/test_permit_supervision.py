@@ -136,7 +136,7 @@ class TheForms(Supervised):
         permit = self.reload()
         self.assertEqual(permit.stage_no, 9)
         self.assertIsNone(permit_supervision.current(permit))
-        self.assertEqual(permit.status_text, 'گزارش‌های نظارت کامل شد؛ درخواست گواهی پایان کار')
+        self.assertEqual(permit.status_text, 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی')
         data = permit_supervision.payload(permit)[13]['f']
         self.assertEqual((data['s1_no'], data['s4_no']), (permit_supervision.forms(permit)[9]['f']['number'], permit_supervision.forms(permit)[12]['f']['number']))
 
