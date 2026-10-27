@@ -10,43 +10,33 @@ from .models import UserProfile, ServiceRequest, RequestDocument, Service, Servi
 from .widgets import JalaliSelectDateWidget, JalaliDateInput, JalaliDateTimeInput, JalaliDateField, JalaliDateTimeField
 
 class ContactForm(forms.Form):
-    name = forms.CharField(
-        max_length=100,
-        label='نام و نام خانوادگی',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'نام خود را وارد کنید',
-            'dir': 'rtl'
-        })
-    )
+    """The public contact form: a name, a way to answer (an email or a mobile number, at least one), a subject and the message."""
+    SUBJECTS = [('services', 'پرسش درباره‌ی خدمات'), ('technical', 'مشکل فنی در سایت'), ('suggestion', 'پیشنهاد یا انتقاد'),
+                ('municipality', 'همکاری و ثبت‌نام دهیاری'), ('other', 'سایر')]
 
-    email = forms.EmailField(
-        label='ایمیل',
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'example@email.com'
-        })
-    )
+    name = forms.CharField(max_length=100, label='نام و نام خانوادگی',
+                           widget=forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'name'}))
+    email = forms.EmailField(required=False, label='ایمیل',
+                             widget=forms.EmailInput(attrs={'class': 'form-control', 'dir': 'ltr', 'placeholder': 'example@email.com', 'autocomplete': 'email'}))
+    phone = forms.CharField(required=False, max_length=11, label='شماره‌ی موبایل',
+                            widget=forms.TextInput(attrs={'class': 'form-control', 'dir': 'ltr', 'placeholder': '09123456789', 'inputmode': 'numeric', 'autocomplete': 'tel'}))
+    subject = forms.ChoiceField(choices=SUBJECTS, label='موضوع', widget=forms.Select(attrs={'class': 'form-select'}))
+    message = forms.CharField(min_length=5, max_length=5000, label='پیام',
+                              widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 6, 'dir': 'rtl'}))
+    website = forms.CharField(required=False, widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off'}))     # honeypot: people leave it empty
 
-    phone = forms.CharField(
-        max_length=15,
-        label='شماره تماس',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '09123456789',
-            'dir': 'ltr'
-        })
-    )
+    def clean_phone(self):
+        raw = (self.cleaned_data.get('phone') or '').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')).strip()
+        if raw and not re.fullmatch(r'09\d{9}', raw):
+            raise forms.ValidationError('شماره‌ی موبایل را مثل 09123456789 بنویسید.')
+        return raw
 
-    message = forms.CharField(
-        label='پیام',
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 5,
-            'placeholder': 'پیام خود را بنویسید...',
-            'dir': 'rtl'
-        })
-    )
+    def clean(self):
+        data = super().clean()
+        if not data.get('email') and not data.get('phone') and 'email' not in self.errors and 'phone' not in self.errors:
+            raise forms.ValidationError('برای پاسخ‌گویی، ایمیل یا شماره‌ی موبایل خود را بنویسید.')
+        return data
+
 
 class CustomAuthenticationForm(AuthenticationForm):
     """
