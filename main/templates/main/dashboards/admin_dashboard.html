@@ -652,7 +652,7 @@
                 <nav class="mt-6">
                     <a
                         href="#"
-                        class="sidebar-link{% if not server_open and not mail_open %} active{% endif %} flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        class="sidebar-link{% if not server_open and not mail_open and not monitor_open %} active{% endif %} flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                         onclick="showTab('dashboard', this)"
                     >
                         <div class="flex items-center">
@@ -713,7 +713,7 @@
                     </a>
                     <a
                         href="{% url 'main:admin_monitoring' %}"
-                        class="sidebar-link flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
+                        class="sidebar-link{% if monitor_open %} active{% endif %} flex items-center justify-between py-4 px-6 rounded-lg mx-3 my-1"
                     >
                         <div class="flex items-center">
                             <i class="fas fa-eye ml-3"></i>نظارت بر مکاتبات و گفتگوها
@@ -804,7 +804,7 @@
 
                 <main class="flex-1 overflow-y-auto p-6 md:p-8 main-content">
                     <!-- Dashboard Tab -->
-                    <div id="dashboard-tab"{% if not server_open and not mail_open %} class="active"{% endif %}>
+                    <div id="dashboard-tab"{% if not server_open and not mail_open and not monitor_open %} class="active"{% endif %}>
                         <div class="flex justify-between items-center mb-8">
                             <h2 class="text-3xl font-bold text-gray-800">
                                 داشبورد مدیریت کلی سیستم
@@ -1342,6 +1342,9 @@
                                 </div>
                                 <span class="text-xs text-gray-400">به‌روزرسانی خودکار هر ۳۰ ثانیه</span>
                             </div>
+                            <div class="px-6 py-3 text-xs text-amber-800 bg-amber-50 border-b border-amber-100">
+                                <i class="fas fa-key ml-1"></i>رمز عبور کاربران فقط به‌صورت رمزنگاری‌شده ذخیره می‌شود و قابل نمایش نیست؛ برای تحویل رمز به کاربر از دکمه‌ی کلید در ستون اقدامات استفاده کنید تا یک رمز موقت تازه بسازید (فقط یک بار نمایش داده می‌شود و کاربر باید در ورود بعدی آن را عوض کند).
+                            </div>
 
                             <div class="overflow-x-auto">
                                 <table class="w-full text-right" id="monitoring-users-table">
@@ -1525,6 +1528,17 @@
                                                     <span class="text-[11px] text-gray-400 italic px-2 py-1 bg-gray-100 rounded-lg">
                                                         غیرقابل تغییر
                                                     </span>
+                                                    {% endif %}
+
+                                                    {% if item.can_toggle %}
+                                                    <button
+                                                        type="button"
+                                                        onclick="resetUserPassword({{ item.user.id }}, '{{ item.user.get_full_name|default:item.user.username|escapejs }}')"
+                                                        class="p-1.5 text-gray-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
+                                                        title="ساخت رمز موقت جدید برای کاربر"
+                                                    >
+                                                        <i class="fas fa-key text-sm text-amber-500"></i>
+                                                    </button>
                                                     {% endif %}
 
                                                     <!-- View Details Button -->
@@ -2312,6 +2326,12 @@
                     <!-- Admin mailbox (embedded) -->
                     <div id="mail-tab" class="active">
                         {% include 'main/admin/_mail_panel.html' %}
+                    </div>
+                    {% endif %}
+                    {% if monitor_open %}
+                    <!-- Letters and chats monitoring (embedded) -->
+                    <div id="monitor-tab" class="active">
+                        {% include 'main/admin/_monitoring_panel.html' %}
                     </div>
                     {% endif %}
                     {% if server_open %}
@@ -3565,6 +3585,24 @@
         }
 
         // Toggle user access (block/unblock)
+        async function resetUserPassword(userId, userName) {
+            if (!confirm(`برای «${userName}» رمز موقت تازه ساخته شود؟ رمز فعلی او از کار می‌افتد و از همه‌ی دستگاه‌ها خارج می‌شود.`)) return;
+            try {
+                const res = await fetch(`/api/admin/users/${userId}/temp-password/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    window.prompt(`رمز موقت «${data.user_name}» (فقط همین یک بار؛ کپی کنید):`, data.password);
+                } else {
+                    showNotification('error', data.message || 'رمز ساخته نشد.');
+                }
+            } catch (err) {
+                showNotification('error', 'ارتباط با سرور برقرار نشد.');
+            }
+        }
+
         async function toggleUserAccess(userId, userName) {
             const row = document.getElementById(`user-row-${userId}`);
             const currentIsActive = row ? (row.getAttribute('data-is-active') === '1') : true;
