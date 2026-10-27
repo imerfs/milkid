@@ -97,6 +97,9 @@
           <p><b>وضعیت:</b> {{ permit.status_text }}</p>
           <a class="pf-btn pf-btn-main" href="{% url 'main:permit_licence' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-stamp" aria-hidden="true"></i>فرم پروانه‌ی ساختمان</a>
           {% endif %}
+          {% if permit.stage_no >= 9 %}
+          <p><a class="pf-btn pf-btn-main" href="{% url 'main:permit_endwork' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-flag-checkered" aria-hidden="true"></i>درخواست و گواهی پایان ساخت</a></p>
+          {% endif %}
           {% if permit.licence_state == 'issued' %}
           <p><a class="pf-btn" href="{% url 'main:permit_services' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-plug" aria-hidden="true"></i>نامه‌های خدمات (برق، گاز، آب)</a></p>
           <p><a class="pf-btn pf-btn-main" href="{% url 'main:permit_supervision' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-helmet-safety" aria-hidden="true"></i>نظارت بر ساخت (فرم‌های ۸ تا ۱۳)</a></p>

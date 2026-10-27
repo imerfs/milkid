@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_services, permit_supervision, permits
+from main.office import permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
@@ -793,3 +793,71 @@ def permit_service_cancel(request, file_id, sid):
 @require_POST
 def permit_service_issue(request, file_id, sid):
     return _svc_action(request, file_id, lambda p: permit_services.issue(request.user, p, sid, request.POST), 'تحویل نامه ثبت شد.', sid)
+
+
+# ---------- the end-of-work certificate ----------
+
+@login_required
+def permit_endwork_page(request, file_id):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if not permit_endwork.available(permit):
+        messages.error(request, 'درخواست پایان کار پس از تایید همه‌ی فرم‌های نظارت ممکن است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    data = permit_endwork.payload(permit)
+    state = permit.endwork_state
+    return render(request, 'main/permits/endwork.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'state': state, 'state_text': permit_endwork.STATE_TEXT.get(state, ''),
+        'info': permit.endwork or {}, 'can_request': (mine or staff) and state in ('', 'rejected'), 'editing': staff and state in ('requested', 'approved'),
+        'printable': state in ('approved', 'issued') and (staff or mine),
+        'fields': [(key, permit_endwork.LABELS[key], data.get(key, '')) for key in permit_endwork.KEYS],
+        'sides': [(side, label, data.get(f'sd_{side}_deed', ''), data.get(f'sd_{side}_after', '')) for side, label in (('north', 'شمالاً'), ('east', 'شرقاً'), ('south', 'جنوباً'), ('west', 'غرباً'))],
+        'floors': [(floor, label, data.get(f'fl_{floor}_count', ''), data.get(f'fl_{floor}_area', ''), data.get(f'fl_{floor}_use', '')) for floor, label in permit_endwork.FLOORS],
+        'payload': {'f': data, 'file': permit.pk, 'floors': [k for k, _ in permit_endwork.FLOORS], 'letterhead': static('forms/permit/letterhead.jpg')},
+    })
+
+
+def _end_action(request, file_id, action, ok):
+    permit = permits.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_endwork', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_endwork_request(request, file_id):
+    return _end_action(request, file_id, lambda p: permit_endwork.request(request.user, p), 'درخواست پایان کار ثبت شد؛ دهیاری پاسخ می‌دهد.')
+
+
+@login_required
+@require_POST
+def permit_endwork_save(request, file_id):
+    return _end_action(request, file_id, lambda p: permit_endwork.save(request.user, p, request.POST), 'اطلاعات گواهی ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_endwork_approve(request, file_id):
+    return _end_action(request, file_id, lambda p: permit_endwork.approve(request.user, p, request.POST), 'درخواست تایید شد؛ گواهی قابل چاپ است.')
+
+
+@login_required
+@require_POST
+def permit_endwork_reject(request, file_id):
+    return _end_action(request, file_id, lambda p: permit_endwork.reject(request.user, p, request.POST.get('reason', '')), 'درخواست رد شد.')
+
+
+@login_required
+@require_POST
+def permit_endwork_issue(request, file_id):
+    return _end_action(request, file_id, lambda p: permit_endwork.issue(request.user, p, request.POST), 'صدور گواهی پایان ساخت ثبت شد.')

@@ -145,3 +145,13 @@ company's letter number and the slip). The letter is typeset on the dehyari lett
 - The owner (or the staff for a walk-in owner) asks; the clerk / technical expert / dehyari edit the fields, **approve** (number and date,
   which lets the owner print) or reject with a reason; the owner prints, the dehyari **signs and stamps by hand**; the staff record the handover.
 - Requests waiting for approval count in the staff panels (`needs_staff`); the owner may cancel a waiting request.
+
+## The last step: the end-of-work certificate (گواهی پایان ساخت)
+`permits/<id>/endwork/` (`permit_endwork.py`, `static/js/permit-endwork-form.js`), open once forms 8-13 are confirmed (file at stage 9).
+- The owner (or the staff for a walk-in owner) requests it (`endwork_state` `requested`). **Any of the clerk / technical expert / dehyari answers**:
+  reject with a reason, or approve (number and date) which makes the certificate printable. The certificate is filled from the file: owner,
+  plot, permit number and date, the supervising engineer and his signature number, the number and date of the last supervision report, use, limits,
+  floors, total built area.
+- The owner / staff print it; the **dehyari and the technical manager (technical expert) sign and stamp by hand**; the staff tick the handover
+  and issue (`issued`), which ends the file (step 9 is shown done) and tells the owner. The certificate number and date are then prefilled in the
+  «electricity with end-of-work» service letter.

@@ -216,6 +216,8 @@ def upload(user, permit, n, uploads):
         old.delete()
     data['docs'] = [PermitDocument.objects.create(file=permit, kind='supervision_form', document=item, original_name=item.name[:200], size=item.size,
                                                   uploaded_by=user).pk for item in uploads]
+    if not data['f'].get('number'):                 # the sheet that was printed: keep its numbers as they were
+        data['f'] = defaults(permit, n)
     data['state'] = 'uploaded'
     _save(permit, n, data)
     _step(permit, f'ارسال فرم {n} نظارت با امضای ناظر')

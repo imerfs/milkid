@@ -180,7 +180,7 @@ def tracker(permit):
     """The nine steps with where the file is: done / current / waiting."""
     rows = []
     for number, title in STAGES:
-        done = number < permit.stage_no or (number == permit.stage_no and permit.state == 'done' and number == 9)
+        done = number < permit.stage_no or (number == 9 and permit.stage_no == 9 and permit.endwork_state == 'issued')
         state = 'done' if done else 'current' if number == permit.stage_no else 'todo'
         rows.append({'no': number, 'title': title, 'state': state})
     return rows
