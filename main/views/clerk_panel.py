@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from main.access import policy_required
+from main.gis.access import maps_for
 from main.office import desk, messenger, permits
 from main.office.appointments import jalali_label
 from main.office.errors import OfficeError
@@ -40,6 +41,7 @@ def clerk_dashboard(request):
         context['permitlist'] = permits.panel_rows(user)
     else:
         context['follow_ups'] = desk.follow_ups(user)
+    context['gis_maps'] = maps_for(user)
     return render(request, 'main/clerk/desk.html', context)
 
 

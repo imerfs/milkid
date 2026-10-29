@@ -485,7 +485,16 @@ def acc_p_misc(request, py, pm, emp_id):
 @_guard()
 @require_POST
 def acc_p_run(request, py, pm):
-    return _post_action(request, lambda: payroll.run_payroll(request.user, py, pm), f'حقوق {_month_label(py, pm)} محاسبه شد.')
+    try:
+        payroll.run_payroll(request.user, py, pm)
+    except OfficeError as exc:
+        return _failed(exc)
+    message = f'حقوق {_month_label(py, pm)} محاسبه شد.'
+    unpriced = payroll.unpriced_missions(request.user, py, pm)
+    if unpriced:
+        message += (' توجه: نرخ روز ماموریت این افراد صفر است و ماموریتشان پولی ندارد: ' + '، '.join(unpriced)
+                    + ' (در «نحوه محاسبات فردی» تنظیم کنید).')
+    return _done(message)
 
 
 @_guard()

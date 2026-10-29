@@ -18,6 +18,7 @@ import json
 import os
 
 from .common import role_required
+from main.gis.access import maps_for
 from main import lifecycle
 from main.office import roles as office_roles
 from main.office.directory import requests_for
@@ -120,6 +121,7 @@ def dehyari_dashboard(request):
         'unread_notifications': unread_notifications,
         'stats': stats,
     }
+    context['gis_maps'] = maps_for(request.user)           # the village map, as in the technical expert's panel
     return render(request, 'main/dashboards/mayor.html', context)
 
 

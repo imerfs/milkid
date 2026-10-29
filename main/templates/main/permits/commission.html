@@ -1,0 +1,117 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}فرم درخواست و تعهدنامه - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-file-signature" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۲: فرم درخواست و تعهدنامه</h1>
+      <p>{{ d.form.name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.commission_state == 'verified' or permit.stage_no > 2 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li><b>۱</b><span>دو فرم (درخواست و تعهدنامه) از اطلاعات پرونده پر شده؛ اطلاعات را بررسی و اصلاح کنید.</span></li>
+    <li><b>۲</b><span>هر دو فرم را چاپ کنید، امضا کنید و اثر انگشت بزنید.</span></li>
+    <li><b>۳</b><span>تصویر هر دو برگه‌ی امضاشده را اینجا بارگذاری کنید؛ اصل آن‌ها را هم به دهیاری بدهید.</span></li>
+    <li class="{% if permit.stage_no > 2 %}ok{% endif %}"><b>۴</b><span>دهیار، کارشناس فنی یا کارشناس اداری تایید می‌کند و پرونده به مرحله‌ی بعد می‌رود.</span></li>
+  </ol>
+  {% if mine %}
+  <aside class="pf-paper" aria-label="کارهای دستی این مرحله">
+    <b><i class="fas fa-file-signature" aria-hidden="true"></i> امضا و تحویل دستی</b>
+    <p>فعلا همه‌ی فرم‌ها باید چاپ، امضا و <u>به‌صورت دستی به دهیاری تحویل شود</u>؛ سامانه فرم‌ها را پر می‌کند و پیگیری پرونده را نگه می‌دارد.</p>
+    <ul>
+      <li>فرم درخواست و تعهدنامه را چاپ کنید و هر دو را امضا و اثر انگشت بزنید.</li>
+      <li>اصل هر دو برگه را به دهیاری تحویل دهید و تصویرشان را اینجا بارگذاری کنید.</li>
+    </ul>
+  </aside>
+  {% endif %}
+
+  {% if permit.commission_state == 'returned' and permit.staff_notes %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری فرم‌ها را برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
+  {% if d.checked.by %}<div class="pf-card pf-shamim"><b><i class="fas fa-circle-check" aria-hidden="true"></i> تایید فرم‌ها</b><p>{{ d.checked.by }} در {{ d.checked.at|persian_numbers }} رسیدن هر دو برگه‌ی امضاشده را تایید کرد.</p></div>{% endif %}
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+
+      <form method="post" action="{% url 'main:permit_commission_save' permit.pk %}" class="pf-card pf-form pff-form" id="pcm-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-pen-to-square" aria-hidden="true"></i>اطلاعات روی فرم‌ها</h2>
+        {% if can_edit %}<p class="pf-hint">از پرونده‌ی شما پر شده است. اگر چیزی نادرست است اصلاح کنید؛ پیش‌نمایش کنار صفحه همزمان تغییر می‌کند.</p>{% endif %}
+        <div class="pff-fields">
+          {% for key, label, value in field_rows %}
+          <label{% if key == 'street' %} class="wide"{% endif %}>{{ label }}<input name="{{ key }}" value="{{ value }}" {% if not can_edit %}readonly{% endif %}{% if key != 'name' and key != 'father' and key != 'street' %} dir="ltr"{% endif %}></label>
+          {% endfor %}
+        </div>
+        {% if can_edit %}<button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی اطلاعات</button>{% endif %}
+      </form>
+
+      <section class="pf-card" id="pcm-scans">
+        <h2><i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>فرم‌های امضاشده</h2>
+        {% for key, label, docs in scan_rows %}
+        <h3>{{ label }}</h3>
+        <ul class="pf-docs">
+          {% for doc in docs %}
+          <li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }} <small>{{ doc.size|filesizeformat }}</small></a></li>
+          {% empty %}<li class="pf-none">هنوز فایلی نیست.</li>{% endfor %}
+        </ul>
+        {% endfor %}
+        {% if owner_open %}
+        <form method="post" action="{% url 'main:permit_commission_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form pf-open" data-once>{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>{% if permit.commission_state == 'returned' %}بارگذاری دوباره{% else %}ارسال برای دهیاری{% endif %}</h3>
+          <label>تصویر فرم درخواست امضاشده<input type="file" name="request_scan" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+          <label>تصویر تعهدنامه‌ی امضاشده<input type="file" name="undertaking_scan" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+          <label class="pff-check"><input type="checkbox" name="signed" required> هر دو برگه را امضا کرده و اثر انگشت زده‌ام</label>
+          <p class="pf-hint">فرمت‌های مجاز: pdf، jpg، png. در بارگذاری دوباره، فقط برگه‌ای را که عوض می‌شود انتخاب کنید.</p>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال به دهیاری</button>
+        </form>
+        {% endif %}
+      </section>
+
+      {% if can_decide %}
+      <section class="pf-card" id="pcm-review">
+        <h2><i class="fas fa-clipboard-check" aria-hidden="true"></i>بررسی و تایید</h2>
+        <p class="pf-hint">تصویرها را باز کنید و ببینید هر دو برگه خوانا و با امضا و اثر انگشت متقاضی است؛ کارشناس اداری، کارشناس فنی یا دهیار می‌تواند تایید کند.</p>
+        <form method="post" action="{% url 'main:permit_commission_verify' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> هر دو برگه با امضا و اثر انگشت متقاضی رسید</label></div>
+          <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۳</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_commission_return' permit.pk %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>برگشت برای اصلاح</h3>
+          <label>چه چیزی باید اصلاح شود؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist">
+        <button type="button" class="is-on" data-page="request" role="tab">فرم درخواست</button>
+        <button type="button" data-page="undertaking" role="tab">تعهدنامه</button>
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pcm-dl-this"><i class="fas fa-download" aria-hidden="true"></i>دانلود این فرم (PDF)</button>
+        <button type="button" class="pf-btn pf-btn-main" id="pcm-dl-all"><i class="fas fa-download" aria-hidden="true"></i>دانلود هر دو فرم (PDF)</button>
+        <button type="button" class="pf-btn" id="pcm-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ هر دو فرم</button>
+      </div>
+      <p class="pf-hint">فرم‌ها را چاپ کنید و متقاضی امضا و اثر انگشت بزند.</p>
+    </aside>
+  </div>
+</div>
+{{ payload|json_script:"pcm-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/office.js' %}" defer></script>
+<script src="{% static 'js/permit-commission-forms.js' %}" defer></script>
+{% endblock %}

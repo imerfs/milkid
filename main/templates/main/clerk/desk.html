@@ -19,6 +19,7 @@
         <a href="{% url 'main:clerk_dashboard' %}" {% if tab == 'today' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-home"/></svg>امروز</a>
         <a href="?tab=messages" {% if tab == 'messages' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-mail"/></svg>پیام‌ها و نامه‌ها{% if stats.unread %}<em>{{ stats.unread|persian_numbers }}</em>{% endif %}</a>
         <a href="?tab=files" {% if tab == 'files' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-folder"/></svg>پرونده‌های پروانه{% if stats.permit_files %}<em>{{ stats.permit_files|persian_numbers }}</em>{% endif %}</a>
+        {% for gis_map in gis_maps %}<a href="{% url 'main:gis_map' gis_map.slug %}"><svg class="cd-i"><use href="#i-pin"/></svg>نقشه‌ی روستا</a>{% endfor %}
         <a href="?tab=follow" {% if tab == 'follow' %}class="is-on" aria-current="page"{% endif %}><svg class="cd-i"><use href="#i-doc-alert"/></svg>پیگیری‌ها{% if stats.waiting_docs %}<em>{{ stats.waiting_docs|persian_numbers }}</em>{% endif %}</a>
       </nav>
       <div class="cd-tools">

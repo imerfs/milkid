@@ -1,0 +1,16 @@
+{# The figures of the warning notice (owner types them, staff may correct them). Context: n, positions, deliveries, editable #}
+<div class="pff-fields">
+  <label>شماره‌ی اخطاریه<input name="number" value="{{ n.number }}" dir="ltr" required {% if not editable %}readonly{% endif %}></label>
+  <label>تاریخ اخطاریه<input name="date" value="{{ n.date }}" dir="ltr" required placeholder="۱۴۰۲/۱۰/۱۸" {% if not editable %}readonly{% endif %}></label>
+  <label class="wide">نام روی اخطاریه (جناب آقا / خانم)<input name="addressee" value="{{ n.addressee }}" required {% if not editable %}readonly{% endif %}></label>
+  <label>موقعیت ملک
+    <select name="position" required {% if not editable %}disabled{% endif %}>
+      <option value="">انتخاب کنید</option>
+      {% for code, label in positions %}<option value="{{ code }}" {% if n.position == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select></label>
+  <label>نحوه‌ی ابلاغ
+    <select name="delivery" required {% if not editable %}disabled{% endif %}>
+      <option value="">انتخاب کنید</option>
+      {% for code, label in deliveries %}<option value="{{ code }}" {% if n.delivery == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select></label>
+</div>

@@ -147,3 +147,22 @@ class Tabs(Village):
         letters.compose(self.dehyari, to=[self.clerk.id], subject='نامه‌ی امروز', body='متن')
         page = self.open()
         self.assertContains(page, '?tab=messages&open=l')
+
+
+class MapLink(TestCase):
+    """The village map is in the clerk's desk and the dehyari's panel as it is in the technical expert's."""
+    LOCAL = dict(province='خراسان جنوبی', county='بیرجند', city_village='دستگرد')
+    MAP = '/gis/dastgerd/'
+
+    def test_the_clerk_desk_links_to_the_village_map_only_for_its_own_village(self):
+        page = client_for(make_user('clerk', **self.LOCAL)).get(reverse('main:clerk_dashboard')).content.decode()
+        self.assertIn(self.MAP, page)
+        elsewhere = client_for(make_user('clerk', city_village='روستای دیگر', county='شهرستان دیگر')).get(reverse('main:clerk_dashboard'))
+        self.assertNotIn(self.MAP, elsewhere.content.decode())
+
+    def test_the_dehyari_panel_links_to_the_village_map_only_for_its_own_village(self):
+        page = client_for(make_user('dehyari', **self.LOCAL)).get(reverse('main:dehyari_dashboard')).content.decode()
+        self.assertIn(self.MAP, page)
+        elsewhere = client_for(make_user('dehyari', city_village='روستای دیگر', county='شهرستان دیگر')).get(reverse('main:dehyari_dashboard'))
+        self.assertNotIn(self.MAP, elsewhere.content.decode())
+

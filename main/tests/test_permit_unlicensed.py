@@ -133,11 +133,11 @@ class UnlicensedStaff(UnlicensedBase):
             for who in (self.citizen, self.clerk, self.dehyari):
                 self.assertEqual(client_for(who).get(reverse(f'main:{name}', args=[self.permit.pk])).status_code, 404, (name, who.profile.role))
         page = client_for(self.citizen).get(reverse('main:permit_file', args=[self.permit.pk])).content.decode()
-        self.assertIn('هنوز در سامانه راه‌اندازی نشده', page)
+        self.assertIn('فرم درخواست و تعهدنامه', page)
         self.assertNotIn(reverse('main:permit_forms', args=[self.permit.pk]), page)
         self.permit.refresh_from_db()
-        self.assertEqual(self.permit.status_text, 'مرحله‌ی ۱ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است')
-        self.assertFalse(self.permit.needs_staff)
+        self.assertEqual(self.permit.status_text, 'منتظر فرم درخواست و تعهدنامه‌ی امضاشده (از متقاضی)')
+        self.assertFalse(self.permit.needs_staff)           # waiting for the owner's forms, not for the staff
 
     def test_it_is_listed_in_the_staff_panel_with_its_own_label(self):
         from main.office import permits

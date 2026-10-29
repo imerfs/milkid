@@ -520,6 +520,16 @@ def run_payroll(actor, year, month):
     return run
 
 
+def unpriced_missions(actor, year, month):
+    """Names of employees with a mission in the month whose day rate is zero: their mission pay comes out as zero."""
+    muni = municipality_of(actor)
+    names = []
+    for m in Mission.objects.filter(employee__municipality=muni, employee__active=True).select_related('employee'):
+        if _jalali_ym(m.start_date) == (year, month) and not calc_of(m.employee).mission_day_rate and m.employee.full_name not in names:
+            names.append(m.employee.full_name)
+    return names
+
+
 def finalize_run(actor, run):
     muni = municipality_of(actor)
     _own(muni, run)
