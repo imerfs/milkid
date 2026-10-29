@@ -4,7 +4,7 @@ from django.urls import reverse
 from main.models import Notification, PermitDocument, PermitFile
 from main.tests.helpers import client_for
 from main.tests.test_permit_files import PDF, PNG, Village, upload
-from main.tests.test_permit_unlicensed import CODE, unlicensed
+from main.tests.test_permit_unlicensed import CODE, sign_defence, unlicensed
 
 
 def notice_post(**override):
@@ -23,6 +23,7 @@ class Notice(Village):
         """A file of the unlicensed track that reached step 3 (step 1 confirmed, step 2 papers confirmed)."""
         client_for(self.citizen).post(reverse('main:without_permit_form'), unlicensed())
         permit = PermitFile.objects.latest('pk')
+        sign_defence(self.citizen, permit)
         client_for(self.clerk).post(reverse('main:permit_open', args=[permit.pk]), {'renewal_code': CODE})
         client_for(self.citizen).post(reverse('main:permit_commission_upload', args=[permit.pk]),
                                       {'request_scan': upload('r.png', PNG), 'undertaking_scan': upload('u.png', PNG), 'signed': 'on'})

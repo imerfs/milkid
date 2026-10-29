@@ -17,13 +17,15 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_commission, permit_notice, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import permit_commission, permit_defence, permit_notice, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
 
 INLINE_TYPES = {'.pdf', '.jpg', '.jpeg', '.png'}
 PERSON_LABELS = (('name', 'نام و نام خانوادگی'), ('father', 'فرزند'), ('grade', 'پایه‌ی پروانه‌ی اشتغال'), ('field', 'رشته'), ('license', 'شماره‌ی پروانه / عضویت'))
+DEFENCE_FIELDS = (('name', 'نام و نام خانوادگی'), ('father', 'نام پدر'), ('phone', 'شماره تلفن'), ('village', 'روستا'), ('district', 'بخش'),
+                  ('county', 'شهرستان'), ('area', 'متراژ بنای غیرمجاز (متر مربع)'), ('date', 'تاریخ فرم'), ('dehyari', 'نام دهیار (جعبه‌ی تاییدیه)'))
 COMMISSION_FIELDS = (('name', 'نام و نام خانوادگی'), ('father', 'نام پدر'), ('id_number', 'شماره شناسنامه'), ('national_id', 'کد ملی'),
                      ('street', 'خیابان / آدرس'), ('phone', 'شماره تماس'), ('date', 'تاریخ فرم'))
 FORM_LABELS = (('f04', 'فرم ۰۴ (دستور تهیه‌ی نقشه)'), ('f05', 'فرم ۰۵ (تعهد معماری)'), ('f06', 'فرم ۰۶ (تعهد سازه)'), ('f07', 'فرم ۰۷ (تعهد نظارت)'))
@@ -997,4 +999,107 @@ def permit_notice_verify(request, file_id):
 def permit_notice_return(request, file_id):
     return _notice_action(request, file_id, lambda p: permit_notice.send_back(request.user, p, request.POST.get('notes', '')),
                           'اخطاریه برای اصلاح به متقاضی برگشت داده شد.')
+
+
+# ---------- construction without a permit, step 1: the defence form and the shamim sketch ----------
+
+def _step1_redirect(request, permit, name):
+    return redirect(reverse(f'main:{name}', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') or request.GET.get('embed') else ''))
+
+
+@login_required
+def permit_defence_page(request, file_id):
+    permit = permit_defence.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    data = permit_defence.payload(permit)
+    return render(request, 'main/permits/defence.html', {
+        'permit': permit, 'embed': bool(request.GET.get('embed')), 'mine': mine, 'staff': staff, 'd': data,
+        'scans': permit_defence.scans(permit), 'can_edit': permit_defence._may_edit(request.user, permit),          # pylint: disable=protected-access
+        'owner_open': mine and permit_defence.at_step(permit),
+        'field_rows': [(key, label, data['form'].get(key, '')) for key, label in DEFENCE_FIELDS],
+        'statuses': permit_defence.STATUSES.items(), 'suggestions': permit_defence.SUGGESTIONS,
+        'payload': {**data, 'suggestions': list(permit_defence.SUGGESTIONS)},
+    })
+
+
+def _defence_action(request, file_id, action, ok):
+    permit = permit_defence.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return _step1_redirect(request, permit, 'permit_defence')
+
+
+@login_required
+@require_POST
+def permit_defence_save(request, file_id):
+    return _defence_action(request, file_id, lambda p: permit_defence.save_form(request.user, p, request.POST), 'اطلاعات فرم دفاعیه ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_defence_upload(request, file_id):
+    return _defence_action(request, file_id, lambda p: permit_defence.upload(request.user, p, request.FILES),
+                           'فرم دفاعیه‌ی امضاشده فرستاده شد.')
+
+
+@login_required
+def permit_sketch_page(request, file_id):
+    permit = permit_sketch.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    mine = permit.request.user_id == request.user.id
+    at_step = permit_sketch.at_step(permit)
+    work = permit_sketch.may_work(request.user, permit)
+    return render(request, 'main/permits/sketch.html', {
+        'permit': permit, 'embed': bool(request.GET.get('embed')), 'mine': mine, 'sk': permit.sketch or {}, 'state': permit.sketch_state,
+        'slips': permit_sketch.slips(permit), 'sketch_files': permit_sketch.sketch_files(permit),
+        'can_request': at_step and mine and not permit.sketch_state and not permit_sketch.sketch_files(permit),
+        'can_price': at_step and work and permit.sketch_state in ('requested', 'priced'),
+        'can_pay': at_step and mine and permit.sketch_state == 'priced',
+        'can_deliver': at_step and work and permit.sketch_state == 'paid',
+    })
+
+
+def _sketch_action(request, file_id, action, ok):
+    permit = permit_sketch.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return _step1_redirect(request, permit, 'permit_sketch')
+
+
+@login_required
+@require_POST
+def permit_sketch_request(request, file_id):
+    return _sketch_action(request, file_id, lambda p: permit_sketch.request(request.user, p), 'درخواست کروکی ثبت شد؛ مسئول فنی هزینه را تعیین می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_sketch_fee(request, file_id):
+    return _sketch_action(request, file_id, lambda p: permit_sketch.set_fee(request.user, p, request.POST), 'هزینه‌ی کروکی تعیین و به متقاضی اطلاع داده شد.')
+
+
+@login_required
+@require_POST
+def permit_sketch_pay(request, file_id):
+    return _sketch_action(request, file_id, lambda p: permit_sketch.pay(request.user, p, request.POST, request.FILES), 'فیش ثبت شد؛ منتظر تایید پرداخت و تحویل کروکی باشید.')
+
+
+@login_required
+@require_POST
+def permit_sketch_deliver(request, file_id):
+    return _sketch_action(request, file_id, lambda p: permit_sketch.deliver(request.user, p, request.POST, request.FILES), 'پرداخت تایید و کروکی تحویل شد.')
 

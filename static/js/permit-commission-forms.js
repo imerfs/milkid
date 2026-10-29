@@ -9,7 +9,7 @@
   var R = 1235, L = 165;                       // right and left text margins inside the frame
   var page = 'request';
   var FA = '۰۱۲۳۴۵۶۷۸۹';
-  function fa(t) { return String(t == null ? '' : t).replace(/\d/g, function (d) { return FA[d]; }).replace(/\./g, '٫'); }
+  function fa(t) { return String(t == null ? '' : t).replace(/(\d)\.(?=\d)/g, '$1٫').replace(/\d/g, function (d) { return FA[d]; }); }
 
   function frame() {
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);

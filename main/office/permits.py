@@ -99,6 +99,10 @@ def submit(user, data):
         share_dang=fields['share_dang'], area_m2=fields['area_m2'], land_use=fields['land_use'],
         address=fields['address'], postal_code=fields['postal_code'],
         details={**fields['details'], **({'dehestan': fields['dehestan'].name} if fields.get('dehestan') else {})})
+    if data.get('sketch_request'):
+        permit.sketch_state, permit.sketch = 'requested', {'requested_at': timezone.now().strftime('%Y-%m-%d %H:%M')}
+        permit.sketch_at = timezone.now()
+        permit.save(update_fields=['sketch', 'sketch_state', 'sketch_at'])
     people = {}
     for order, person in enumerate(data['people']):
         row = PermitPerson.objects.create(
@@ -246,6 +250,12 @@ def open_file(actor, permit, *, code, parcel_id=None, notes=''):
         raise Forbidden('اجازه‌ی افتتاح این پرونده را ندارید.')
     if permit.state != 'submitted':
         raise Conflict('این پرونده در حال بررسی نیست؛ مدارک تازه یا تصمیم قبلی را بررسی کنید.')
+    if permit.unlicensed:
+        # an unlicensed building's step 1 also needs the signed defence form and the shamim file (or the sketch that replaces it)
+        if not permit.documents.filter(kind='defence_form').exists():
+            raise Invalid('فرم دفاعیه‌ی امضاشده (با امضای دهیار) هنوز بارگذاری نشده است.')
+        if not permit.documents.filter(kind='shamim').exists():
+            raise Invalid('فایل شمیم نیست؛ تا کروکی شمیم تحویل داده نشود نمی‌توان مرحله را تایید کرد.')
     code = '-'.join(permit_form.digits(code).replace('_', ' ').replace('/', ' ').replace('.', ' ').replace('-', ' ').split())
     if not permit_form._CODE.match(code):          # pylint: disable=protected-access
         raise Invalid('کد نوسازی را به شکل «صنف-آپارتمان-ملک-بلوک-محله» مثل ۰-۰-۸-۱۸۲-۲ وارد کنید.')

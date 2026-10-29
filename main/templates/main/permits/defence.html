@@ -1,0 +1,81 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}فرم دفاعیه - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-scale-balanced" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۱: فرم دفاعیه</h1>
+      <p>{{ d.form.name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi></p>
+    </div>
+    <span class="pf-state pf-state-{% if scans %}done{% else %}submitted{% endif %}">{% if scans %}فرم امضاشده بارگذاری شد{% else %}منتظر فرم امضاشده{% endif %}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li><b>۱</b><span>فرم از اطلاعات پرونده پر شده؛ اطلاعات را بررسی و علت ساخت بدون پروانه را بنویسید.</span></li>
+    <li><b>۲</b><span>فرم را چاپ کنید و امضا و اثر انگشت بزنید.</span></li>
+    <li><b>۳</b><span>جعبه‌ی «محل تاییدیه دهیاری» پایین فرم را دهیار پر، مهر و امضا می‌کند.</span></li>
+    <li class="{% if scans %}ok{% endif %}"><b>۴</b><span>تصویر فرم امضاشده را بارگذاری کنید؛ بدون آن مرحله‌ی ۱ تایید نمی‌شود.</span></li>
+  </ol>
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+      <form method="post" action="{% url 'main:permit_defence_save' permit.pk %}" class="pf-card pf-form pff-form" id="pdf-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-pen-to-square" aria-hidden="true"></i>اطلاعات روی فرم</h2>
+        <div class="pff-fields">
+          {% for key, label, value in field_rows %}
+          <label{% if key == 'county' or key == 'village' %}{% endif %}>{{ label }}<input name="{{ key }}" value="{{ value }}" {% if not can_edit %}readonly{% endif %}{% if key == 'phone' or key == 'area' or key == 'date' %} dir="ltr"{% endif %}></label>
+          {% endfor %}
+          <label>وضعیت بنا
+            <select name="status" {% if not can_edit %}disabled{% endif %}>
+              {% for code, label in statuses %}<option value="{{ code }}" {% if d.form.status == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></label>
+        </div>
+        <label class="wide">شرح علل تخلف و دفاعیات (حداکثر ۴۵۰ نویسه؛ بیشتر را پشت برگه بنویسید)
+          <textarea name="explanation" rows="5" maxlength="450" {% if not can_edit %}readonly{% endif %}>{{ d.form.explanation }}</textarea></label>
+        {% if can_edit %}
+        <p class="pf-hint">پیشنهادها (روی هر کدام بزنید تا به متن اضافه شود):
+          {% for s in suggestions %}<button type="button" class="pf-chip" data-suggest="{{ s }}">{{ s }}</button> {% endfor %}</p>
+        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی اطلاعات</button>
+        {% endif %}
+      </form>
+
+      <section class="pf-card" id="pdf-scans">
+        <h2><i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>فرم امضاشده</h2>
+        <ul class="pf-docs">
+          {% for doc in scans %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }} <small>{{ doc.size|filesizeformat }}</small></a></li>
+          {% empty %}<li class="pf-none">هنوز فایلی نیست.</li>{% endfor %}
+        </ul>
+        {% if owner_open %}
+        <form method="post" action="{% url 'main:permit_defence_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form pf-open" data-once>{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>تصویر فرم امضاشده (همه‌ی صفحه‌ها؛ pdf، jpg یا png)<input type="file" name="scan" multiple required accept=".pdf,.jpg,.jpeg,.png"></label>
+          <p class="pf-hint">فرم باید امضا و اثر انگشت متقاضی و مهر و امضای دهیار را داشته باشد. بارگذاری دوباره، تصویر قبلی را عوض می‌کند.</p>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>بارگذاری</button>
+        </form>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="pff-view">
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش فرم دفاعیه"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pdf-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود فرم (PDF)</button>
+        <button type="button" class="pf-btn" id="pdf-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ فرم</button>
+      </div>
+      <p class="pf-hint">پیش‌نمایش با تغییر اطلاعات همزمان عوض می‌شود. فرم را چاپ کنید و امضا و اثر انگشت بزنید، سپس دهیار تاییدیه را پر کند.</p>
+    </aside>
+  </div>
+</div>
+{{ payload|json_script:"pdf-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/office.js' %}" defer></script>
+<script src="{% static 'js/permit-defence-form.js' %}" defer></script>
+{% endblock %}

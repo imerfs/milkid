@@ -36,7 +36,10 @@
         <h2 id="pf-now"><i class="fas fa-flag" aria-hidden="true"></i>وضعیت پرونده</h2>
         {% if mine and permit.state != 'rejected' and permit.stage_no == 1 or mine and permit.state != 'rejected' and not permit.unlicensed %}{% include 'main/permits/_paper.html' with stage=permit.stage_no %}{% endif %}
         {% if permit.state == 'submitted' %}
-          {% if permit.unlicensed %}<p>مرحله‌ی ۱ («ایجاد پرونده اولیه»): مدارک شما رسیده و منتظر بررسی کارشناس اداری، کارشناس فنی یا دهیار است. هر یک از این سه نفر می‌تواند مرحله را تایید کند؛ با تایید، بر اساس فایل شمیم یک <b>کد نوسازی</b> به ملک شما داده می‌شود و پرونده به مرحله‌ی بعد می‌رود.</p>
+          {% if permit.unlicensed %}<p>مرحله‌ی ۱ («ایجاد پرونده اولیه»): مدارک شما رسیده. برای تایید، <b>فرم دفاعیه‌ی امضاشده</b> (با مهر و امضای دهیار) و فایل شمیم یا کروکی شمیم هم لازم است. سپس کارشناس اداری، کارشناس فنی یا دهیار بررسی و تایید می‌کند؛ با تایید، بر اساس فایل شمیم یک <b>کد نوسازی</b> به ملک شما داده می‌شود و پرونده به مرحله‌ی بعد می‌رود.</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          <p><a class="pf-btn pf-btn-main" href="{% url 'main:permit_defence' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-scale-balanced" aria-hidden="true"></i>فرم دفاعیه</a>
+             <a class="pf-btn" href="{% url 'main:permit_sketch' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-drafting-compass" aria-hidden="true"></i>کروکی شمیم</a></p>
           {% else %}<p>مرحله‌ی ۱ («افتتاح پرونده»): مدارک شما رسیده و منتظر بررسی کارشناس اداری، کارشناس فنی یا دهیار است. پس از بررسی، بر اساس فایل شمیم یک <b>کد نوسازی</b> به ملک شما داده می‌شود و پرونده به مرحله‌ی بعد می‌رود.</p>{% endif %}
         {% elif permit.state == 'needs_docs' %}
           <p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> پرونده برای رفع نقص برگشت داده شد.</p>

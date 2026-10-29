@@ -4,7 +4,7 @@ from django.urls import reverse
 from main.models import Notification, PermitDocument, PermitFile
 from main.tests.helpers import client_for
 from main.tests.test_permit_files import PDF, PNG, Village, upload
-from main.tests.test_permit_unlicensed import CODE, unlicensed
+from main.tests.test_permit_unlicensed import CODE, sign_defence, unlicensed
 
 
 class Commission(Village):
@@ -13,6 +13,7 @@ class Commission(Village):
         response = client_for(self.citizen).post(reverse('main:without_permit_form'), unlicensed())
         self.assertEqual(response.status_code, 302)
         self.permit = PermitFile.objects.latest('pk')
+        sign_defence(self.citizen, self.permit)
         client_for(self.clerk).post(reverse('main:permit_open', args=[self.permit.pk]), {'renewal_code': CODE})
         self.reload()
 
@@ -145,6 +146,7 @@ class Deciding(Commission):
             if who != self.clerk:
                 client_for(self.citizen).post(reverse('main:without_permit_form'), unlicensed())
                 self.permit = PermitFile.objects.latest('pk')
+                sign_defence(self.citizen, self.permit)
                 client_for(self.clerk).post(reverse('main:permit_open', args=[self.permit.pk]), {'renewal_code': CODE})
                 self.send()
             self.decide(who, confirm='on', notes='خوانا بود')
