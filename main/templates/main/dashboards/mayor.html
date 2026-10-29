@@ -407,6 +407,14 @@
                             <span>پرونده‌های پروانه</span>
                         </a>
                     </li>
+                    {% for gis_map in gis_maps %}
+                    <li>
+                        <a href="{% url 'main:gis_map' gis_map.slug %}" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-map-marked-alt ml-3 w-5"></i>
+                            <span>نقشه‌ی روستا</span>
+                        </a>
+                    </li>
+                    {% endfor %}
                     <li>
                         <a href="#" class="sidebar-item flex items-center p-3 rounded-lg text-gray-700 hover:text-blue-600" data-page="violations">
                             <i class="fas fa-exclamation-triangle ml-3 w-5"></i>

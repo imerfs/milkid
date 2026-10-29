@@ -69,7 +69,7 @@ class MapAccess(TestCase):
 
     def test_other_roles_are_refused_even_in_the_village(self):
         urls = self.urls(self.parcel)
-        for role in ('citizen', 'owner', 'dehyari', 'inspector', 'accountant', 'council'):
+        for role in ('citizen', 'owner', 'inspector', 'accountant', 'council'):
             client = client_for(make_user(role, **LOCAL))
             with self.subTest(role=role):
                 self.assertEqual(client.get(urls['page']).status_code, 302)
@@ -81,6 +81,29 @@ class MapAccess(TestCase):
                                            {'reason': 'debt'}).status_code, 403)
         self.assertFalse(ParcelArchive.objects.exists())
         self.assertFalse(ParcelLock.objects.exists())
+
+    def test_the_dehyari_and_the_clerk_open_the_map_and_edit_plots_but_only_the_dehyari_locks(self):
+        urls = self.urls(self.parcel)
+        for role, may_lock in (('dehyari', True), ('clerk', False)):
+            client = client_for(make_user(role, **LOCAL))
+            with self.subTest(role=role):
+                self.assertEqual(client.get(urls['page']).status_code, 200)
+                for name in ('data', 'detail', 'buildings', 'easements'):
+                    self.assertEqual(client.get(urls[name]).status_code, 200, name)
+                saved = post_json(client, reverse('main:gis_archive_save', args=[SLUG, self.parcel.pk]), {'owner_name': 'مالک آزمون'})
+                self.assertEqual(saved.status_code, 200, saved.content[:200])
+                locked = post_json(client, reverse('main:gis_lock', args=[SLUG, self.parcel.pk]), {'reason': 'debt'})
+                self.assertEqual(locked.status_code == 200, may_lock, (role, locked.status_code))
+                config = client.get(urls['page']).context['config']
+                self.assertEqual((config['canEdit'], config['canLock']), (True, may_lock))
+                ParcelLock.objects.all().delete()
+
+    def test_the_dehyari_and_the_clerk_of_another_village_are_refused(self):
+        urls = self.urls(self.parcel)
+        for role in ('dehyari', 'clerk'):
+            client = client_for(make_user(role, city_village='روستای دیگر', county='شهرستان دیگر'))
+            self.assertEqual(client.get(urls['page']).status_code, 302, role)
+            self.assertEqual(client.get(urls['data']).status_code, 403, role)
 
     def test_engineer_of_another_village_is_refused(self):
         urls = self.urls(self.parcel)
