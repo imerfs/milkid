@@ -46,8 +46,12 @@
         {% if can_edit %}<p class="pf-hint">از پرونده‌ی شما پر شده است. اگر چیزی نادرست است اصلاح کنید؛ پیش‌نمایش کنار صفحه همزمان تغییر می‌کند.</p>{% endif %}
         <div class="pff-fields">
           {% for key, label, value in field_rows %}
-          <label{% if key == 'street' %} class="wide"{% endif %}>{{ label }}<input name="{{ key }}" value="{{ value }}" {% if not can_edit %}readonly{% endif %}{% if key != 'name' and key != 'father' and key != 'street' %} dir="ltr"{% endif %}></label>
+          <label{% if key == 'street' or key == 'subject' %} class="wide"{% endif %}>{{ label }}<input name="{{ key }}" value="{{ value }}" {% if not can_edit %}readonly{% endif %}{% if key != 'name' and key != 'father' and key != 'street' and key != 'subject' %} dir="ltr"{% endif %}></label>
           {% endfor %}
+          <label>فرم درخواست خطاب به
+            <select name="addressee" {% if not can_edit %}disabled{% endif %}>
+              {% for code, label in addressees %}<option value="{{ code }}" {% if d.form.addressee == code %}selected{% endif %}>{{ label }} {{ d.village }}</option>{% endfor %}
+            </select></label>
         </div>
         {% if can_edit %}<button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی اطلاعات</button>{% endif %}
       </form>

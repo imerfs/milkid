@@ -19,7 +19,9 @@ from main.office.permits import may_open
 
 KINDS = {'request': 'comm_request', 'undertaking': 'comm_undertake'}
 LABELS = {'request': 'فرم درخواست', 'undertaking': 'تعهدنامه'}
-FIELDS = ('name', 'father', 'id_number', 'national_id', 'street', 'phone', 'date')
+FIELDS = ('name', 'father', 'id_number', 'national_id', 'street', 'phone', 'date', 'subject', 'addressee')
+ADDRESSEES = {'council': 'شورای اسلامی روستا', 'dehyari': 'دهیار روستا'}
+DEFAULT_SUBJECT = 'تشکیل پرونده کمیسیون و تقسیط هزینه‌های دهیاری و جریمه کمیسیون'
 OPEN_STATES = ('', 'returned')
 MAX_SCANS = 6
 
@@ -41,12 +43,12 @@ def defaults(permit):
     """What the file already knows, for the two forms."""
     owner = permit.people.first()
     return {'name': owner.full_name, 'father': owner.father_name, 'id_number': owner.id_number, 'national_id': owner.national_id,
-            'street': permit.address, 'phone': owner.phone, 'date': permit_step2.today()}
+            'street': permit.address, 'phone': owner.phone, 'date': permit_step2.today(), 'subject': DEFAULT_SUBJECT, 'addressee': 'council'}
 
 
 def payload(permit):
     form = {**defaults(permit), **{k: v for k, v in ((permit.commission or {}).get('form') or {}).items() if k in FIELDS}}
-    return {'form': form, 'village': permit_step2._village(permit), 'file': permit.pk,         # pylint: disable=protected-access
+    return {'form': form, 'village': permit_step2._village(permit), 'file': permit.pk, 'addressees': ADDRESSEES,         # pylint: disable=protected-access
             'checked': (permit.commission or {}).get('checked') or {}}
 
 
@@ -75,6 +77,9 @@ def save_form(actor, permit, post):
     if problem:
         raise Invalid(problem)
     values['national_id'] = national
+    values['subject'] = _clean(post.get('subject', ''), 150) or DEFAULT_SUBJECT          # blank: the usual request
+    if values['addressee'] not in ADDRESSEES:
+        values['addressee'] = 'council'
     values['id_number'] = permit_form.digits(values['id_number'])[:15]
     values['phone'] = permit_form.digits(values['phone'])[:11]
     if values['phone'] and not permit_form._PHONE.match(values['phone']):          # pylint: disable=protected-access

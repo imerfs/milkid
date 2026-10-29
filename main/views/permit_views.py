@@ -27,7 +27,7 @@ PERSON_LABELS = (('name', 'نام و نام خانوادگی'), ('father', 'فر
 DEFENCE_FIELDS = (('name', 'نام و نام خانوادگی'), ('father', 'نام پدر'), ('phone', 'شماره تلفن'), ('village', 'روستا'), ('district', 'بخش'),
                   ('county', 'شهرستان'), ('area', 'متراژ بنای غیرمجاز (متر مربع)'), ('date', 'تاریخ فرم'), ('dehyari', 'نام دهیار (جعبه‌ی تاییدیه)'))
 COMMISSION_FIELDS = (('name', 'نام و نام خانوادگی'), ('father', 'نام پدر'), ('id_number', 'شماره شناسنامه'), ('national_id', 'کد ملی'),
-                     ('street', 'خیابان / آدرس'), ('phone', 'شماره تماس'), ('date', 'تاریخ فرم'))
+                     ('street', 'خیابان / آدرس'), ('phone', 'شماره تماس'), ('date', 'تاریخ فرم'), ('subject', 'موضوع درخواست (تقاضای ... را دارم)'))
 FORM_LABELS = (('f04', 'فرم ۰۴ (دستور تهیه‌ی نقشه)'), ('f05', 'فرم ۰۵ (تعهد معماری)'), ('f06', 'فرم ۰۶ (تعهد سازه)'), ('f07', 'فرم ۰۷ (تعهد نظارت)'))
 SIDE_LABELS = (('length', 'طول موجود'), ('after', 'ابعاد پس از اصلاح'), ('passage', 'عرض گذر موجود'), ('approved', 'عرض گذر مصوب'))
 
@@ -900,6 +900,7 @@ def permit_commission_page(request, file_id):
         'owner_open': at_step and mine and permit.commission_state in permit_commission.OPEN_STATES,
         'can_decide': at_step and staff and permit.commission_state == 'uploaded',
         'field_rows': [(key, label, data['form'].get(key, '')) for key, label in COMMISSION_FIELDS],
+        'addressees': permit_commission.ADDRESSEES.items(),
         'payload': {**data, 'owner': data['form']['name']},
     })
 

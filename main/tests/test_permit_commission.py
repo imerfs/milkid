@@ -185,3 +185,22 @@ class Deciding(Commission):
         self.assertEqual(self.reload().commission.get('form', {}).get('name'), None)
         page = client_for(self.citizen).get(reverse('main:permit_file', args=[self.permit.pk])).content.decode()
         self.assertIn(reverse('main:permit_notice', args=[self.permit.pk]), page)
+
+
+class SubjectAndAddressee(Commission):
+    def test_the_request_defaults_to_the_usual_subject_addressed_to_the_council(self):
+        form = client_for(self.citizen).get(self.url()).context['d']['form']
+        self.assertEqual(form['subject'], 'تشکیل پرونده کمیسیون و تقسیط هزینه‌های دهیاری و جریمه کمیسیون')
+        self.assertEqual(form['addressee'], 'council')
+        page = client_for(self.citizen).get(self.url()).content.decode()
+        self.assertIn('شورای اسلامی روستا', page)
+
+    def test_the_owner_may_change_both_and_a_bad_addressee_falls_back(self):
+        base = {'name': 'علی رضایی', 'father': 'حسن', 'id_number': '1', 'national_id': self.permit.people.first().national_id,
+                'street': 'x', 'phone': '09121234567', 'date': '1405/06/22'}
+        client_for(self.citizen).post(self.url('permit_commission_save'), {**base, 'subject': 'تقسیط جریمه', 'addressee': 'dehyari'})
+        form = self.reload().commission['form']
+        self.assertEqual((form['subject'], form['addressee']), ('تقسیط جریمه', 'dehyari'))
+        client_for(self.citizen).post(self.url('permit_commission_save'), {**base, 'subject': '', 'addressee': 'x'})
+        form = self.reload().commission['form']
+        self.assertEqual((form['subject'], form['addressee']), ('تشکیل پرونده کمیسیون و تقسیط هزینه‌های دهیاری و جریمه کمیسیون', 'council'))

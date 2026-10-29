@@ -217,3 +217,9 @@ Step 1 of the unlicensed track now carries everything the village needs before i
 - **Confirming step 1** (any of the clerk / technical expert / dehyari, `permits.open_file`) now needs the signed defence form **and** a shamim file
   (uploaded or delivered as a sketch); otherwise the staff see what is missing. The file list says what it waits for (`PermitFile.step1_text`).
 - Steps 2 (request form and undertaking) and 3 (the warning notice) follow as before.
+
+### Step 2 forms follow the dehyari's templates (folder «2»)
+The request form's subject («تقاضای ... را دارم») and its addressee are fields: the subject defaults to «تشکیل پرونده کمیسیون و تقسیط هزینه‌های دهیاری و جریمه
+کمیسیون»; the addressee defaults to «شورای اسلامی روستا» as in the template and can be switched to «دهیار روستا» as on the earlier signed sample. The
+undertaking is unchanged (its monthly occupation rate stays a dotted blank for the dehyari: the template shows an unreadable rate).
+
