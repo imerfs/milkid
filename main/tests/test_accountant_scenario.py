@@ -1,6 +1,7 @@
 """A whole village year in the accountant workspace, entered through the panel's own HTTP endpoints, then the books are checked
 against figures computed here independently: trial balance, statements, ledgers, budget, bills, instalments, transport income,
 the status change, the exports and the permit-fee list. If any screen or any total is wrong, this fails."""
+import json
 from datetime import date
 from decimal import Decimal
 
@@ -10,7 +11,11 @@ from main.accounting import bills, budget as budget_mod, ledger, statements
 from main.accounting.tabs import TAB_LIST
 from main.models import Account, Bill, Installment, InstallmentPlan, Party, TransportIncome, Voucher
 from main.accounting import payroll
-from main.models import PayrollRun
+from main.models import ReconMark, AssetDepreciation, CreditProvision, Contract, Guarantee, Invoice, PayrollRun
+from main.tests.test_accounting_assets import AssetBase
+from main.tests.test_trade_views import ON, TABS, TradeViewBase, u
+from main.tests.helpers import client_for
+from main.accounting import assets
 from main.tests.test_accounting_finance_panel import FinancePanelBase  # noqa: F401
 from main.tests.test_accounting_payroll import NID
 from main.tests.test_accounting_payroll_panel import PayrollPanelBase
@@ -253,3 +258,176 @@ class PayrollMonth(PayrollPanelBase):
         r = self.post('acc_p_eidi_setting', 1404, calc_group='official_worker', fixed_amount='۳۶٬۰۰۰٬۰۰۰', annual_days='360')
         self.assertEqual(r.status_code, 204, r.content.decode()[:300])
         self.assertEqual(self.post('acc_p_eidi_compute', 1404).status_code, 204)
+
+
+class ContractsCreditGuarantees(FinancePanelBase):
+    """A contract with its statements, a credit reservation against the budget and a guarantee through its life."""
+
+    def test_contract_statements_deductions_and_the_contract_ceiling(self):
+        data = {'subject': 'آسفالت کوچه', 'contractor': self.party.id, 'date': '۱۴۰۴/۰۲/۱۱', 'start_date': '۱۴۰۴/۰۲/۱۱',
+                'end_date': '۱۴۰۴/۱۲/۱۱', 'amount': '۱٬۰۰۰٬۰۰۰', 'vat_pct': '10', 'tax_pct': '3'}
+        self.assertEqual(self.post('acc_p_contract_new', self.year.id, **data).status_code, 204)
+        contract = Contract.objects.get()
+        for gross in ('۴۰۰۰۰۰', '۳۰۰۰۰۰'):
+            self.assertEqual(self.post('acc_p_statement_new', contract.id, date='۱۴۰۴/۰۳/۰۱', gross=gross).status_code, 204)
+        slips = list(contract.statements.order_by('id'))
+        self.assertEqual([(s.gross, s.vat, s.tax, s.net) for s in slips],
+                         [(400_000, 40_000, 12_000, 428_000), (300_000, 30_000, 9_000, 321_000)])      # net = gross + 10% VAT - 3% tax
+        self.assertEqual(self.post('acc_p_statement_new', contract.id, date='۱۴۰۴/۰۳/۰۱', gross='۳۰۰۰۰۱').status_code, 409)   # over the ceiling
+        self.assertEqual(self.post('acc_p_statement_new', contract.id, date='۱۴۰۴/۰۳/۰۱', gross='۳۰۰۰۰۰').status_code, 204)      # exactly the rest
+        self.assertContains(self.get('acc_p_contract_detail', contract.id), 'صورت‌وضعیت')
+        self.assertContains(self.get('acc_panel', tab='contracts'), 'آسفالت کوچه')
+
+    def test_credit_is_reserved_against_the_budget_and_refused_beyond_it(self):
+        budget_mod.set_budget(self.dehyar, self.year, self.salary, 1000)
+        row = {'date': '۱۴۰۴/۰۲/۱۱', 'use_account': [self.salary.id, ''], 'source_account': [self.tax.id, ''], 'project': ['پروژه', ''],
+               'description': ['', ''], 'amount': ['۸۰۰', '']}
+        self.assertEqual(self.post('acc_p_credit_new', self.year.id, **row).status_code, 204)
+        self.assertEqual(self.post('acc_p_credit_new', self.year.id, **{**row, 'amount': ['۳۰۰', '']}).status_code, 409)     # 800 + 300 > 1000
+        self.assertEqual(self.post('acc_p_credit_new', self.year.id, **{**row, 'amount': ['۲۰۰', '']}).status_code, 204)     # exactly the rest
+        self.assertEqual(CreditProvision.objects.count(), 2)
+        self.assertEqual(sum(line.amount for prov in CreditProvision.objects.all() for line in prov.lines.all()), 1000)
+        self.assertEqual(self.get('acc_panel', tab='credit').status_code, 200)
+
+    def test_a_guarantee_can_be_returned_and_not_twice(self):
+        r = self.post('acc_p_guarantee_new', kind='bid', doc_kind='cheque', party=self.party.id, serial='55', date='۱۴۰۴/۰۲/۱۱',
+                      expires_on='۱۴۰۴/۰۵/۱۱', amount='۵۰۰')
+        self.assertEqual(r.status_code, 204, r.content.decode()[:300])
+        g = Guarantee.objects.get()
+        self.assertContains(self.get('acc_panel', tab='guarantees'), '۵۵')
+        self.assertEqual(self.post('acc_p_guarantee_action', g.id, 'returned').status_code, 204)
+        self.assertGreaterEqual(self.post('acc_p_guarantee_action', g.id, 'returned').status_code, 400)
+        self.assertEqual(self.post('acc_p_guarantee_action', g.id, 'nonsense').status_code, 404)
+
+
+class FixedAssets(AssetBase):
+    """An asset bought, depreciated for the year (the schedule's own arithmetic) and sold."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = client_for(self.dehyar)
+
+    def test_the_year_depreciation_equals_the_schedule_and_the_books_stay_balanced(self):
+        asset = self.asset()
+        plan = assets.schedule(asset)
+        self.assertEqual(sum(plan.values()), 12_000_000)                                  # the whole cost, no more
+        self.assertEqual(self.client.post(reverse('main:acc_p_asset_depreciate', args=[self.year.id])).status_code, 204)
+        dep = AssetDepreciation.objects.get(asset=asset)
+        self.assertEqual(dep.amount, plan[1404])
+        rows, totals = ledger.trial_balance(self.dehyar, self.year)
+        self.assertEqual(totals['debit'], totals['credit'])
+        accum = next(r for r in rows if r['account_id'] == self.accum.id)
+        self.assertEqual(accum['credit'], plan[1404])                                        # accumulated depreciation grew by the share
+        again = self.client.post(reverse('main:acc_p_asset_depreciate', args=[self.year.id]))        # re-issuing the year replaces, never doubles
+        self.assertIn(again.status_code, (204, 409))
+        rows, totals = ledger.trial_balance(self.dehyar, self.year)
+        accum = next(r for r in rows if r['account_id'] == self.accum.id)
+        self.assertEqual(accum['credit'], plan[1404])
+        self.assertEqual(AssetDepreciation.objects.filter(asset=asset).count(), 1)
+
+    def test_selling_the_asset_closes_it_and_balances(self):
+        asset = self.asset()
+        self.client.post(reverse('main:acc_p_asset_depreciate', args=[self.year.id]))
+        done = self.client.post(reverse('main:acc_p_asset_dispose', args=[asset.id]),
+                                {'date': '1405/03/15', 'proceeds': '9000000', 'proceeds_account': self.bank.id})
+        self.assertEqual(done.status_code, 204, done.content.decode()[:300])
+        asset.refresh_from_db()
+        self.assertEqual(asset.status, 'disposed')
+        for year in (self.year, self.year2):
+            _, totals = ledger.trial_balance(self.dehyar, year)
+            self.assertEqual(totals['debit'], totals['credit'], year.year)
+        self.assertEqual(self.client.get(reverse('main:acc_panel'), {'year': self.year.id, 'tab': 'assets'}).status_code, 200)
+
+
+class TradeYear(TradeViewBase):
+    """Stock of rice moves with sales and cancellations; it never goes below zero."""
+
+    def test_sale_cancel_move_the_stock_exactly_and_oversell_is_refused(self):
+        self.assertEqual(self.stock(self.rice), 100)
+        sale = {'on': ON, 'party': self.customer.id, 'warehouse': self.wh.id, 'product': [self.rice.id], 'qty': ['4'], 'unit_price': ['۳۰۰'],
+                'discount': ['']}
+        self.assertEqual(self.client.post(u('acc_p_trade_invoice_new', self.year.id, 'sale'), sale).status_code, 204)
+        self.assertEqual(self.stock(self.rice), 96)
+        inv = Invoice.objects.get(municipality=self.muni, kind='sale')
+        self.assertEqual(self.client.post(u('acc_p_trade_invoice_action', inv.id, 'cancel')).status_code, 204)
+        self.assertEqual(self.stock(self.rice), 100)                                         # cancelled: the goods are back
+        over = self.client.post(u('acc_p_trade_invoice_new', self.year.id, 'sale'), {**sale, 'qty': ['101']})
+        self.assertGreaterEqual(over.status_code, 400)                                       # more than the stock
+        self.assertEqual(self.stock(self.rice), 100)
+
+    def test_a_receipt_and_the_kardex_follow_the_movements(self):
+        before = self.stock(self.rice)
+        self.receive(self.rice, 25, 110, date(2025, 4, 20))
+        self.assertEqual(self.stock(self.rice), before + 25)
+        self.assertEqual(self.client.get(u('acc_p_trade_kardex', self.rice.id)).status_code, 200)
+        self.assertEqual(self.client.get(u('acc_p_trade_stock_export', self.year.id)).status_code, 200)
+
+    def test_every_trade_screen_renders_with_this_data(self):
+        self.sale(self.rice, 10, 300)
+        for tab in TABS:
+            self.assertEqual(self.client.get(u('acc_panel'), {'tab': tab, 'year': self.year.id}).status_code, 200, tab)
+        self.assertEqual(self.client.get(u('acc_p_trade_warehouses')).status_code, 200)
+        self.assertEqual(self.client.get(u('acc_p_trade_settings')).status_code, 200)
+
+
+class ReceivableOnTheBudget(VillageYear):
+    """Unpaid bills used to leave no trace in the budget report: now they show as a receivable, never booked."""
+
+    def test_the_budget_report_shows_what_open_bills_still_owe_without_booking_it(self):
+        rows, totals = budget_mod.report(self.dehyar, self.year)
+        row = next(r for r in rows if r['account_id'] == self.tax.id)
+        self.assertEqual(row['receivable'], 2_500_000 + 800_000)           # b1 still owes 2.5M, b3 owes all; b2 is cancelled
+        self.assertEqual(row['actual'], 3_000_000 + 1_500_000 + 4_000_000 + 2_500_000)           # unchanged: income is booked on payment
+        self.assertEqual(totals['resource']['receivable'], 3_300_000)
+        page = self.client.get(reverse('main:acc_panel'), {'tab': 'budget'})
+        self.assertContains(page, 'مطالبه‌ی فیش‌های باز')
+        _, trial = ledger.trial_balance(self.dehyar, self.year)
+        self.assertEqual(trial['debit'], trial['credit'])
+
+    def test_a_paid_bill_owes_nothing(self):
+        bills.record_payment(self.dehyar, self.b3, self.d, 800_000, self.cash, 'cash')
+        rows, _ = budget_mod.report(self.dehyar, self.year)
+        row = next(r for r in rows if r['account_id'] == self.tax.id)
+        self.assertEqual(row['receivable'], 2_500_000)
+
+
+class MissionRateWarning(PayrollPanelBase):
+    def test_the_run_says_who_has_a_mission_without_a_day_rate(self):
+        emp = self.make_emp()
+        self.post('acc_p_mission_new', employee=emp.id, order_no='۱', order_date='۱۴۰۴/۰۲/۱۰', start_date='۱۴۰۴/۰۳/۱۱',
+                  end_date='۱۴۰۴/۰۳/۱۳', origin='الف', destination='ب')
+        self.assertEqual(payroll.unpriced_missions(self.dehyar, 1404, 3), ['علی رضایی'])
+        message = json.loads(self.post('acc_p_run', 1404, 3)['HX-Trigger'])['accDone']['message']
+        self.assertIn('نرخ روز ماموریت', message)
+        self.assertIn('علی رضایی', message)
+        self.assertEqual(payroll.unpriced_missions(self.dehyar, 1404, 4), [])           # another month has no mission
+
+    def test_no_warning_when_there_is_no_mission(self):
+        self.make_emp()
+        message = json.loads(self.post('acc_p_run', 1404, 3)['HX-Trigger'])['accDone']['message']
+        self.assertNotIn('نرخ روز ماموریت', message)
+
+
+class BankReconAndLock(VillageYear):
+    """Tick the bank movements against the statement, then lock the dates: the lock stops later edits."""
+
+    def test_reconciliation_marks_and_the_difference_with_the_statement(self):
+        page = self.client.get(reverse('main:acc_panel'), {'tab': 'recon', 'account': self.cash.id, 'statement': '9500000'})
+        self.assertEqual(page.status_code, 200)
+        shown = page.context['shown_ids']
+        rows = page.context['recon']['rows']
+        self.assertGreaterEqual(len(rows), 3)
+        first = self.v1.lines.get(account=self.cash)
+        done = self.client.post(reverse('main:acc_p_recon_save', args=[self.year.id]), {'account': self.cash.id, 'shown': shown, 'line': [first.id]})
+        self.assertEqual(done.status_code, 204, done.content.decode()[:300])
+        self.assertEqual(ReconMark.objects.count(), 1)
+
+    def test_the_date_lock_blocks_new_and_edited_vouchers_before_it(self):
+        self.assertEqual(self.client.post(reverse('main:acc_p_lock_set'), {'lock_date': '1404/02/28'}).status_code, 204)
+        late = self.client.post(reverse('main:acc_p_voucher_new', args=[self.year.id]), {
+            'date': '1404/02/10', 'kind': 'income', 'description': 'پس از قفل', 'account': [self.cash.id, self.tax.id], 'party': ['', ''],
+            'cost_center': ['', ''], 'line_description': ['', ''], 'debit': ['100', ''], 'credit': ['', '100']})
+        self.assertGreaterEqual(late.status_code, 400)
+        self.assertFalse(Voucher.objects.filter(description='پس از قفل').exists())
+        self.assertGreaterEqual(self.client.post(reverse('main:acc_p_voucher_action', args=[self.v2.id, 'delete'])).status_code, 400)
+        self.assertEqual(self.client.get(reverse('main:acc_panel'), {'tab': 'controls'}).context['check_summary']['failed'], 0)

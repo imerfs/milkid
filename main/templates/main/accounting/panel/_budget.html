@@ -9,7 +9,7 @@
     </div>
     <div class="ac-table-wrap">
         <table>
-            <thead><tr><th>کد</th><th>شرح حساب</th><th>بودجه مصوب</th><th>عملکرد</th><th>باقی‌مانده</th><th style="min-width:9rem">درصد</th></tr></thead>
+            <thead><tr><th>کد</th><th>شرح حساب</th><th>بودجه مصوب</th><th>عملکرد</th><th title="فیش‌های صادرشده‌ای که هنوز پرداخت نشده؛ تا پرداخت، درآمد ثبت نمی‌شود">مطالبه‌ی فیش‌های باز</th><th>باقی‌مانده</th><th style="min-width:9rem">درصد</th></tr></thead>
             <tbody>
             {% for r in rows %}
                 <tr class="{% if r.over %}over{% endif %}">
@@ -17,6 +17,7 @@
                     <td><a class="ac-link" href="{% url 'main:acc_ledger' year.id r.account_id %}">{{ r.title }}</a> <span class="ac-tag">{% if r.kind == 'resource' %}منبع{% else %}مصرف{% endif %}</span></td>
                     <td class="num-cell">{{ r.budget|rial }}</td>
                     <td class="num-cell">{{ r.actual|rial }}</td>
+                    <td class="num-cell">{% if r.receivable %}{{ r.receivable|rial }}{% else %}<span class="muted">—</span>{% endif %}</td>
                     <td class="num-cell">{{ r.remaining|rial }}</td>
                     <td>
                         {% if r.percent is None %}<span class="muted">—</span>{% else %}
@@ -25,12 +26,12 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6"><div class="ac-empty"><span class="eic"><i class="fas fa-chart-pie" aria-hidden="true"></i></span><h4>هنوز بودجه یا گردشی ثبت نشده است</h4></div></td></tr>
+                <tr><td colspan="7"><div class="ac-empty"><span class="eic"><i class="fas fa-chart-pie" aria-hidden="true"></i></span><h4>هنوز بودجه یا گردشی ثبت نشده است</h4></div></td></tr>
             {% endfor %}
             </tbody>
             <tfoot>
-                <tr><td></td><td>جمع منابع</td><td class="num-cell">{{ totals.resource.budget|rial }}</td><td class="num-cell">{{ totals.resource.actual|rial }}</td><td colspan="2"></td></tr>
-                <tr><td></td><td>جمع مصارف</td><td class="num-cell">{{ totals.use.budget|rial }}</td><td class="num-cell">{{ totals.use.actual|rial }}</td><td colspan="2"></td></tr>
+                <tr><td></td><td>جمع منابع</td><td class="num-cell">{{ totals.resource.budget|rial }}</td><td class="num-cell">{{ totals.resource.actual|rial }}</td><td class="num-cell">{{ totals.resource.receivable|rial }}</td><td colspan="2"></td></tr>
+                <tr><td></td><td>جمع مصارف</td><td class="num-cell">{{ totals.use.budget|rial }}</td><td class="num-cell">{{ totals.use.actual|rial }}</td><td></td><td colspan="2"></td></tr>
             </tfoot>
         </table>
     </div>
