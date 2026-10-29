@@ -1,10 +1,17 @@
 """Construction without a permit, step 3: the warning notice the owner already received (uploaded, checked, confirmed)."""
+import datetime
+
+import jdatetime
 from django.urls import reverse
 
 from main.models import Notification, PermitDocument, PermitFile
 from main.tests.helpers import client_for
 from main.tests.test_permit_files import PDF, PNG, Village, upload
-from main.tests.test_permit_unlicensed import CODE, unlicensed
+from main.tests.test_permit_unlicensed import CODE, sign_defence, unlicensed
+
+
+def soon(days=10):
+    return (jdatetime.date.today() + datetime.timedelta(days=days)).strftime('%Y/%m/%d')
 
 
 def notice_post(**override):
@@ -23,6 +30,7 @@ class Notice(Village):
         """A file of the unlicensed track that reached step 3 (step 1 confirmed, step 2 papers confirmed)."""
         client_for(self.citizen).post(reverse('main:without_permit_form'), unlicensed())
         permit = PermitFile.objects.latest('pk')
+        sign_defence(self.citizen, permit)
         client_for(self.clerk).post(reverse('main:permit_open', args=[permit.pk]), {'renewal_code': CODE})
         client_for(self.citizen).post(reverse('main:permit_commission_upload', args=[permit.pk]),
                                       {'request_scan': upload('r.png', PNG), 'undertaking_scan': upload('u.png', PNG), 'signed': 'on'})
@@ -55,9 +63,10 @@ class Page(Notice):
 
     def test_it_asks_the_owner_for_the_notice_and_names_the_owner_on_it(self):
         page = client_for(self.citizen).get(self.url()).content.decode()
-        self.assertIn('بارگذاری اخطاریه', page)
+        self.assertIn('اخطاریه دارم', page)
+        self.assertIn('درخواست دریافت اخطاریه', page)
         self.assertIn('value="علی رضایی"', page)
-        self.assertEqual(self.permit.status_text, 'منتظر تصویر اخطاریه‌ی دریافتی (از متقاضی)')
+        self.assertEqual(self.permit.status_text, 'منتظر اخطاریه‌ی قبلی یا درخواست صدور اخطاریه (از متقاضی)')
 
     def test_the_page_is_closed_before_step_three_and_to_permit_files(self):
         client_for(self.citizen).post(reverse('main:without_permit_form'), unlicensed())
@@ -128,7 +137,7 @@ class Deciding(Notice):
                 self.send()
             self.decide(who, **self.good())
             permit = self.reload()
-            self.assertEqual((permit.notice_state, permit.stage_no, permit.state), ('verified', 4, 'done'), who.profile.role)
+            self.assertEqual((permit.notice_state, permit.stage_no, permit.state), ('verified', 3, 'done'), who.profile.role)       # the visit follows
             self.assertEqual(permit.notice['checked']['by'], who.username)
             self.assertTrue(Notification.objects.filter(user=self.citizen, title='اخطاریه‌ی شما تایید شد').exists())
 
@@ -169,12 +178,20 @@ class Deciding(Notice):
         self.send(scan=upload('new.png', PNG), date='1402/10/19')                 # sent already: refused
         self.assertEqual(PermitDocument.objects.get(file=permit, kind='warning_notice').pk, old)
 
-    def test_after_confirming_step_four_is_not_built_yet(self):
+    def test_after_confirming_the_notice_the_owner_asks_for_the_visit_and_step_four_is_not_built_yet(self):
         self.decide(self.dehyari, **self.good())
         permit = self.reload()
-        self.assertEqual(permit.status_text, 'مرحله‌ی ۳ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است')
+        self.assertEqual(permit.status_text, 'منتظر درخواست بازدید (از متقاضی)')
         self.assertFalse(permit.needs_staff)
-        page = client_for(self.citizen).get(reverse('main:permit_file', args=[permit.pk])).content.decode()
-        self.assertIn('هنوز در سامانه راه‌اندازی نشده', page)
         self.send(number='555')
         self.assertEqual(self.reload().notice['number'], '2/4493')
+        client_for(self.citizen).post(self.url('permit_visit_request'), {'date': '1300/01/01', 'slot': 'morning'})
+        client_for(self.engineer).post(self.url('permit_visit_complete'), {'confirm': 'on'})
+        self.assertEqual(self.reload().stage_no, 3)                # nothing was requested: nothing to complete
+        client_for(self.citizen).post(self.url('permit_visit_request'), {'date': soon(), 'slot': 'morning', 'note': 'هماهنگ شده'})
+        client_for(self.engineer).post(self.url('permit_visit_complete'), {'confirm': 'on', 'notes': 'سه طبقه، نمای ناتمام'})
+        permit = self.reload()
+        self.assertEqual((permit.visit_state, permit.stage_no), ('done', 4))
+        self.assertEqual(permit.status_text, 'مرحله‌ی ۳ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است')
+        page = client_for(self.citizen).get(reverse('main:permit_file', args=[permit.pk])).content.decode()
+        self.assertIn('هنوز در سامانه راه‌اندازی نشده', page)

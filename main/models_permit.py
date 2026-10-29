@@ -128,6 +128,15 @@ class PermitFile(models.Model):
     endwork = models.JSONField(default=dict, blank=True)
     endwork_state = models.CharField(max_length=10, blank=True, default='')
     supervision = models.JSONField(default=dict, blank=True)
+    # construction without a permit, step 1: the owner's defence form (فرم دفاعیه) as filled in (main/office/permit_defence.py), and
+    # the shamim sketch (کروکی شمیم) the owner asks the technical expert for when he has no shamim file (main/office/permit_sketch.py):
+    # '' / requested / priced (the fee is set) / paid (the slip is recorded) / delivered
+    SKETCH_STATES = [('', 'بدون درخواست کروکی'), ('requested', 'منتظر تعیین هزینه'), ('priced', 'منتظر پرداخت متقاضی'),
+                     ('paid', 'منتظر تایید پرداخت و تحویل کروکی'), ('delivered', 'کروکی تحویل شد')]
+    defence = models.JSONField(default=dict, blank=True)
+    sketch = models.JSONField(default=dict, blank=True)
+    sketch_state = models.CharField(max_length=10, choices=SKETCH_STATES, blank=True, default='')
+    sketch_at = models.DateTimeField(null=True, blank=True)
     # construction without a permit, step 2: the owner's request form and undertaking, signed on paper and uploaded
     # (main/office/permit_commission.py): '' (the owner fills, prints, signs) / uploaded / returned / verified
     COMMISSION_STATES = [('', 'در حال تهیه‌ی فرم‌ها'), ('uploaded', 'منتظر تایید فرم‌ها'), ('returned', 'برگشت‌خورده'), ('verified', 'تایید شد')]
@@ -136,9 +145,18 @@ class PermitFile(models.Model):
     commission_at = models.DateTimeField(null=True, blank=True)
     # construction without a permit, step 3: the warning notice (اخطاریه به مالک) the owner already received, uploaded
     # (main/office/permit_notice.py): '' (waiting for the owner) / uploaded / returned / verified
+    # '' (the owner uploads the one he has, or asks for one) / requested (he asks the village to issue it) / issued (the staff filled and
+    # printed it; the owner signs in person) / uploaded (the signed scan) / returned / verified; then the owner asks for the technical
+    # expert's visit: visit_state '' / requested / scheduled / done (which moves the file to step 4)
+    NOTICE_STATES = [('', 'منتظر اخطاریه'), ('requested', 'درخواست صدور اخطاریه'), ('issued', 'اخطاریه صادر شد'), ('uploaded', 'منتظر تایید اخطاریه'),
+                     ('returned', 'برگشت‌خورده'), ('verified', 'تایید شد')]
+    VISIT_STATES = [('', 'بدون درخواست بازدید'), ('requested', 'درخواست بازدید'), ('scheduled', 'بازدید زمان‌بندی شد'), ('done', 'بازدید انجام شد')]
     notice = models.JSONField(default=dict, blank=True)
-    notice_state = models.CharField(max_length=10, choices=COMMISSION_STATES, blank=True, default='')
+    notice_state = models.CharField(max_length=10, choices=NOTICE_STATES, blank=True, default='')
     notice_at = models.DateTimeField(null=True, blank=True)
+    visit = models.JSONField(default=dict, blank=True)
+    visit_state = models.CharField(max_length=10, choices=VISIT_STATES, blank=True, default='')
+    visit_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -168,6 +186,8 @@ class PermitFile(models.Model):
     @property
     def status_text(self):
         """One line for the lists: where the file stands now."""
+        if self.unlicensed and self.stage_no == 1:
+            return self.step1_text()
         if self.state != 'done':
             return self.get_state_display()
         if self.unlicensed:
@@ -175,7 +195,11 @@ class PermitFile(models.Model):
                 return {'': 'منتظر فرم درخواست و تعهدنامه‌ی امضاشده (از متقاضی)', 'uploaded': 'فرم درخواست و تعهدنامه منتظر تایید',
                         'returned': 'فرم‌های امضاشده برگشت خورد'}.get(self.commission_state, '')
             if self.stage_no == 3:
-                return {'': 'منتظر تصویر اخطاریه‌ی دریافتی (از متقاضی)', 'uploaded': 'اخطاریه منتظر تایید',
+                if self.notice_state == 'verified':
+                    return {'': 'منتظر درخواست بازدید (از متقاضی)', 'requested': 'درخواست بازدید منتظر کارشناس فنی',
+                            'scheduled': 'بازدید زمان‌بندی شد'}.get(self.visit_state, '')
+                return {'': 'منتظر اخطاریه‌ی قبلی یا درخواست صدور اخطاریه (از متقاضی)', 'requested': 'درخواست اخطاریه منتظر صدور (دهیاری)',
+                        'issued': 'اخطاریه صادر شد؛ متقاضی حضوری امضا کند', 'uploaded': 'اخطاریه منتظر تایید',
                         'returned': 'اخطاریه برگشت خورد'}.get(self.notice_state, '')
             return 'مرحله‌ی ۳ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
@@ -211,8 +235,8 @@ class PermitFile(models.Model):
     def needs_staff(self):
         """True while the village staff (clerk / expert / dehyari) have something to decide on this file."""
         if self.unlicensed:
-            return (self.state == 'submitted' or (self.stage_no == 2 and self.commission_state == 'uploaded')
-                    or (self.stage_no == 3 and self.notice_state == 'uploaded'))
+            return (self.state == 'submitted' or self.sketch_state in ('requested', 'paid') or (self.stage_no == 2 and self.commission_state == 'uploaded')
+                    or (self.stage_no == 3 and (self.notice_state in ('requested', 'uploaded') or self.visit_state in ('requested', 'scheduled'))))
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -227,6 +251,16 @@ class PermitFile(models.Model):
     @property
     def needs_accountant(self):
         return not self.unlicensed and self.stage_no == 5 and self.fees_state in ('', 'objected')
+
+    def step1_text(self):
+        """Where an unlicensed file stands in step 1: what the owner or the staff still have to do."""
+        if self.state != 'submitted':
+            return self.get_state_display()
+        if self.sketch_state and self.sketch_state != 'delivered':
+            return dict(self.SKETCH_STATES)[self.sketch_state]
+        if not self.documents.filter(kind='defence_form').exists():
+            return 'منتظر فرم دفاعیه‌ی امضاشده (از متقاضی)'
+        return 'در انتظار بررسی'
 
     @property
     def stage_title(self):
@@ -272,7 +306,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
+        ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
         ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]

@@ -178,7 +178,7 @@ def parse(post, files, track='permit'):
     # ---- the ownership paper
     ownership = post.get('ownership_type', '')
     fields['ownership_type'] = ownership
-    if ownership not in OWNERSHIP_DOC or (unlicensed and ownership == 'bonyad'):
+    if ownership not in OWNERSHIP_DOC:
         errors['ownership_type'] = 'وضعیت سند ملک را انتخاب کنید.'
     fields['doc_number'] = text(post, 'doc_number', 60)
     fields['doc_issuer'] = text(post, 'doc_issuer', 150)
@@ -229,6 +229,12 @@ def parse(post, files, track='permit'):
             errors[name] = f'{label} را بارگذاری کنید.'
         uploaded[name] = found
 
+    if unlicensed and ownership == 'agreement':
+        # the agreement (قولنامه) must go back to the first owner: the applicant ticks that it was
+        if post.get('agreement_returned') == 'on':
+            fields['details']['agreement_returned'] = 'yes'
+        else:
+            errors['agreement_returned'] = 'قولنامه باید به صاحب اول برگردد؛ تیک تایید لازم است.'
     if ownership in OWNERSHIP_DOC:
         name = OWNERSHIP_DOC[ownership]
         found, error = _uploads(files, name, ID_EXTENSIONS)
@@ -238,10 +244,14 @@ def parse(post, files, track='permit'):
             errors[name] = f'{OWNERSHIP_LABEL[ownership]} را بارگذاری کنید.'
         uploaded[name] = found
     found, error = _uploads(files, 'shamim', SHAMIM_EXTENSIONS)
+    # without a shamim file the owner of an unlicensed building may ask the technical expert for a sketch (against a fee)
+    sketch = unlicensed and not found and post.get('shamim_request') == 'on'
+    if sketch:
+        data['sketch_request'] = True
     if error:
         errors['shamim'] = error
-    elif not found:
-        errors['shamim'] = 'فایل شمیم را بارگذاری کنید.'
+    elif not found and not sketch:
+        errors['shamim'] = 'فایل شمیم را بارگذاری کنید' + ('، یا درخواست کروکی بدهید.' if unlicensed else '.')
     elif len(found) > 1:
         errors['shamim'] = 'فقط یک فایل شمیم (در صورت چند فایل، به‌صورت zip) بفرستید.'
     uploaded['shamim'] = found

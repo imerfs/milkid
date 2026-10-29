@@ -189,14 +189,41 @@ services, end of work). **Only step 1 is built; steps 2-6 are still the static p
   who and when are kept in `commission.checked`), or sends them back with a reason. Waiting files count in the three panels (`needs_staff`).
   Step 3 onwards is not built yet.
 
-## Construction without a permit: step 3 (the warning notice the owner already received)
-`permits/<id>/notice/` (`permit_notice.py`, `permits/notice.html`), open once step 2 is confirmed (file at stage 3). The dehyari's warning notice
-to the owner (form 14, «اخطاریه به مالک»: building without a permit, inside or outside the village master plan, handed to the owner or his
-relatives or posted on the building) was issued before the file; the owner only brings it in.
-- The owner uploads the scan (`warning_notice`, private storage) and types its figures from the paper: number, date (not in the future), the name
-  on it, inside / outside the master plan, handed over / posted.
-- **Any of the clerk / technical expert / dehyari** (`permit.open`) sees the scan beside the figures and the system's comparison (the name against
-  the file's owner, a number already used in another file), may correct a figure, ticks that the notice was compared with the original and
-  confirms (the file moves to step 4; who and when are kept in `notice.checked`), or sends it back with a reason (the owner uploads again, or just
-  fixes the figures: the old scan is kept unless a new one is sent). Step 4 onwards is not built yet.
-- The blank form 14 is not drawn by the system yet (the dehyari issues it on paper); the system can issue it later if wanted.
+## Construction without a permit: step 3 (the warning notice and the technical expert's visit)
+`permits/<id>/notice/` (`permit_notice.py`, `permits/notice.html`, `static/js/permit-notice-form.js`), open once step 2 is confirmed (file at stage 3).
+The dehyari's warning notice to the owner (form 14, «اخطاریه به مالک») comes first, then the visit; any of the clerk / technical expert / dehyari
+(`permit.open`) confirms each part.
+- **Owner has the notice:** uploads the scan and types its figures (number, date not in the future, the name on it, inside / outside the master plan,
+  handed over / posted). **Owner has none:** asks (`notice_state` `requested`) and goes to the dehyari in person.
+- **The staff fill the notice** (`issue`, also for a walk-in owner without a request): form 14 is drawn over its blank (`static/forms/permit/form14_blank.jpg`)
+  from the file: the owner's name, the address, the five breach ticks (no permit and no approved plans ticked by default, «extra built area» when the
+  defence form says over a permit), inside the master plan when the plot is on the village map; the staff change anything, print or download it. The dehyari
+  stamps and signs, the owner signs in person, and the owner **or the staff** upload the signed scan (`issued` → `uploaded`).
+- **Checking:** the staff see the scan beside the figures and the system's comparison (the name against the file's owner, a number used in another file),
+  may correct a figure, tick that it was compared with the original and confirm (`verified`; who and when in `notice.checked`) or send it back with a reason.
+- **The visit:** after the confirmation the owner asks for the technical expert's visit (a future Jalali date and morning / afternoon,
+  `visit_state` `requested`); any of the three staff may set the day (`scheduled`, the owner is told) and record that the visit was made (`done`, with a
+  short report), which moves the file to **step 4**. Waiting items count in the three panels (`needs_staff`). Step 4 onwards is not built yet.
+
+## Construction without a permit: step 1 reworked (defence form, shamim sketch)
+Step 1 of the unlicensed track now carries everything the village needs before it opens the Article 99 file:
+- **Papers:** identity papers and the ownership paper (deed, agreement / مبایعه‌نامه, or the assignment contract). For an **agreement** the owner must
+  tick that it was returned to the first owner (`details.agreement_returned`).
+- **Shamim file or sketch:** the owner uploads the shamim file, or ticks «فایل شمیم ندارم» (`shamim_request`) and asks the technical expert for a **sketch**
+  (`permit_sketch.py`, page `permits/<id>/sketch/`, `sketch_state`): the technical expert (or the dehyari, policy `permit.sketch`) sets the fee →
+  the owner pays at the dehyari's bank account and records the slip (number, Jalali date, exact amount, optional scan `sketch_slip`) → the technical expert
+  / dehyari confirm the payment and deliver the file, which becomes the file's shamim file (read like any other: the map plot is suggested). The fee is not
+  posted to the books here.
+- **Defence form** (`permit_defence.py`, `static/js/permit-defence-form.js`, page `permits/<id>/defence/`): «فرم ارائه دفاعیات و توضیحات ذینفع یا نماینده
+  قانونی متخلف ساختمانی», filled from the file (owner, father, phone, village, district, county, the built area from the filing, without a permit / over a
+  permit, the dehyari's name), editable, with a free explanation (max 450 characters, two suggested sentences from the dehyari's sample). The owner prints it,
+  signs and leaves a fingerprint, takes it to the dehyari for the confirmation box at the bottom, and uploads the scan (`defence_form`).
+- **Confirming step 1** (any of the clerk / technical expert / dehyari, `permits.open_file`) now needs the signed defence form **and** a shamim file
+  (uploaded or delivered as a sketch); otherwise the staff see what is missing. The file list says what it waits for (`PermitFile.step1_text`).
+- Steps 2 (request form and undertaking) and 3 (the warning notice) follow as before.
+
+### Step 2 forms follow the dehyari's templates (folder «2»)
+The request form's subject («تقاضای ... را دارم») and its addressee are fields: the subject defaults to «تشکیل پرونده کمیسیون و تقسیط هزینه‌های دهیاری و جریمه
+کمیسیون»; the addressee defaults to «شورای اسلامی روستا» as in the template and can be switched to «دهیار روستا» as on the earlier signed sample. The
+undertaking is unchanged (its monthly occupation rate stays a dotted blank for the dehyari: the template shows an unreadable rate).
+

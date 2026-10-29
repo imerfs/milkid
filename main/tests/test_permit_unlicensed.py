@@ -9,8 +9,14 @@ from main.tests.test_permit_files import Village, application
 CODE = '0-0-8-182-2'
 
 
+def sign_defence(citizen, permit):
+    """The owner uploads the signed defence form (step 1 cannot be confirmed without it)."""
+    from main.tests.test_permit_files import PNG, upload
+    return client_for(citizen).post(reverse('main:permit_defence_upload', args=[permit.pk]), {'scan': upload('defence.png', PNG)})
+
+
 def unlicensed(ownership='agreement', **override):
-    data = application(ownership, built_area='70.28', floors='1', built_year='1402', **override)
+    data = application(ownership, built_area='70.28', floors='1', built_year='1402', agreement_returned='on', **override)
     data.pop('permit_kind', None)
     return data
 
@@ -53,11 +59,29 @@ class UnlicensedFiling(UnlicensedBase):
         self.assertTrue(Notification.objects.filter(user=self.clerk, title__contains='ساخت‌وساز بدون پروانه').exists())
         self.assertTrue(Notification.objects.filter(user=self.engineer, title__contains='ساخت‌وساز بدون پروانه').exists())
 
-    def test_a_deed_works_too_but_the_bonyad_contract_does_not(self):
+    def test_a_deed_a_bonyad_contract_and_an_agreement_all_work(self):
         self.assertEqual(self.filed(ownership_type='deed', deed=application('deed')['deed']).ownership_type, 'deed')
-        response = self.file_it(ownership_type='bonyad')
+        bonyad = application('bonyad')
+        self.assertEqual(self.filed(ownership_type='bonyad', bonyad_contract=bonyad['bonyad_contract']).ownership_type, 'bonyad')
+        self.assertEqual(self.filed().ownership_type, 'agreement')
+
+    def test_an_agreement_must_be_confirmed_as_returned_to_the_first_owner(self):
+        response = client_for(self.citizen).post(reverse(self.url), {**unlicensed(), 'agreement_returned': ''})
         self.assertEqual(response.status_code, 400)
-        self.assertIn('ownership_type', response.context['errors'])
+        self.assertIn('agreement_returned', response.context['errors'])
+        self.assertEqual(self.filed().details['agreement_returned'], 'yes')
+
+    def test_without_a_shamim_file_the_owner_may_ask_for_a_sketch_instead(self):
+        no_file = client_for(self.citizen).post(reverse(self.url), {**unlicensed(), 'shamim': ''})
+        self.assertEqual(no_file.status_code, 400)
+        self.assertIn('shamim', no_file.context['errors'])
+        data = unlicensed()
+        data.pop('shamim')
+        data['shamim_request'] = 'on'
+        self.assertEqual(client_for(self.citizen).post(reverse(self.url), data).status_code, 302)
+        permit = PermitFile.objects.latest('pk')
+        self.assertEqual(permit.sketch_state, 'requested')
+        self.assertFalse(permit.documents.filter(kind='shamim').exists())
 
     def test_the_built_building_must_be_described(self):
         for field in ('built_area', 'floors'):
@@ -86,6 +110,7 @@ class UnlicensedStaff(UnlicensedBase):
         self.assertIsNotNone(self.parcel)
 
     def confirm(self, who):
+        sign_defence(self.citizen, self.permit)
         return client_for(who).post(reverse('main:permit_open', args=[self.permit.pk]),
                                     {'renewal_code': CODE, 'notes': 'مدارک کامل بود'}, follow=True)
 

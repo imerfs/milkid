@@ -4,7 +4,7 @@ from django.urls import reverse
 from main.models import Notification, PermitDocument, PermitFile
 from main.tests.helpers import client_for
 from main.tests.test_permit_files import PDF, PNG, Village, upload
-from main.tests.test_permit_unlicensed import CODE, unlicensed
+from main.tests.test_permit_unlicensed import CODE, sign_defence, unlicensed
 
 
 class Commission(Village):
@@ -13,6 +13,7 @@ class Commission(Village):
         response = client_for(self.citizen).post(reverse('main:without_permit_form'), unlicensed())
         self.assertEqual(response.status_code, 302)
         self.permit = PermitFile.objects.latest('pk')
+        sign_defence(self.citizen, self.permit)
         client_for(self.clerk).post(reverse('main:permit_open', args=[self.permit.pk]), {'renewal_code': CODE})
         self.reload()
 
@@ -145,6 +146,7 @@ class Deciding(Commission):
             if who != self.clerk:
                 client_for(self.citizen).post(reverse('main:without_permit_form'), unlicensed())
                 self.permit = PermitFile.objects.latest('pk')
+                sign_defence(self.citizen, self.permit)
                 client_for(self.clerk).post(reverse('main:permit_open', args=[self.permit.pk]), {'renewal_code': CODE})
                 self.send()
             self.decide(who, confirm='on', notes='خوانا بود')
@@ -177,9 +179,28 @@ class Deciding(Commission):
 
     def test_after_confirming_the_forms_are_locked_and_step_three_opens(self):
         self.decide(self.dehyari, confirm='on')
-        self.assertEqual(self.reload().status_text, 'منتظر تصویر اخطاریه‌ی دریافتی (از متقاضی)')
+        self.assertEqual(self.reload().status_text, 'منتظر اخطاریه‌ی قبلی یا درخواست صدور اخطاریه (از متقاضی)')
         client_for(self.citizen).post(self.url('permit_commission_save'), {'name': 'کس دیگر', 'national_id': self.permit.people.first().national_id,
                                                                             'date': '1405/01/01'})
         self.assertEqual(self.reload().commission.get('form', {}).get('name'), None)
         page = client_for(self.citizen).get(reverse('main:permit_file', args=[self.permit.pk])).content.decode()
         self.assertIn(reverse('main:permit_notice', args=[self.permit.pk]), page)
+
+
+class SubjectAndAddressee(Commission):
+    def test_the_request_defaults_to_the_usual_subject_addressed_to_the_council(self):
+        form = client_for(self.citizen).get(self.url()).context['d']['form']
+        self.assertEqual(form['subject'], 'تشکیل پرونده کمیسیون و تقسیط هزینه‌های دهیاری و جریمه کمیسیون')
+        self.assertEqual(form['addressee'], 'council')
+        page = client_for(self.citizen).get(self.url()).content.decode()
+        self.assertIn('شورای اسلامی روستا', page)
+
+    def test_the_owner_may_change_both_and_a_bad_addressee_falls_back(self):
+        base = {'name': 'علی رضایی', 'father': 'حسن', 'id_number': '1', 'national_id': self.permit.people.first().national_id,
+                'street': 'x', 'phone': '09121234567', 'date': '1405/06/22'}
+        client_for(self.citizen).post(self.url('permit_commission_save'), {**base, 'subject': 'تقسیط جریمه', 'addressee': 'dehyari'})
+        form = self.reload().commission['form']
+        self.assertEqual((form['subject'], form['addressee']), ('تقسیط جریمه', 'dehyari'))
+        client_for(self.citizen).post(self.url('permit_commission_save'), {**base, 'subject': '', 'addressee': 'x'})
+        form = self.reload().commission['form']
+        self.assertEqual((form['subject'], form['addressee']), ('تشکیل پرونده کمیسیون و تقسیط هزینه‌های دهیاری و جریمه کمیسیون', 'council'))

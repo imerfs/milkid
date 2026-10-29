@@ -1,0 +1,95 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}کروکی شمیم - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-drafting-compass" aria-hidden="true"></i></span>
+    <div>
+      <h1>کروکی شمیم</h1>
+      <p>پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi> · وضعیت: {% if state %}{{ permit.get_sketch_state_display }}{% else %}بدون درخواست{% endif %}</p>
+    </div>
+  </header>
+
+  <ol class="pff-how">
+    <li class="{% if state %}ok{% endif %}"><b>۱</b><span>اگر فایل شمیم ندارید، کروکی شمیم ملک را از مسئول فنی دهیاری درخواست کنید.</span></li>
+    <li class="{% if sk.fee %}ok{% endif %}"><b>۲</b><span>مسئول فنی هزینه‌ی کروکی را تعیین می‌کند.</span></li>
+    <li class="{% if sk.payment %}ok{% endif %}"><b>۳</b><span>هزینه را به حساب دهیاری بپردازید و فیش را ثبت کنید.</span></li>
+    <li class="{% if state == 'delivered' %}ok{% endif %}"><b>۴</b><span>مسئول فنی پرداخت را تایید و کروکی را تحویل می‌دهد؛ کروکی همان فایل شمیم پرونده می‌شود.</span></li>
+  </ol>
+
+  <div class="pff-edit">
+    {% if can_request %}
+    <form method="post" action="{% url 'main:permit_sketch_request' permit.pk %}" class="pf-card pf-form pf-open">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <h2><i class="fas fa-pen-ruler" aria-hidden="true"></i>درخواست کروکی</h2>
+      <p class="pf-hint">تهیه‌ی کروکی هزینه دارد؛ مبلغ را مسئول فنی تعیین می‌کند و شما می‌پردازید.</p>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>درخواست کروکی شمیم</button>
+    </form>
+    {% endif %}
+
+    {% if sk.fee %}
+    <section class="pf-card"><h2><i class="fas fa-coins" aria-hidden="true"></i>هزینه</h2>
+      <p class="pf-code">{{ sk.fee|rials }}</p>
+      {% if sk.priced_by %}<p class="pf-hint">تعیین‌شده توسط {{ sk.priced_by }} · {{ sk.priced_at|persian_numbers }}{% if sk.note %} · {{ sk.note }}{% endif %}</p>{% endif %}
+    </section>
+    {% endif %}
+
+    {% if can_price %}
+    <form method="post" action="{% url 'main:permit_sketch_fee' permit.pk %}" class="pf-card pf-form pff-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <h2><i class="fas fa-tag" aria-hidden="true"></i>تعیین هزینه‌ی کروکی</h2>
+      <div class="pff-fields">
+        <label>هزینه (ریال)<input name="fee" dir="ltr" required inputmode="numeric" value="{{ sk.fee|default:'' }}"></label>
+        <label>توضیح (اختیاری)<input name="note" maxlength="300" value="{{ sk.note|default:'' }}"></label>
+      </div>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ثبت هزینه و اطلاع به متقاضی</button>
+    </form>
+    {% endif %}
+
+    {% if can_pay %}
+    <form method="post" action="{% url 'main:permit_sketch_pay' permit.pk %}" enctype="multipart/form-data" class="pf-card pf-form pff-form" data-once>{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <h2><i class="fas fa-receipt" aria-hidden="true"></i>ثبت فیش پرداخت</h2>
+      <div class="pff-fields">
+        <label>مبلغ (ریال)<input name="amount" dir="ltr" required inputmode="numeric" value="{{ sk.fee }}"></label>
+        <label>شماره‌ی فیش<input name="number" dir="ltr" required maxlength="40"></label>
+        <label>تاریخ فیش<input name="date" dir="ltr" required placeholder="۱۴۰۵/۰۶/۲۲"></label>
+      </div>
+      <label>تصویر فیش (اختیاری)<input type="file" name="slip" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ثبت فیش</button>
+    </form>
+    {% endif %}
+
+    {% if sk.payment %}
+    <section class="pf-card"><h2><i class="fas fa-receipt" aria-hidden="true"></i>فیش ثبت‌شده</h2>
+      <p>شماره <bdi dir="ltr">{{ sk.payment.number|persian_numbers }}</bdi> · تاریخ <bdi dir="ltr">{{ sk.payment.date|persian_numbers }}</bdi> · {{ sk.payment.amount|rials }}</p>
+      <ul class="pf-docs">{% for doc in slips %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }}</a></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+
+    {% if can_deliver %}
+    <form method="post" action="{% url 'main:permit_sketch_deliver' permit.pk %}" enctype="multipart/form-data" class="pf-card pf-form pff-form" data-once>{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <h2><i class="fas fa-truck-ramp-box" aria-hidden="true"></i>تایید پرداخت و تحویل کروکی</h2>
+      <label>فایل کروکی شمیم (dwg، dxf، geojson، kml یا zip)<input type="file" name="sketch" required accept=".dwg,.dxf,.geojson,.zip,.kml"></label>
+      <div class="pff-checks"><label><input type="checkbox" name="confirm"> فیش پرداخت را بررسی و تایید کردم</label></div>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و تحویل کروکی</button>
+    </form>
+    {% endif %}
+
+    {% if sketch_files %}
+    <section class="pf-card pf-shamim"><h2><i class="fas fa-circle-check" aria-hidden="true"></i>فایل شمیم پرونده</h2>
+      <ul class="pf-docs">{% for doc in sketch_files %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-drafting-compass" aria-hidden="true"></i>{{ doc.original_name }}</a></li>{% endfor %}</ul>
+      {% if sk.delivered %}<p class="pf-hint">کروکی توسط {{ sk.delivered.by }} در {{ sk.delivered.at|persian_numbers }} تحویل شد.</p>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

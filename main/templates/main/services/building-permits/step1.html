@@ -48,7 +48,7 @@
                     <div class="text-center border-b pb-6 mb-8">
                         <i class="fas fa-folder-plus text-green-600 text-4xl mb-4"></i>
                         <h1 class="text-3xl font-bold text-gray-800">{% if unlicensed %}ساخت‌وساز بدون پروانه: {% endif %}ایجاد پرونده اولیه</h1>
-                        <p class="mt-2 text-gray-600">{% if unlicensed %}ساختمانی که بدون پروانه ساخته شده یا در حال ساخت است را ثبت کنید؛ پس از تایید مرحله‌ی ۱ توسط دهیاری، پرونده برای کمیسیون ماده ۹۹ آماده می‌شود.{% else %}لطفاً اطلاعات پایه مالک و ملک را با دقت وارد نمایید.{% endif %}</p>
+                        <p class="mt-2 text-gray-600">{% if unlicensed %}ساختمانی که بدون پروانه ساخته شده یا در حال ساخت است را ثبت کنید. پس از ثبت، فرم دفاعیه‌ی پر شده را چاپ، امضا و به امضای دهیار برسانید و بارگذاری کنید؛ سپس دهیاری مرحله‌ی ۱ را تایید می‌کند و پرونده برای کمیسیون ماده ۹۹ آماده می‌شود.{% else %}لطفاً اطلاعات پایه مالک و ملک را با دقت وارد نمایید.{% endif %}</p>
                     </div>
 
                     <!-- Warning Banner -->
@@ -217,10 +217,10 @@
                              <div class="mt-6">
                                 <label class="block font-medium mb-3">وضعیت سند ملک<span class="text-red-500">*</span></label>
                                 {% if errors.ownership_type %}<p class="text-sm text-red-600 mb-2">{{ errors.ownership_type }}</p>{% endif %}
-                                <div class="grid grid-cols-1 {% if unlicensed %}md:grid-cols-2{% else %}md:grid-cols-3{% endif %} gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-green-50 has-[:checked]:border-green-500"><input type="radio" name="ownership_type" value="deed" class="ml-3" onchange="handlePropertyStatusChange()" {% if v.ownership_type == 'deed' %}checked{% endif %}><span class="font-medium">دارای سند رسمی</span></label>
                                     <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500"><input type="radio" name="ownership_type" value="agreement" class="ml-3" onchange="handlePropertyStatusChange()" {% if v.ownership_type == 'agreement' %}checked{% endif %}><span class="font-medium">فاقد سند (قولنامه)</span></label>
-                                    {% if not unlicensed %}<label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500"><input type="radio" name="ownership_type" value="bonyad" class="ml-3" onchange="handlePropertyStatusChange()" {% if v.ownership_type == 'bonyad' %}checked{% endif %}><span class="font-medium">قرارداد واگذاری بنیاد مسکن</span></label>{% endif %}
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer w-full has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500"><input type="radio" name="ownership_type" value="bonyad" class="ml-3" onchange="handlePropertyStatusChange()" {% if v.ownership_type == 'bonyad' %}checked{% endif %}><span class="font-medium">{% if unlicensed %}قرارداد واگذاری{% else %}قرارداد واگذاری بنیاد مسکن{% endif %}</span></label>
                                 </div>
                             </div>
                             <!-- Conditional Sections -->
@@ -230,10 +230,14 @@
                             <div id="agreement-section" class="conditional-section border-t">
                                 <div class="p-6 bg-amber-50 rounded-b-lg border-x border-b border-amber-200 space-y-4">
                                     <p class="text-sm text-amber-800 font-semibold">توضیح: تصویر قولنامه باید برگردد به صاحب اول.</p>
+                                    {% if unlicensed %}
+                                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="agreement_returned" {% if v.agreement_returned %}checked{% endif %}> تایید می‌کنم قولنامه به صاحب اول (فروشنده) بازگردانده شده یا برمی‌گردد<span class="text-red-500">*</span></label>
+                                    {% if errors.agreement_returned %}<p class="text-sm text-red-600">{{ errors.agreement_returned }}</p>{% endif %}
+                                    {% endif %}
                                     {% include 'main/permits/_file.html' with name='agreement' label='آپلود قولنامه (می‌توانید چند فایل انتخاب کنید)' multiple=1 error=errors.agreement %}
                                 </div>
                             </div>
-                            {% if not unlicensed %}<div id="bonyad-section" class="conditional-section border-t">
+                            <div id="bonyad-section" class="conditional-section border-t">
                                 <div class="p-6 bg-blue-50 rounded-b-lg border-x border-b border-blue-200 space-y-4">
                                     <p class="text-sm text-blue-800 font-semibold">قرارداد واگذاری (موقت) زمین از بنیاد مسکن؛ شماره، تاریخ و کد پروژه را از بالای برگه‌ی قرارداد بخوانید.</p>
                                     {% include 'main/permits/_file.html' with name='bonyad_contract' label='تصویر قرارداد (تمام صفحات)' multiple=1 error=errors.bonyad_contract %}
@@ -242,7 +246,7 @@
                                         {% include 'main/permits/_field.html' with name='lease_years' label='مدت قرارداد (سال)' value=v.lease_years ltr=1 mode='numeric' %}
                                     </div>
                                 </div>
-                            </div>{% endif %}
+                            </div>
                             <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {% include 'main/permits/_field.html' with name='doc_number' label='شماره سند / قرارداد' value=v.doc_number error=errors.doc_number ltr=1 %}
                                 {% include 'main/permits/_field.html' with name='doc_date' label='تاریخ سند / قرارداد' value=v.doc_date error=errors.doc_date ltr=1 hint='۱۴۰۴/۰۳/۰۵' %}
@@ -263,6 +267,9 @@
                                     </button>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-2">فرمت‌های مجاز: dwg, dxf, geojson, zip(shp), kml. کارشناس اداری بر اساس این فایل، کد نوسازی ملک شما را می‌دهد.</p>
+                                {% if unlicensed %}
+                                <label class="flex items-center gap-2 text-sm mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg"><input type="checkbox" name="shamim_request" id="shamim-request" {% if v.shamim_request %}checked{% endif %}> فایل شمیم ندارم؛ کروکی شمیم را از مسئول فنی دهیاری می‌خواهم (هزینه دارد و مسئول فنی مبلغ را تعیین می‌کند)</label>
+                                {% endif %}
                                 {% if errors.shamim %}<p class="text-sm text-red-600 mt-1">{{ errors.shamim }}</p>{% endif %}
                             </div>
                         </div>
@@ -292,7 +299,8 @@
                     <ul class="space-y-3 text-gray-600">
                         <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>اطلاعات هویتی مالک</span></li>
                         <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>شناسنامه و کارت ملی</span></li>
-                        <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>{% if unlicensed %}سند یا قولنامه (مبایعه‌نامه){% else %}سند، قولنامه یا قرارداد بنیاد مسکن{% endif %}</span></li>
+                        <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>{% if unlicensed %}سند، مبایعه‌نامه (قولنامه) یا قرارداد واگذاری{% else %}سند، قولنامه یا قرارداد بنیاد مسکن{% endif %}</span></li>
+                        {% if unlicensed %}<li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>فرم دفاعیه‌ی امضاشده (پس از ثبت پرونده)</span></li>{% endif %}
                         <li class="flex items-center"><i class="fas fa-check-circle text-gray-300 mr-3"></i><span>فایل شمیم (سی‌دی نقشه‌برداری ملک){% if unlicensed %} که زیربنای ساخته‌شده را نشان دهد{% endif %}</span></li>
                     </ul>
                 </div>
@@ -370,7 +378,8 @@
         // The browser's own check for the files the chosen paper needs (the server checks again)
         document.getElementById('case-creation-form').addEventListener('submit', function (event) {
             const status = (document.querySelector('input[name="ownership_type"]:checked') || {}).value;
-            const need = ['birth_cert', 'national_card', 'shamim'].concat(status ? [status === 'bonyad' ? 'bonyad_contract' : status] : []);
+            const noShamim = document.getElementById('shamim-request') && document.getElementById('shamim-request').checked;
+            const need = ['birth_cert', 'national_card'].concat(noShamim ? [] : ['shamim']).concat(status ? [status === 'bonyad' ? 'bonyad_contract' : status] : []);
             for (const name of need) {
                 const input = document.querySelector('input[type=file][name="' + name + '"]');
                 if (input && input.files.length === 0) {

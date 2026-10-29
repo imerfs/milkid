@@ -9,7 +9,7 @@
   var R = 1235, L = 165;                       // right and left text margins inside the frame
   var page = 'request';
   var FA = '۰۱۲۳۴۵۶۷۸۹';
-  function fa(t) { return String(t == null ? '' : t).replace(/\d/g, function (d) { return FA[d]; }).replace(/\./g, '٫'); }
+  function fa(t) { return String(t == null ? '' : t).replace(/(\d)\.(?=\d)/g, '$1٫').replace(/\d/g, function (d) { return FA[d]; }); }
 
   function frame() {
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
@@ -53,11 +53,11 @@
     text('بسمه تعالی', W / 2, 140, 42, { bold: true, align: 'center' });
     text('«فرم درخواست»', R, 270, 54, { bold: true });
     text('تاریخ: ' + fa(f.date), 400, 270, 36, { color: INK, bold: true, align: 'left' });
-    text('دهیار روستای ' + fa(data.village), R, 430, 46, { bold: true });
+    text((f.addressee === 'dehyari' ? 'دهیار روستای ' : 'شورای اسلامی روستای ') + fa(data.village), R, 430, 46, { bold: true });
     text('باسلام', R, 520, 36);
     var y = paragraph([{ t: 'اینجانب' }, { v: f.name, w: 26 }, { t: 'فرزند' }, { v: f.father, w: 20 }, { t: 'باشماره شناسنامه' }, { v: f.id_number, w: 14 },
       { t: 'ساکن روستای' }, { v: data.village, w: 12 }, { t: '، خیابان' }, { v: f.street, w: 40 }], 610, 82, 35);
-    y = paragraph([{ t: 'تقاضای تشکیل پرونده کمیسیون و تقسیط هزینه های دهیاری و جریمه کمیسیون را دارم. خواهشمند است در صورت امکان مساعدت فرمایید.' }], y + 110, 82, 35);
+    y = paragraph([{ t: 'تقاضای' }, { v: f.subject, w: 40 }, { t: 'را دارم. خواهشمند است در صورت امکان مساعدت فرمایید.' }], y + 110, 82, 35);
     y = paragraph([{ t: 'تلفن تماس:' }, { v: f.phone, w: 28 }], y + 100, 82, 35);
     signBox('امضاء واثرانگشت متقاضی', R, y + 130);
     paragraph([{ t: 'ضمنا شماره تماس اعلامی متعلق به اینجانب می باشد که دهیاری از طریق آن هزینه های دهیاری ، جریمه و هرگونه پیام اطلاع رسانی را به اینجانب ابلاغ خواهد نمود.' }], y + 480, 82, 35);
@@ -97,7 +97,7 @@
   function pageCanvas(which) { var keep = page; draw(which); var c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(canvas, 0, 0); draw(keep); return c; }
 
   function readInputs() {
-    document.querySelectorAll('#pcm-form input[name]').forEach(function (el) { if (el.name in data.form) data.form[el.name] = el.value; });
+    document.querySelectorAll('#pcm-form input[name], #pcm-form select[name]').forEach(function (el) { if (el.name in data.form) data.form[el.name] = el.value; });
   }
   function refresh() { readInputs(); draw(); }
   var form = document.getElementById('pcm-form');
