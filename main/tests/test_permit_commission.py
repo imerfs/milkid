@@ -179,7 +179,7 @@ class Deciding(Commission):
 
     def test_after_confirming_the_forms_are_locked_and_step_three_opens(self):
         self.decide(self.dehyari, confirm='on')
-        self.assertEqual(self.reload().status_text, 'منتظر تصویر اخطاریه‌ی دریافتی (از متقاضی)')
+        self.assertEqual(self.reload().status_text, 'منتظر اخطاریه‌ی قبلی یا درخواست صدور اخطاریه (از متقاضی)')
         client_for(self.citizen).post(self.url('permit_commission_save'), {'name': 'کس دیگر', 'national_id': self.permit.people.first().national_id,
                                                                             'date': '1405/01/01'})
         self.assertEqual(self.reload().commission.get('form', {}).get('name'), None)

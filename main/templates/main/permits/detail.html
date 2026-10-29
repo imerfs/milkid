@@ -55,10 +55,10 @@
           {% endif %}
           {% if permit.stage_no >= 2 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_commission' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-file-signature" aria-hidden="true"></i>فرم درخواست و تعهدنامه</a>{% endif %}
           {% if permit.stage_no == 3 %}
-          <p>مرحله‌ی ۳: اخطاریه‌ی (فرم ۱۴) را که قبلاً از دهیاری دریافت کرده‌اید بارگذاری کنید و مشخصاتش را بنویسید؛ دهیار، کارشناس فنی یا کارشناس اداری تایید می‌کند.</p>
+          <p>مرحله‌ی ۳: اگر اخطاریه‌ی (فرم ۱۴) دارید بارگذاری کنید؛ اگر ندارید درخواست بدهید و حضوری به دهیاری بروید تا صادر و امضا شود. پس از تایید دهیار، کارشناس فنی یا کارشناس اداری، درخواست بازدید کارشناس فنی را بدهید.</p>
           <p><b>وضعیت:</b> {{ permit.status_text }}</p>
           {% endif %}
-          {% if permit.stage_no >= 3 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_notice' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>اخطاریه‌ی مالک</a>{% endif %}
+          {% if permit.stage_no >= 3 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_notice' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>اخطاریه و بازدید</a>{% endif %}
           {% if permit.stage_no >= 4 %}<p class="pf-hint">مرحله‌ی ۴ و مرحله‌های بعد (تعهد محضری، استحکام بنا، رأی کمیسیون و جریمه، خدمات و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>{% endif %}
           {% else %}
           {% if permit.stage_no == 2 %}

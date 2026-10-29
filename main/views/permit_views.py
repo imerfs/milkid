@@ -958,14 +958,24 @@ def permit_notice_page(request, file_id):
     mine = permit.request.user_id == request.user.id
     staff = permits.may_open(request.user, permit)
     at_step = permit_notice.at_step(permit)
-    owner_open = at_step and mine and permit.notice_state in permit_notice.OPEN_STATES
+    owner_open = at_step and mine and permit.notice_state in permit_notice.UPLOAD_STATES
+    staff_upload = at_step and staff and permit.notice_state == 'issued'
     can_decide = at_step and staff and permit.notice_state == 'uploaded'
+    can_issue = at_step and staff and permit.notice_state in permit_notice.ISSUE_STATES
+    visit_open = at_step and permit.notice_state == 'verified'
+    data = permit_notice.payload(permit)
     return render(request, 'main/permits/notice.html', {
         'permit': permit, 'embed': embed, 'mine': mine, 'n': permit_notice.data(permit), 'scans': permit_notice.documents(permit),
-        'owner_open': owner_open, 'can_decide': can_decide, 'editable': owner_open or can_decide,
-        'checks': permit_notice.checks(permit) if (can_decide or (staff and permit.notice_state)) else [],
+        'owner_open': owner_open, 'staff_upload': staff_upload, 'can_decide': can_decide, 'editable': owner_open or staff_upload or can_decide,
+        'can_issue': can_issue, 'can_request': at_step and mine and permit.notice_state in ('', 'returned'),
+        'checks': permit_notice.checks(permit) if (can_decide or (staff and permit.notice_state in ('uploaded', 'verified'))) else [],
         'positions': permit_notice.POSITIONS.items(), 'deliveries': permit_notice.DELIVERIES.items(),
-        'checked': (permit.notice or {}).get('checked') or {},
+        'checked': (permit.notice or {}).get('checked') or {}, 'issued': (permit.notice or {}).get('issued') or {},
+        'f': data['form'], 'ticks': [(t['key'], t['label'], data['form']['ticks'].get(t['key'], False)) for t in data['ticks']],
+        'slots': permit_notice.SLOTS.items(), 'visit': permit.visit or {}, 'visit_state': permit.visit_state,
+        'can_request_visit': visit_open and mine and not permit.visit_state,
+        'can_schedule': visit_open and staff and permit.visit_state in ('requested', 'scheduled'),
+        'payload': {**data, 'blank': static('forms/permit/form14_blank.jpg')},
     })
 
 
@@ -1103,4 +1113,39 @@ def permit_sketch_pay(request, file_id):
 @require_POST
 def permit_sketch_deliver(request, file_id):
     return _sketch_action(request, file_id, lambda p: permit_sketch.deliver(request.user, p, request.POST, request.FILES), 'پرداخت تایید و کروکی تحویل شد.')
+
+
+@login_required
+@require_POST
+def permit_notice_request(request, file_id):
+    return _notice_action(request, file_id, lambda p: permit_notice.request_issue(request.user, p),
+                          'درخواست اخطاریه ثبت شد؛ حضوری به دهیاری مراجعه کنید تا اخطاریه صادر و امضا شود.')
+
+
+@login_required
+@require_POST
+def permit_notice_issue(request, file_id):
+    return _notice_action(request, file_id, lambda p: permit_notice.issue(request.user, p, request.POST),
+                          'اخطاریه ثبت شد؛ آن را چاپ کنید، مهر و امضای دهیار و امضای مالک را بگیرید و تصویر را بارگذاری کنید.')
+
+
+@login_required
+@require_POST
+def permit_visit_request(request, file_id):
+    return _notice_action(request, file_id, lambda p: permit_notice.request_visit(request.user, p, request.POST),
+                          'درخواست بازدید ثبت شد؛ کارشناس فنی زمان را مشخص می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_visit_schedule(request, file_id):
+    return _notice_action(request, file_id, lambda p: permit_notice.schedule_visit(request.user, p, request.POST),
+                          'زمان بازدید تعیین و به متقاضی اطلاع داده شد.')
+
+
+@login_required
+@require_POST
+def permit_visit_complete(request, file_id):
+    return _notice_action(request, file_id, lambda p: permit_notice.complete_visit(request.user, p, request.POST),
+                          'بازدید ثبت شد و پرونده به مرحله‌ی ۴ رفت.')
 

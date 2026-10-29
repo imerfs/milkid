@@ -1,6 +1,6 @@
 {% extends 'main/dashboards/_base.html' %}
 {% load static jalali_tags persian_filters %}
-{% block title %}اخطاریه‌ی مالک - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block title %}اخطاریه و بازدید - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
 {% block body_class %}pf-body{% endblock %}
 {% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
 {% block content %}
@@ -11,73 +11,175 @@
   <header class="pf-head">
     <span class="pf-ic"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
     <div>
-      <h1>مرحله‌ی ۳: اخطاریه‌ی مالک</h1>
+      <h1>مرحله‌ی ۳: اخطاریه و بازدید</h1>
       <p>{{ n.addressee }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
     </div>
-    <span class="pf-state pf-state-{% if permit.notice_state == 'verified' or permit.stage_no > 3 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+    <span class="pf-state pf-state-{% if permit.stage_no > 3 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
   </header>
 
   <ol class="pff-how">
-    <li><b>۱</b><span>اخطاریه‌ای (فرم ۱۴) که دهیاری برای ساختمان بدون پروانه به شما ابلاغ کرده را بردارید.</span></li>
-    <li><b>۲</b><span>تصویر خوانای همه‌ی صفحه‌های آن را بارگذاری کنید و مشخصاتش را از روی برگه بنویسید.</span></li>
-    <li><b>۳</b><span>اصل اخطاریه (با امضای شما) را همراه ببرید و به دهیاری نشان دهید.</span></li>
-    <li class="{% if permit.stage_no > 3 %}ok{% endif %}"><b>۴</b><span>دهیار، کارشناس فنی یا کارشناس اداری مشخصات را با اصل مقایسه و تایید می‌کند.</span></li>
+    <li class="{% if permit.notice_state %}ok{% endif %}"><b>۱</b><span>اگر اخطاریه دارید بارگذاری کنید؛ اگر ندارید درخواست اخطاریه بدهید و حضوری به دهیاری بروید.</span></li>
+    <li class="{% if permit.notice_state == 'uploaded' or permit.notice_state == 'verified' %}ok{% endif %}"><b>۲</b><span>اخطاریه را (با امضای خودتان و مهر و امضای دهیار) امضا کنید و تصویرش را بارگذاری کنید.</span></li>
+    <li class="{% if permit.notice_state == 'verified' %}ok{% endif %}"><b>۳</b><span>دهیار، کارشناس فنی یا کارشناس اداری اخطاریه را تایید می‌کند.</span></li>
+    <li class="{% if permit.stage_no > 3 %}ok{% endif %}"><b>۴</b><span>درخواست بازدید کارشناس فنی را بدهید؛ پس از بازدید، پرونده به مرحله‌ی بعد می‌رود.</span></li>
   </ol>
 
   {% if permit.notice_state == 'returned' and permit.staff_notes %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری اخطاریه را برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
   {% if checked.by %}<div class="pf-card pf-shamim"><b><i class="fas fa-circle-check" aria-hidden="true"></i> تایید اخطاریه</b><p>{{ checked.by }} در {{ checked.at|persian_numbers }} اخطاریه را تایید کرد.</p></div>{% endif %}
+  {% if issued.by and permit.notice_state == 'issued' %}<div class="pf-card"><p><i class="fas fa-file-signature" aria-hidden="true"></i> اخطاریه را {{ issued.by }} در {{ issued.at|persian_numbers }} صادر کرد؛ مالک حضوری امضا می‌کند و تصویر امضاشده بارگذاری می‌شود.</p></div>{% endif %}
 
-  <div class="pff-edit">
-    <section class="pf-card" id="pnt-scans">
-      <h2><i class="fas fa-file-image" aria-hidden="true"></i>تصویر اخطاریه</h2>
-      <ul class="pf-docs">
-        {% for doc in scans %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }} <small>{{ doc.size|filesizeformat }}</small></a></li>
-        {% empty %}<li class="pf-none">هنوز فایلی نیست.</li>{% endfor %}
-      </ul>
-    </section>
+  <div class="pff-grid">
+    <div class="pff-edit">
 
-    {% if owner_open %}
-    <form method="post" action="{% url 'main:permit_notice_upload' permit.pk %}" enctype="multipart/form-data" class="pf-card pf-form pff-form" data-once>{% csrf_token %}
-      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
-      <h2><i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>{% if permit.notice_state == 'returned' %}بارگذاری دوباره{% else %}بارگذاری اخطاریه{% endif %}</h2>
-      <label>تصویر اخطاریه (همه‌ی صفحه‌ها؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not scans %}required{% endif %}></label>
-      {% include 'main/permits/_notice_fields.html' %}
-      <p class="pf-hint">مشخصات را از روی خود برگه بنویسید؛ دهیاری آن‌ها را با اصل اخطاریه مقایسه می‌کند.</p>
-      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال به دهیاری</button>
-    </form>
-    {% elif permit.notice_state and not can_decide %}
-    <section class="pf-card">
-      <h2><i class="fas fa-list" aria-hidden="true"></i>مشخصات اخطاریه</h2>
-      {% include 'main/permits/_notice_fields.html' %}
-    </section>
-    {% endif %}
-
-    {% if checks %}
-    <section class="pf-card"><h2><i class="fas fa-circle-check" aria-hidden="true"></i>مقایسه‌ی سامانه</h2>
-      <ul class="pf-checks">{% for level, text in checks %}<li class="{{ level }}">{{ text }}</li>{% endfor %}</ul>
-    </section>
-    {% endif %}
-
-    {% if can_decide %}
-    <section class="pf-card" id="pnt-review">
-      <h2><i class="fas fa-clipboard-check" aria-hidden="true"></i>بررسی و تایید</h2>
-      <form method="post" action="{% url 'main:permit_notice_verify' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+      {% if can_request %}
+      <form method="post" action="{% url 'main:permit_notice_request' permit.pk %}" class="pf-card pf-form pf-open">{% csrf_token %}
         {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
-        <p class="pf-hint">اگر مشخصاتی با اصل برگه فرق دارد، همین‌جا اصلاح کنید.</p>
+        <h2><i class="fas fa-hand" aria-hidden="true"></i>اخطاریه ندارم</h2>
+        <p class="pf-hint">اگر اخطاریه‌ی قبلی را ندارید، درخواست بدهید و حضوری به دهیاری مراجعه کنید؛ دهیاری اخطاریه را از روی اطلاعات پرونده پر می‌کند، شما آن را امضا می‌کنید و تصویرش را بارگذاری می‌کنید.</p>
+        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>درخواست دریافت اخطاریه</button>
+      </form>
+      {% endif %}
+
+      {# ---------- the staff fill the notice ---------- #}
+      {% if can_issue %}
+      <form method="post" action="{% url 'main:permit_notice_issue' permit.pk %}" class="pf-card pf-form pff-form" id="pnf-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-pen-to-square" aria-hidden="true"></i>پر کردن اخطاریه (فرم ۱۴)</h2>
+        <p class="pf-hint">از پرونده پر شده: نام مالک، آدرس، تیک «بدون پروانه» و «نقشه‌ی مصوب»، و داخل طرح هادی بودن ملک (اگر روی نقشه‌ی روستا هست). هرچه لازم است تغییر دهید؛ شماره‌ی ثبت را دهیاری می‌دهد.</p>
+        <div class="pff-fields">
+          <label>شماره‌ی ثبت<input name="number" value="{{ f.number }}" dir="ltr"></label>
+          <label>تاریخ<input name="date" value="{{ f.date }}" dir="ltr" required></label>
+          <label class="wide">جناب آقا / خانم<input name="addressee" value="{{ f.addressee }}" required></label>
+          <label class="wide">آدرس ملک<input name="address" value="{{ f.address }}"></label>
+          <label>موقعیت
+            <select name="position">
+              <option value="">—</option>
+              {% for code, label in positions %}<option value="{{ code }}" {% if f.position == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></label>
+          <label>نحوه‌ی ابلاغ
+            <select name="delivery">
+              <option value="">—</option>
+              {% for code, label in deliveries %}<option value="{{ code }}" {% if f.delivery == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></label>
+        </div>
+        <h3>موارد تخلف (نظر به اینکه ساختمان جنابعالی بدون مجوز …)</h3>
+        <div class="pff-checks">
+          {% for key, label, on in ticks %}<label><input type="checkbox" name="tick_{{ key }}" {% if on %}checked{% endif %}> {{ label }}</label>{% endfor %}
+        </div>
+        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ثبت اخطاریه و اطلاع به مالک</button>
+      </form>
+      {% endif %}
+
+      {# ---------- the scan ---------- #}
+      <section class="pf-card" id="pnt-scans">
+        <h2><i class="fas fa-file-image" aria-hidden="true"></i>تصویر اخطاریه‌ی امضاشده</h2>
+        <ul class="pf-docs">
+          {% for doc in scans %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }} <small>{{ doc.size|filesizeformat }}</small></a></li>
+          {% empty %}<li class="pf-none">هنوز فایلی نیست.</li>{% endfor %}
+        </ul>
+      </section>
+
+      {% if owner_open or staff_upload %}
+      <form method="post" action="{% url 'main:permit_notice_upload' permit.pk %}" enctype="multipart/form-data" class="pf-card pf-form pff-form" data-once>{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>{% if permit.notice_state == 'returned' %}بارگذاری دوباره{% elif permit.notice_state == 'issued' %}بارگذاری اخطاریه‌ی امضاشده{% else %}اخطاریه دارم: بارگذاری{% endif %}</h2>
+        <label>تصویر اخطاریه (همه‌ی صفحه‌ها؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not scans %}required{% endif %}></label>
         {% include 'main/permits/_notice_fields.html' %}
-        <div class="pff-checks"><label><input type="checkbox" name="confirm"> اخطاریه را با اصل آن مقایسه و صحت مشخصاتش را بررسی کردم</label></div>
-        <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
-        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۴</button>
+        <p class="pf-hint">مشخصات را از روی خود برگه بنویسید؛ دهیاری آن‌ها را با اصل اخطاریه مقایسه می‌کند.</p>
+        <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال</button>
       </form>
-      <form method="post" action="{% url 'main:permit_notice_return' permit.pk %}" class="pf-form">{% csrf_token %}
-        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
-        <h3>برگشت برای اصلاح</h3>
-        <label>چه چیزی باید اصلاح شود؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
-        <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
-      </form>
-    </section>
+      {% elif permit.notice_state and not can_decide %}
+      <section class="pf-card">
+        <h2><i class="fas fa-list" aria-hidden="true"></i>مشخصات اخطاریه</h2>
+        {% include 'main/permits/_notice_fields.html' %}
+      </section>
+      {% endif %}
+
+      {% if checks %}
+      <section class="pf-card"><h2><i class="fas fa-circle-check" aria-hidden="true"></i>مقایسه‌ی سامانه</h2>
+        <ul class="pf-checks">{% for level, text in checks %}<li class="{{ level }}">{{ text }}</li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+
+      {% if can_decide %}
+      <section class="pf-card" id="pnt-review">
+        <h2><i class="fas fa-clipboard-check" aria-hidden="true"></i>بررسی و تایید اخطاریه</h2>
+        <form method="post" action="{% url 'main:permit_notice_verify' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <p class="pf-hint">اگر مشخصاتی با اصل برگه فرق دارد، همین‌جا اصلاح کنید.</p>
+          {% include 'main/permits/_notice_fields.html' %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> اخطاریه را با اصل آن مقایسه و صحت مشخصاتش را بررسی کردم</label></div>
+          <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید اخطاریه</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_notice_return' permit.pk %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>برگشت برای اصلاح</h3>
+          <label>چه چیزی باید اصلاح شود؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+      </section>
+      {% endif %}
+
+      {# ---------- the technical expert's visit ---------- #}
+      {% if permit.notice_state == 'verified' %}
+      <section class="pf-card" id="pnt-visit">
+        <h2><i class="fas fa-helmet-safety" aria-hidden="true"></i>بازدید کارشناس فنی</h2>
+        {% if visit.date %}<p class="pf-code">{{ visit.date|persian_numbers }} · {% for code, label in slots %}{% if code == visit.slot %}{{ label }}{% endif %}{% endfor %}</p>
+        {% elif visit.preferred_date %}<p>درخواست متقاضی: {{ visit.preferred_date|persian_numbers }} · {% for code, label in slots %}{% if code == visit.slot %}{{ label }}{% endif %}{% endfor %}{% if visit.note %} · {{ visit.note }}{% endif %}</p>{% endif %}
+        {% if visit.done %}<p class="pf-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> بازدید توسط {{ visit.done.by }} در {{ visit.done.at|persian_numbers }} ثبت شد.{% if visit.done.notes %} «{{ visit.done.notes }}»{% endif %}</p>{% endif %}
+
+        {% if can_request_visit %}
+        <form method="post" action="{% url 'main:permit_visit_request' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <p class="pf-hint">روز و بازه‌ی مناسب برای بازدید کارشناس فنی از ملک را بنویسید.</p>
+          <div class="pff-fields">
+            <label>تاریخ دلخواه<input name="date" dir="ltr" required placeholder="۱۴۰۵/۰۶/۲۵"></label>
+            <label>بازه‌ی زمانی<select name="slot" required>{% for code, label in slots %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select></label>
+            <label class="wide">توضیح (اختیاری، مثلاً هماهنگی با ساکنان)<input name="note" maxlength="300"></label>
+          </div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>درخواست بازدید</button>
+        </form>
+        {% endif %}
+
+        {% if can_schedule %}
+        <form method="post" action="{% url 'main:permit_visit_schedule' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>تعیین زمان بازدید</h3>
+          <div class="pff-fields">
+            <label>تاریخ<input name="date" dir="ltr" required value="{{ visit.date|default:visit.preferred_date }}"></label>
+            <label>بازه‌ی زمانی<select name="slot" required>{% for code, label in slots %}<option value="{{ code }}" {% if code == visit.slot %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          </div>
+          <button class="pf-btn" type="submit"><i class="fas fa-calendar-check" aria-hidden="true"></i>ثبت زمان بازدید</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_visit_complete' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <h3>ثبت انجام بازدید</h3>
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> بازدید از ملک انجام شد</label></div>
+          <label>گزارش کوتاه (اختیاری)<textarea name="notes" rows="2" maxlength="800"></textarea></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>ثبت بازدید و رفتن به مرحله‌ی ۴</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    {% if can_issue %}
+    <aside class="pff-view">
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1414" height="2000" aria-label="پیش‌نمایش اخطاریه"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pnf-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود اخطاریه (PDF)</button>
+        <button type="button" class="pf-btn" id="pnf-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ اخطاریه</button>
+      </div>
+      <p class="pf-hint">پس از چاپ: مهر و امضای دهیار و امضای مالک را بگیرید، «تحویل مالک / بستگان» یا «الصاق در محل» را با دست علامت بزنید اگر در فرم تیک نخورده، و تصویر را بارگذاری کنید.</p>
+    </aside>
     {% endif %}
   </div>
 </div>
+{% if can_issue %}
+{{ payload|json_script:"pnf-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/permit-notice-form.js' %}" defer></script>
+{% endif %}
 <script src="{% static 'js/office.js' %}" defer></script>
 {% endblock %}
