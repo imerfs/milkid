@@ -1,0 +1,129 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}فرم ۱۶ و خلاصه‌ی پرونده - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-file-circle-exclamation" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۹: فرم ۱۶ و خلاصه‌ی پرونده</h1>
+      <p>{{ v.owner }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.stage_no > 9 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li class="{% if filed %}ok{% endif %}"><b>۱</b><span>اطلاعات فرم ۱۶ و خلاصه‌ی پرونده از پرونده پر شده است؛ آنچه نادرست است اصلاح کنید.</span></li>
+    <li class="{% if filed %}ok{% endif %}"><b>۲</b><span>هر دو برگه را چاپ کنید؛ دهیار (و بخشداری برای فرم ۱۶) امضا و مهر می‌کند. تصویر امضاشده را بارگذاری و «افزودن به پرونده» را بزنید.</span></li>
+    <li class="{% if permit.stage_no > 9 %}ok{% endif %}"><b>۳</b><span>دهیار، کارشناس فنی یا کارشناس اداری مرحله را تایید می‌کند.</span></li>
+  </ol>
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+      <form method="post" action="{% url 'main:permit_form16_save' permit.pk %}" enctype="multipart/form-data" class="pf-card pf-form pff-form" id="f16-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-pen-to-square" aria-hidden="true"></i>فرم ۱۶: گزارش تخلف به کمیسیون ماده ۹۹</h2>
+        <details open><summary><b>مشخصات</b></summary>
+          <div class="pff-fields">
+            <label>شماره<input name="number" dir="ltr" value="{{ v.number }}"></label>
+            <label>تاریخ<input name="date" dir="ltr" value="{{ v.date }}"></label>
+            <label>تاریخ بازدید<input name="visit_date" dir="ltr" value="{{ v.visit_date }}"></label>
+            <label>نام مالک<input name="owner" value="{{ v.owner }}" required></label>
+            <label>نام پدر<input name="father" value="{{ v.father }}"></label>
+            <label>شماره ملی<input name="national_id" dir="ltr" value="{{ v.national_id }}"></label>
+            <label>روستا<input name="village" value="{{ v.village }}"></label>
+            <label>دهستان<input name="dehestan" value="{{ v.dehestan }}"></label>
+            <label>بخش<input name="district" value="{{ v.district }}"></label>
+            <label>شهرستان<input name="county" value="{{ v.county }}"></label>
+            <label>تلفن مالک<input name="phone" dir="ltr" value="{{ v.phone }}"></label>
+          </div>
+          <div class="pff-checks"><b>کاربری زمین:</b> {% for code, label in uses %}<label><input type="radio" name="use" value="{{ code }}" {% if v.use == code %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+          <div class="pff-checks"><b>الف - ساختمان را بدون اخذ پروانه:</b> {% for code, label in built_choices %}<label><input type="radio" name="built" value="{{ code }}" {% if v.built == code %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+        </details>
+        <details><summary><b>ب - با اخذ پروانه ولی موارد ذیل رعایت نشده</b> (برای ساخت بدون پروانه معمولاً خالی)</summary>
+          <p class="pf-hint">۱ - عدم رعایت عقب‌نشینی درنظر گرفته شده برای:</p>
+          <div class="pff-checks">{% for code, label in setbacks %}<label><input type="checkbox" name="b1" value="{{ code }}" {% if code in v.b1 %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+          <div class="pff-checks">{% for code, label in others %}<label><input type="checkbox" name="b" value="{{ code }}" {% if code in v.b %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+          <label>به متراژ (م²، برای عدم رعایت تراکم)<input name="b5_area" dir="ltr" value="{{ v.b5_area }}"></label>
+        </details>
+        <details open><summary><b>تقاضا و ابلاغ</b></summary>
+          <div class="pff-checks">{% for code, label in requests %}<label><input type="checkbox" name="requests" value="{{ code }}" {% if code in v.requests %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+          <div class="pff-fields">
+            <label>شماره برگ اخطار<input name="notice_no" dir="ltr" value="{{ v.notice_no }}"></label>
+            <label>تاریخ اخطار<input name="notice_date" dir="ltr" value="{{ v.notice_date }}"></label>
+          </div>
+          <div class="pff-checks">{% for code, label in served %}<label><input type="checkbox" name="served" value="{{ code }}" {% if code in v.served %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+          <div class="pff-fields">
+            <label>توضیحات (دست‌نویس فرم)<input name="notes" value="{{ v.notes }}"></label>
+            <label>نام دهیار<input name="dehyar" value="{{ v.dehyar }}"></label>
+            <label>نام بخشدار<input name="governor" value="{{ v.governor }}"></label>
+          </div>
+        </details>
+
+        <h2><i class="fas fa-file-lines" aria-hidden="true"></i>خلاصه‌ی پرونده (جدول شماره ۵)</h2>
+        <details open><summary><b>نامه به اعضای کمیسیون</b></summary>
+          <div class="pff-fields">
+            <label>شماره<input name="s_number" dir="ltr" value="{{ v.summary.number }}"></label>
+            <label>تاریخ<input name="s_date" dir="ltr" value="{{ v.summary.date }}"></label>
+            <label>جمع بنای مسکونی (م²)<input name="s_area" dir="ltr" value="{{ v.summary.area }}"></label>
+            <label>کارشناس دادگستری<input name="s_expert" value="{{ v.summary.expert }}"></label>
+            <label>شماره‌ی نامه‌ی کارشناس<input name="s_expert_no" dir="ltr" value="{{ v.summary.expert_no }}"></label>
+            <label>تاریخ نامه‌ی کارشناس<input name="s_expert_date" dir="ltr" value="{{ v.summary.expert_date }}"></label>
+            <label>نوع سازه<input name="s_structure" value="{{ v.summary.structure }}"></label>
+            <label>سال ساخت<input name="s_year" dir="ltr" value="{{ v.summary.year }}"></label>
+            <label>تلفن مسئول مطلع از جریان پرونده<input name="s_contact" dir="ltr" value="{{ v.summary.contact }}"></label>
+            <label>استحکام بنا<select name="s_strength"><option value="">—</option><option value="has" {% if v.summary.strength == 'has' %}selected{% endif %}>تایید شده</option><option value="lacks" {% if v.summary.strength == 'lacks' %}selected{% endif %}>تایید نشده</option></select></label>
+          </div>
+          <div class="pff-checks"><label><input type="checkbox" name="s_widening" {% if v.summary.widening %}checked{% endif %}> ملک در تعریض است</label></div>
+        </details>
+
+        {% if at_step %}
+        <label>تصویر فرم ۱۶ امضاشده (اختیاری؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+        <div class="pff-actions">
+          <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی پیش‌نویس</button>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_form16_file' permit.pk %}" onclick="return confirm('فرم ۱۶ و خلاصه‌ی پرونده به پرونده افزوده شود؟')"><i class="fas fa-folder-plus" aria-hidden="true"></i>افزودن به پرونده</button>
+        </div>
+        {% endif %}
+        <ul class="pf-docs">{% for d in scans %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ d.original_name }}</a></li>{% endfor %}</ul>
+      </form>
+
+      {% if at_step %}
+      <section class="pf-card" id="f16-finish">
+        <h2><i class="fas fa-circle-check" aria-hidden="true"></i>تایید مرحله‌ی ۹</h2>
+        {% if blocking %}<ul class="pf-checks">{% for b in blocking %}<li class="warn">{{ b }}</li>{% endfor %}</ul>
+        {% else %}
+        <form method="post" action="{% url 'main:permit_step9_finish' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> فرم ۱۶ و خلاصه‌ی پرونده را بررسی کردم</label></div>
+          <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۱۰</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist" id="f16-tabs">
+        <button type="button" class="is-on" data-page="form16" role="tab">فرم ۱۶</button>
+        <button type="button" data-page="summary" role="tab">خلاصه‌ی پرونده</button>
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="f16-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود (PDF)</button>
+        <button type="button" class="pf-btn" id="f16-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ</button>
+      </div>
+      <p class="pf-hint">پیش‌نمایش با تغییر اطلاعات همزمان عوض می‌شود. فرم ۱۶ را بخشدار و دهیار، خلاصه‌ی پرونده را دهیار مهر و امضا می‌کند.</p>
+    </aside>
+  </div>
+</div>
+{{ payload|json_script:"f16-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/permit-form16.js' %}" defer></script>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

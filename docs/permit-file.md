@@ -231,7 +231,7 @@ undertaking is unchanged (its monthly occupation rate stays a dotted blank for t
 `permits/<id>/report/` (`permit_report.py`, `permit_site.py`, `permits/report.html`, `static/js/permit-report-form.js`), open once the technical expert's
 visit is recorded (file at stage 4). The stages of this track are now: 1 initial file (with the defence form), 2 request form and undertaking, 3 notice
 and visit request, 4 visit report / overhang / materials, 5 introduction to a judiciary expert and the undertakings, 6 the expert's reply and the strength of the building,
-7 fees and the price of the services (payment, instalments, cheques), 8 the Bonyad's visit list and letter, 9 ruling, fine and end of work (9 is not built yet).
+7 fees and the price of the services (payment, instalments, cheques), 8 the Bonyad's visit list and letter, 9 form 16 and the file summary, 10 ruling, fine and end of work (10 is not built yet).
 - **The visit report** («گزارش بازدید», from the dehyari's sheet `گزارش نهایی 404.xlsx`) is filled by the **technical expert or the dehyari**
   (policy `permit.report`). Prefilled from the file: the owner, the address, the four limits measured on the village map, the areas, the built area the owner
   gave (spread over the floors he declared). The staff add the measurements, the floors (residential, commercial, parking, pilotis, storage, penthouse,
@@ -299,4 +299,13 @@ the file shows in the officer's permit list (`fee_rows_for`, `needs_accountant_d
   owner until the visit is confirmed.
 - The owner uploads the Bonyad's letter (scan, number, past date; `bonyad_letter`); **any of the three staff** confirms it with a tick or sends it back with a reason
   and then ends the step; the file goes to stage 9.
+
+## Construction without a permit: step 9 (form 16 and the file summary)
+`permits/<id>/form16/` (`permit_form16.py`, `permits/form16.html`, `static/js/permit-form16.js`), open at stage 9 to **the clerk, the technical expert and the dehyari** (the three panels;
+the link is on the file page). Two sheets are typeset in the browser from the file and printed: **form 16** («گزارش تخلف به کمیسیون ماده ۹۹»: the owner and the village, the
+land use, built / started without a permit, the section-B violations, what the commission is asked for, the notice number/date and how it was served, the bakhshdar's and
+the dehyari's names) and the **file summary** (جدول ۵, the covering letter to the members of the commission: the owner, the built area from the visit report, the expert's
+name, letter number/date and strength verdict from step 6, the structure and year, the contact phone, the widening tick). Prefilled from the file (notice from step 3, visit
+report, expert reply); everything is editable. «ذخیره» keeps a draft; «افزودن به پرونده» (any of the three) sets `form16_state` filed and keeps the signed scan if one is
+uploaded (`form16_scan`). Any of the three then confirms with a tick and the file goes to stage 10. The owner only sees the status.
 
