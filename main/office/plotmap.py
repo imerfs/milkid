@@ -79,6 +79,25 @@ def limits(village_map, parcel_id=None, ring=None):
     return result
 
 
+def neighbours(village_map, parcel_id):
+    """{'north': [id, ...], ...}: the plots of the map that touch each side of a plot, the longest contact first (streets are left out)."""
+    grid, rows = index(village_map)
+    ring = next((r['ring'] for r in rows if r['id'] == parcel_id), None)
+    if ring is None:
+        return {}
+    around = _near(rows, geo.bbox(ring), 3)
+    contact = {side: {} for side in SIDES}
+    for edge in geo.edges(ring):
+        if edge['length'] < 0.4:
+            continue
+        mx, my = (edge['a'][0] + edge['b'][0]) / 2, (edge['a'][1] + edge['b'][1]) / 2
+        px, py = mx + edge['normal'][0] * PROBE_M, my + edge['normal'][1] * PROBE_M
+        hit = next((r for r in around if r['id'] != parcel_id and geo.contains(r['ring'], px, py)), None)
+        if hit:
+            contact[edge['side']][hit['id']] = contact[edge['side']].get(hit['id'], 0.0) + edge['length']
+    return {side: [i for i, _ in sorted(found.items(), key=lambda kv: -kv[1])] for side, found in contact.items()}
+
+
 def sheet(village_map, parcel_id=None, ring=None):
     """What the client draws as «نقشه ملک»: the plot, the plots around it and the length of every edge."""
     grid, rows = index(village_map)

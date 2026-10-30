@@ -1,0 +1,39 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}کارشناسان دادگستری - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-user-tie" aria-hidden="true"></i></span>
+    <div>
+      <h1>کارشناسان رسمی دادگستری</h1>
+      <p>{% if village %}فهرست دهیاری {{ village }}؛ کارشناس اداری، کارشناس فنی و دهیار مالک ساخت‌وساز بدون پروانه را به یکی از اینها معرفی می‌کنند.{% else %}روستای شما مشخص نیست.{% endif %}</p>
+    </div>
+  </header>
+
+  {% if manage %}
+  <form method="post" action="{% url 'main:permit_expert_add' %}" class="pf-card pf-form pff-form">{% csrf_token %}
+    <h2><i class="fas fa-user-plus" aria-hidden="true"></i>افزودن کارشناس</h2>
+    <div class="pff-fields">
+      <label>نام و نام خانوادگی<input name="name" required maxlength="120"></label>
+      <label>رشته / تخصص<input name="field" maxlength="120" placeholder="راه و ساختمان"></label>
+      <label>تلفن<input name="phone" dir="ltr" maxlength="20"></label>
+    </div>
+    <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-plus" aria-hidden="true"></i>افزودن به فهرست</button>
+  </form>
+  {% endif %}
+
+  <section class="pf-card">
+    <h2><i class="fas fa-list" aria-hidden="true"></i>فهرست</h2>
+    <ul class="pf-docs">
+      {% for e in experts %}
+      <li><span><b>{{ e.name }}</b>{% if e.field %} · {{ e.field }}{% endif %}{% if e.phone %} · <bdi dir="ltr">{{ e.phone|persian_numbers }}</bdi>{% endif %}{% if not e.active %} <small>(کنار گذاشته شده)</small>{% endif %}</span>
+        {% if manage %}<form method="post" action="{% url 'main:permit_expert_toggle' e.pk %}" style="display:inline">{% csrf_token %}<input type="hidden" name="active" value="{% if e.active %}0{% else %}1{% endif %}"><button class="pf-btn" type="submit">{% if e.active %}کنار گذاشتن{% else %}فعال کردن{% endif %}</button></form>{% endif %}</li>
+      {% empty %}<li class="pf-none">هنوز کارشناسی ثبت نشده است.</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

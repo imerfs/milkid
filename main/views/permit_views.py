@@ -17,8 +17,9 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_commission, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import permit_commission, permit_commit, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
+from main.office.directory import village_of
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
 
@@ -1264,4 +1265,133 @@ def permit_materials_return(request, file_id):
 @require_POST
 def permit_step4_finish(request, file_id):
     return _report_action(request, file_id, lambda p: permit_site.finish(request.user, p, request.POST), 'مرحله‌ی ۴ تایید شد و پرونده به مرحله‌ی ۵ رفت.')
+
+
+# ---------- construction without a permit, step 5: the judiciary expert, the neighbours' consent, the notarial undertaking ----------
+
+@login_required
+def permit_commit_page(request, file_id):
+    permit = permit_commit.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 5 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۴ در دسترس است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    at_step = permit_commit.at_step(permit)
+    shown = mine or staff
+    letter = permit_commit.letter_payload(permit, request.user)
+    consent = permit_commit.consent_data(permit)
+    deed = permit_commit.deed_data(permit)
+    return render(request, 'main/permits/commit.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'at_step': at_step, 'shown': shown,
+        'letter': letter, 'consent': consent, 'deed': deed, 'sides': permit_commit.SIDE_LABELS.items(),
+        'consent_docs': permit_commit.documents(permit, permit_commit.CONSENT_KIND), 'deed_docs': permit_commit.documents(permit, permit_commit.DEED_KIND),
+        'ex': (permit.commit or {}).get('expert') or {}, 'blocking': permit_commit.blocking(permit) if at_step else [],
+        'owner_consent': at_step and mine and permit.consent_state in ('', 'returned'),
+        'owner_deed': at_step and mine and permit.deed_state in ('', 'returned'),
+        'decide_consent': at_step and staff and permit.consent_state == 'uploaded',
+        'decide_deed': at_step and staff and permit.deed_state == 'uploaded',
+        'can_introduce': at_step and staff, 'can_finish': at_step and staff,
+        'payload': {'letter': letter, 'consent': consent, 'deed': deed, 'file': permit.pk, 'shown': shown,
+                    'letterhead': static('forms/permit/letterhead.jpg'),
+                    'sides': [[k, label] for k, label in permit_commit.SIDE_LABELS.items()]},
+    })
+
+
+def _commit_action(request, file_id, action, ok):
+    permit = permit_commit.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_commit', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_commit_introduce(request, file_id):
+    return _commit_action(request, file_id, lambda p: permit_commit.introduce(request.user, p, request.POST), 'مالک به کارشناس دادگستری معرفی شد.')
+
+
+@login_required
+@require_POST
+def permit_consent_save(request, file_id):
+    return _commit_action(request, file_id, lambda p: permit_commit.save_consent(request.user, p, request.POST), 'مشخصات همسایگان ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_consent_upload(request, file_id):
+    return _commit_action(request, file_id, lambda p: permit_commit.upload_consent(request.user, p, request.POST, request.FILES),
+                          'تعهدنامه‌ی همسایگان فرستاده شد؛ دهیاری بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_deed_save(request, file_id):
+    return _commit_action(request, file_id, lambda p: permit_commit.save_deed(request.user, p, request.POST), 'متن تعهد ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_deed_upload(request, file_id):
+    return _commit_action(request, file_id, lambda p: permit_commit.upload_deed(request.user, p, request.POST, request.FILES),
+                          'تعهد محضری فرستاده شد؛ دهیاری بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_commit_verify(request, file_id, part):
+    return _commit_action(request, file_id, lambda p: permit_commit.verify(request.user, p, part, request.POST), 'مدرک تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_commit_return(request, file_id, part):
+    return _commit_action(request, file_id, lambda p: permit_commit.send_back(request.user, p, part, request.POST.get('notes', '')),
+                          'مدرک برای اصلاح به متقاضی برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_step5_finish(request, file_id):
+    return _commit_action(request, file_id, lambda p: permit_commit.finish(request.user, p, request.POST), 'مرحله‌ی ۵ تایید شد و پرونده به مرحله‌ی ۶ رفت.')
+
+
+@login_required
+def permit_experts(request):
+    if not can(request.user, 'permit.open'):
+        raise Http404('صفحه پیدا نشد.')
+    village = village_of(request.user)
+    return render(request, 'main/permits/experts.html', {
+        'village': village, 'experts': permit_commit.experts_for(village, active_only=False) if village else [],
+        'manage': permit_commit.may_manage_experts(request.user)})
+
+
+@login_required
+@require_POST
+def permit_expert_add(request):
+    try:
+        permit_commit.add_expert(request.user, request.POST)
+        messages.success(request, 'کارشناس به فهرست افزوده شد.')
+    except OfficeError as exc:
+        messages.error(request, str(exc))
+    return redirect('main:permit_experts')
+
+
+@login_required
+@require_POST
+def permit_expert_toggle(request, expert_id):
+    try:
+        expert = permit_commit.set_expert_active(request.user, expert_id, request.POST.get('active') == '1')
+        messages.success(request, f'{expert.name} {"فعال" if expert.active else "از فهرست کنار گذاشته"} شد.')
+    except OfficeError as exc:
+        messages.error(request, str(exc))
+    return redirect('main:permit_experts')
 

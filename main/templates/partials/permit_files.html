@@ -2,6 +2,7 @@
 {# The permit files of the village (context `permitlist` from main.office.permits.panel_rows). Each row opens the file. #}
 <link rel="stylesheet" href="{% static 'css/permits.css' %}">
 <div class="pl">
+  <p class="pl-links"><a href="{% url 'main:permit_experts' %}"><i class="fas fa-user-tie" aria-hidden="true"></i> کارشناسان دادگستری (فهرست دهیاری برای معرفی مالکان ساخت‌وساز بدون پروانه)</a></p>
 {% if permitlist.rows %}
   <div style="overflow-x:auto">
   <table>
