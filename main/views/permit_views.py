@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_bonyad, permit_form16, fee_tables, permit_commission, permit_commit, permit_dues, permit_reply, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import permit_bonyad, permit_form16, permit_pack, fee_tables, permit_commission, permit_commit, permit_dues, permit_reply, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.directory import village_of
 from main.office.errors import OfficeError
@@ -1690,7 +1690,81 @@ def permit_step8_finish(request, file_id):
     return _bonyad_action(request, file_id, lambda p: permit_bonyad.finish(request.user, p, request.POST), 'مرحله‌ی ۸ تایید شد و پرونده به مرحله‌ی ۹ رفت.')
 
 
-# ---------- construction without a permit, step 9: form 16 and the file summary ----------
+# ---------- construction without a permit, step 9: the package of forms and the property undertaking ----------
+
+@login_required
+def permit_pack_page(request, file_id):
+    permit = permit_pack.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 9 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۸ در دسترس است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    at_step = permit_pack.at_step(permit)
+    state = permit.pack_state
+    return render(request, 'main/permits/pack.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'owner_name': permit.people.first().full_name, 'state': state, 'data': permit.pack or {},
+        'items': permit_pack.items(permit), 'deeds': permit_pack.documents(permit, permit_pack.DEED_KIND),
+        'can_commit': at_step and mine and state == '', 'can_upload': at_step and mine and state in ('committed', 'returned'),
+        'can_decide': at_step and staff and state == 'uploaded', 'can_finish': at_step and staff,
+        'blocking': permit_pack.blocking(permit) if at_step else []})
+
+
+@login_required
+def permit_pack_health(request, file_id):
+    """The owner's health undertaking (printable), typeset from the file."""
+    permit = permit_pack.find(request.user, file_id)
+    if permit is None or permit.stage_no < 9:
+        raise Http404('برگه پیدا نشد.')
+    return render(request, 'main/permits/health_undertaking.html', {'permit': permit, 'L': permit_pack.health_payload(permit)})
+
+
+def _pack_action(request, file_id, action, ok):
+    permit = permit_pack.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_pack', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_pack_commit(request, file_id):
+    return _pack_action(request, file_id, lambda p: permit_pack.give_undertaking(request.user, p, request.POST), 'تعهد شما ثبت شد؛ تعهدنامه‌ی ملک را بارگذاری کنید.')
+
+
+@login_required
+@require_POST
+def permit_pack_upload(request, file_id):
+    return _pack_action(request, file_id, lambda p: permit_pack.upload_deed(request.user, p, request.POST, request.FILES), 'تعهدنامه‌ی ملک برای دهیاری فرستاده شد.')
+
+
+@login_required
+@require_POST
+def permit_pack_verify(request, file_id):
+    return _pack_action(request, file_id, lambda p: permit_pack.verify(request.user, p, request.POST), 'تعهدنامه‌ی ملک تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_pack_return(request, file_id):
+    return _pack_action(request, file_id, lambda p: permit_pack.send_back(request.user, p, request.POST.get('notes')), 'تعهدنامه‌ی ملک به متقاضی برگشت.')
+
+
+@login_required
+@require_POST
+def permit_step9_finish(request, file_id):
+    return _pack_action(request, file_id, lambda p: permit_pack.finish(request.user, p, request.POST), 'مرحله‌ی ۹ تایید شد و پرونده به مرحله‌ی ۱۰ رفت.')
+
+
+# ---------- construction without a permit, steps 10 and 11: form 16 with the governor's signature, the summary sent to the commission ----------
 
 @login_required
 def permit_form16_page(request, file_id):
@@ -1698,16 +1772,19 @@ def permit_form16_page(request, file_id):
     if permit is None or not permits.may_open(request.user, permit):
         raise Http404('صفحه پیدا نشد.')
     embed = bool(request.GET.get('embed'))
-    if permit.stage_no < 9 or permit.state != 'done':
-        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۸ در دسترس است.')
+    if permit.stage_no < 10 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۹ در دسترس است.')
         return redirect(_file_url(permit, embed))
     at_step = permit_form16.at_step(permit)
     values = permit_form16.data(permit, request.user)
+    part = 'summary' if permit.stage_no >= 11 else 'form16'
     return render(request, 'main/permits/form16.html', {
-        'permit': permit, 'embed': embed, 'v': values, 'at_step': at_step, 'scans': permit_form16.documents(permit), 'filed': permit.form16_state == 'filed',
+        'permit': permit, 'embed': embed, 'v': values, 'at_step': at_step, 'part': part, 'scans': permit_form16.documents(permit),
+        'summary_scans': permit_form16.documents(permit, permit_form16.SUMMARY_KIND), 'filed': permit.form16_state == 'filed', 'sent': permit.summary_state == 'sent',
+        'filed_info': (permit.form16 or {}).get('filed') or {}, 'sent_info': (permit.form16 or {}).get('sent') or {},
         'uses': permit_form16.USES, 'built_choices': permit_form16.BUILT, 'setbacks': permit_form16.SETBACKS, 'others': permit_form16.OTHER_VIOLATIONS,
         'requests': permit_form16.REQUESTS, 'served': permit_form16.SERVED, 'blocking': permit_form16.blocking(permit) if at_step else [],
-        'payload': {'v': values, 'file': permit.pk, 'uses': permit_form16.USES, 'built': permit_form16.BUILT, 'setbacks': permit_form16.SETBACKS,
+        'payload': {'v': values, 'file': permit.pk, 'part': part, 'uses': permit_form16.USES, 'built': permit_form16.BUILT, 'setbacks': permit_form16.SETBACKS,
                     'others': permit_form16.OTHER_VIOLATIONS, 'requests': permit_form16.REQUESTS, 'served': permit_form16.SERVED}})
 
 
@@ -1732,11 +1809,22 @@ def permit_form16_save(request, file_id):
 @login_required
 @require_POST
 def permit_form16_file(request, file_id):
-    return _form16_action(request, file_id, lambda p: permit_form16.file_form(request.user, p, request.POST, request.FILES), 'فرم ۱۶ و خلاصه‌ی پرونده به پرونده افزوده شد.')
+    return _form16_action(request, file_id, lambda p: permit_form16.file_form(request.user, p, request.POST, request.FILES), 'فرم ۱۶ امضاشده به پرونده افزوده شد.')
 
 
 @login_required
 @require_POST
-def permit_step9_finish(request, file_id):
-    return _form16_action(request, file_id, lambda p: permit_form16.finish(request.user, p, request.POST), 'مرحله‌ی ۹ تایید شد و پرونده به مرحله‌ی ۱۰ رفت.')
+def permit_summary_send(request, file_id):
+    return _form16_action(request, file_id, lambda p: permit_form16.send_summary(request.user, p, request.POST, request.FILES), 'ارسال خلاصه‌ی پرونده به کمیسیون ثبت شد.')
 
+
+@login_required
+@require_POST
+def permit_step10_finish(request, file_id):
+    return _form16_action(request, file_id, lambda p: permit_form16.finish(request.user, p, request.POST), 'مرحله‌ی ۱۰ تایید شد و پرونده به مرحله‌ی ۱۱ رفت.')
+
+
+@login_required
+@require_POST
+def permit_step11_finish(request, file_id):
+    return _form16_action(request, file_id, lambda p: permit_form16.finish(request.user, p, request.POST), 'مرحله‌ی ۱۱ تایید شد و پرونده به مرحله‌ی ۱۲ رفت.')

@@ -1,0 +1,35 @@
+{% load static jalali_tags persian_filters %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>تعهد بهداشتی - پرونده {{ permit.pk|persian_numbers }}</title>
+<link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+<style>
+  body{font-family:Vazirmatn,Tahoma,sans-serif;margin:0;padding:32px;color:#111827;background:#fff;line-height:2}
+  .top{display:flex;justify-content:space-between;font-size:14px}
+  h1{text-align:center;font-size:18px;margin:8px 0 24px}
+  ol{margin:8px 0 0;padding-right:22px}
+  .sign{margin-top:64px;text-align:left;padding-left:80px;font-weight:bold}
+  .bar{text-align:center;margin-bottom:12px}
+  .draft{text-align:center;color:#92400e;font-size:12px}
+  @media print{.bar,.draft{display:none}body{padding:0}@page{size:A4;margin:18mm}}
+</style>
+</head>
+<body>
+<div class="bar"><button type="button" onclick="window.print()">چاپ</button> · چاپ، امضای مالک و تحویل به دهیاری</div>
+<p class="draft">متن این برگه پیش‌نویس است؛ پیش از استفاده دهیاری آن را با فرم رسمی مطابقت دهد.</p>
+<div class="top"><span>بسمه تعالی</span><span>تاریخ: {{ L.date|persian_numbers }}</span></div>
+<h1>تعهدنامه‌ی رعایت موازین بهداشتی</h1>
+<p>اینجانب <b>{{ L.owner }}</b>{% if L.father %} فرزند {{ L.father }}{% endif %} با شماره ملی <bdi dir="ltr">{{ L.national_id|persian_numbers }}</bdi>، مالک ملک واقع در روستای {{ L.village }}{% if L.address %}، {{ L.address }}{% endif %}{% if L.code %}، کد نوسازی <bdi dir="ltr">{{ L.code|persian_numbers }}</bdi>{% endif %} متعهد می‌شوم:</p>
+<ol>
+  <li>فاضلاب ساختمان را به‌صورت بهداشتی (چاه جذبی یا سپتیک استاندارد) و مطابق ضوابط دفع کنم و آن را به معابر، جوی‌ها و ملک همسایگان رها نکنم.</li>
+  <li>از آلوده کردن منابع آب آشامیدنی، قنات و چاه‌های اطراف پیشگیری کنم.</li>
+  <li>پسماند و نخاله‌ی ساختمانی را در معبر رها نکنم و به محل تعیین‌شده‌ی دهیاری ببرم.</li>
+  <li>در صورت بازرسی، دسترسی مأموران دهیاری و بهداشت به ملک را فراهم کنم و ایرادهای اعلام‌شده را در مهلت داده‌شده رفع نمایم.</li>
+</ol>
+<p>در صورت تخلف، دهیاری و مراجع ذی‌صلاح مجاز به اقدام قانونی خواهند بود.</p>
+<div class="sign">نام و نام خانوادگی مالک: {{ L.owner }}<br><small style="font-weight:normal">امضاء و اثر انگشت</small></div>
+</body>
+</html>

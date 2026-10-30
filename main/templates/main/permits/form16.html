@@ -11,17 +11,25 @@
   <header class="pf-head">
     <span class="pf-ic"><i class="fas fa-file-circle-exclamation" aria-hidden="true"></i></span>
     <div>
-      <h1>مرحله‌ی ۹: فرم ۱۶ و خلاصه‌ی پرونده</h1>
+      <h1>{% if part == 'summary' %}مرحله‌ی ۱۱: خلاصه‌ی پرونده و ارسال به کمیسیون ماده ۹۹{% else %}مرحله‌ی ۱۰: فرم ۱۶ و امضای بخشدار{% endif %}</h1>
       <p>{{ v.owner }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
     </div>
-    <span class="pf-state pf-state-{% if permit.stage_no > 9 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+    <span class="pf-state pf-state-{% if permit.stage_no > 11 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
   </header>
 
+  {% if part == 'summary' %}
   <ol class="pff-how">
-    <li class="{% if filed %}ok{% endif %}"><b>۱</b><span>اطلاعات فرم ۱۶ و خلاصه‌ی پرونده از پرونده پر شده است؛ آنچه نادرست است اصلاح کنید.</span></li>
-    <li class="{% if filed %}ok{% endif %}"><b>۲</b><span>هر دو برگه را چاپ کنید؛ دهیار (و بخشداری برای فرم ۱۶) امضا و مهر می‌کند. تصویر امضاشده را بارگذاری و «افزودن به پرونده» را بزنید.</span></li>
-    <li class="{% if permit.stage_no > 9 %}ok{% endif %}"><b>۳</b><span>دهیار، کارشناس فنی یا کارشناس اداری مرحله را تایید می‌کند.</span></li>
+    <li class="ok"><b>۱</b><span>فرم ۱۶ امضاشده‌ی بخشدار در پرونده است. اطلاعات خلاصه‌ی پرونده از پرونده پر شده؛ آنچه نادرست است اصلاح کنید.</span></li>
+    <li class="{% if sent %}ok{% endif %}"><b>۲</b><span>خلاصه‌ی پرونده را چاپ کنید، دهیار امضا و مهر کند و همراه پرونده به کمیسیون ماده ۹۹ بفرستید؛ شماره‌ی نامه را ثبت کنید.</span></li>
+    <li class="{% if permit.stage_no > 11 %}ok{% endif %}"><b>۳</b><span>دهیار، کارشناس فنی یا کارشناس اداری مرحله را تایید می‌کند.</span></li>
   </ol>
+  {% else %}
+  <ol class="pff-how">
+    <li class="{% if filed %}ok{% endif %}"><b>۱</b><span>اطلاعات فرم ۱۶ از پرونده پر شده است؛ آنچه نادرست است اصلاح کنید.</span></li>
+    <li class="{% if filed %}ok{% endif %}"><b>۲</b><span>فرم را چاپ کنید، دهیار امضا و مهر کند و برای امضا نزد بخشدار ببرید. تصویر فرم امضاشده را بارگذاری و «افزودن به پرونده» را بزنید.</span></li>
+    <li class="{% if permit.stage_no > 10 %}ok{% endif %}"><b>۳</b><span>دهیار، کارشناس فنی یا کارشناس اداری مرحله را تایید می‌کند.</span></li>
+  </ol>
+  {% endif %}
 
   <div class="pff-grid">
     <div class="pff-edit">
@@ -82,26 +90,37 @@
           <div class="pff-checks"><label><input type="checkbox" name="s_widening" {% if v.summary.widening %}checked{% endif %}> ملک در تعریض است</label></div>
         </details>
 
-        {% if at_step %}
-        <label>تصویر فرم ۱۶ امضاشده (اختیاری؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+        {% if at_step and part == 'form16' %}
+        <label>تصویر فرم ۱۶ امضاشده‌ی بخشدار (الزامی؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not scans %}required{% endif %}></label>
         <div class="pff-actions">
-          <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی پیش‌نویس</button>
-          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_form16_file' permit.pk %}" onclick="return confirm('فرم ۱۶ و خلاصه‌ی پرونده به پرونده افزوده شود؟')"><i class="fas fa-folder-plus" aria-hidden="true"></i>افزودن به پرونده</button>
+          <button class="pf-btn" type="submit" formnovalidate><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی پیش‌نویس</button>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_form16_file' permit.pk %}" onclick="return confirm('فرم ۱۶ امضاشده به پرونده افزوده شود؟')"><i class="fas fa-folder-plus" aria-hidden="true"></i>افزودن به پرونده</button>
         </div>
         {% endif %}
-        <ul class="pf-docs">{% for d in scans %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ d.original_name }}</a></li>{% endfor %}</ul>
+        {% if at_step and part == 'summary' %}
+        <div class="pff-fields">
+          <label>مقصد<input name="sent_to" value="{{ sent_info.to|default:'کمیسیون ماده ۹۹' }}" maxlength="120"></label>
+          <label class="wide">تصویر خلاصه‌ی پرونده‌ی امضاشده (اختیاری؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+        </div>
+        <div class="pff-actions">
+          <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی پیش‌نویس</button>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_summary_send' permit.pk %}" onclick="return confirm('ارسال خلاصه‌ی پرونده به کمیسیون ثبت شود؟')"><i class="fas fa-paper-plane" aria-hidden="true"></i>ثبت ارسال به کمیسیون</button>
+        </div>
+        {% endif %}
+        <ul class="pf-docs">{% for d in scans %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>فرم ۱۶: {{ d.original_name }}</a></li>{% endfor %}{% for d in summary_scans %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>خلاصه‌ی پرونده: {{ d.original_name }}</a></li>{% endfor %}</ul>
+        {% if sent_info %}<p class="pf-hint">ارسال به {{ sent_info.to }} · نامه‌ی {{ sent_info.number|persian_numbers }} · {{ sent_info.at|persian_numbers }}</p>{% endif %}
       </form>
 
       {% if at_step %}
       <section class="pf-card" id="f16-finish">
-        <h2><i class="fas fa-circle-check" aria-hidden="true"></i>تایید مرحله‌ی ۹</h2>
+        <h2><i class="fas fa-circle-check" aria-hidden="true"></i>تایید مرحله‌ی {% if part == 'summary' %}۱۱{% else %}۱۰{% endif %}</h2>
         {% if blocking %}<ul class="pf-checks">{% for b in blocking %}<li class="warn">{{ b }}</li>{% endfor %}</ul>
         {% else %}
-        <form method="post" action="{% url 'main:permit_step9_finish' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+        <form method="post" action="{% if part == 'summary' %}{% url 'main:permit_step11_finish' permit.pk %}{% else %}{% url 'main:permit_step10_finish' permit.pk %}{% endif %}" class="pf-form pff-form">{% csrf_token %}
           {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
-          <div class="pff-checks"><label><input type="checkbox" name="confirm"> فرم ۱۶ و خلاصه‌ی پرونده را بررسی کردم</label></div>
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> {% if part == 'summary' %}ارسال خلاصه‌ی پرونده به کمیسیون را بررسی کردم{% else %}فرم ۱۶ امضاشده را بررسی کردم{% endif %}</label></div>
           <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
-          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۱۰</button>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی {% if part == 'summary' %}۱۲{% else %}۱۱{% endif %}</button>
         </form>
         {% endif %}
       </section>
@@ -110,8 +129,8 @@
 
     <aside class="pff-view">
       <div class="pff-tabs" role="tablist" id="f16-tabs">
-        <button type="button" class="is-on" data-page="form16" role="tab">فرم ۱۶</button>
-        <button type="button" data-page="summary" role="tab">خلاصه‌ی پرونده</button>
+        <button type="button" class="{% if part == 'form16' %}is-on{% endif %}" data-page="form16" role="tab">فرم ۱۶</button>
+        <button type="button" class="{% if part == 'summary' %}is-on{% endif %}" data-page="summary" role="tab">خلاصه‌ی پرونده</button>
       </div>
       <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
       <div class="pff-actions">

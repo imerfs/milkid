@@ -34,8 +34,10 @@ UNLICENSED_STAGES = [
     (6, 'پاسخ کارشناس دادگستری و استحکام بنا'),
     (7, 'پرداخت عوارض و بهای خدمات'),
     (8, 'لیست بازدید بنیاد و نامه‌ی بنیاد'),
-    (9, 'فرم ۱۶ و خلاصه‌ی پرونده'),
-    (10, 'رأی کمیسیون، جریمه و پایان کار'),
+    (9, 'بسته‌ی فرم‌ها و تعهدنامه‌ی ملک'),
+    (10, 'فرم ۱۶ و امضای بخشدار'),
+    (11, 'خلاصه‌ی پرونده و ارسال به کمیسیون'),
+    (12, 'رأی کمیسیون، جریمه و پایان کار'),
 ]
 
 
@@ -200,10 +202,15 @@ class PermitFile(models.Model):
                      ('uploaded', 'نامه‌ی بنیاد منتظر تایید'), ('returned', 'نامه‌ی بنیاد برگشت خورد'), ('verified', 'نامه‌ی بنیاد تایید شد')]
     bonyad_list = models.JSONField(default=dict, blank=True)
     bonyad_list_state = models.CharField(max_length=10, choices=BONYAD_STATES, blank=True, default='')
-    # step 9 (main/office/permit_form16.py): form 16 (گزارش تخلف به کمیسیون ماده ۹۹) and the file summary (خلاصه‌ی پرونده, table 5) for the commission;
-    # form16_state '' / filed (the form is in the file)
+    # step 9 (main/office/permit_pack.py): the package of forms and the owner's property undertaking; pack_state '' / committed (the owner gave the
+    # undertaking) / uploaded (the deed is up) / returned / verified
+    pack = models.JSONField(default=dict, blank=True)
+    pack_state = models.CharField(max_length=10, blank=True, default='')
+    # steps 10 and 11 (main/office/permit_form16.py): form 16 (گزارش تخلف به کمیسیون ماده ۹۹) signed by the governor, and the file summary (خلاصه‌ی پرونده,
+    # table 5) sent to the commission; form16_state '' / filed (the signed form is in the file), summary_state '' / sent
     form16 = models.JSONField(default=dict, blank=True)
     form16_state = models.CharField(max_length=10, blank=True, default='')
+    summary_state = models.CharField(max_length=10, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -253,7 +260,13 @@ class PermitFile(models.Model):
             if self.stage_no == 5:
                 return self.step5_text()
             if self.stage_no == 9:
-                return 'فرم ۱۶ در پرونده است؛ منتظر تایید نهایی مرحله' if self.form16_state == 'filed' else 'منتظر افزودن فرم ۱۶ به پرونده (دهیاری)'
+                return {'': 'منتظر تعهد مالک و تعهدنامه‌ی ملک (از متقاضی)', 'committed': 'تعهد ثبت شد؛ منتظر تعهدنامه‌ی ملک (از متقاضی)',
+                        'uploaded': 'تعهدنامه‌ی ملک منتظر تایید', 'returned': 'تعهدنامه‌ی ملک برگشت خورد',
+                        'verified': 'تعهدنامه‌ی ملک تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.pack_state, '')
+            if self.stage_no == 10:
+                return 'فرم ۱۶ امضاشده در پرونده است؛ منتظر تایید نهایی مرحله' if self.form16_state == 'filed' else 'منتظر فرم ۱۶ و امضای بخشدار (دهیاری)'
+            if self.stage_no == 11:
+                return 'خلاصه‌ی پرونده به کمیسیون فرستاده شد؛ منتظر تایید نهایی مرحله' if self.summary_state == 'sent' else 'منتظر ارسال خلاصه‌ی پرونده به کمیسیون (دهیاری)'
             if self.stage_no == 8:
                 return {'': 'منتظر درخواست قرار گرفتن در لیست بازدید بنیاد (از متقاضی)', 'requested': 'در لیست بازدید بنیاد؛ منتظر تایید انجام بازدید (کارشناس فنی)',
                         'released': 'مدارک به متقاضی نشان داده شد؛ منتظر نامه‌ی بنیاد (از متقاضی)', 'uploaded': 'نامه‌ی بنیاد منتظر تایید',
@@ -263,7 +276,7 @@ class PermitFile(models.Model):
             if self.stage_no == 6:
                 return {'': 'منتظر دو جوابیه‌ی کارشناس دادگستری (از متقاضی)', 'uploaded': 'جوابیه‌های کارشناس منتظر تایید', 'returned': 'جوابیه‌ها برگشت خورد',
                         'verified': 'جوابیه‌ها تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.reply_state, '')
-            return f'مرحله‌ی {"۰۱۲۳۴۵۶۷۸۹"[self.stage_no - 1]} تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
+            return f'مرحله‌ی {str(self.stage_no - 1).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))} تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
             return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
                     'issued': 'گواهی پایان کار صادر شد', 'rejected': 'درخواست پایان کار رد شد'}.get(self.endwork_state, '')
@@ -304,7 +317,8 @@ class PermitFile(models.Model):
                     or (self.stage_no == 5 and (self.expert_state == '' or self.consent_state == 'uploaded' or self.deed_state == 'uploaded'
                                                 or (self.consent_state == 'verified' and self.deed_state == 'verified')))
                     or (self.stage_no == 6 and self.reply_state in ('uploaded', 'verified'))
-                    or self.stage_no == 9
+                    or (self.stage_no == 9 and self.pack_state in ('uploaded', 'verified'))
+                    or self.stage_no in (10, 11)
                     or (self.stage_no == 8 and self.bonyad_list_state in ('requested', 'uploaded', 'verified'))
                     or (self.stage_no == 7 and (self.plan_state == 'requested' or self.dues_settled
                                                 or any(not p.get('ok') for p in (self.dues or {}).get('payments') or []))))
@@ -441,7 +455,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('form16_scan', 'فرم ۱۶ امضاشده'), ('bonyad_letter', 'نامه‌ی بنیاد مسکن'), ('expert_letter', 'نامه‌ی کارشناس دادگستری'), ('expert_table', 'جدول شماره ۲ کارشناس'), ('consent_form', 'تعهدنامه‌ی رضایت همسایگان'), ('deed_scan', 'تعهد محضری'), ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
+        ('form16_scan', 'فرم ۱۶ امضاشده'), ('property_deed', 'تعهدنامه‌ی ملک'), ('summary_scan', 'خلاصه‌ی پرونده امضاشده'), ('bonyad_letter', 'نامه‌ی بنیاد مسکن'), ('expert_letter', 'نامه‌ی کارشناس دادگستری'), ('expert_table', 'جدول شماره ۲ کارشناس'), ('consent_form', 'تعهدنامه‌ی رضایت همسایگان'), ('deed_scan', 'تعهد محضری'), ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
         ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]
