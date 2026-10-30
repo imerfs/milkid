@@ -121,6 +121,8 @@ class SecurityHeadersMiddleware:
             response['X-Frame-Options'] = 'SAMEORIGIN'
             response['X-XSS-Protection'] = '1; mode=block'
             response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+            # the parts of a CSP that cannot break inline scripts: no framing by other sites, no plugins, no <base> or form posts to other hosts
+            response.setdefault('Content-Security-Policy', "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'")
             response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
         
         return response

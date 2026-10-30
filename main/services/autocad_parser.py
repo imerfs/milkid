@@ -51,8 +51,9 @@ class AutoCADParser:
             logger.error(f"Error reading DXF file: {str(e)}")
             raise Exception(f"خطا در خواندن فایل DXF: {str(e)}")
         except Exception as e:
-            logger.error(f"Unexpected error parsing file: {str(e)}")
-            raise Exception(f"خطای غیرمنتظره در پردازش فایل: {str(e)}")
+            logging.getLogger(__name__).exception('request failed')
+            logger.error(f"Unexpected error parsing file: خطایی رخ داد؛ دوباره تلاش کنید.")
+            raise Exception(f"خطای غیرمنتظره در پردازش فایل: خطایی رخ داد؛ دوباره تلاش کنید.")
     
     def extract_all_texts(self) -> list:
         """

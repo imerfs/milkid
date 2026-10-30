@@ -1,3 +1,4 @@
+import logging
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -25,9 +26,10 @@ def get_provinces(request):
             "data": provinces_data
         })
     except Exception as e:
+        logging.getLogger(__name__).exception('request failed')
         return Response({
             "success": False,
-            "error": str(e)
+            "error": 'خطایی رخ داد؛ دوباره تلاش کنید.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
@@ -48,9 +50,10 @@ def get_counties(request, province_id):
             "data": counties_data
         })
     except Exception as e:
+        logging.getLogger(__name__).exception('request failed')
         return Response({
             "success": False,
-            "error": str(e)
+            "error": 'خطایی رخ داد؛ دوباره تلاش کنید.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -72,9 +75,10 @@ def get_districts(request, county_id):
             "data": districts_data
         })
     except Exception as e:
+        logging.getLogger(__name__).exception('request failed')
         return Response({
             "success": False,
-            "error": str(e)
+            "error": 'خطایی رخ داد؛ دوباره تلاش کنید.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -96,9 +100,10 @@ def get_dehestans(request, district_id):
             "data": dehestans_data
         })
     except Exception as e:
+        logging.getLogger(__name__).exception('request failed')
         return Response({
             "success": False,
-            "error": str(e)
+            "error": 'خطایی رخ داد؛ دوباره تلاش کنید.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -142,9 +147,10 @@ def get_cities_villages(request):
             "data": cities_villages_data
         })
     except Exception as e:
+        logging.getLogger(__name__).exception('request failed')
         return Response({
             "success": False,
-            "error": str(e)
+            "error": 'خطایی رخ داد؛ دوباره تلاش کنید.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

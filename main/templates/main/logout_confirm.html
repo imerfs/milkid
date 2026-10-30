@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>خروج از حساب - ملک آیدی</title>
+<style>
+  body{font-family:Vazirmatn,Tahoma,sans-serif;background:#f1f5f9;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center}
+  form{background:#fff;border-radius:12px;padding:32px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  button{background:#1e3a8a;color:#fff;border:0;border-radius:8px;padding:10px 24px;font:inherit;cursor:pointer}
+  a{display:inline-block;margin-right:12px;color:#475569}
+</style>
+</head>
+<body>
+<form method="post" action="{% url 'main:logout' %}">{% csrf_token %}
+  <p>می‌خواهید از حساب خود خارج شوید؟</p>
+  <button type="submit">خروج</button><a href="{% url 'main:home' %}">انصراف</a>
+</form>
+</body>
+</html>

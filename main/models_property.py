@@ -1,4 +1,5 @@
 """Properties and property advertisements (with their images and edit requests)."""
+import logging
 from decimal import Decimal
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
@@ -398,10 +399,11 @@ class PropertyAdvertisementEditLog(models.Model):
                     return True
                     
         except Exception as e:
+            logging.getLogger(__name__).exception('request failed')
             # Log error but don't raise to avoid breaking the approval process
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"Error applying changes to advertisement {advertisement.id}: {str(e)}")
+            logger.error(f"Error applying changes to advertisement {advertisement.id}: خطایی رخ داد؛ دوباره تلاش کنید.")
             return False
             
         return False
