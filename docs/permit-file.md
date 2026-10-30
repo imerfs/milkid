@@ -230,8 +230,8 @@ undertaking is unchanged (its monthly occupation rate stays a dotted blank for t
 ## Construction without a permit: step 4 (the visit report, the electricity office, the materials)
 `permits/<id>/report/` (`permit_report.py`, `permit_site.py`, `permits/report.html`, `static/js/permit-report-form.js`), open once the technical expert's
 visit is recorded (file at stage 4). The stages of this track are now: 1 initial file (with the defence form), 2 request form and undertaking, 3 notice
-and visit request, 4 visit report / overhang / materials, 5 introduction to a judiciary expert and the undertakings, 6 strength check, ruling and fine,
-7 services and end of work (6 and 7 are not built yet).
+and visit request, 4 visit report / overhang / materials, 5 introduction to a judiciary expert and the undertakings, 6 the expert's reply and the strength of the building,
+7 ruling, fine, services and end of work (7 is not built yet).
 - **The visit report** («گزارش بازدید», from the dehyari's sheet `گزارش نهایی 404.xlsx`) is filled by the **technical expert or the dehyari**
   (policy `permit.report`). Prefilled from the file: the owner, the address, the four limits measured on the village map, the areas, the built area the owner
   gave (spread over the floors he declared). The staff add the measurements, the floors (residential, commercial, parking, pilotis, storage, penthouse,
@@ -264,4 +264,11 @@ and visit request, 4 visit report / overhang / materials, 5 introduction to a ju
   notary, hands the **original to the dehyari** and uploads the scan with the document number, date and office and the tick «delivered» (`deed_scan`, `deed_state`).
 - Each upload is confirmed (tick required) or sent back with a reason by **any of the three staff**; when the introduction is made and both are verified, any of
   them confirms the step (`permit_commit.finish`) and the file goes to **step 6**. Statuses: `PermitFile.step5_text`; waiting items count in the panels (`needs_staff`).
+
+## Construction without a permit: step 6 (the judiciary expert's reply)
+`permits/<id>/reply/` (`permit_reply.py`, `permits/reply.html`), open at stage 6. The expert gives the owner two papers: the covering letter and the «جدول شماره ۲»
+(floors, structure, occupation, strength). The owner hands the **originals to the dehyari** and uploads the scan of each (`expert_letter`, `expert_table`) with the
+expert's name (prefilled from step 5), the letter's number and date, what the table says about the strength of the building (`commit.reply.strength`: has / lacks,
+kept for the later steps) and the tick «delivered». Any of the clerk / technical expert / dehyari confirms the papers with a tick (or sends them back with a reason;
+`reply_state` '' → uploaded → verified / returned) and then ends the step; the file goes to **stage 7**.
 

@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_commission, permit_commit, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import permit_commission, permit_commit, permit_reply, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.directory import village_of
 from main.office.errors import OfficeError
@@ -1394,4 +1394,65 @@ def permit_expert_toggle(request, expert_id):
     except OfficeError as exc:
         messages.error(request, str(exc))
     return redirect('main:permit_experts')
+
+
+# ---------- construction without a permit, step 6: the judiciary expert's two replies ----------
+
+@login_required
+def permit_reply_page(request, file_id):
+    permit = permit_reply.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 6 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۵ در دسترس است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    at_step = permit_reply.at_step(permit)
+    return render(request, 'main/permits/reply.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'v': permit_reply.defaults(permit), 'strengths': permit_reply.STRENGTH.items(),
+        'letters': permit_reply.documents(permit, permit_reply.LETTER_KIND), 'tables': permit_reply.documents(permit, permit_reply.TABLE_KIND),
+        'owner_upload': at_step and mine and permit.reply_state in ('', 'returned'),
+        'decide': at_step and staff and permit.reply_state == 'uploaded', 'can_finish': at_step and staff and permit.reply_state == 'verified',
+        'strength_text': permit_reply.STRENGTH.get(permit_reply.defaults(permit)['strength'], ''),
+        'owner_name': permit.people.first().full_name})
+
+
+def _reply_action(request, file_id, action, ok):
+    permit = permit_reply.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_reply', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_reply_upload(request, file_id):
+    return _reply_action(request, file_id, lambda p: permit_reply.upload(request.user, p, request.POST, request.FILES),
+                         'جوابیه‌های کارشناس فرستاده شد؛ دهیاری بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_reply_verify(request, file_id):
+    return _reply_action(request, file_id, lambda p: permit_reply.verify(request.user, p, request.POST), 'جوابیه‌های کارشناس تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_reply_return(request, file_id):
+    return _reply_action(request, file_id, lambda p: permit_reply.send_back(request.user, p, request.POST.get('notes', '')),
+                         'جوابیه‌ها برای اصلاح به متقاضی برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_step6_finish(request, file_id):
+    return _reply_action(request, file_id, lambda p: permit_reply.finish(request.user, p, request.POST), 'مرحله‌ی ۶ تایید شد و پرونده به مرحله‌ی ۷ رفت.')
 
