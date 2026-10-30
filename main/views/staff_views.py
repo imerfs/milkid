@@ -211,7 +211,10 @@ def inspection_detail(request, inspection_id):
             inspection.completed_at = timezone.now()
             inspection.save()
             
-            lifecycle.record_inspection(inspection.request, request.user, approved=True)
+            try:
+                lifecycle.record_inspection(inspection.request, request.user, approved=True)
+            except lifecycle.TransitionError as exc:
+                messages.error(request, str(exc))
             messages.success(request, 'بازرسی با موفقیت تکمیل شد.')
             
         elif action == 'reject':
@@ -220,8 +223,11 @@ def inspection_detail(request, inspection_id):
             inspection.completed_at = timezone.now()
             inspection.save()
             
-            lifecycle.record_inspection(inspection.request, request.user, approved=False,
-                                        reason=inspection.rejection_reason)
+            try:
+                lifecycle.record_inspection(inspection.request, request.user, approved=False,
+                                            reason=inspection.rejection_reason)
+            except lifecycle.TransitionError as exc:
+                messages.error(request, str(exc))
             messages.warning(request, 'بازرسی رد شد.')
             
         elif action == 'upload_document':
@@ -493,8 +499,12 @@ def assign_request_to_engineer(request, request_id):
         
         if engineer_id:
             engineer = get_object_or_404(User, id=engineer_id, profile__role='engineer')
-            lifecycle.assign(service_request, request.user, engineer)
-            
+            try:
+                lifecycle.assign(service_request, request.user, engineer)
+            except lifecycle.TransitionError as exc:
+                messages.error(request, str(exc))
+                return redirect('main:manage_requests')
+
             messages.success(request, f'درخواست به {engineer.get_full_name()} ارجاع شد.')
             return redirect('main:manage_requests')
     

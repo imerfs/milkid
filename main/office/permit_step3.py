@@ -226,7 +226,7 @@ def verify(actor, permit, post):
     if data['verdict'] == 'denied':
         permit.bonyad_state, permit.state = 'verified', 'rejected'
         permit.save()
-        lifecycle.reject(sr, actor, f'پاسخ بنیاد مسکن (نامه {data["letter_no"]}) غیرمجاز است.')
+        lifecycle.reject(sr, actor, f'پاسخ بنیاد مسکن (نامه {data["letter_no"]}) غیرمجاز است.', by_file=True)
         _sync_parcel(permit, actor)
         return permit
     permit.bonyad_state, permit.stage_no = 'verified', 4

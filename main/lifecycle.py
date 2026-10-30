@@ -33,6 +33,14 @@ def _ensure_open(sr):
         raise TransitionError('درخواست تکمیل شده است و قابل تغییر نیست.')
 
 
+def ensure_plain(sr):
+    """A request that has a permit file moves only through the file's own steps (main/office/permit_*.py): the generic approve / reject / refer / status
+    actions of the old panels would close or re-route the request while the file stays at its step."""
+    from main.models import PermitFile      # pylint: disable=import-outside-toplevel
+    if PermitFile.objects.filter(request=sr).exists():
+        raise TransitionError('این درخواست پرونده‌ی ساختمانی است؛ مراحل آن را از صفحه‌ی خود پرونده انجام دهید.')
+
+
 def _ensure_not_locked(sr):
     """A request for a locked plot (debt, neighbour's complaint, street occupation) cannot be approved."""
     from main.gis import locks
@@ -92,6 +100,7 @@ def _finish(sr, actor, *, status, stage, action, notes='', to_role='citizen', re
 
 
 def approve(sr, actor, *, notes='', completed=False, authority='expert'):
+    ensure_plain(sr)
     _ensure_open(sr)
     _ensure_not_locked(sr)
     if authority == 'mayor':
@@ -107,7 +116,9 @@ def approve(sr, actor, *, notes='', completed=False, authority='expert'):
            f'درخواست شما توسط کارشناس دهیاری تایید گردید. {notes}', request=sr)
 
 
-def reject(sr, actor, reason, *, authority='expert'):
+def reject(sr, actor, reason, *, authority='expert', by_file=False):
+    if not by_file:
+        ensure_plain(sr)
     _ensure_open(sr)
     if authority == 'mayor':
         sr.staff_comments = reason
@@ -135,6 +146,7 @@ def request_documents(sr, actor, notes):
 
 def refer(sr, actor, target_role, *, notes='', assigned_user=None):
     """Forward the request to another panel. Returns (new_stage, target_name)."""
+    ensure_plain(sr)
     _ensure_open(sr)
     if target_role not in REFERRAL_STAGES:
         raise TransitionError('نقش مقصد نامعتبر است.')
@@ -165,6 +177,7 @@ def refer(sr, actor, target_role, *, notes='', assigned_user=None):
 
 def assign(sr, actor, staff_user):
     """Mayor hands the request to a staff member for review."""
+    ensure_plain(sr)
     _ensure_open(sr)
     sr.assigned_to = staff_user
     sr.status = 'in_review'
@@ -178,6 +191,7 @@ def assign(sr, actor, staff_user):
 
 def set_status(sr, actor, new_status, notes=''):
     """Generic staff status change (status screen)."""
+    ensure_plain(sr)
     if new_status not in VALID_STATUSES:
         raise TransitionError('وضعیت نامعتبر است.')
     _ensure_open(sr)
@@ -196,6 +210,7 @@ def set_status(sr, actor, new_status, notes=''):
 
 def record_inspection(sr, inspector, *, approved, reason=''):
     """The inspector's outcome decides the request (approved / rejected)."""
+    ensure_plain(sr)
     _ensure_open(sr)
     if approved:
         _ensure_not_locked(sr)

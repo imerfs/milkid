@@ -305,6 +305,7 @@ def api_expert_request_documents(request, request_id):
     if not notes:
         return JsonResponse({'success': False, 'message': 'لطفاً مدارک مورد نیاز یا توضیحات نقص پرونده را درج نمایید.'}, status=400)
     try:
+        lifecycle.ensure_plain(service_request)
         lifecycle.request_documents(service_request, request.user, notes)
     except lifecycle.TransitionError as exc:
         return JsonResponse({'success': False, 'message': str(exc)}, status=409)

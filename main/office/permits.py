@@ -304,7 +304,7 @@ def refuse(actor, permit, reason):
     if not reason:
         raise Invalid('دلیل رد را بنویسید.')
     with transaction.atomic():
-        lifecycle.reject(permit.request, actor, reason)
+        lifecycle.reject(permit.request, actor, reason, by_file=True)
         permit.state, permit.staff_notes = 'rejected', reason[:2000]
         permit.save(update_fields=['state', 'staff_notes', 'updated_at'])
 
