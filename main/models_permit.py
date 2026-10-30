@@ -32,7 +32,9 @@ UNLICENSED_STAGES = [
     (4, 'گزارش بازدید، پیش‌آمدگی و مصالح'),
     (5, 'معرفی به کارشناس دادگستری و تعهدات'),
     (6, 'پاسخ کارشناس دادگستری و استحکام بنا'),
-    (7, 'خدمات و پایان کار'),
+    (7, 'پرداخت عوارض و بهای خدمات'),
+    (8, 'لیست بازدید بنیاد و نامه‌ی بنیاد'),
+    (9, 'رأی کمیسیون، جریمه و پایان کار'),
 ]
 
 
@@ -183,6 +185,20 @@ class PermitFile(models.Model):
     # step 6 (main/office/permit_reply.py): the expert's two replies (the covering letter and table 2), uploaded by the owner who has handed
     # the originals to the dehyari; the strength verdict and the letter's number and date are kept in ``commit['reply']``
     reply_state = models.CharField(max_length=10, choices=COMMIT_STATES, blank=True, default='')
+    # step 7 (main/office/permit_dues.py): the fee sheet of the dehyari («فرم محاسبه عوارض و بهای خدمات»), the owner's payments, the instalment
+    # plan and its cheques, all kept in ``dues``; dues_state '' (sheet not issued) / issued; plan_state follows the instalment request
+    DUES_STATES = [('', 'منتظر محاسبه‌ی عوارض'), ('issued', 'عوارض اعلام شد')]
+    PLAN_STATES = [('', 'بدون تقسیط'), ('requested', 'درخواست تقسیط'), ('approved', 'تقسیط تایید شد'), ('signed', 'تقسیط امضا شد'),
+                   ('registered', 'چک‌ها ثبت شد'), ('confirmed', 'ثبت چک‌ها تایید شد'), ('returned', 'تقسیط برگشت خورد')]
+    dues = models.JSONField(default=dict, blank=True)
+    dues_state = models.CharField(max_length=10, choices=DUES_STATES, blank=True, default='')
+    plan_state = models.CharField(max_length=10, choices=PLAN_STATES, blank=True, default='')
+    # step 8 (main/office/permit_bonyad.py): the owner asks to be put on the Bonyad-e Maskan's visit list; once the visit is done the technical expert releases
+    # the package (sketch, expert's reply, visit report, payments, the dehyari's letter) to the owner, who then uploads the Bonyad's letter
+    BONYAD_STATES = [('', 'منتظر درخواست متقاضی'), ('requested', 'در لیست بازدید بنیاد'), ('released', 'مدارک به متقاضی نشان داده شد'),
+                     ('uploaded', 'نامه‌ی بنیاد منتظر تایید'), ('returned', 'نامه‌ی بنیاد برگشت خورد'), ('verified', 'نامه‌ی بنیاد تایید شد')]
+    bonyad_list = models.JSONField(default=dict, blank=True)
+    bonyad_list_state = models.CharField(max_length=10, choices=BONYAD_STATES, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -231,6 +247,12 @@ class PermitFile(models.Model):
                 return self.step4_text()
             if self.stage_no == 5:
                 return self.step5_text()
+            if self.stage_no == 8:
+                return {'': 'منتظر درخواست قرار گرفتن در لیست بازدید بنیاد (از متقاضی)', 'requested': 'در لیست بازدید بنیاد؛ منتظر تایید انجام بازدید (کارشناس فنی)',
+                        'released': 'مدارک به متقاضی نشان داده شد؛ منتظر نامه‌ی بنیاد (از متقاضی)', 'uploaded': 'نامه‌ی بنیاد منتظر تایید',
+                        'returned': 'نامه‌ی بنیاد برگشت خورد', 'verified': 'نامه‌ی بنیاد تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.bonyad_list_state, '')
+            if self.stage_no == 7:
+                return self.step7_text()
             if self.stage_no == 6:
                 return {'': 'منتظر دو جوابیه‌ی کارشناس دادگستری (از متقاضی)', 'uploaded': 'جوابیه‌های کارشناس منتظر تایید', 'returned': 'جوابیه‌ها برگشت خورد',
                         'verified': 'جوابیه‌ها تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.reply_state, '')
@@ -274,7 +296,10 @@ class PermitFile(models.Model):
                                                 or (self.overhang_state in ('', 'verified') and self.materials_state in ('', 'verified'))))
                     or (self.stage_no == 5 and (self.expert_state == '' or self.consent_state == 'uploaded' or self.deed_state == 'uploaded'
                                                 or (self.consent_state == 'verified' and self.deed_state == 'verified')))
-                    or (self.stage_no == 6 and self.reply_state in ('uploaded', 'verified')))
+                    or (self.stage_no == 6 and self.reply_state in ('uploaded', 'verified'))
+                    or (self.stage_no == 8 and self.bonyad_list_state in ('requested', 'uploaded', 'verified'))
+                    or (self.stage_no == 7 and (self.plan_state == 'requested' or self.dues_settled
+                                                or any(not p.get('ok') for p in (self.dues or {}).get('payments') or []))))
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -314,6 +339,40 @@ class PermitFile(models.Model):
         if self.overhang_state == 'replied' or self.materials_state == 'uploaded':
             return 'مدارک متقاضی منتظر تایید'
         return 'گزارش در پرونده است؛ منتظر تایید نهایی مرحله'
+
+    @property
+    def dues_total(self):
+        return int(((self.dues or {}).get('sheet') or {}).get('total') or 0)
+
+    @property
+    def dues_paid(self):
+        return sum(p.get('amount', 0) for p in (self.dues or {}).get('payments') or [] if p.get('ok'))
+
+    @property
+    def dues_settled(self):
+        """The fees are covered: paid in full, or the instalment plan's cheques are registered and confirmed."""
+        return self.dues_state == 'issued' and (self.dues_paid >= self.dues_total or self.plan_state == 'confirmed')
+
+    @property
+    def needs_accountant_dues(self):
+        """Step 7 of an unlicensed file, for the financial officer: the sheet to issue, the plan to sign, the cheques to confirm."""
+        return self.unlicensed and self.stage_no == 7 and (self.dues_state == '' or self.plan_state in ('approved', 'registered')
+                                                           or any(not p.get('ok') for p in (self.dues or {}).get('payments') or []))
+
+    def step7_text(self):
+        """Where an unlicensed file stands in step 7: the fees, the payments, the instalment plan."""
+        if self.dues_state == '':
+            return 'منتظر محاسبه‌ی عوارض و بهای خدمات (مسئول مالی)'
+        if self.dues_settled:
+            return 'عوارض تسویه شد؛ منتظر تایید نهایی مرحله'
+        plan = {'requested': 'درخواست تقسیط منتظر تایید کارشناس اداری یا دهیار', 'approved': 'تقسیط منتظر امضای مسئول مالی',
+                'signed': 'تقسیط تایید شد؛ منتظر ثبت چک‌ها (از متقاضی)', 'registered': 'چک‌ها منتظر تایید ثبت (مسئول مالی)',
+                'returned': 'درخواست تقسیط برگشت خورد'}.get(self.plan_state)
+        if plan:
+            return plan
+        if any(not p.get('ok') for p in (self.dues or {}).get('payments') or []):
+            return 'فیش پرداخت منتظر تایید'
+        return 'منتظر پرداخت عوارض (از متقاضی)'
 
     def step5_text(self):
         """Where an unlicensed file stands in step 5: the introduction, the neighbours' consent, the notarial undertaking."""
@@ -374,7 +433,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('expert_letter', 'نامه‌ی کارشناس دادگستری'), ('expert_table', 'جدول شماره ۲ کارشناس'), ('consent_form', 'تعهدنامه‌ی رضایت همسایگان'), ('deed_scan', 'تعهد محضری'), ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
+        ('bonyad_letter', 'نامه‌ی بنیاد مسکن'), ('expert_letter', 'نامه‌ی کارشناس دادگستری'), ('expert_table', 'جدول شماره ۲ کارشناس'), ('consent_form', 'تعهدنامه‌ی رضایت همسایگان'), ('deed_scan', 'تعهد محضری'), ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
         ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]

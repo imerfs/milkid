@@ -59,7 +59,7 @@ class Decide(Step6):
             self.assertEqual(self.reload().reply_state, 'verified', who.profile.role)
             self.act(who, 'permit_step6_finish', confirm='on')
             self.assertEqual(self.reload().stage_no, 7, who.profile.role)
-        self.assertIn('مرحله‌ی ۶ تایید شد', self.permit.status_text)
+        self.assertEqual(self.permit.status_text, 'منتظر محاسبه‌ی عوارض و بهای خدمات (مسئول مالی)')
 
     def test_the_step_does_not_end_before_the_replies_are_confirmed(self):
         self.reply()

@@ -1,0 +1,35 @@
+{% load static jalali_tags persian_filters %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>نامه‌ی دهیاری به بنیاد مسکن - پرونده {{ permit.pk|persian_numbers }}</title>
+<link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+<style>
+  body{font-family:Vazirmatn,Tahoma,sans-serif;margin:0;padding:32px;color:#111827;background:#fff;line-height:2}
+  .top{display:flex;justify-content:space-between;font-size:14px}
+  h1{text-align:center;font-size:18px;margin:8px 0 24px}
+  ol{margin:8px 0 0;padding-right:22px}
+  .sign{margin-top:64px;text-align:left;padding-left:80px;font-weight:bold}
+  .bar{text-align:center;margin-bottom:12px}
+  @media print{.bar{display:none}body{padding:0}@page{size:A4;margin:18mm}}
+</style>
+</head>
+<body>
+<div class="bar"><button type="button" onclick="window.print()">چاپ</button> · روی کاغذ سربرگ دهیاری چاپ کنید</div>
+<div class="top"><span>بسمه تعالی</span><span>شماره: ................ &nbsp; تاریخ: {{ L.date|persian_numbers }}</span></div>
+<h1>ریاست محترم بنیاد مسکن انقلاب اسلامی{% if L.county %} شهرستان {{ L.county }}{% endif %}</h1>
+<p>با سلام و احترام؛</p>
+<p>بدین‌وسیله مدارک پرونده‌ی ساخت‌وساز بدون پروانه‌ی آقای/خانم <b>{{ L.owner }}</b>{% if L.father %} فرزند {{ L.father }}{% endif %} با شماره ملی <bdi dir="ltr">{{ L.national_id|persian_numbers }}</bdi>، به نشانی روستای {{ L.village }}، {{ L.address }}{% if L.code %}، کد نوسازی <bdi dir="ltr">{{ L.code|persian_numbers }}</bdi>{% endif %}{% if L.visit.date %} که در تاریخ {{ L.visit.date|persian_numbers }} مورد بازدید قرار گرفته است{% endif %} ارسال می‌گردد. خواهشمند است دستور فرمایید نسبت به بررسی و اعلام نظر اقدام شود.</p>
+<p><b>پیوست‌ها:</b></p>
+<ol>
+  <li>کروکی شمیم ملک{% if not pack.sketch %} (طبق فایل ارائه‌شده){% endif %}</li>
+  <li>جوابیه‌ی کارشناس رسمی دادگستری (نامه و جدول شماره ۲)</li>
+  <li>گزارش کارشناس فنی دهیاری</li>
+  <li>مدارک پرداخت عوارض و بهای خدمات{% if pack.sheet %} (جمع عوارض {{ pack.total|rials }} ریال){% endif %}{% if pack.cheques %} و چک‌های اقساط{% endif %}</li>
+</ol>
+<p>با تشکر</p>
+<div class="sign">دهیار روستای {{ L.village }}<br><small style="font-weight:normal">مهر و امضاء</small></div>
+</body>
+</html>

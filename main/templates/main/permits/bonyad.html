@@ -1,0 +1,111 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}بازدید و نامه‌ی بنیاد - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-building-columns" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۸: بازدید و نامه‌ی بنیاد مسکن</h1>
+      <p>{{ owner_name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.stage_no > 8 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li class="{% if state %}ok{% endif %}"><b>۱</b><span>شما درخواست قرار گرفتن در لیست بازدید بنیاد مسکن را می‌دهید.</span></li>
+    <li class="{% if state == 'released' or state == 'uploaded' or state == 'returned' or state == 'verified' %}ok{% endif %}"><b>۲</b><span>پس از بازدید، کارشناس فنی انجام آن را تایید می‌کند؛ مدارک به شما نشان داده می‌شود و پیامک می‌رسد.</span></li>
+    <li class="{% if state == 'uploaded' or state == 'verified' %}ok{% endif %}"><b>۳</b><span>نامه‌ی دهیاری را چاپ و امضا بگیرید، با مدارک به بنیاد بدهید و نامه‌ی دریافتی از بنیاد را اینجا بارگذاری کنید.</span></li>
+    <li class="{% if permit.stage_no > 8 %}ok{% endif %}"><b>۴</b><span>دهیار، کارشناس فنی یا کارشناس اداری نامه را تایید و مرحله را تمام می‌کند.</span></li>
+  </ol>
+
+  {% if permit.staff_notes and state == 'returned' %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
+
+  <section class="pf-card" id="bd-request">
+    <h2><i class="fas fa-list-check" aria-hidden="true"></i>لیست بازدید بنیاد</h2>
+    <p>وضعیت: <b>{{ permit.get_bonyad_list_state_display }}</b>{% if data.visit %} · بازدید در <bdi dir="ltr">{{ data.visit.date|persian_numbers }}</bdi>{% endif %}</p>
+    {% if can_request %}
+    <form method="post" action="{% url 'main:permit_bonyad_request' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <label>توضیح (اختیاری)<input name="note" maxlength="300"></label>
+      <div class="pff-checks"><label><input type="checkbox" name="confirm"> درخواست قرار گرفتن در لیست بازدید بنیاد مسکن را دارم</label></div>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ثبت درخواست</button>
+    </form>
+    {% endif %}
+    {% if can_release %}
+    <form method="post" action="{% url 'main:permit_bonyad_release' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <label>تاریخ بازدید بنیاد<input name="date" dir="ltr" required value="{{ today }}"></label>
+      <div class="pff-checks"><label><input type="checkbox" name="confirm"> بازدید بنیاد انجام شد و مدارک زیر را بررسی کردم</label></div>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید بازدید، نمایش مدارک و ارسال پیامک</button>
+    </form>
+    {% endif %}
+    {% if data.visit and staff %}<p class="pf-hint">پیامک به متقاضی: {% if data.visit.sms %}ارسال شد{% else %}ارسال نشد ({{ data.visit.sms_detail }}) — اعلان داخل سامانه رفت.{% endif %}</p>{% endif %}
+  </section>
+
+  {% if shown %}
+  <section class="pf-card" id="bd-pack">
+    <h2><i class="fas fa-folder-open" aria-hidden="true"></i>مدارک پرونده برای بنیاد</h2>
+    <ul class="pf-docs">
+      <li><b>کروکی شمیم:</b> {% for d in pack.sketch %}<a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-download" aria-hidden="true"></i> {{ d.original_name }}</a> {% empty %}<span class="pf-none">فایلی نیست</span>{% endfor %}</li>
+      <li><b>جوابیه‌ی کارشناس دادگستری:</b> {% for d in pack.expert_letter %}<a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i> نامه</a> {% endfor %}{% for d in pack.expert_table %}<a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i> جدول ۲</a> {% endfor %}{% if not pack.expert_letter and not pack.expert_table %}<span class="pf-none">فایلی نیست</span>{% endif %}</li>
+      <li><b>گزارش کارشناس فنی:</b> {% if pack.report %}<a href="{% url 'main:permit_report' permit.pk %}" target="_blank" rel="noopener"><i class="fas fa-clipboard-list" aria-hidden="true"></i> مشاهده و چاپ</a>{% else %}<span class="pf-none">ثبت نشده</span>{% endif %}</li>
+      <li><b>پرداخت‌ها:</b> {% if pack.sheet %}جمع عوارض {{ pack.total|rials }} ریال، پرداخت‌شده {{ pack.paid|rials }} ریال{% if pack.cheques %} و {{ pack.cheques|length|persian_numbers }} چک{% endif %} · <a href="{% url 'main:permit_dues_sheet' permit.pk %}" target="_blank" rel="noopener"><i class="fas fa-print" aria-hidden="true"></i> برگه‌ی عوارض</a>{% else %}<span class="pf-none">ثبت نشده</span>{% endif %}
+        {% if pack.payments %}<ul>{% for p in pack.payments %}<li>فیش <bdi dir="ltr">{{ p.slip_no|persian_numbers }}</bdi> · {{ p.date|persian_numbers }} · {{ p.amount|rials }} ریال</li>{% endfor %}</ul>{% endif %}</li>
+      <li><b>نامه‌ی دهیاری به بنیاد:</b> <a href="{% url 'main:permit_bonyad_letter' permit.pk %}" target="_blank" rel="noopener"><i class="fas fa-print" aria-hidden="true"></i> مشاهده و چاپ</a> <small>(دهیار مهر و امضا می‌کند)</small></li>
+    </ul>
+  </section>
+
+  <section class="pf-card" id="bd-letter">
+    <h2><i class="fas fa-envelope-open-text" aria-hidden="true"></i>نامه‌ی دریافتی از بنیاد</h2>
+    {% if data.letter %}<p>شماره <bdi dir="ltr">{{ data.letter.number|persian_numbers }}</bdi> · تاریخ <bdi dir="ltr">{{ data.letter.date|persian_numbers }}</bdi></p>{% endif %}
+    <ul class="pf-docs">{% for d in letters %}<li><a href="{% url 'main:permit_document' d.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ d.original_name }}</a></li>{% empty %}<li class="pf-none">هنوز بارگذاری نشده.</li>{% endfor %}</ul>
+    {% if can_upload %}
+    <form method="post" action="{% url 'main:permit_bonyad_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form" data-once>{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <label>تصویر نامه‌ی بنیاد (pdf، jpg یا png)<input type="file" name="letter" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not letters %}required{% endif %}></label>
+      <div class="pff-fields">
+        <label>شماره‌ی نامه<input name="letter_no" dir="ltr" required value="{{ data.letter.number }}"></label>
+        <label>تاریخ نامه<input name="letter_date" dir="ltr" required value="{{ data.letter.date }}" placeholder="۱۴۰۵/۰۷/۲۶"></label>
+        <label class="wide">توضیح (اختیاری)<input name="note" maxlength="300"></label>
+      </div>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال نامه‌ی بنیاد</button>
+    </form>
+    {% endif %}
+    {% if can_decide %}
+    <form method="post" action="{% url 'main:permit_bonyad_verify' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <div class="pff-checks"><label><input type="checkbox" name="confirm"> نامه‌ی بنیاد را با اصل مقایسه و بررسی کردم</label></div>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید نامه‌ی بنیاد</button>
+    </form>
+    <form method="post" action="{% url 'main:permit_bonyad_return' permit.pk %}" class="pf-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <label>مشکل نامه چیست؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+      <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if can_finish %}
+  <section class="pf-card" id="bd-finish">
+    <h2><i class="fas fa-circle-check" aria-hidden="true"></i>تایید مرحله‌ی ۸</h2>
+    {% if blocking %}<ul class="pf-checks">{% for b in blocking %}<li class="warn">{{ b }}</li>{% endfor %}</ul>
+    {% else %}
+    <form method="post" action="{% url 'main:permit_step8_finish' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+      {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+      <div class="pff-checks"><label><input type="checkbox" name="confirm"> مدارک این مرحله را بررسی کردم</label></div>
+      <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+      <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۹</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

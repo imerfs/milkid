@@ -36,6 +36,8 @@ POLICY = {
     'permit.report': {'engineer', 'dehyari'},
     # the list of judiciary experts the dehyari introduces owners of unlicensed buildings to (step 5)
     'permit.experts': {'dehyari'},
+    # the administrative expert and the dehyari decide on an owner's request to pay the fees in instalments (step 7); the financial officer signs it
+    'permit.plan': {'clerk', 'dehyari'},
     # the administrative expert's desk (letters and follow-ups of the village)
     'clerk.desk': {'clerk', 'dehyari'},
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed

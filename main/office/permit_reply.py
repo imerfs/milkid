@@ -152,4 +152,6 @@ def finish(actor, permit, post):
     sr.add_workflow_step(action='تایید مرحله ۶ (جوابیه‌ی کارشناس دادگستری)', from_user=actor, to_role='citizen', notes=permit.staff_notes)
     sr.save(update_fields=['workflow_history', 'updated_at'])
     notify(sr.user, 'مرحله‌ی ۶ تایید شد', f'جوابیه‌های کارشناس پرونده {permit.pk} تایید شد؛ پرونده به مرحله‌ی ۷ رفت.', request=sr)
+    from main.office import permit_dues       # pylint: disable=import-outside-toplevel
+    permit_dues.tell_the_officer(permit)
     return permit

@@ -13,8 +13,8 @@
         <td><b>{{ f.request.user.get_full_name|default:f.request.user.username }}</b></td>
         <td>{{ f.stage_no|persian_numbers }}. {{ f.stage_title }}</td>
         <td><span class="pl-state pl-state-{{ f.state }}">{{ f.status_text }}</span></td>
-        <td>{{ f.fees.total|rials|default:"—" }}</td>
-        <td><a class="pl-open" href="{% url 'main:permit_fees' f.pk %}">{% if f.needs_accountant %}تعیین عوارض{% else %}مشاهده{% endif %}</a></td>
+        <td>{% if f.unlicensed %}{{ f.dues_total|rials|default:"—" }}{% else %}{{ f.fees.total|rials|default:"—" }}{% endif %}</td>
+        <td><a class="pl-open" href="{% if f.unlicensed %}{% url 'main:permit_dues' f.pk %}{% else %}{% url 'main:permit_fees' f.pk %}{% endif %}">{% if f.needs_accountant or f.needs_accountant_dues %}تعیین عوارض{% else %}مشاهده{% endif %}</a></td>
       </tr>
     {% endfor %}
     </tbody>
