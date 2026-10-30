@@ -31,7 +31,7 @@ UNLICENSED_STAGES = [
     (3, 'اخطاریه و درخواست بازدید'),
     (4, 'گزارش بازدید، پیش‌آمدگی و مصالح'),
     (5, 'معرفی به کارشناس دادگستری و تعهدات'),
-    (6, 'استحکام بنا، رأی و جریمه'),
+    (6, 'پاسخ کارشناس دادگستری و استحکام بنا'),
     (7, 'خدمات و پایان کار'),
 ]
 
@@ -180,6 +180,9 @@ class PermitFile(models.Model):
     expert_state = models.CharField(max_length=10, choices=EXPERT_STATES, blank=True, default='')
     consent_state = models.CharField(max_length=10, choices=COMMIT_STATES, blank=True, default='')
     deed_state = models.CharField(max_length=10, choices=COMMIT_STATES, blank=True, default='')
+    # step 6 (main/office/permit_reply.py): the expert's two replies (the covering letter and table 2), uploaded by the owner who has handed
+    # the originals to the dehyari; the strength verdict and the letter's number and date are kept in ``commit['reply']``
+    reply_state = models.CharField(max_length=10, choices=COMMIT_STATES, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -228,6 +231,9 @@ class PermitFile(models.Model):
                 return self.step4_text()
             if self.stage_no == 5:
                 return self.step5_text()
+            if self.stage_no == 6:
+                return {'': 'منتظر دو جوابیه‌ی کارشناس دادگستری (از متقاضی)', 'uploaded': 'جوابیه‌های کارشناس منتظر تایید', 'returned': 'جوابیه‌ها برگشت خورد',
+                        'verified': 'جوابیه‌ها تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.reply_state, '')
             return f'مرحله‌ی {"۰۱۲۳۴۵۶۷۸۹"[self.stage_no - 1]} تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
             return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
@@ -267,7 +273,8 @@ class PermitFile(models.Model):
                     or (self.stage_no == 4 and (self.report_state != 'filed' or self.overhang_state == 'replied' or self.materials_state == 'uploaded'
                                                 or (self.overhang_state in ('', 'verified') and self.materials_state in ('', 'verified'))))
                     or (self.stage_no == 5 and (self.expert_state == '' or self.consent_state == 'uploaded' or self.deed_state == 'uploaded'
-                                                or (self.consent_state == 'verified' and self.deed_state == 'verified'))))
+                                                or (self.consent_state == 'verified' and self.deed_state == 'verified')))
+                    or (self.stage_no == 6 and self.reply_state in ('uploaded', 'verified')))
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -367,7 +374,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('consent_form', 'تعهدنامه‌ی رضایت همسایگان'), ('deed_scan', 'تعهد محضری'), ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
+        ('expert_letter', 'نامه‌ی کارشناس دادگستری'), ('expert_table', 'جدول شماره ۲ کارشناس'), ('consent_form', 'تعهدنامه‌ی رضایت همسایگان'), ('deed_scan', 'تعهد محضری'), ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
         ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]

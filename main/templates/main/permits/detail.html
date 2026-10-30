@@ -69,7 +69,12 @@
           <p><b>وضعیت:</b> {{ permit.status_text }}</p>
           {% endif %}
           {% if permit.stage_no >= 5 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_commit' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-user-check" aria-hidden="true"></i>معرفی به کارشناس و تعهدات</a>{% endif %}
-          {% if permit.stage_no >= 6 %}<p class="pf-hint">مرحله‌ی ۶ و مرحله‌ی بعد (استحکام بنا، رأی کمیسیون و جریمه، خدمات و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>{% endif %}
+          {% if permit.stage_no == 6 %}
+          <p>مرحله‌ی ۶: کارشناس دادگستری دو برگه به شما می‌دهد (نامه و جدول شماره ۲). اصل هر دو را به دهیاری تحویل دهید و تصویرشان را بارگذاری کنید.</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          {% endif %}
+          {% if permit.stage_no >= 6 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_reply' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-file-circle-check" aria-hidden="true"></i>جوابیه‌ی کارشناس</a>{% endif %}
+          {% if permit.stage_no >= 7 %}<p class="pf-hint">مرحله‌ی ۷ (رأی کمیسیون و جریمه، خدمات و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>{% endif %}
           {% else %}
           {% if permit.stage_no == 2 %}
           <p>مرحله‌ی ۲: فرم ۱ (استعلام از بنیاد مسکن) را دهیاری و فرم ۲ (تقاضای پروانه) را متقاضی پر می‌کند؛ هر دو را دانلود و چاپ کنید، فرم ۱ مهر و امضای دهیار می‌گیرد و با نقشه‌ی ملک به بنیاد مسکن می‌روید.</p>
