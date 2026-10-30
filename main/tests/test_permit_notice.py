@@ -178,7 +178,7 @@ class Deciding(Notice):
         self.send(scan=upload('new.png', PNG), date='1402/10/19')                 # sent already: refused
         self.assertEqual(PermitDocument.objects.get(file=permit, kind='warning_notice').pk, old)
 
-    def test_after_confirming_the_notice_the_owner_asks_for_the_visit_and_step_four_is_not_built_yet(self):
+    def test_after_confirming_the_notice_the_owner_asks_for_the_visit_and_step_four_opens(self):
         self.decide(self.dehyari, **self.good())
         permit = self.reload()
         self.assertEqual(permit.status_text, 'منتظر درخواست بازدید (از متقاضی)')
@@ -192,6 +192,6 @@ class Deciding(Notice):
         client_for(self.engineer).post(self.url('permit_visit_complete'), {'confirm': 'on', 'notes': 'سه طبقه، نمای ناتمام'})
         permit = self.reload()
         self.assertEqual((permit.visit_state, permit.stage_no), ('done', 4))
-        self.assertEqual(permit.status_text, 'مرحله‌ی ۳ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است')
+        self.assertEqual(permit.status_text, 'منتظر گزارش بازدید (کارشناس فنی)')
         page = client_for(self.citizen).get(reverse('main:permit_file', args=[permit.pk])).content.decode()
-        self.assertIn('هنوز در سامانه راه‌اندازی نشده', page)
+        self.assertIn(reverse('main:permit_report', args=[permit.pk]), page)

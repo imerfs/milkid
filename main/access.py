@@ -32,6 +32,8 @@ POLICY = {
     'permit.fees': {'accountant', 'dehyari'},    # the fee rows of a permit file (step 5) and the payments received (step 6)
     # the shamim sketch the technical expert draws for an owner without a shamim file: its fee, the payment and the delivery
     'permit.sketch': {'engineer', 'dehyari'},
+    # the technical expert's visit report of an unlicensed building (step 4)
+    'permit.report': {'engineer', 'dehyari'},
     # the administrative expert's desk (letters and follow-ups of the village)
     'clerk.desk': {'clerk', 'dehyari'},
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed

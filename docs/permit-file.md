@@ -227,3 +227,24 @@ The request form's subject («تقاضای ... را دارم») and its addresse
 کمیسیون»; the addressee defaults to «شورای اسلامی روستا» as in the template and can be switched to «دهیار روستا» as on the earlier signed sample. The
 undertaking is unchanged (its monthly occupation rate stays a dotted blank for the dehyari: the template shows an unreadable rate).
 
+## Construction without a permit: step 4 (the visit report, the electricity office, the materials)
+`permits/<id>/report/` (`permit_report.py`, `permit_site.py`, `permits/report.html`, `static/js/permit-report-form.js`), open once the technical expert's
+visit is recorded (file at stage 4). The stages of this track are now: 1 initial file (with the defence form), 2 request form and undertaking, 3 notice
+and visit request, 4 visit report / overhang / materials, 5 notarial undertaking, strength check, ruling and fine, 6 services and end of work (5 and 6
+are not built yet).
+- **The visit report** («گزارش بازدید», from the dehyari's sheet `گزارش نهایی 404.xlsx`) is filled by the **technical expert or the dehyari**
+  (policy `permit.report`). Prefilled from the file: the owner, the address, the four limits measured on the village map, the areas, the built area the owner
+  gave (spread over the floors he declared). The staff add the measurements, the floors (residential, commercial, parking, pilotis, storage, penthouse,
+  overhang over the street, overhang facing the yard, the small yard, height), the structure and year. The system works out what the sheet does: each floor's
+  area (a closed overhang counts 2/3, the small yard counts), the total built area, the excess over the permit and the commission's ruling, the occupation
+  percentage, the parking needed (one per unit) and the separation limit (160 m²). «ذخیره» keeps a draft the owner does not see; «ثبت در پرونده» puts it in the
+  owner's file, where he sees, downloads and prints it (typeset in the browser, one page).
+- **Overhang over the street** (the report's «پیش‌آمدگی به معبر» above zero): the owner asks the electricity distribution office. The system prints the owner's
+  request and the dehyari's letter to the office (built / not built overhang, the passages' width, the useful pavement, the balcony depth, the distance
+  from the network, the UTM) from the report; the dehyari signs, the owner takes it to the office, brings the answer to the dehyari and uploads it with its
+  number, date and sense (`power_reply`, `overhang_state`: required → replied → verified / returned).
+- **Materials in the street** (ticked in the report): the owner clears them and uploads photos (`materials_photo`, `materials_state`); the file does not go
+  on until the staff confirm the photos.
+- **Ending the step:** when the report is filed and neither of the above is outstanding, any of the clerk / technical expert / dehyari ticks that the report
+  and the papers were checked (`permit_site.finish`) and the file goes to **step 5**. Every part is confirmed, or sent back with a reason, by any of the three.
+
