@@ -396,7 +396,7 @@ function printConversation() {
 function shareConversation() {
     if (navigator.share) {
         navigator.share({
-            title: '{{ conversation.subject }}',
+            title: '{{ conversation.subject|escapejs }}',
             url: window.location.href
         });
     } else {

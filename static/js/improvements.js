@@ -6,6 +6,12 @@
 (function() {
     'use strict';
 
+    function escapeHtml(v) {
+        return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+        });
+    }
+
     // ============================================
     // Loading Overlay System
     // ============================================
@@ -33,7 +39,7 @@
             overlay.innerHTML = `
                 <div class="loading-content">
                     <div class="spinner spinner-large"></div>
-                    <div class="loading-text">${message}</div>
+                    <div class="loading-text">${escapeHtml(message)}</div>
                 </div>
             `;
             document.body.appendChild(overlay);
@@ -81,7 +87,7 @@
             feedbackEl.className = `feedback-message ${type}`;
             feedbackEl.innerHTML = `
                 <i class="fas fa-${this.getIcon(type)} me-2"></i>
-                ${message}
+                ${escapeHtml(message)}
             `;
             document.body.appendChild(feedbackEl);
 

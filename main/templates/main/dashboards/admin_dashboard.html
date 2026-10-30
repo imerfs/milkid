@@ -1101,7 +1101,7 @@
                                 </button>
                                 <a
                                     href="/register/citizen/"
-                                    target="_blank"
+                                    target="_blank" rel="noopener noreferrer"
                                     class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:from-blue-700 hover:to-indigo-700 flex items-center transition"
                                 >
                                     <i class="fas fa-user-plus ml-2"></i>ثبت کاربر جدید
@@ -1246,7 +1246,7 @@
                                                 name="action"
                                                 value="approve"
                                                 class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold transition"
-                                                onclick="return confirm('تایید کاربر {{ user.user.get_full_name|default:user.user.username }}؟')"
+                                                onclick="return confirm('تایید کاربر {{ user.user.get_full_name|default:user.user.username|escapejs }}؟')"
                                             >
                                                 تایید
                                             </button>
@@ -1259,7 +1259,7 @@
                                                 name="action"
                                                 value="reject"
                                                 class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-bold transition"
-                                                onclick="return confirm('رد کاربر {{ user.user.get_full_name|default:user.user.username }}؟')"
+                                                onclick="return confirm('رد کاربر {{ user.user.get_full_name|default:user.user.username|escapejs }}؟')"
                                             >
                                                 رد
                                             </button>
@@ -1681,7 +1681,7 @@
                                 <a href="{% url 'main:manage_property_ads' %}" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium flex items-center shadow transition-colors">
                                     <i class="fas fa-external-link-alt ml-2"></i> صفحه مستقل مدیریت
                                 </a>
-                                <a href="{% url 'main:property_listings' %}" target="_blank" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium flex items-center shadow transition-colors">
+                                <a href="{% url 'main:property_listings' %}" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium flex items-center shadow transition-colors">
                                     <i class="fas fa-store ml-2"></i> مشاهده در سایت
                                 </a>
                             </div>
@@ -2108,7 +2108,7 @@
                                             <td class="py-3.5 px-4">
                                                 <div class="text-gray-500 font-mono text-[11px]">{{ mun.created_at|date:"Y/m/d" }}</div>
                                                 {% if mun.governor_decree %}
-                                                <a href="{% url 'main:municipality_decree_view' mun.id %}" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-bold mt-1">
+                                                <a href="{% url 'main:municipality_decree_view' mun.id %}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-bold mt-1">
                                                     <i class="fas fa-file-pdf"></i>
                                                     <span>مشاهده حکم</span>
                                                 </a>
@@ -2345,6 +2345,12 @@
         </div>
 
         <script>
+            // HTML-escape server/user text before it goes into innerHTML.
+            function escapeHtml(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+                });
+            }
             // Initialize variables
             let isDarkMode = localStorage.getItem('darkMode') === 'true';
             let dashboardWidgets = localStorage.getItem('dashboardWidgets');
@@ -2637,7 +2643,7 @@
                             }
                             if (actionsCell) {
                                 actionsCell.innerHTML = `
-                                    <button type="button" onclick="executeMunicipalityAction(${municipalityId}, 'reject', '${munName}')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-gray-50 text-gray-600 hover:bg-rose-50 hover:text-rose-700 border border-gray-200" title="تعلیق یا رد">
+                                    <button type="button" onclick="executeMunicipalityAction(${municipalityId}, 'reject', ${escapeHtml(JSON.stringify(munName))})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-gray-50 text-gray-600 hover:bg-rose-50 hover:text-rose-700 border border-gray-200" title="تعلیق یا رد">
                                         <i class="fas fa-ban text-[11px]"></i>
                                         <span>تعلیق</span>
                                     </button>`;
@@ -2656,7 +2662,7 @@
                             }
                             if (actionsCell) {
                                 actionsCell.innerHTML = `
-                                    <button type="button" onclick="executeMunicipalityAction(${municipalityId}, 'approve', '${munName}')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200" title="تایید مجدد">
+                                    <button type="button" onclick="executeMunicipalityAction(${municipalityId}, 'approve', ${escapeHtml(JSON.stringify(munName))})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200" title="تایید مجدد">
                                         <i class="fas fa-redo text-[11px]"></i>
                                         <span>تایید مجدد</span>
                                     </button>`;
@@ -2720,48 +2726,48 @@
                             if (mun.status === 'pending') {
                                 statusBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fas fa-clock ml-1 text-amber-600"></i>در انتظار بررسی</span>`;
                                 actionsBtns = `
-                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'approve', '${mun.name}')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 shadow-xs" title="تایید درخواست">
+                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'approve', ${escapeHtml(JSON.stringify(mun.name))})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 shadow-xs" title="تایید درخواست">
                                         <i class="fas fa-check text-[11px]"></i><span>تایید</span>
                                     </button>
-                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'reject', '${mun.name}')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 shadow-xs" title="رد درخواست">
+                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'reject', ${escapeHtml(JSON.stringify(mun.name))})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 shadow-xs" title="رد درخواست">
                                         <i class="fas fa-times text-[11px]"></i><span>رد</span>
                                     </button>`;
                             } else if (mun.status === 'active') {
                                 statusBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fas fa-check-circle ml-1 text-emerald-600"></i>تایید شده (فعال)</span>`;
                                 actionsBtns = `
-                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'reject', '${mun.name}')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-gray-50 text-gray-600 hover:bg-rose-50 hover:text-rose-700 border border-gray-200" title="تعلیق یا رد">
+                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'reject', ${escapeHtml(JSON.stringify(mun.name))})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-gray-50 text-gray-600 hover:bg-rose-50 hover:text-rose-700 border border-gray-200" title="تعلیق یا رد">
                                         <i class="fas fa-ban text-[11px]"></i><span>تعلیق</span>
                                     </button>`;
                             } else {
                                 statusBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200"><i class="fas fa-times-circle ml-1 text-rose-600"></i>رد شده</span>`;
                                 actionsBtns = `
-                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'approve', '${mun.name}')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200" title="تایید مجدد">
+                                    <button type="button" onclick="executeMunicipalityAction(${mun.id}, 'approve', ${escapeHtml(JSON.stringify(mun.name))})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200" title="تایید مجدد">
                                         <i class="fas fa-redo text-[11px]"></i><span>تایید مجدد</span>
                                     </button>`;
                             }
 
                             html += `
-                                <tr class="hover:bg-gray-50/80 transition mun-row" id="mun-row-${mun.id}" data-status="${mun.status}" data-search="${mun.name} ${mun.province} ${mun.county} ${mun.city_village} ${mun.contact_person} ${mun.contact_phone}">
+                                <tr class="hover:bg-gray-50/80 transition mun-row" id="mun-row-${mun.id}" data-status="${escapeHtml(mun.status)}" data-search="${escapeHtml(mun.name)} ${escapeHtml(mun.province)} ${escapeHtml(mun.county)} ${escapeHtml(mun.city_village)} ${escapeHtml(mun.contact_person)} ${escapeHtml(mun.contact_phone)}">
                                     <td class="py-3.5 px-4">
-                                        <div class="font-bold text-gray-900 text-sm">${mun.name}</div>
-                                        <div class="text-[11px] text-gray-500 mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">${mun.type}</span></div>
+                                        <div class="font-bold text-gray-900 text-sm">${escapeHtml(mun.name)}</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">${escapeHtml(mun.type)}</span></div>
                                     </td>
                                     <td class="py-3.5 px-4 text-gray-700">
-                                        <div class="font-medium text-gray-900">${mun.province} - ${mun.county}</div>
-                                        <div class="text-[11px] text-gray-500 mt-0.5">${mun.district ? 'بخش ' + mun.district + ' - ' : ''}${mun.city_village}</div>
+                                        <div class="font-medium text-gray-900">${escapeHtml(mun.province)} - ${escapeHtml(mun.county)}</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">${mun.district ? 'بخش ' + escapeHtml(mun.district) + ' - ' : ''}${escapeHtml(mun.city_village)}</div>
                                     </td>
                                     <td class="py-3.5 px-4">
-                                        <div class="font-bold text-gray-800">${mun.contact_person}</div>
-                                        <div class="text-[11px] text-gray-500 mt-0.5 font-mono" dir="ltr">${mun.contact_phone}</div>
-                                        ${mun.contact_national_id ? `<div class="text-[10px] text-gray-400 font-mono" dir="ltr">کد ملی: ${mun.contact_national_id}</div>` : ''}
+                                        <div class="font-bold text-gray-800">${escapeHtml(mun.contact_person)}</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5 font-mono" dir="ltr">${escapeHtml(mun.contact_phone)}</div>
+                                        ${mun.contact_national_id ? `<div class="text-[10px] text-gray-400 font-mono" dir="ltr">کد ملی: ${escapeHtml(mun.contact_national_id)}</div>` : ''}
                                     </td>
                                     <td class="py-3.5 px-4 text-gray-600">
-                                        <div>جمعیت: <span class="font-bold text-gray-800 font-mono">${mun.population}</span> نفر</div>
-                                        <div class="text-[11px] text-gray-500 mt-0.5">مساحت: <span class="font-mono">${mun.area_hectares}</span> هکتار</div>
+                                        <div>جمعیت: <span class="font-bold text-gray-800 font-mono">${escapeHtml(mun.population)}</span> نفر</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">مساحت: <span class="font-mono">${escapeHtml(mun.area_hectares)}</span> هکتار</div>
                                     </td>
                                     <td class="py-3.5 px-4">
-                                        <div class="text-gray-500 font-mono text-[11px]">${mun.created_at}</div>
-                                        ${mun.has_decree ? `<a href="${mun.decree_url}" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-bold mt-1"><i class="fas fa-file-pdf"></i><span>مشاهده حکم</span></a>` : '<span class="text-[11px] text-gray-400 mt-1 block">بدون فایل پیوست</span>'}
+                                        <div class="text-gray-500 font-mono text-[11px]">${escapeHtml(mun.created_at)}</div>
+                                        ${mun.has_decree ? `<a href="${escapeHtml(mun.decree_url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-bold mt-1"><i class="fas fa-file-pdf"></i><span>مشاهده حکم</span></a>` : '<span class="text-[11px] text-gray-400 mt-1 block">بدون فایل پیوست</span>'}
                                     </td>
                                     <td class="py-3.5 px-4" id="mun-status-cell-${mun.id}">
                                         ${statusBadge}
@@ -2994,7 +3000,7 @@
                 notification.innerHTML = `
                     <div class="flex items-center">
                         <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'} ml-2"></i>
-                        <span>${message}</span>
+                        <span>${escapeHtml(message)}</span>
                     </div>
                 `;
 
@@ -3348,6 +3354,13 @@
             });
         }
 
+        // HTML-escape server/user text before it goes into innerHTML.
+        function escapeHtml(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+            });
+        }
+
         // View Property Ad Detail in Modal
         function adminViewPropertyAdDetail(adId) {
             const modal = document.getElementById('adminPropertyDetailModal');
@@ -3365,7 +3378,7 @@
                         let imagesHtml = '';
                         if (ad.images && ad.images.length > 0) {
                             imagesHtml = '<div class="grid grid-cols-3 gap-2 my-3">' + 
-                                ad.images.map(img => `<img src="${img.url}" alt="تصویر آگهی" class="h-24 w-full object-cover rounded-lg border">`).join('') +
+                                ad.images.map(img => `<img src="${escapeHtml(img.url)}" alt="تصویر آگهی" class="h-24 w-full object-cover rounded-lg border">`).join('') +
                                 '</div>';
                         } else {
                             imagesHtml = '<div class="p-3 bg-gray-50 rounded-lg text-center text-xs text-gray-400">تصویری بارگذاری نشده است</div>';
@@ -3379,19 +3392,19 @@
                         content.innerHTML = `
                             ${imagesHtml}
                             <div class="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-4 rounded-xl">
-                                <div><strong>نوع آگهی:</strong> ${ad.ad_type_display}</div>
-                                <div><strong>نوع ملک:</strong> ${ad.property_type_display}</div>
-                                <div><strong>مساحت کل:</strong> ${ad.total_area} متر مربع</div>
-                                <div><strong>زیربنا:</strong> ${ad.built_area || '-'} متر مربع</div>
-                                <div><strong>تعداد اتاق:</strong> ${ad.bedrooms || '-'}</div>
-                                <div><strong>سال ساخت:</strong> ${ad.construction_year || '-'}</div>
+                                <div><strong>نوع آگهی:</strong> ${escapeHtml(ad.ad_type_display)}</div>
+                                <div><strong>نوع ملک:</strong> ${escapeHtml(ad.property_type_display)}</div>
+                                <div><strong>مساحت کل:</strong> ${escapeHtml(ad.total_area)} متر مربع</div>
+                                <div><strong>زیربنا:</strong> ${escapeHtml(ad.built_area || '-')} متر مربع</div>
+                                <div><strong>تعداد اتاق:</strong> ${escapeHtml(ad.bedrooms || '-')}</div>
+                                <div><strong>سال ساخت:</strong> ${escapeHtml(ad.construction_year || '-')}</div>
                                 <div><strong>پارکینگ:</strong> ${ad.parking_available ? 'دارد' : 'ندارد'}</div>
                                 <div><strong>آسانسور:</strong> ${ad.elevator ? 'دارد' : 'ندارد'}</div>
                             </div>
                             <div class="p-3 bg-purple-50 rounded-xl text-sm border border-purple-100">
                                 <div class="font-bold text-purple-900 mb-1">موقعیت:</div>
-                                <div>${ad.province} - ${ad.county} - ${ad.district} - ${ad.city_village} ${ad.is_village ? '(روستا)' : ''}</div>
-                                <div class="text-xs text-gray-600 mt-1"><strong>آدرس دقیق:</strong> ${ad.address}</div>
+                                <div>${escapeHtml(ad.province)} - ${escapeHtml(ad.county)} - ${escapeHtml(ad.district)} - ${escapeHtml(ad.city_village)} ${ad.is_village ? '(روستا)' : ''}</div>
+                                <div class="text-xs text-gray-600 mt-1"><strong>آدرس دقیق:</strong> ${escapeHtml(ad.address)}</div>
                             </div>
                             <div class="p-3 bg-emerald-50 rounded-xl text-sm border border-emerald-100">
                                 <div class="font-bold text-emerald-900 mb-1">شرایط مالی:</div>
@@ -3399,10 +3412,10 @@
                             </div>
                             <div class="p-3 bg-blue-50 rounded-xl text-sm border border-blue-100">
                                 <div class="font-bold text-blue-900 mb-1">اطلاعات تماس:</div>
-                                <div><strong>نام:</strong> ${ad.contact_name}</div>
-                                <div><strong>تلفن:</strong> <a href="tel:${ad.contact_phone}" class="text-blue-600 font-bold underline" dir="ltr">${ad.contact_phone}</a></div>
+                                <div><strong>نام:</strong> ${escapeHtml(ad.contact_name)}</div>
+                                <div><strong>تلفن:</strong> <a href="tel:${escapeHtml(ad.contact_phone)}" class="text-blue-600 font-bold underline" dir="ltr">${escapeHtml(ad.contact_phone)}</a></div>
                             </div>
-                            ${ad.description ? `<div class="text-xs text-gray-700 bg-gray-50 p-3 rounded-lg"><strong>توضیحات:</strong> ${ad.description}</div>` : ''}
+                            ${ad.description ? `<div class="text-xs text-gray-700 bg-gray-50 p-3 rounded-lg"><strong>توضیحات:</strong> ${escapeHtml(ad.description)}</div>` : ''}
                         `;
 
                         footer.innerHTML = `
@@ -3896,11 +3909,11 @@
                 modalBody.innerHTML = `
                     <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <div class="w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-md bg-gradient-to-tr from-blue-600 to-indigo-600">
-                            ${fullname.charAt(0)}
+                            ${escapeHtml(fullname.charAt(0))}
                         </div>
                         <div>
-                            <h4 class="font-bold text-gray-900 text-lg">${fullname}</h4>
-                            <p class="text-xs text-gray-500 font-mono" dir="ltr">@${username}</p>
+                            <h4 class="font-bold text-gray-900 text-lg">${escapeHtml(fullname)}</h4>
+                            <p class="text-xs text-gray-500 font-mono" dir="ltr">@${escapeHtml(username)}</p>
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${isOnline ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-600'}">
                                     ${isOnline ? '🟢 آنلاین هم‌اکنون' : '⚪ آفلاین'}
@@ -3915,33 +3928,33 @@
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <div class="p-3 bg-gray-50 rounded-xl">
                             <span class="text-xs text-gray-400 block mb-1">نقش کاربری</span>
-                            <span class="font-bold text-gray-800">${roleDisplay}</span>
+                            <span class="font-bold text-gray-800">${escapeHtml(roleDisplay)}</span>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl">
                             <span class="text-xs text-gray-400 block mb-1">شماره همراه</span>
-                            <span class="font-bold text-gray-800 font-mono" dir="ltr">${mobile}</span>
+                            <span class="font-bold text-gray-800 font-mono" dir="ltr">${escapeHtml(mobile)}</span>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl">
                             <span class="text-xs text-gray-400 block mb-1">کد ملی</span>
-                            <span class="font-bold text-gray-800 font-mono" dir="ltr">${nationalId}</span>
+                            <span class="font-bold text-gray-800 font-mono" dir="ltr">${escapeHtml(nationalId)}</span>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl">
                             <span class="text-xs text-gray-400 block mb-1">ایمیل</span>
-                            <span class="font-bold text-gray-800 text-xs font-mono" dir="ltr">${email}</span>
+                            <span class="font-bold text-gray-800 text-xs font-mono" dir="ltr">${escapeHtml(email)}</span>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl">
                             <span class="text-xs text-gray-400 block mb-1">تاریخ عضویت</span>
-                            <span class="font-bold text-gray-800">${dateJoined}</span>
+                            <span class="font-bold text-gray-800">${escapeHtml(dateJoined)}</span>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl">
                             <span class="text-xs text-gray-400 block mb-1">آخرین ورود</span>
-                            <span class="font-bold text-gray-800">${lastLogin}</span>
+                            <span class="font-bold text-gray-800">${escapeHtml(lastLogin)}</span>
                         </div>
                     </div>
 
                     <div class="p-3.5 bg-blue-50/70 border border-blue-100 rounded-xl text-sm">
                         <span class="text-xs text-blue-700 font-bold block mb-1">منطقه و موقعیت جغرافیایی:</span>
-                        <span class="text-gray-800 font-medium">${location}</span>
+                        <span class="text-gray-800 font-medium">${escapeHtml(location)}</span>
                     </div>
                 `;
             }

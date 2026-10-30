@@ -9,6 +9,7 @@ LIMITS = {
     '/contact/': (5, 600),
     '/2fa/': (10, 300),
     '/support/': (5, 600),
+    '/api/geo/request-city-village': (10, 3600),   # anonymous register form; every call may add a village
 }
 
 

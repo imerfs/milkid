@@ -6,6 +6,7 @@ thread pane, directory) are HTML fragments the component loads and swaps.
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
@@ -150,4 +151,6 @@ def switch_municipality(request):
     messages.success(request, f'از این پس درخواست‌ها و نامه‌های شما به «{org.name}» می‌رود.' if org
                      else 'به دهیاری خودتان برگشتید.')
     target = request.POST.get('next', '')
-    return redirect(target if target.startswith('/') and not target.startswith('//') else 'main:my_municipality')
+    safe = (target.startswith('/') and url_has_allowed_host_and_scheme(
+        target, allowed_hosts={request.get_host()}, require_https=request.is_secure()))   # rejects //host and /\host
+    return redirect(target if safe else 'main:my_municipality')

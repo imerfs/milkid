@@ -216,6 +216,12 @@ function updatePriorityPreview() {
     const preview = document.getElementById('priorityPreview');
     const previewPriority = document.getElementById('previewPriority');
     
+function escapeHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+}
+
     const priorityTexts = {
         'urgent': 'فوری',
         'high': 'بالا', 
@@ -287,10 +293,10 @@ function previewAnnouncement() {
     modalPreview.className = 'alert ' + priorityClasses[priority];
     modalPreview.innerHTML = `
         <div class="d-flex justify-content-between align-items-start mb-2">
-            <h5 class="alert-heading mb-0">${title}</h5>
-            <span class="badge bg-dark">${priorityTexts[priority]}</span>
+            <h5 class="alert-heading mb-0">${escapeHtml(title)}</h5>
+            <span class="badge bg-dark">${escapeHtml(priorityTexts[priority])}</span>
         </div>
-        <p class="mb-0">${content}</p>
+        <p class="mb-0">${escapeHtml(content)}</p>
     `;
     
     // تاریخ ارسال

@@ -266,8 +266,8 @@
 function shareAnnouncement() {
     if (navigator.share) {
         navigator.share({
-            title: '{{ announcement.title }}',
-            text: '{{ announcement.content|truncatechars:100 }}',
+            title: '{{ announcement.title|escapejs }}',
+            text: '{{ announcement.content|truncatechars:100|escapejs }}',
             url: window.location.href
         });
     } else {

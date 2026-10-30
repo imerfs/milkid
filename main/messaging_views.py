@@ -245,10 +245,14 @@ def start_conversation(request):
             # اضافه کردن درخواست مرتبط (اگر وجود دارد)
             if related_request_id:
                 try:
+                    from main.request_scope import in_scope
                     related_request = ServiceRequest.objects.get(id=related_request_id)
-                    conversation.related_request = related_request
-                    conversation.save()
-                except ServiceRequest.DoesNotExist:
+                    # only the owner's own request, or one a same-village staff member handles: its title is shown in the chat
+                    if related_request.user_id == request.user.id or (
+                            request.user.profile.is_staff_member() and in_scope(request.user, related_request)):
+                        conversation.related_request = related_request
+                        conversation.save()
+                except (ServiceRequest.DoesNotExist, ValueError):
                     pass
             
             # ایجاد پیام اول
@@ -587,12 +591,12 @@ def api_send_quick_message(request):
         recipient = User.objects.get(id=recipient_id)
         
         # ایجاد مکالمه جدید یا استفاده از موجود
-        conversation, created = Conversation.objects.get_or_create(
-            subject=f'پیام سریع از {request.user.get_full_name()}',
-            defaults={'created_at': timezone.now()}
-        )
-        
-        if created:
+        # reuse only a quick conversation between exactly these two people (never one found by subject alone)
+        subject = f'پیام سریع از {request.user.get_full_name()}'
+        conversation = (Conversation.objects.filter(subject=subject, participants=request.user)
+                        .filter(participants=recipient).first())
+        if conversation is None:
+            conversation = Conversation.objects.create(subject=subject)
             conversation.participants.add(request.user, recipient)
         
         # ایجاد پیام
@@ -619,5 +623,5 @@ def api_send_quick_message(request):
         
         return JsonResponse({'success': True, 'conversation_id': conversation.id})
         
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'ارسال پیام ناموفق بود.'})

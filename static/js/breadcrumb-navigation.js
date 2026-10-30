@@ -1,4 +1,11 @@
 // Breadcrumb Navigation System for MelkID
+// HTML-escape text before it goes into innerHTML.
+function escapeHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+}
+
 class BreadcrumbNavigation {
     constructor() {
         this.breadcrumbs = [];
@@ -216,14 +223,14 @@ class BreadcrumbNavigation {
             if (isLast || crumb.active) {
                 return `
                     <li class="breadcrumb-item active" aria-current="page">
-                        ${icon}${crumb.name}
+                        ${icon}${escapeHtml(crumb.name)}
                     </li>
                 `;
             } else {
                 return `
                     <li class="breadcrumb-item">
-                        <a href="${crumb.url}" class="text-decoration-none" style="color: var(--primary-color);">
-                            ${icon}${crumb.name}
+                        <a href="${escapeHtml(crumb.url)}" class="text-decoration-none" style="color: var(--primary-color);">
+                            ${icon}${escapeHtml(crumb.name)}
                         </a>
                     </li>
                 `;
@@ -438,7 +445,7 @@ class QuickActionsPanel {
         const actionsList = document.createElement('div');
         actionsList.className = 'actions-list';
         actionsList.innerHTML = this.actions.map(action => `
-            <a href="${action.url}" class="action-item" data-action="${action.id}" style="
+            <a href="${escapeHtml(action.url)}" class="action-item" data-action="${escapeHtml(action.id)}" style="
                 display: flex;
                 align-items: center;
                 gap: 1rem;
@@ -664,7 +671,7 @@ class QuickActionsPanel {
     refreshPanel() {
         const actionsList = this.panel.querySelector('.actions-list');
         actionsList.innerHTML = this.actions.map(action => `
-            <a href="${action.url}" class="action-item" data-action="${action.id}">
+            <a href="${escapeHtml(action.url)}" class="action-item" data-action="${escapeHtml(action.id)}">
                 <!-- Action item HTML -->
             </a>
         `).join('');
