@@ -85,6 +85,26 @@ class PerformanceMonitoringMiddleware:
         return response
 
 
+class NoStoreMiddleware:
+    """Pages are never kept by the browser (or a proxy), so after signing out the Back button cannot show a signed-in page again.
+
+    Only requests that carry a session are affected (anonymous public pages stay cacheable); static files are left alone; the sign-out response also asks the browser to drop what it cached for the site.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        has_session = settings.SESSION_COOKIE_NAME in request.COOKIES or settings.SESSION_COOKIE_NAME in response.cookies
+        if has_session and not request.path.startswith(('/static/', '/media/')) and 'Cache-Control' not in response:
+            response['Cache-Control'] = 'no-store, no-cache, must-revalidate, private, max-age=0'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+        if request.path.startswith('/logout/') and request.is_secure():
+            response['Clear-Site-Data'] = '"cache"'
+        return response
+
+
 class SecurityHeadersMiddleware:
     """
     Add security headers to responses

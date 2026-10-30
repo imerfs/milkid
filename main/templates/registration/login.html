@@ -103,8 +103,9 @@
             box-shadow: 0 0 0 3px rgba(22, 160, 133, 0.1);
         }
 
-        input[type="password"] {
-            padding-left: 45px; /* افزایش padding تا متن از آیکن دور بماند */
+        /* the eye button sits over the left edge: keep the text clear of it also while the password is shown (type="text") */
+        input[type="password"], #{{ form.password.id_for_label }} {
+            padding-left: 45px;
         }
     </style>
 

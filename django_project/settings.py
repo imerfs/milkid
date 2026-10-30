@@ -78,6 +78,7 @@ MIDDLEWARE = [
     'main.ipblock.BlockedIPMiddleware',  # admin-managed IP block list
     'main.siteextras.RedirectMiddleware',  # admin-managed 301/302 redirects
     'main.ratelimit.AuthThrottleMiddleware',  # brute-force / spam throttling
+    'main.middleware.NoStoreMiddleware',  # no browser caching of pages: Back after sign-out must not show a signed-in page
     'main.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
