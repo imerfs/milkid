@@ -30,8 +30,9 @@ UNLICENSED_STAGES = [
     (2, 'فرم درخواست و تعهدنامه'),
     (3, 'اخطاریه و درخواست بازدید'),
     (4, 'گزارش بازدید، پیش‌آمدگی و مصالح'),
-    (5, 'تعهد محضری، استحکام بنا، رأی و جریمه'),
-    (6, 'خدمات و پایان کار'),
+    (5, 'معرفی به کارشناس دادگستری و تعهدات'),
+    (6, 'استحکام بنا، رأی و جریمه'),
+    (7, 'خدمات و پایان کار'),
 ]
 
 
@@ -170,6 +171,15 @@ class PermitFile(models.Model):
     overhang_state = models.CharField(max_length=10, choices=SITE_STATES, blank=True, default='')
     materials = models.JSONField(default=dict, blank=True)
     materials_state = models.CharField(max_length=10, choices=SITE_STATES, blank=True, default='')
+    # construction without a permit, step 5 (main/office/permit_commit.py): the owner is introduced to a judiciary expert from the
+    # dehyari's list (expert_state '' / introduced), fills the neighbours' consent form and takes the notarial undertaking to the notary
+    # (consent_state / deed_state '' / uploaded / returned / verified)
+    EXPERT_STATES = [('', 'منتظر معرفی به کارشناس'), ('introduced', 'به کارشناس معرفی شد')]
+    COMMIT_STATES = [('', 'منتظر متقاضی'), ('uploaded', 'منتظر تایید'), ('returned', 'برگشت‌خورده'), ('verified', 'تایید شد')]
+    commit = models.JSONField(default=dict, blank=True)
+    expert_state = models.CharField(max_length=10, choices=EXPERT_STATES, blank=True, default='')
+    consent_state = models.CharField(max_length=10, choices=COMMIT_STATES, blank=True, default='')
+    deed_state = models.CharField(max_length=10, choices=COMMIT_STATES, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -216,7 +226,9 @@ class PermitFile(models.Model):
                         'returned': 'اخطاریه برگشت خورد'}.get(self.notice_state, '')
             if self.stage_no == 4:
                 return self.step4_text()
-            return 'مرحله‌ی ۴ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
+            if self.stage_no == 5:
+                return self.step5_text()
+            return f'مرحله‌ی {"۰۱۲۳۴۵۶۷۸۹"[self.stage_no - 1]} تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
             return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
                     'issued': 'گواهی پایان کار صادر شد', 'rejected': 'درخواست پایان کار رد شد'}.get(self.endwork_state, '')
@@ -253,7 +265,9 @@ class PermitFile(models.Model):
             return (self.state == 'submitted' or self.sketch_state in ('requested', 'paid') or (self.stage_no == 2 and self.commission_state == 'uploaded')
                     or (self.stage_no == 3 and (self.notice_state in ('requested', 'uploaded') or self.visit_state in ('requested', 'scheduled')))
                     or (self.stage_no == 4 and (self.report_state != 'filed' or self.overhang_state == 'replied' or self.materials_state == 'uploaded'
-                                                or (self.overhang_state in ('', 'verified') and self.materials_state in ('', 'verified')))))
+                                                or (self.overhang_state in ('', 'verified') and self.materials_state in ('', 'verified'))))
+                    or (self.stage_no == 5 and (self.expert_state == '' or self.consent_state == 'uploaded' or self.deed_state == 'uploaded'
+                                                or (self.consent_state == 'verified' and self.deed_state == 'verified'))))
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -293,6 +307,21 @@ class PermitFile(models.Model):
         if self.overhang_state == 'replied' or self.materials_state == 'uploaded':
             return 'مدارک متقاضی منتظر تایید'
         return 'گزارش در پرونده است؛ منتظر تایید نهایی مرحله'
+
+    def step5_text(self):
+        """Where an unlicensed file stands in step 5: the introduction, the neighbours' consent, the notarial undertaking."""
+        waiting = []
+        if self.expert_state != 'introduced':
+            waiting.append('معرفی به کارشناس دادگستری (دهیاری)')
+        if self.consent_state in ('', 'returned'):
+            waiting.append('تعهدنامه‌ی رضایت همسایگان (از متقاضی)')
+        if self.deed_state in ('', 'returned'):
+            waiting.append('تعهد محضری (از متقاضی)')
+        if waiting:
+            return 'منتظر ' + ' و '.join(waiting)
+        if self.consent_state == 'uploaded' or self.deed_state == 'uploaded':
+            return 'مدارک متقاضی منتظر تایید'
+        return 'همه‌ی مدارک این مرحله تایید شد؛ منتظر تایید نهایی مرحله'
 
     @property
     def stage_title(self):
@@ -338,7 +367,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
+        ('consent_form', 'تعهدنامه‌ی رضایت همسایگان'), ('deed_scan', 'تعهد محضری'), ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
         ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]
@@ -356,3 +385,23 @@ class PermitDocument(models.Model):
         ordering = ['kind', 'id']
         verbose_name = 'مدرک پرونده'
         verbose_name_plural = 'مدارک پرونده'
+
+
+class JudicialExpert(models.Model):
+    """A judiciary expert (کارشناس رسمی دادگستری) the dehyari of a village introduces owners of unlicensed buildings to."""
+    city_village = models.CharField(max_length=120, db_index=True, verbose_name='روستا')
+    name = models.CharField(max_length=120, verbose_name='نام کارشناس')
+    field = models.CharField(max_length=120, blank=True, verbose_name='رشته / تخصص')
+    phone = models.CharField(max_length=20, blank=True, verbose_name='تلفن')
+    active = models.BooleanField(default=True, verbose_name='فعال')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'کارشناس دادگستری'
+        verbose_name_plural = 'کارشناسان دادگستری'
+
+    def __str__(self):
+        return self.name
+

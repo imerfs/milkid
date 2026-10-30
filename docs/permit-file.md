@@ -230,8 +230,8 @@ undertaking is unchanged (its monthly occupation rate stays a dotted blank for t
 ## Construction without a permit: step 4 (the visit report, the electricity office, the materials)
 `permits/<id>/report/` (`permit_report.py`, `permit_site.py`, `permits/report.html`, `static/js/permit-report-form.js`), open once the technical expert's
 visit is recorded (file at stage 4). The stages of this track are now: 1 initial file (with the defence form), 2 request form and undertaking, 3 notice
-and visit request, 4 visit report / overhang / materials, 5 notarial undertaking, strength check, ruling and fine, 6 services and end of work (5 and 6
-are not built yet).
+and visit request, 4 visit report / overhang / materials, 5 introduction to a judiciary expert and the undertakings, 6 strength check, ruling and fine,
+7 services and end of work (6 and 7 are not built yet).
 - **The visit report** («گزارش بازدید», from the dehyari's sheet `گزارش نهایی 404.xlsx`) is filled by the **technical expert or the dehyari**
   (policy `permit.report`). Prefilled from the file: the owner, the address, the four limits measured on the village map, the areas, the built area the owner
   gave (spread over the floors he declared). The staff add the measurements, the floors (residential, commercial, parking, pilotis, storage, penthouse,
@@ -247,4 +247,21 @@ are not built yet).
   on until the staff confirm the photos.
 - **Ending the step:** when the report is filed and neither of the above is outstanding, any of the clerk / technical expert / dehyari ticks that the report
   and the papers were checked (`permit_site.finish`) and the file goes to **step 5**. Every part is confirmed, or sent back with a reason, by any of the three.
+
+## Construction without a permit: step 5 (the judiciary expert, the neighbours' consent, the notarial undertaking)
+`permits/<id>/commit/` (`permit_commit.py`, `permits/commit.html`, `static/js/permit-commit-forms.js`), open at stage 5. The list of experts is at
+`permits/experts/` (`permits/experts.html`, model `JudicialExpert`, a link in the permit-file lists of the three panels).
+- **The experts** are listed per village by the **dehyari only** (policy `permit.experts`); the clerk and the technical expert read the list. An expert can be set
+  aside (not deleted).
+- **Introduction:** any of the clerk / technical expert / dehyari picks an active expert from the list in their own panel and issues the letter
+  (`expert_state` '' → introduced; number and date editable). The letter is typeset on the dehyari's letterhead from the file (owner, address, phone, the dehyari's
+  name as signer); the dehyari stamps and signs it, the owner takes it to the expert.
+- **Neighbours' consent** (`تعهدنامه مالک و همسایگان`): up to three neighbours, prefilled from the village map (`plotmap.neighbours`: the plots touching each side,
+  longest contact first; east and west first) with the owner name, national id and phone of the plot's archive; the owner (or staff) corrects and saves them
+  (`commit.consent`), prints the form, the neighbours sign, the owner uploads the scan with the tick «signed» (`consent_form`, `consent_state`).
+- **Notarial undertaking:** the draft (`deed_default`) is typed from the file (owner, address, four limits with lengths and adjacents, land and built areas,
+  floors) followed by the clauses of the sample; its text is editable and kept (`commit.deed.text`); it is a draft the notary finalises. The owner takes it to the
+  notary, hands the **original to the dehyari** and uploads the scan with the document number, date and office and the tick «delivered» (`deed_scan`, `deed_state`).
+- Each upload is confirmed (tick required) or sent back with a reason by **any of the three staff**; when the introduction is made and both are verified, any of
+  them confirms the step (`permit_commit.finish`) and the file goes to **step 6**. Statuses: `PermitFile.step5_text`; waiting items count in the panels (`needs_staff`).
 

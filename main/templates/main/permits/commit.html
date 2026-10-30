@@ -1,0 +1,177 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}معرفی به کارشناس و تعهدات - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-user-check" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۵: معرفی به کارشناس دادگستری و تعهدات</h1>
+      <p>{{ consent.owner.name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.stage_no > 5 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li class="{% if permit.expert_state == 'introduced' %}ok{% endif %}"><b>۱</b><span>کارشناس اداری، کارشناس فنی یا دهیار شما را به یکی از کارشناسان دادگستری فهرست دهیاری معرفی می‌کند؛ نامه را چاپ و به کارشناس بدهید.</span></li>
+    <li class="{% if permit.consent_state == 'verified' %}ok{% endif %}"><b>۲</b><span>تعهدنامه‌ی رضایت همسایگان (پر شده از نقشه‌ی روستا) را چاپ کنید، همسایگان راست و چپ امضا کنند و بارگذاری کنید.</span></li>
+    <li class="{% if permit.deed_state == 'verified' %}ok{% endif %}"><b>۳</b><span>تعهد محضری را چاپ کنید، به دفترخانه ببرید، اصل را به دهیاری بدهید و تصویرش را بارگذاری کنید.</span></li>
+    <li class="{% if permit.stage_no > 5 %}ok{% endif %}"><b>۴</b><span>دهیار، کارشناس فنی یا کارشناس اداری مرحله را تایید می‌کند.</span></li>
+  </ol>
+
+  {% if permit.staff_notes and permit.consent_state == 'returned' or permit.staff_notes and permit.deed_state == 'returned' %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+
+      {# ---------- the introduction ---------- #}
+      <section class="pf-card" id="pcm-expert">
+        <h2><i class="fas fa-user-tie" aria-hidden="true"></i>معرفی به کارشناس دادگستری</h2>
+        {% if permit.expert_state == 'introduced' %}
+        <p>معرفی‌شده به: <b>{{ ex.name }}</b>{% if ex.field %} ({{ ex.field }}){% endif %}{% if ex.phone %} · تلفن <bdi dir="ltr">{{ ex.phone|persian_numbers }}</bdi>{% endif %}<br><small>توسط {{ ex.by }} · {{ ex.letter_date|persian_numbers }}</small></p>
+        {% if mine %}<p class="pf-hint">«نامه‌ی معرفی» را از کنار صفحه چاپ کنید، دهیار مهر و امضا می‌کند و نامه را به کارشناس بدهید.</p>{% endif %}
+        {% else %}<p>هنوز معرفی نشده است.</p>{% endif %}
+        {% if can_introduce %}
+        {% if letter.experts %}
+        <form method="post" action="{% url 'main:permit_commit_introduce' permit.pk %}" class="pf-form pff-form" id="pcm-letter-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>کارشناس (از فهرست دهیاری)<select name="expert" required>{% for e in letter.experts %}<option value="{{ e.id }}" {% if ex.id == e.id %}selected{% endif %}>{{ e.name }}{% if e.field %} — {{ e.field }}{% endif %}</option>{% endfor %}</select></label>
+          <div class="pff-fields">
+            <label>شماره‌ی نامه<input name="letter_no" dir="ltr" value="{{ letter.number }}"></label>
+            <label>تاریخ نامه<input name="letter_date" dir="ltr" value="{{ letter.date }}"></label>
+          </div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-user-check" aria-hidden="true"></i>{% if permit.expert_state == 'introduced' %}تغییر کارشناس{% else %}معرفی مالک به این کارشناس{% endif %}</button>
+        </form>
+        {% else %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیار هنوز کارشناسی در فهرست ننوشته است. <a href="{% url 'main:permit_experts' %}">فهرست کارشناسان دادگستری</a></p>{% endif %}
+        {% endif %}
+      </section>
+
+      {# ---------- the neighbours' consent ---------- #}
+      <section class="pf-card" id="pcm-consent">
+        <h2><i class="fas fa-people-roof" aria-hidden="true"></i>تعهدنامه‌ی رضایت همسایگان</h2>
+        <p>وضعیت: <b>{{ permit.get_consent_state_display }}</b></p>
+        <form method="post" action="{% url 'main:permit_consent_save' permit.pk %}" class="pf-form pff-form" id="pcm-consent-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <p class="pf-hint">همسایه‌ها از نقشه‌ی روستا و بایگانی قطعه‌ها پر شده‌اند؛ هرچه نادرست یا خالی است را اصلاح کنید. خالی‌ها را می‌شود با خودکار روی برگه نوشت.</p>
+          {% for n in consent.neighbours %}
+          <details {% if forloop.first %}open{% endif %}><summary><b>همسایه‌ی {{ forloop.counter|persian_numbers }}</b></summary>
+            <div class="pff-fields">
+              <label>ضلع<select name="n{{ forloop.counter0 }}_side"><option value="">—</option>{% for code, label in sides %}<option value="{{ code }}" {% if n.side == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+              <label>نام و نام خانوادگی<input name="n{{ forloop.counter0 }}_name" value="{{ n.name }}"></label>
+              <label>نام پدر<input name="n{{ forloop.counter0 }}_father" value="{{ n.father }}"></label>
+              <label>شماره ملی<input name="n{{ forloop.counter0 }}_national_id" value="{{ n.national_id }}" dir="ltr"></label>
+              <label>تاریخ تولد<input name="n{{ forloop.counter0 }}_birth" value="{{ n.birth }}" dir="ltr"></label>
+              <label>شماره تماس<input name="n{{ forloop.counter0 }}_phone" value="{{ n.phone }}" dir="ltr"></label>
+              <label class="wide">نشانی محل سکونت<input name="n{{ forloop.counter0 }}_address" value="{{ n.address }}"></label>
+            </div>
+          </details>
+          {% endfor %}
+          {% if mine or staff %}<button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی مشخصات همسایگان</button>{% endif %}
+        </form>
+        <ul class="pf-docs">{% for doc in consent_docs %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }}</a></li>{% empty %}<li class="pf-none">هنوز تصویری بارگذاری نشده.</li>{% endfor %}</ul>
+        {% if owner_consent %}
+        <form method="post" action="{% url 'main:permit_consent_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form" data-once>{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>تصویر تعهدنامه‌ی امضاشده‌ی همسایگان (pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not consent_docs %}required{% endif %}></label>
+          <div class="pff-checks"><label><input type="checkbox" name="signed"> همسایگان فرم را امضا کرده‌اند</label></div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال تعهدنامه</button>
+        </form>
+        {% endif %}
+        {% if decide_consent %}
+        <form method="post" action="{% url 'main:permit_commit_verify' permit.pk 'consent' %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> امضای همسایگان را با فرم مقایسه و بررسی کردم</label></div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید تعهدنامه‌ی همسایگان</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_commit_return' permit.pk 'consent' %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>مشکل تعهدنامه چیست؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+        {% endif %}
+      </section>
+
+      {# ---------- the notarial undertaking ---------- #}
+      <section class="pf-card" id="pcm-deed">
+        <h2><i class="fas fa-stamp" aria-hidden="true"></i>تعهد محضری</h2>
+        <p>وضعیت: <b>{{ permit.get_deed_state_display }}</b>{% if deed.number %} · سند <bdi dir="ltr">{{ deed.number|persian_numbers }}</bdi> · {{ deed.office }}{% endif %}</p>
+        <form method="post" action="{% url 'main:permit_deed_save' permit.pk %}" class="pf-form pff-form" id="pcm-deed-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <p class="pf-hint">پیش‌نویس از اطلاعات پرونده (حدود، مساحت‌ها، طبقات) نوشته شده است. دفترخانه متن نهایی را تنظیم می‌کند؛ این برگه برای همراه بردن است.</p>
+          <label>متن تعهد (بندها را با یک خط خالی جدا کنید)<textarea name="text" rows="12" maxlength="8000">{{ deed.text }}</textarea></label>
+          {% if mine or staff %}<button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی متن</button>{% endif %}
+        </form>
+        <ul class="pf-docs">{% for doc in deed_docs %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }}</a></li>{% empty %}<li class="pf-none">هنوز تصویری بارگذاری نشده.</li>{% endfor %}</ul>
+        {% if owner_deed %}
+        <form method="post" action="{% url 'main:permit_deed_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form" data-once>{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>تصویر سند تعهد محضری (همه‌ی صفحه‌ها؛ pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not deed_docs %}required{% endif %}></label>
+          <div class="pff-fields">
+            <label>شماره‌ی سند<input name="deed_no" dir="ltr" required value="{{ deed.number }}"></label>
+            <label>تاریخ سند<input name="deed_date" dir="ltr" required value="{{ deed.date }}" placeholder="۱۴۰۵/۰۶/۲۲"></label>
+            <label>دفترخانه<input name="office" required value="{{ deed.office }}" placeholder="دفترخانه‌ی ۶۴ بیرجند"></label>
+          </div>
+          <div class="pff-checks"><label><input type="checkbox" name="delivered"> اصل تعهد را به دهیاری تحویل داده‌ام</label></div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال تعهد محضری</button>
+        </form>
+        {% endif %}
+        {% if decide_deed %}
+        <form method="post" action="{% url 'main:permit_commit_verify' permit.pk 'deed' %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> اصل تعهد محضری به دهیاری رسیده و با تصویر مطابق است</label></div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید تعهد محضری</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_commit_return' permit.pk 'deed' %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>مشکل تعهد چیست؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+        {% endif %}
+      </section>
+
+      {# ---------- the end of the step ---------- #}
+      {% if can_finish %}
+      <section class="pf-card" id="pcm-finish">
+        <h2><i class="fas fa-circle-check" aria-hidden="true"></i>تایید مرحله‌ی ۵</h2>
+        {% if blocking %}<ul class="pf-checks">{% for b in blocking %}<li class="warn">{{ b }}</li>{% endfor %}</ul>
+        {% else %}
+        <form method="post" action="{% url 'main:permit_step5_finish' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> مدارک این مرحله را بررسی کردم</label></div>
+          <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۶</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    {% if shown %}
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist" id="pcm-tabs">
+        <button type="button" class="is-on" data-page="letter" role="tab">نامه‌ی معرفی</button>
+        <button type="button" data-page="consent" role="tab">تعهدنامه‌ی همسایگان</button>
+        <button type="button" data-page="deed" role="tab">تعهد محضری</button>
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="pcm-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود (PDF)</button>
+        <button type="button" class="pf-btn" id="pcm-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ</button>
+      </div>
+      <p class="pf-hint">پیش‌نمایش با تغییر اطلاعات همزمان عوض می‌شود. نامه‌ی معرفی را دهیار مهر و امضا می‌کند؛ تعهدنامه را مالک و همسایگان امضا و اثر انگشت می‌زنند.</p>
+    </aside>
+    {% endif %}
+  </div>
+</div>
+{% if shown %}
+{{ payload|json_script:"pcm-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/permit-commit-forms.js' %}" defer></script>
+{% endif %}
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}

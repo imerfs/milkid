@@ -274,7 +274,8 @@ class Ending(Step4):
             self.act(who, 'permit_step4_finish', confirm='on', notes='مطابق گزارش')
             self.assertEqual(self.reload().stage_no, 5, who.profile.role)
         self.assertTrue(Notification.objects.filter(user=self.citizen, title='مرحله‌ی ۴ تایید شد').exists())
-        self.assertEqual(self.reload().status_text, 'مرحله‌ی ۴ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است')
+        self.assertEqual(self.reload().status_text, self.permit.step5_text())
+        self.assertIn('منتظر معرفی به کارشناس دادگستری', self.permit.status_text)
 
     def test_outsiders_cannot_end_it(self):
         self.fill()
@@ -302,4 +303,4 @@ class Ending(Step4):
         self.fill()
         self.assertTrue(self.reload().needs_staff)                                    # the final confirmation
         self.act(self.dehyari, 'permit_step4_finish', confirm='on')
-        self.assertFalse(self.reload().needs_staff)
+        self.assertTrue(self.reload().needs_staff)                                    # step 5 starts with the introduction
