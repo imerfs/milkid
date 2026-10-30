@@ -17,6 +17,10 @@
             direction: rtl;
         }
         
+
+        /* the eye button sits over the left edge: keep the text clear of it also while the password is shown (type="text") */
+        #{{ form.password1.id_for_label }}, #{{ form.password2.id_for_label }} { padding-left: 3rem !important; }
+
         /* Custom focus styles */
         input:focus, select:focus {
             outline: none;
