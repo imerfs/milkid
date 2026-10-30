@@ -74,7 +74,12 @@
           <p><b>وضعیت:</b> {{ permit.status_text }}</p>
           {% endif %}
           {% if permit.stage_no >= 6 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_reply' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-file-circle-check" aria-hidden="true"></i>جوابیه‌ی کارشناس</a>{% endif %}
-          {% if permit.stage_no >= 7 %}<p class="pf-hint">مرحله‌ی ۷ (رأی کمیسیون و جریمه، خدمات و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>{% endif %}
+          {% if permit.stage_no == 7 %}
+          <p>مرحله‌ی ۷: عوارض و بهای خدمات ملک شما توسط مسئول مالی محاسبه می‌شود. می‌توانید پرداخت کنید؛ اگر یکجا ممکن نیست درخواست تقسیط بدهید و پس از تایید، چک‌ها را در سامانه ثبت کنید.</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          {% endif %}
+          {% if permit.stage_no >= 7 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_dues' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-coins" aria-hidden="true"></i>عوارض، پرداخت و تقسیط</a>{% endif %}
+          {% if permit.stage_no >= 8 %}<p class="pf-hint">مرحله‌ی ۸ (رأی کمیسیون، جریمه و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>{% endif %}
           {% else %}
           {% if permit.stage_no == 2 %}
           <p>مرحله‌ی ۲: فرم ۱ (استعلام از بنیاد مسکن) را دهیاری و فرم ۲ (تقاضای پروانه) را متقاضی پر می‌کند؛ هر دو را دانلود و چاپ کنید، فرم ۱ مهر و امضای دهیار می‌گیرد و با نقشه‌ی ملک به بنیاد مسکن می‌روید.</p>

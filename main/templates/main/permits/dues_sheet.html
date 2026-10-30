@@ -1,0 +1,46 @@
+{% load static jalali_tags persian_filters %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>فرم محاسبه عوارض و بهای خدمات - پرونده {{ permit.pk|persian_numbers }}</title>
+<link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+<style>
+  body{font-family:Vazirmatn,Tahoma,sans-serif;margin:0;padding:24px;color:#111827;background:#fff}
+  h1{font-size:20px;text-align:center;margin:0 0 4px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 32px;margin:12px 0;font-size:14px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid #111827;padding:5px 8px;text-align:right}
+  td.n{text-align:left;direction:ltr}
+  tfoot th{background:#f3f4f6}
+  .sign{display:flex;justify-content:space-between;margin-top:56px;font-size:14px}
+  .sign div{text-align:center;min-width:160px}
+  .note{font-size:12px;color:#374151;margin-top:16px}
+  .bar{margin-bottom:12px;text-align:center}
+  @media print{.bar{display:none}body{padding:0}@page{size:A4;margin:14mm}}
+</style>
+</head>
+<body>
+<div class="bar"><button type="button" onclick="window.print()">چاپ</button></div>
+<h1>فرم محاسبه عوارض و بهای خدمات ({{ width }})</h1>
+<div class="meta">
+  <span>دهیاری: <b>{{ village }}</b></span>
+  <span>نام متقاضی: <b>{{ owner.full_name }}</b></span>
+  <span>آدرس ملک: <b>{{ permit.address }}</b></span>
+  <span>تاریخ: <b>{{ sheet.date|persian_numbers }}</b></span>
+  {% if sheet.number %}<span>شماره: <b>{{ sheet.number|persian_numbers }}</b></span>{% endif %}
+  {% if permit.renewal_code %}<span>کد نوسازی: <b dir="ltr">{{ permit.renewal_code|persian_numbers }}</b></span>{% endif %}
+</div>
+<table>
+  <thead><tr><th>ردیف</th><th>کاربری</th><th>شرح</th><th>مقدار</th><th>عوارض (ریال)</th></tr></thead>
+  <tbody>{% for r in rows %}<tr><td>{{ r.no|persian_numbers }}</td><td>{{ r.group }}</td><td>{{ r.title }}</td><td class="n">{{ r.area|persian_numbers }}</td><td class="n">{{ r.amount|rials }}</td></tr>{% endfor %}</tbody>
+  <tfoot><tr><th colspan="4">جمع</th><th class="n">{{ total|rials }}</th></tr></tfoot>
+</table>
+{% if schedule %}
+<p class="note"><b>برنامه‌ی اقساط:</b> {% for s in schedule %}قسط {{ s.n|persian_numbers }}: {{ s.amount|rials }} ریال ({{ s.due|persian_numbers }}){% if not forloop.last %}؛ {% endif %}{% endfor %}</p>
+{% endif %}
+<p class="note">اعتبار محاسبات تا پایان سال جاری می‌باشد. مبالغ در تاریخ ........................ به مالک ابلاغ شد.</p>
+<div class="sign"><div>تنظیم‌کننده<br><br>{{ sheet.by }}</div><div>امور مالی<br><br>&nbsp;</div><div>دهیار<br><br>&nbsp;</div></div>
+</body>
+</html>

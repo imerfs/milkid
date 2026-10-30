@@ -231,7 +231,7 @@ undertaking is unchanged (its monthly occupation rate stays a dotted blank for t
 `permits/<id>/report/` (`permit_report.py`, `permit_site.py`, `permits/report.html`, `static/js/permit-report-form.js`), open once the technical expert's
 visit is recorded (file at stage 4). The stages of this track are now: 1 initial file (with the defence form), 2 request form and undertaking, 3 notice
 and visit request, 4 visit report / overhang / materials, 5 introduction to a judiciary expert and the undertakings, 6 the expert's reply and the strength of the building,
-7 ruling, fine, services and end of work (7 is not built yet).
+7 fees and the price of the services (payment, instalments, cheques), 8 ruling, fine and end of work (8 is not built yet).
 - **The visit report** («گزارش بازدید», from the dehyari's sheet `گزارش نهایی 404.xlsx`) is filled by the **technical expert or the dehyari**
   (policy `permit.report`). Prefilled from the file: the owner, the address, the four limits measured on the village map, the areas, the built area the owner
   gave (spread over the floors he declared). The staff add the measurements, the floors (residential, commercial, parking, pilotis, storage, penthouse,
@@ -271,4 +271,21 @@ and visit request, 4 visit report / overhang / materials, 5 introduction to a ju
 expert's name (prefilled from step 5), the letter's number and date, what the table says about the strength of the building (`commit.reply.strength`: has / lacks,
 kept for the later steps) and the tick «delivered». Any of the clerk / technical expert / dehyari confirms the papers with a tick (or sends them back with a reason;
 `reply_state` '' → uploaded → verified / returned) and then ends the step; the file goes to **stage 7**.
+
+## Construction without a permit: step 7 (the fees, the payment, the instalments)
+`permits/<id>/dues/` (`permit_dues.py`, `fee_tables.py`, `permits/dues.html`, printable `dues/sheet/`), open at stage 7. The financial officer is told when step 6 ends and
+the file shows in the officer's permit list (`fee_rows_for`, `needs_accountant_dues`).
+- **The sheet** («فرم محاسبه عوارض و بهای خدمات»): `fee_tables.py` holds the rates of the dehyari's eleven workbooks (street widths 4-6, 8, 10, 12, 14, 16, 18, 20, 25, 30 and
+  30+; the council factor B, the land-added and change-of-use rates, kerb and street-preparation rates differ by width; the land values 220,000 / 440,000 and the P
+  coefficients are common) and the calculation of the 39 rows. The test reproduces the dehyari's sample (8 m street, 72.28 + 64 m² built, 79.41 m² plot) to the rial:
+  851,874,240. The officer or the dehyari (policy `permit.fees`) picks the width; the areas are prefilled from the visit report (floors, commercial, pilotis, balconies,
+  the street frontage for the kerb, the plot for the annual fee), corrected by hand and issued (`dues_state` issued; frozen once a slip or a plan exists). The sheet
+  prints with the officer's and the dehyari's signature lines. Not modelled: the 0.5 factor on some rows of the 12 m workbook and the 0.15 extra rows of the 30 m one.
+- **Payment:** the owner records bank slips (scan optional); the staff or the officer confirm them; those the staff record are confirmed at once. `dues_paid` counts confirmed ones.
+- **Instalments:** the owner asks (count 2-24, first due date) for what is still owed; the **administrative expert or the dehyari** approve (policy `permit.plan`, the count may be
+  changed), the **financial officer signs** (`plan_state` requested → approved → signed; either may send it back with a reason). The owner then registers the cheques (number, bank;
+  amount and due date are prefilled as equal monthly shares) and types the dehyari's **legal-entity id (۱۱ digits)**; the officer ticks that the registration matches and confirms it
+  (`registered` → `confirmed`) or sends it back. No new slips after the registration.
+- **Ending the step:** when the fees are settled (paid in full, or the plan confirmed) any of the clerk / technical expert / dehyari / officer confirms; the file goes to stage 8.
+  The cheques are kept in the file (`dues.plan.cheques`), not yet in the accounting module's instalment plans.
 

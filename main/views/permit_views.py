@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_commission, permit_commit, permit_reply, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import fee_tables, permit_commission, permit_commit, permit_dues, permit_reply, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.directory import village_of
 from main.office.errors import OfficeError
@@ -1455,4 +1455,150 @@ def permit_reply_return(request, file_id):
 @require_POST
 def permit_step6_finish(request, file_id):
     return _reply_action(request, file_id, lambda p: permit_reply.finish(request.user, p, request.POST), 'مرحله‌ی ۶ تایید شد و پرونده به مرحله‌ی ۷ رفت.')
+
+
+# ---------- construction without a permit, step 7: the fees, the payments, the instalments ----------
+
+def _dues_context(request, permit, embed):
+    mine = permit.request.user_id == request.user.id
+    staff = permit_dues.is_staff(request.user, permit)
+    officer = permit_dues.is_officer(request.user, permit)
+    decider = permit_dues.is_decider(request.user, permit)
+    at_step = permit_dues.at_step(permit)
+    width = request.GET.get('width')
+    inputs = permit_dues.sheet_inputs(permit, width)
+    view = permit_dues.sheet_view(permit)
+    rows = fee_tables.compute(inputs)[0]
+    plan = permit_dues.plan(permit)
+    issued = permit.dues_state == 'issued'
+    return {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'officer': officer, 'at_step': at_step, 'owner_name': permit.people.first().full_name,
+        'widths': [(key, row[0]) for key, row in fee_tables.WIDTHS.items()], 'inputs': inputs, 'live': [r for r in rows if r['amount']],
+        'live_total': sum(r['amount'] for r in rows),
+        'groups': [(key, title, [(i, floor, f'a_{key}_{i}', inputs.get(f'a_{key}_{i}', '0')) for i, floor in enumerate(fee_tables.FLOOR_TITLES)])
+                   for key, title, _, _ in fee_tables.GROUPS],
+        'changes': [(no, fee_tables.CHANGE_TITLES[no], f'chg_{no}', inputs.get(f'chg_{no}', '0')) for no in fee_tables.CHANGE_ROWS],
+        'fixed': [(no, title, f'fx_{no}', inputs.get(f'fx_{no}', '0')) for no, (title, _) in fee_tables.FIXED_ROWS.items()],
+        'sheet': view['sheet'], 'sheet_rows': view['rows'], 'total': permit.dues_total, 'paid': permit.dues_paid, 'remaining': permit_dues.remaining(permit),
+        'payments': permit_dues.payments(permit), 'issued': issued, 'plan': plan, 'schedule': permit_dues.schedule(permit) if plan.get('count') else [],
+        'cheques': permit_dues.cheque_rows(permit) if permit.plan_state in ('signed', 'registered', 'confirmed') else [],
+        'can_issue': at_step and officer and not permit.plan_state and not permit.dues.get('payments'),
+        'can_pay': at_step and issued and (mine or staff) and permit.plan_state not in ('registered', 'confirmed') and permit.dues_paid < permit.dues_total,
+        'can_ask_plan': at_step and issued and mine and permit.plan_state in ('', 'returned') and permit_dues.remaining(permit) > 0,
+        'can_decide': at_step and decider and permit.plan_state == 'requested',
+        'can_sign': at_step and officer and permit.plan_state == 'approved',
+        'can_register': at_step and mine and permit.plan_state == 'signed',
+        'can_confirm_cheques': at_step and officer and permit.plan_state == 'registered',
+        'can_finish': at_step and staff, 'blocking': permit_dues.blocking(permit) if at_step else [],
+        'today': permit_step2.today(),
+    }
+
+
+@login_required
+def permit_dues_page(request, file_id):
+    permit = permit_dues.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 7 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۶ در دسترس است.')
+        return redirect(_file_url(permit, embed))
+    return render(request, 'main/permits/dues.html', _dues_context(request, permit, embed))
+
+
+@login_required
+def permit_dues_sheet(request, file_id):
+    """The printable sheet (the officer, the dehyari sign it)."""
+    permit = permit_dues.find(request.user, file_id)
+    if permit is None or permit.dues_state != 'issued':
+        raise Http404('برگه پیدا نشد.')
+    view = permit_dues.sheet_view(permit)
+    return render(request, 'main/permits/dues_sheet.html', {
+        'permit': permit, 'sheet': view['sheet'], 'rows': view['rows'], 'total': view['total'], 'owner': permit.people.first(),
+        'village': permit_step2._village(permit), 'width': fee_tables.WIDTHS[view['sheet']['inputs']['width']][0], 'plan': permit_dues.plan(permit),
+        'schedule': permit_dues.schedule(permit) if permit.plan_state in ('signed', 'registered', 'confirmed') else []})
+
+
+def _dues_action(request, file_id, action, ok):
+    permit = permit_dues.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_dues', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_dues_issue(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.issue_sheet(request.user, p, request.POST), 'عوارض اعلام شد و متقاضی خبردار شد.')
+
+
+@login_required
+@require_POST
+def permit_dues_pay(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.add_payment(request.user, p, request.POST, request.FILES.getlist('receipt')), 'فیش ثبت شد.')
+
+
+@login_required
+@require_POST
+def permit_dues_pay_confirm(request, file_id, payment_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.confirm_payment(request.user, p, payment_id), 'پرداخت تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_dues_pay_remove(request, file_id, payment_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.remove_payment(request.user, p, payment_id), 'پرداخت حذف شد.')
+
+
+@login_required
+@require_POST
+def permit_plan_request(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.request_plan(request.user, p, request.POST), 'درخواست تقسیط ثبت شد.')
+
+
+@login_required
+@require_POST
+def permit_plan_approve(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.approve_plan(request.user, p, request.POST), 'تقسیط تایید شد؛ منتظر امضای مسئول مالی.')
+
+
+@login_required
+@require_POST
+def permit_plan_return(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.return_plan(request.user, p, request.POST.get('notes', '')), 'درخواست تقسیط برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_plan_sign(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.sign_plan(request.user, p, request.POST), 'تقسیط امضا شد.')
+
+
+@login_required
+@require_POST
+def permit_cheques_register(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.register_cheques(request.user, p, request.POST), 'چک‌ها ثبت شد؛ منتظر تایید مسئول مالی.')
+
+
+@login_required
+@require_POST
+def permit_cheques_confirm(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.confirm_cheques(request.user, p, request.POST), 'ثبت چک‌ها تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_cheques_return(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.return_cheques(request.user, p, request.POST.get('notes', '')), 'ثبت چک‌ها برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_step7_finish(request, file_id):
+    return _dues_action(request, file_id, lambda p: permit_dues.finish(request.user, p, request.POST), 'مرحله‌ی ۷ تایید شد و پرونده به مرحله‌ی ۸ رفت.')
 

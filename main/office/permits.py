@@ -318,8 +318,9 @@ def panel_rows(user, limit=60):
 def fee_rows_for(user, limit=60):
     """The financial officer's list: files in step 5 waiting for fees, and files in step 6 with a payment to confirm."""
     rows = [f for f in files_for(user).filter(request__request_type='building_permit', stage_no__in=(5, 6))[:300]]
-    todo = [f for f in rows if f.needs_accountant or (f.stage_no == 6 and not f.insurance_state
-                                                      and any(not p.get('ok') for p in (f.insurance or {}).get('payments') or []))]
+    rows += list(files_for(user).filter(request__request_type='no_permit', stage_no=7)[:100])
+    todo = [f for f in rows if f.needs_accountant or f.needs_accountant_dues or (f.stage_no == 6 and not f.insurance_state and not f.unlicensed
+                                                                                 and any(not p.get('ok') for p in (f.insurance or {}).get('payments') or []))]
     ordered = sorted(rows, key=lambda f: (f not in todo, -f.created_at.timestamp()))[:limit]
     return {'rows': ordered, 'waiting': len(todo)}
 
