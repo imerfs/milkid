@@ -20,6 +20,7 @@ from main.models import (MapParcel, Municipality, ParcelArchive, PermitDocument,
 from main.models_permit import STAGES
 from main.notifications import notify
 from main.office import permit_form
+from main.roles import CITIZEN_ROLES
 from main.office.directory import requests_for, village_of
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.roles import is_admin
@@ -158,6 +159,8 @@ def files_for(user):
     rows = PermitFile.objects.select_related('request', 'request__user', 'request__user__profile', 'parcel', 'opened_by')
     if is_admin(user):
         return rows
+    if role_of(user) in CITIZEN_ROLES:         # an applicant opens only their own files (see ``find``), never the village's list
+        return rows.none()
     village = village_of(user)
     if not village:
         return rows.none()
