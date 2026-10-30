@@ -9,6 +9,7 @@ reason; confirming moves the file to step 4.
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.models import PermitDocument, PermitFile
 from main.notifications import notify
@@ -148,7 +149,7 @@ def upload(user, permit, post, files):
     permit.save(update_fields=['notice', 'notice_state', 'notice_at', 'updated_at'])
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال اخطاریه‌ی امضاشده (مرحله ۳)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -190,7 +191,7 @@ def send_back(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل اخطاریه چیست.')
-    lifecycle.request_documents(permit.request, actor, f'اخطاریه‌ی مالک: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'اخطاریه‌ی مالک: {notes}')
     permit.notice_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['notice_state', 'staff_notes', 'updated_at'])
     return permit

@@ -8,6 +8,7 @@ and date; any of the clerk / technical expert / dehyari confirms it (or sends it
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle, sms
 from main.access import can
 from main.models import PermitDocument
@@ -145,7 +146,7 @@ def upload_letter(user, permit, post, files):
     permit.save(update_fields=['bonyad_list', 'bonyad_list_state', 'updated_at'])
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال نامه‌ی بنیاد مسکن توسط متقاضی (مرحله ۸)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -179,7 +180,7 @@ def send_back(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل نامه چیست.')
-    lifecycle.request_documents(permit.request, actor, f'نامه‌ی بنیاد: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'نامه‌ی بنیاد: {notes}')
     permit.bonyad_list_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['bonyad_list_state', 'staff_notes', 'updated_at'])
     return permit

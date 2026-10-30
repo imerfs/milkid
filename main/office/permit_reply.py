@@ -8,6 +8,7 @@ with a reason) and then the step; the file goes on to step 7.
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.models import PermitDocument
 from main.notifications import notify
@@ -123,7 +124,7 @@ def send_back(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل جوابیه‌ها چیست.')
-    lifecycle.request_documents(permit.request, actor, f'جوابیه‌های کارشناس: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'جوابیه‌های کارشناس: {notes}')
     permit.reply_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['reply_state', 'staff_notes', 'updated_at'])
     return permit

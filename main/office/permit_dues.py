@@ -15,6 +15,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.access import can
 from main.accounting.instalments import add_jalali_months, split
@@ -358,7 +359,7 @@ def return_plan(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید چرا تقسیط برگشت داده می‌شود.')
-    lifecycle.request_documents(permit.request, actor, f'درخواست تقسیط: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'درخواست تقسیط: {notes}')
     permit.plan_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['plan_state', 'staff_notes', 'updated_at'])
     return permit
@@ -466,7 +467,7 @@ def return_cheques(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل ثبت چک‌ها چیست.')
-    lifecycle.request_documents(permit.request, actor, f'ثبت چک‌ها: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'ثبت چک‌ها: {notes}')
     data = dict(permit.dues or {})
     plan_ = dict(data.get('plan') or {})
     plan_['note'] = notes[:300]

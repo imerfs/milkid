@@ -14,6 +14,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.access import can
 from main.accounting.parse import digits
@@ -220,7 +221,7 @@ def submit(user, permit):
     permit.save(update_fields=['design_state', 'design_at', 'updated_at'])
     sr = permit.request
     if again:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال نقشه‌های معماری و سازه برای بررسی (مرحله ۴)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -238,7 +239,7 @@ def send_back(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید چه چیزی باید اصلاح شود.')
-    lifecycle.request_documents(permit.request, actor, f'نقشه‌ها: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'نقشه‌ها: {notes}')
     permit.design_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['design_state', 'staff_notes', 'updated_at'])
     return permit

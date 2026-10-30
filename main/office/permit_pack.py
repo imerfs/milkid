@@ -9,6 +9,7 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.models import PermitDocument
 from main.notifications import notify
@@ -111,7 +112,7 @@ def upload_deed(user, permit, post, files):
     permit.save(update_fields=['pack', 'pack_state', 'updated_at'])
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال تعهدنامه‌ی ملک توسط متقاضی (مرحله ۹)', from_user=user, to_role='clerk')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -145,7 +146,7 @@ def send_back(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل تعهدنامه چیست.')
-    lifecycle.request_documents(permit.request, actor, f'تعهدنامه‌ی ملک: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'تعهدنامه‌ی ملک: {notes}')
     permit.pack_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['pack_state', 'staff_notes', 'updated_at'])
     return permit

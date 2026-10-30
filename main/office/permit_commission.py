@@ -10,6 +10,7 @@ the owner prints them, signs and leaves a fingerprint, and uploads the scans. An
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.models import PermitDocument
 from main.notifications import notify
@@ -135,7 +136,7 @@ def upload(user, permit, post, files):
     permit.save(update_fields=['commission_state', 'commission_at', 'updated_at'])
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال فرم درخواست و تعهدنامه‌ی امضاشده توسط متقاضی (مرحله ۲)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -177,7 +178,7 @@ def send_back(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل فرم‌ها چیست.')
-    lifecycle.request_documents(permit.request, actor, f'فرم درخواست و تعهدنامه: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'فرم درخواست و تعهدنامه: {notes}')
     permit.commission_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['commission_state', 'staff_notes', 'updated_at'])
     return permit
