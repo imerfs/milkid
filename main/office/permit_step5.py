@@ -19,7 +19,7 @@ from main.access import can
 from main.accounting.parse import digits, jalali_str, parse_amount, parse_jalali
 from main.models import PermitDocument, PermitFile
 from main.notifications import notify
-from main.office import permit_form, permit_step2, permit_step4, permits
+from main.office import permit_form, permit_step2, permit_step4, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
@@ -82,7 +82,7 @@ def _money(value, label):
 
 
 def _clean(value, limit=200):
-    return ' '.join(str(value or '').split())[:limit]
+    return step_flow.clean(value, limit)
 
 
 def total_of(fees):
@@ -228,8 +228,7 @@ def approve(user, permit):
     total = (permit.fees or {}).get('total', 0)
     sr.add_workflow_step(action=f'تایید عوارض ({total:,} ریال) توسط متقاضی - پایان مرحله ۵', from_user=user, to_role='clerk')
     sr.save(update_fields=['workflow_history', 'updated_at'])
-    for staff in permits._staff_to_tell(permit_step2._village(permit)):           # pylint: disable=protected-access
-        notify(staff, 'عوارض تایید شد', f'متقاضی پرونده {permit.pk} عوارض را تایید کرد؛ پرداخت و معرفی‌نامه‌ی تامین اجتماعی.', request=sr)
+    step_flow.notify_staff(permit, 'عوارض تایید شد', f'متقاضی پرونده {permit.pk} عوارض را تایید کرد؛ پرداخت و معرفی‌نامه‌ی تامین اجتماعی.')
     return permit
 
 

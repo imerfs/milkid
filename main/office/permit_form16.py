@@ -13,7 +13,7 @@ from django.utils import timezone
 from main.accounting.parse import digits
 from main.models import PermitDocument
 from main.notifications import notify
-from main.office import permit_commit, permit_form, permit_report, permit_step2
+from main.office import permit_commit, permit_form, permit_report, permit_step2, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
@@ -35,8 +35,7 @@ SERVED = (('owner', 'تحویل مالک'), ('dependents', 'بستگان مال�
 NOTICE_SERVED = {'handed': ['owner'], 'posted': ['posted']}
 
 
-def _text(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_text = step_flow.clean
 
 
 def at_step(permit, stage=None):

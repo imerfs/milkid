@@ -12,7 +12,7 @@ from django.utils import timezone
 from main.accounting.parse import digits
 from main.models import PermitFile
 from main.notifications import notify
-from main.office import permit_form, permit_step2, permit_step7, permits
+from main.office import permit_form, permit_step2, permit_step7, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
@@ -25,7 +25,7 @@ FORM_KEYS = ('number', 'date', 'village', 'section', 'code', 'fee_slip_no', 'fin
 
 
 def _clean(value, limit=120):
-    return ' '.join(str(value or '').split())[:limit]
+    return step_flow.clean(value, limit)
 
 
 def _jd(text):
@@ -132,8 +132,7 @@ def request(actor, permit):
     sr.add_workflow_step(action=f'درخواست تمدید مهلت پروانه ({TERMS[term]})', from_user=actor, to_role='clerk')
     sr.save(update_fields=['workflow_history', 'updated_at'])
     if sr.user_id == actor.id:
-        for staff in permits._staff_to_tell(permit_step2._village(permit)):      # pylint: disable=protected-access
-            notify(staff, 'درخواست تمدید پروانه', f'متقاضی پرونده {permit.pk} درخواست تمدید مهلت پروانه را باز کرد.', request=sr)
+        step_flow.notify_staff(permit, 'درخواست تمدید پروانه', f'متقاضی پرونده {permit.pk} درخواست تمدید مهلت پروانه را باز کرد.')
     return permit
 
 

@@ -14,7 +14,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from main.office import permit_request
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.access import can
 from main.accounting.parse import digits
@@ -36,8 +36,7 @@ SIDES = ('north', 'south', 'east', 'west')
 OPEN_STATES = ('', 'returned')
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def _num(value):
@@ -201,7 +200,7 @@ def delete_plan(user, permit, doc_id):
 
 
 def _staff_to_tell(permit):
-    return permits._staff_to_tell(permit_step2._village(permit))       # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
 @transaction.atomic

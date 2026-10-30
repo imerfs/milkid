@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from main.accounting.parse import digits
 from main.notifications import notify
-from main.office import permit_form, permit_step2, permit_step7, permits
+from main.office import permit_form, permit_step2, permit_step7, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.permits import may_open
 
@@ -48,8 +48,7 @@ STATE_TEXT = {'requested': 'منتظر تایید دهیاری', 'approved': 'ت
 REQUIRED = {'elec_endwork': ('endwork_no', 'endwork_date'), 'gas_dig': ('ref_no', 'slip_no', 'slip_date'), 'elec_permit': ('permit_no',), 'water_permit': ('permit_no',)}
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def services(permit):
@@ -158,8 +157,7 @@ def request(actor, permit, kind, post):
     sr.add_workflow_step(action=f'درخواست نامه‌ی خدمات: {KINDS[kind]["title"]}', from_user=actor, to_role='clerk')
     sr.save(update_fields=['workflow_history', 'updated_at'])
     if sr.user_id == actor.id:
-        for staff in permits._staff_to_tell(permit_step2._village(permit)):          # pylint: disable=protected-access
-            notify(staff, 'درخواست نامه‌ی خدمات', f'متقاضی پرونده {permit.pk}: {KINDS[kind]["title"]}', request=sr)
+        step_flow.notify_staff(permit, 'درخواست نامه‌ی خدمات', f'متقاضی پرونده {permit.pk}: {KINDS[kind]["title"]}')
     return permit
 
 

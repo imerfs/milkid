@@ -8,7 +8,7 @@ with a reason) and then the step; the file goes on to step 7.
 from django.db import transaction
 from django.utils import timezone
 
-from main.office import permit_request
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.models import PermitDocument
 from main.notifications import notify
@@ -23,10 +23,6 @@ MAX_FILES = 6
 
 def find(user, file_id):
     return permit_commit.find(user, file_id)
-
-
-def at_step(permit):
-    return permit.unlicensed and permit.stage_no == 6 and permit.state == 'done'
 
 
 def documents(permit, kind):
@@ -99,60 +95,18 @@ def upload(user, permit, post, files):
     return permit
 
 
-@transaction.atomic
-def verify(actor, permit, post):
-    if not may_open(actor, permit):
-        raise Forbidden('اجازه‌ی تایید را ندارید.')
-    if not at_step(permit) or permit.reply_state != 'uploaded':
-        raise Conflict('جوابیه‌ای برای تایید نیست.')
-    if post.get('confirm') != 'on':
-        raise Invalid('تیک «دو برگه را با اصل تحویل‌شده به دهیاری مقایسه و بررسی کردم» لازم است.')
-    commit = dict(permit.commit or {})
-    commit['reply'] = {**(commit.get('reply') or {}), 'checked': {'by': actor.get_full_name() or actor.username, 'at': permit_commit._now()}}      # pylint: disable=protected-access
-    permit.commit, permit.reply_state = commit, 'verified'
-    permit.save(update_fields=['commit', 'reply_state', 'updated_at'])
-    notify(permit.request.user, 'جوابیه‌های کارشناس تایید شد', f'جوابیه‌های کارشناس پرونده {permit.pk} تایید شد.', request=permit.request)
-    return permit
 
-
-@transaction.atomic
-def send_back(actor, permit, notes):
-    if not may_open(actor, permit):
-        raise Forbidden('اجازه‌ی این کار را ندارید.')
-    if not at_step(permit) or permit.reply_state != 'uploaded':
-        raise Conflict('جوابیه‌ای برای برگرداندن نیست.')
-    notes = (notes or '').strip()
-    if not notes:
-        raise Invalid('بنویسید مشکل جوابیه‌ها چیست.')
-    permit_request.ask_for_documents(permit, actor, f'جوابیه‌های کارشناس: {notes}')
-    permit.reply_state, permit.staff_notes = 'returned', notes[:2000]
-    permit.save(update_fields=['reply_state', 'staff_notes', 'updated_at'])
-    return permit
-
-
-def blocking(permit):
-    return [] if permit.reply_state == 'verified' else ['جوابیه‌های کارشناس هنوز تایید نشده است.']
-
-
-@transaction.atomic
-def finish(actor, permit, post):
-    """Any of the three staff: the replies are confirmed; the file goes on to step 7."""
-    if not may_open(actor, permit):
-        raise Forbidden('اجازه‌ی تایید این مرحله را ندارید.')
-    if not at_step(permit):
-        raise Conflict('پرونده در مرحله‌ی جوابیه‌ی کارشناس نیست.')
-    waiting = blocking(permit)
-    if waiting:
-        raise Conflict(waiting[0])
-    if post.get('confirm') != 'on':
-        raise Invalid('تیک «مدارک این مرحله را بررسی کردم» لازم است.')
-    permit.stage_no = 7
-    permit.staff_notes = (post.get('notes') or '')[:2000]
-    permit.save()
-    sr = permit.request
-    sr.add_workflow_step(action='تایید مرحله ۶ (جوابیه‌ی کارشناس دادگستری)', from_user=actor, to_role='citizen', notes=permit.staff_notes)
-    sr.save(update_fields=['workflow_history', 'updated_at'])
-    notify(sr.user, 'مرحله‌ی ۶ تایید شد', f'جوابیه‌های کارشناس پرونده {permit.pk} تایید شد؛ پرونده به مرحله‌ی ۷ رفت.', request=sr)
+def _tell_the_officer(permit):
     from main.office import permit_dues       # pylint: disable=import-outside-toplevel
     permit_dues.tell_the_officer(permit)
-    return permit
+
+
+STEP = step_flow.Step(
+    stage=6, state_field='reply_state', data_path=('commit', 'reply'),
+    not_here='پرونده در مرحله‌ی جوابیه‌ی کارشناس نیست.', nothing_to_verify='جوابیه‌ای برای تایید نیست.',
+    verify_tick='تیک «دو برگه را با اصل تحویل‌شده به دهیاری مقایسه و بررسی کردم» لازم است.',
+    verified_title='جوابیه‌های کارشناس تایید شد', verified_text='جوابیه‌های کارشناس پرونده {pk} تایید شد.',
+    nothing_to_send_back='جوابیه‌ای برای برگرداندن نیست.', reason_needed='بنویسید مشکل جوابیه‌ها چیست.', back_prefix='جوابیه‌های کارشناس',
+    blocking_text='جوابیه‌های کارشناس هنوز تایید نشده است.', history='تایید مرحله ۶ (جوابیه‌ی کارشناس دادگستری)',
+    done_title='مرحله‌ی ۶ تایید شد', done_text='جوابیه‌های کارشناس پرونده {pk} تایید شد؛ پرونده به مرحله‌ی ۷ رفت.', after=_tell_the_officer)
+at_step, verify, send_back, blocking, finish = STEP.at_step, STEP.verify, STEP.send_back, STEP.blocking, STEP.finish

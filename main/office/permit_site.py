@@ -13,7 +13,7 @@ Every part is confirmed, or sent back with a reason, by any of the three staff (
 from django.db import transaction
 from django.utils import timezone
 
-from main.office import permit_request
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.models import PermitDocument
 from main.notifications import notify
@@ -27,11 +27,10 @@ MAX_FILES = 8
 
 
 def _staff(permit):
-    return permits._staff_to_tell(permit_step2._village(permit))       # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def documents(permit, kind):

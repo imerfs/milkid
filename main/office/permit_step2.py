@@ -21,7 +21,7 @@ from main import lifecycle
 from main.accounting.parse import digits
 from main.models import MapParcel, PermitFile, VillageMap
 from main.notifications import notify
-from main.office import geo, plotmap
+from main.office import geo, plotmap, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.permits import may_open
 
@@ -148,7 +148,7 @@ def form1_defaults(permit):
 
 
 def _clean_text(value, limit=200):
-    return ' '.join(str(value or '').split())[:limit]
+    return step_flow.clean(value, limit)
 
 
 FORM1_TEXT = ('number', 'date', 'bonyad_city', 'request_no', 'request_date', 'name', 'father', 'id_number', 'issued_at',

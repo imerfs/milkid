@@ -9,7 +9,7 @@ reason; confirming moves the file to step 4.
 from django.db import transaction
 from django.utils import timezone
 
-from main.office import permit_request
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.models import PermitDocument, PermitFile
 from main.notifications import notify
@@ -29,8 +29,7 @@ MAX_SCANS = 6
 KIND = 'warning_notice'
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def at_step(permit):
@@ -115,7 +114,7 @@ def checks(permit):
 
 
 def _staff(permit):
-    return permits._staff_to_tell(permit_step2._village(permit))       # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
 @transaction.atomic

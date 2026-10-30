@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from main.accounting.parse import digits
 from main.notifications import notify
-from main.office import permit_form, permit_services, permit_step2, permit_step7, permit_supervision, permits
+from main.office import permit_form, permit_services, permit_step2, permit_step7, permit_supervision, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
@@ -26,8 +26,7 @@ LABELS = {'number': 'شماره‌ی گواهی', 'date': 'تاریخ گواهی
 STATE_TEXT = {'': 'درخواست ثبت نشده', 'requested': 'منتظر پاسخ دهیاری', 'approved': 'تایید شد؛ چاپ و امضای دهیار و مسئول فنی', 'issued': 'صادر و تحویل شد', 'rejected': 'رد شد'}
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def _tidy(value):
@@ -97,7 +96,7 @@ def _collect(post):
 
 
 def _staff_to_tell(permit):
-    return list(permits._staff_to_tell(permit_step2._village(permit)))       # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
 def _save(permit, state=None, **changes):

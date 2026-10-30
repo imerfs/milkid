@@ -9,7 +9,7 @@ from django.db import transaction
 
 from main.models import Municipality, PermitDocument
 from main.notifications import notify
-from main.office import permit_form, permit_step2, permits
+from main.office import permit_form, permit_step2, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.permits import may_open
 
@@ -21,8 +21,7 @@ OPEN_STATES = ('submitted', 'needs_docs')
 MAX_SCANS = 6
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def find(user, file_id):
@@ -114,6 +113,5 @@ def upload(user, permit, files):
         old.delete()
     for scan in found:
         PermitDocument.objects.create(file=permit, kind=KIND, document=scan, original_name=scan.name[:200], size=scan.size, uploaded_by=user)
-    for staff in permits._staff_to_tell(permit_step2._village(permit)):       # pylint: disable=protected-access
-        notify(staff, 'فرم دفاعیه رسید', f'متقاضی فرم دفاعیه‌ی امضاشده‌ی پرونده {permit.pk} را فرستاد.', request=permit.request)
+    step_flow.notify_staff(permit, 'فرم دفاعیه رسید', f'متقاضی فرم دفاعیه‌ی امضاشده‌ی پرونده {permit.pk} را فرستاد.')
     return permit

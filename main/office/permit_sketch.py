@@ -13,7 +13,7 @@ from main.access import can
 from main.accounting.parse import digits
 from main.models import PermitDocument
 from main.notifications import notify
-from main.office import permit_form, permit_step2, permits
+from main.office import permit_form, permit_step2, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 
 OPEN_FILE_STATES = ('submitted', 'needs_docs')
@@ -47,7 +47,7 @@ def sketch_files(permit):
 
 
 def _staff(permit):
-    return permits._staff_to_tell(permit_step2._village(permit))        # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
 @transaction.atomic
