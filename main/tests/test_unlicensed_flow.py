@@ -4,6 +4,7 @@ when money is due), stays hidden from other villages and bystanders, the owner s
 The step modules build on each other (each ``StepN`` class replays steps 1..N-1 through the real URLs), so every class below starts from a file that
 really went through the earlier steps.
 """
+# pylint: disable=no-member   # the mixin runs inside the TestCase classes it is combined with
 from main.models import Notification
 from main.office import permits
 from main.tests.helpers import client_for
