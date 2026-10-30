@@ -28,13 +28,14 @@ class Recording(TestCase):
         self.assertEqual((visit.ip, visit.kind, visit.model_name), ('203.0.113.9', 'mobile', 'SM-S911B'))
 
     def test_a_sign_in_keeps_the_address_and_device(self):
-        make_user('citizen', username='visitor')
-        c = Client(HTTP_USER_AGENT=WINDOWS, HTTP_X_REAL_IP='198.51.100.4')
-        c.post(reverse('main:login'), {'username': 'visitor', 'password': 'bad'})
-        event = AuditEvent.objects.filter(action='login_failed').first()
-        if event is not None:
-            self.assertEqual(event.ip, '198.51.100.4')
-            self.assertTrue(event.summary.endswith('| Edge · Windows'))
+        from django.contrib.auth.signals import user_logged_in
+        from django.test import RequestFactory
+        user = make_user('citizen')
+        request = RequestFactory().get('/', HTTP_USER_AGENT=WINDOWS, HTTP_X_REAL_IP='198.51.100.4')
+        user_logged_in.send(sender=type(user), request=request, user=user)
+        event = AuditEvent.objects.get(action='login', username=user.username)
+        self.assertEqual(event.ip, '198.51.100.4')
+        self.assertTrue(event.summary.endswith('| Edge · Windows'))
 
 
 class Panel(TestCase):
