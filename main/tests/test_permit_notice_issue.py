@@ -154,7 +154,7 @@ class Visit(Notice):
         permit = self.reload()
         self.assertEqual((permit.visit_state, permit.stage_no, permit.visit['done']['by']), ('done', 4, self.dehyari.username))
         self.assertTrue(Notification.objects.filter(user=self.citizen, title='بازدید انجام شد').exists())
-        self.assertFalse(permit.needs_staff)
+        self.assertTrue(permit.needs_staff)                      # the technical expert's report is next
 
     def test_each_of_the_three_staff_can_complete_a_visit(self):
         for who in (self.clerk, self.engineer, self.dehyari):

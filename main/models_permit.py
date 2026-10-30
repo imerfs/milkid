@@ -27,11 +27,11 @@ STAGES = [
 # main/templates/main/services/construction-without-permit/). Only step 1 is handled by the system so far.
 UNLICENSED_STAGES = [
     (1, 'ایجاد پرونده اولیه'),
-    (2, 'تأیید مالکیت و مدارک مکان‌محور'),
-    (3, 'درخواست کمیسیون ماده ۹۹ و بازدید'),
-    (4, 'تعهد، استحکام بنا، رأی و جریمه'),
-    (5, 'خدمات و اختتامیه'),
-    (6, 'درخواست پایان کار'),
+    (2, 'فرم درخواست و تعهدنامه'),
+    (3, 'اخطاریه و درخواست بازدید'),
+    (4, 'گزارش بازدید، پیش‌آمدگی و مصالح'),
+    (5, 'تعهد محضری، استحکام بنا، رأی و جریمه'),
+    (6, 'خدمات و پایان کار'),
 ]
 
 
@@ -157,6 +157,19 @@ class PermitFile(models.Model):
     visit = models.JSONField(default=dict, blank=True)
     visit_state = models.CharField(max_length=10, choices=VISIT_STATES, blank=True, default='')
     visit_at = models.DateTimeField(null=True, blank=True)
+    # construction without a permit, step 4 (main/office/permit_report.py, permit_site.py): the technical expert's visit report put in the
+    # owner's file ('' / filed); the electricity office's answer when the building has an overhang over the street; the materials the owner
+    # must clear from the street (both: '' none needed / required / replied|uploaded / returned / verified)
+    REPORT_STATES = [('', 'گزارش بازدید تهیه نشده'), ('filed', 'گزارش در پرونده است')]
+    SITE_STATES = [('', 'لازم نیست'), ('required', 'لازم است'), ('replied', 'پاسخ منتظر تایید'), ('uploaded', 'عکس منتظر تایید'),
+                   ('returned', 'برگشت‌خورده'), ('verified', 'تایید شد')]
+    report = models.JSONField(default=dict, blank=True)
+    report_state = models.CharField(max_length=8, choices=REPORT_STATES, blank=True, default='')
+    report_at = models.DateTimeField(null=True, blank=True)
+    overhang = models.JSONField(default=dict, blank=True)
+    overhang_state = models.CharField(max_length=10, choices=SITE_STATES, blank=True, default='')
+    materials = models.JSONField(default=dict, blank=True)
+    materials_state = models.CharField(max_length=10, choices=SITE_STATES, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -201,7 +214,9 @@ class PermitFile(models.Model):
                 return {'': 'منتظر اخطاریه‌ی قبلی یا درخواست صدور اخطاریه (از متقاضی)', 'requested': 'درخواست اخطاریه منتظر صدور (دهیاری)',
                         'issued': 'اخطاریه صادر شد؛ متقاضی حضوری امضا کند', 'uploaded': 'اخطاریه منتظر تایید',
                         'returned': 'اخطاریه برگشت خورد'}.get(self.notice_state, '')
-            return 'مرحله‌ی ۳ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
+            if self.stage_no == 4:
+                return self.step4_text()
+            return 'مرحله‌ی ۴ تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
             return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
                     'issued': 'گواهی پایان کار صادر شد', 'rejected': 'درخواست پایان کار رد شد'}.get(self.endwork_state, '')
@@ -236,7 +251,9 @@ class PermitFile(models.Model):
         """True while the village staff (clerk / expert / dehyari) have something to decide on this file."""
         if self.unlicensed:
             return (self.state == 'submitted' or self.sketch_state in ('requested', 'paid') or (self.stage_no == 2 and self.commission_state == 'uploaded')
-                    or (self.stage_no == 3 and (self.notice_state in ('requested', 'uploaded') or self.visit_state in ('requested', 'scheduled'))))
+                    or (self.stage_no == 3 and (self.notice_state in ('requested', 'uploaded') or self.visit_state in ('requested', 'scheduled')))
+                    or (self.stage_no == 4 and (self.report_state != 'filed' or self.overhang_state == 'replied' or self.materials_state == 'uploaded'
+                                                or (self.overhang_state in ('', 'verified') and self.materials_state in ('', 'verified')))))
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -261,6 +278,21 @@ class PermitFile(models.Model):
         if not self.documents.filter(kind='defence_form').exists():
             return 'منتظر فرم دفاعیه‌ی امضاشده (از متقاضی)'
         return 'در انتظار بررسی'
+
+    def step4_text(self):
+        """Where an unlicensed file stands in step 4: the report, the electricity office's answer, the materials, the confirmation."""
+        if self.report_state != 'filed':
+            return 'منتظر گزارش بازدید (کارشناس فنی)'
+        waiting = []
+        if self.overhang_state in ('required', 'returned'):
+            waiting.append('پاسخ اداره برق (از متقاضی)')
+        if self.materials_state in ('required', 'returned'):
+            waiting.append('عکس جمع‌آوری مصالح (از متقاضی)')
+        if waiting:
+            return 'منتظر ' + ' و '.join(waiting)
+        if self.overhang_state == 'replied' or self.materials_state == 'uploaded':
+            return 'مدارک متقاضی منتظر تایید'
+        return 'گزارش در پرونده است؛ منتظر تایید نهایی مرحله'
 
     @property
     def stage_title(self):
@@ -306,7 +338,7 @@ class PermitDocument(models.Model):
     KINDS = [
         ('national_card', 'کارت ملی'), ('birth_cert', 'شناسنامه'), ('deed', 'سند مالکیت'), ('agreement', 'قولنامه'),
         ('bonyad_contract', 'قرارداد بنیاد مسکن'), ('shamim', 'فایل شمیم'), ('bonyad_answer', 'پاسخ بنیاد مسکن'),
-        ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
+        ('power_reply', 'پاسخ اداره برق'), ('materials_photo', 'عکس جمع‌آوری مصالح'), ('defence_form', 'فرم دفاعیه امضاشده'), ('sketch_slip', 'فیش هزینه‌ی کروکی'), ('warning_notice', 'اخطاریه به مالک'), ('comm_request', 'فرم درخواست امضاشده'), ('comm_undertake', 'تعهدنامه امضاشده'),
         ('plan_arch', 'نقشه‌ی معماری'), ('plan_struct', 'نقشه‌ی سازه'), ('plan_other', 'نقشه‌ی دیگر'), ('fee_receipt', 'فیش پرداخت عوارض'), ('insurance_cert', 'گواهی تامین اجتماعی'), ('supervision_form', 'فرم نظارت امضاشده'),
         ('other', 'سایر'),
     ]

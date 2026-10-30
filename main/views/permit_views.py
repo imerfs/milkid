@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import permit_commission, permit_defence, permit_notice, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import permit_commission, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.errors import OfficeError
 from main.roles import CITIZEN_ROLES
@@ -1148,4 +1148,120 @@ def permit_visit_schedule(request, file_id):
 def permit_visit_complete(request, file_id):
     return _notice_action(request, file_id, lambda p: permit_notice.complete_visit(request.user, p, request.POST),
                           'بازدید ثبت شد و پرونده به مرحله‌ی ۴ رفت.')
+
+
+# ---------- construction without a permit, step 4: the visit report, the electricity office, the materials ----------
+
+def _report_rows(values):
+    """(side, label, adjacent, existing, passage, after) rows and floor rows for the editable form."""
+    return {
+        'sides': [(side, label, values['limits'][side], values['overhang_rows'][side]) for side, label in permit_report.SIDES],
+        'floors': [(key, label, values['floors'][key]) for key, label in permit_report.FLOORS],
+    }
+
+
+@login_required
+def permit_report_page(request, file_id):
+    permit = permit_report.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 4 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از ثبت بازدید (مرحله‌ی ۳) در دسترس است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    at_step = permit_report.at_step(permit)
+    fill = at_step and permit_report.may_fill(request.user, permit)
+    values = permit_report.data(permit, request.user)
+    shown = fill or permit.report_state == 'filed'
+    totals = permit_report.totals(values)
+    power = permit_site.power_payload(permit)
+    can_show = shown and (staff or mine or permit.supervisor_id == request.user.id)
+    return render(request, 'main/permits/report.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'v': values, 'rows': _report_rows(values), 'fill': fill, 'shown': can_show,
+        'totals': totals, 'floor_fields': permit_report.FLOOR_FIELDS, 'statuses': permit_report.STATUSES, 'roofs': permit_report.ROOFS,
+        'structures': permit_report.STRUCTURES, 'blocking': permit_site.blocking(permit) if at_step else [],
+        'needs_power': permit_report.needs_power(values) if permit.report_state == 'filed' else False,
+        'power_docs': permit_site.documents(permit, 'power_reply'), 'photos': permit_site.documents(permit, 'materials_photo'),
+        'ov': permit.overhang or {}, 'mat': permit.materials or {}, 'verdicts': permit_site.VERDICTS.items(),
+        'owner_power': at_step and mine and permit.overhang_state in ('required', 'returned'),
+        'owner_photos': at_step and mine and permit.materials_state in ('required', 'returned'),
+        'decide_power': at_step and staff and permit.overhang_state == 'replied',
+        'decide_photos': at_step and staff and permit.materials_state == 'uploaded',
+        'can_finish': at_step and staff and permit.report_state == 'filed',
+        'payload': {'v': values, 'power': power, 'file': permit.pk, 'shown': can_show,
+                    'sides': [[k, label] for k, label in permit_report.SIDES], 'floors': [[k, label] for k, label in permit_report.FLOORS]},
+    })
+
+
+def _report_action(request, file_id, action, ok):
+    permit = permit_report.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_report', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_report_save(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_report.save(request.user, p, request.POST), 'گزارش بازدید به‌صورت پیش‌نویس ذخیره شد.')
+
+
+@login_required
+@require_POST
+def permit_report_file(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_report.file_report(request.user, p, request.POST),
+                          'گزارش بازدید در پرونده‌ی متقاضی قرار گرفت.')
+
+
+@login_required
+@require_POST
+def permit_power_upload(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_site.upload_power_reply(request.user, p, request.POST, request.FILES),
+                          'پاسخ اداره برق فرستاده شد؛ دهیاری بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_power_verify(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_site.verify_power(request.user, p, request.POST), 'پاسخ اداره برق تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_power_return(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_site.return_power(request.user, p, request.POST.get('notes', '')),
+                          'پاسخ برای اصلاح به متقاضی برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_materials_upload(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_site.upload_materials(request.user, p, request.POST, request.FILES),
+                          'عکس‌ها فرستاده شد؛ دهیاری بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_materials_verify(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_site.verify_materials(request.user, p, request.POST), 'جمع‌آوری مصالح تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_materials_return(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_site.return_materials(request.user, p, request.POST.get('notes', '')),
+                          'عکس‌ها برای اصلاح به متقاضی برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_step4_finish(request, file_id):
+    return _report_action(request, file_id, lambda p: permit_site.finish(request.user, p, request.POST), 'مرحله‌ی ۴ تایید شد و پرونده به مرحله‌ی ۵ رفت.')
 

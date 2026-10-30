@@ -116,7 +116,7 @@ class UnlicensedStaff(UnlicensedBase):
 
     def test_the_file_page_shows_the_six_steps_and_the_staffs_form(self):
         page = client_for(self.clerk).get(reverse('main:permit_file', args=[self.permit.pk])).content.decode()
-        self.assertIn('درخواست کمیسیون ماده ۹۹ و بازدید', page)
+        self.assertIn('اخطاریه و درخواست بازدید', page)
         self.assertNotIn('استعلام بنیاد مسکن', page)
         self.assertIn('تایید مرحله‌ی ۱ و دادن کد نوسازی', page)
         self.assertIn('زیربنای ساخته‌شده', page)

@@ -1,0 +1,243 @@
+{% extends 'main/dashboards/_base.html' %}
+{% load static jalali_tags persian_filters %}
+{% block title %}گزارش بازدید - پرونده {{ permit.pk|persian_numbers }} - ملک آیدی{% endblock %}
+{% block body_class %}pf-body{% endblock %}
+{% block head_late %}<link rel="stylesheet" href="{% static 'css/permits.css' %}">{% endblock %}
+{% block content %}
+<div class="pf pff">
+  {% if not embed %}<nav class="pf-top"><a href="{% url 'main:permit_file' permit.pk %}"><i class="fas fa-arrow-right" aria-hidden="true"></i> بازگشت به پرونده</a></nav>{% endif %}
+  {% if messages %}<div class="pf-flash" role="status">{% for m in messages %}<p class="{{ m.tags }}">{{ m }}</p>{% endfor %}</div>{% endif %}
+
+  <header class="pf-head">
+    <span class="pf-ic"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
+    <div>
+      <h1>مرحله‌ی ۴: گزارش بازدید، پیش‌آمدگی و مصالح</h1>
+      <p>{{ v.name }} · پرونده <bdi>{{ permit.pk|persian_numbers }}</bdi>{% if permit.renewal_code %} · کد نوسازی <bdi dir="ltr">{{ permit.renewal_code|persian_numbers }}</bdi>{% endif %}</p>
+    </div>
+    <span class="pf-state pf-state-{% if permit.stage_no > 4 %}done{% else %}submitted{% endif %}">{{ permit.status_text }}</span>
+  </header>
+
+  <ol class="pff-how">
+    <li class="{% if permit.report_state == 'filed' %}ok{% endif %}"><b>۱</b><span>کارشناس فنی گزارش بازدید را پر می‌کند و در پرونده‌ی شما می‌گذارد؛ شما هم می‌توانید ببینید و چاپ کنید.</span></li>
+    <li class="{% if permit.overhang_state == 'verified' %}ok{% endif %}"><b>۲</b><span>اگر بنا پیش‌آمدگی روی معبر دارد، از اداره برق مجوز بگیرید و پاسخ را اینجا بارگذاری کنید.</span></li>
+    <li class="{% if permit.materials_state == 'verified' %}ok{% endif %}"><b>۳</b><span>اگر مصالح در معبر است، جمع کنید و عکس بارگذاری کنید؛ تا آن وقت پرونده جلو نمی‌رود.</span></li>
+    <li class="{% if permit.stage_no > 4 %}ok{% endif %}"><b>۴</b><span>دهیار، کارشناس فنی یا کارشناس اداری مرحله را تایید می‌کند.</span></li>
+  </ol>
+
+  {% if permit.staff_notes and permit.overhang_state == 'returned' or permit.staff_notes and permit.materials_state == 'returned' %}<div class="pf-card"><p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> دهیاری برگرداند:</p><blockquote>{{ permit.staff_notes }}</blockquote></div>{% endif %}
+  {% if permit.report_state != 'filed' and not fill %}<div class="pf-card"><p>گزارش بازدید هنوز توسط کارشناس فنی در پرونده گذاشته نشده است.</p></div>{% endif %}
+
+  <div class="pff-grid">
+    <div class="pff-edit">
+
+      {% if fill %}
+      <form method="post" action="{% url 'main:permit_report_save' permit.pk %}" class="pf-card pf-form pff-form" id="prp-form">{% csrf_token %}
+        {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+        <h2><i class="fas fa-pen-to-square" aria-hidden="true"></i>گزارش بازدید کارشناس فنی</h2>
+        <p class="pf-hint">از پرونده پر شده: مشخصات مالک، آدرس، حدود ملک (از نقشه‌ی روستا)، مساحت و زیربنای اعلامی. اندازه‌های بازدید و طبقات را وارد یا اصلاح کنید؛ جمع‌ها خودکار حساب می‌شوند.</p>
+
+        <details open><summary><b>مشخصات و شماره</b></summary>
+          <div class="pff-fields">
+            <label>شماره‌ی گزارش<input name="number" value="{{ v.number }}" dir="ltr"></label>
+            <label>تاریخ گزارش<input name="date" value="{{ v.date }}" dir="ltr" required></label>
+            <label>تاریخ بازدید<input name="visit_date" value="{{ v.visit_date }}" dir="ltr"></label>
+            <label>نام مالک<input name="name" value="{{ v.name }}" required></label>
+            <label>نام پدر<input name="father" value="{{ v.father }}"></label>
+            <label>شماره ملی<input name="national_id" value="{{ v.national_id }}" dir="ltr"></label>
+            <label>شماره تماس<input name="phone" value="{{ v.phone }}" dir="ltr"></label>
+            <label>کاربری ملک<input name="land_use" value="{{ v.land_use }}"></label>
+            <label>وضعیت<select name="status">{% for s in statuses %}<option value="{{ s }}" {% if v.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+            <label class="wide">آدرس<input name="address" value="{{ v.address }}"></label>
+            <label>مختصات X (UTM)<input name="utm_x" value="{{ v.utm_x }}" dir="ltr"></label>
+            <label>مختصات Y (UTM)<input name="utm_y" value="{{ v.utm_y }}" dir="ltr"></label>
+            <label>سال ساخت<input name="year" value="{{ v.year }}" dir="ltr" placeholder="۱۴۰۴"></label>
+            <label>نوع سقف<select name="roof">{% for s in roofs %}<option value="{{ s }}" {% if v.roof == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+            <label>نوع سازه<select name="structure">{% for s in structures %}<option value="{{ s }}" {% if v.structure == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+          </div>
+        </details>
+
+        <details><summary><b>پروانه و رأی کمیسیون</b> (برای ساخت بدون پروانه معمولاً صفر)</summary>
+          <div class="pff-fields">
+            <label>مساحت با پروانه (م²)<input name="permit_area" value="{{ v.permit_area }}" dir="ltr"></label>
+            <label>تاریخ پروانه<input name="permit_date" value="{{ v.permit_date }}" dir="ltr"></label>
+            <label>شماره پروانه<input name="permit_no" value="{{ v.permit_no }}" dir="ltr"></label>
+            <label>مساحت رأی کمیسیون (م²)<input name="ruling_area" value="{{ v.ruling_area }}" dir="ltr"></label>
+            <label>تاریخ رأی<input name="ruling_date" value="{{ v.ruling_date }}" dir="ltr"></label>
+            <label>شماره رأی<input name="ruling_no" value="{{ v.ruling_no }}" dir="ltr"></label>
+          </div>
+        </details>
+
+        <details open><summary><b>حدود ملک</b></summary>
+          {% for side, label, lim, oh in rows.sides %}
+          <h3>{{ label }}</h3>
+          <div class="pff-fields">
+            <label>حدفاصل مجاور (منزل، معبر، زمین …)<input name="{{ side }}_adjacent" value="{{ lim.adjacent }}"></label>
+            <label>ابعاد موجود (م)<input name="{{ side }}_existing" value="{{ lim.existing }}" dir="ltr"></label>
+            <label>عرض معبر (م)<input name="{{ side }}_passage" value="{{ lim.passage }}" dir="ltr"></label>
+            <label>ابعاد پس از رعایت برهای اصلاحی<input name="{{ side }}_after" value="{{ lim.after }}" dir="ltr"></label>
+          </div>
+          {% endfor %}
+          <div class="pff-fields">
+            <label>مساحت طبق سند (م²)<input name="deed_area" value="{{ v.deed_area }}" dir="ltr"></label>
+            <label>مساحت وضع موجود (م²)<input name="existing_area" value="{{ v.existing_area }}" dir="ltr"></label>
+            <label>مساحت پس از رعایت برهای اصلاحی (م²)<input name="after_area" value="{{ v.after_area }}" dir="ltr"></label>
+            <label>پارکینگ تأمین‌شده<input name="parking_provided" value="{{ v.parking_provided }}" dir="ltr"></label>
+          </div>
+        </details>
+
+        <details open><summary><b>طبقات (متراژها به مترمربع)</b></summary>
+          {% for key, label, f in rows.floors %}
+          <h3>طبقه‌ی {{ label }}</h3>
+          <div class="pff-fields">
+            <label>واحد<input name="{{ key }}_units" value="{{ f.units }}" dir="ltr"></label>
+            <label>مسکونی<input name="{{ key }}_res" value="{{ f.res }}" dir="ltr"></label>
+            <label>تجاری<input name="{{ key }}_commercial" value="{{ f.commercial }}" dir="ltr"></label>
+            <label>پارکینگ<input name="{{ key }}_parking" value="{{ f.parking }}" dir="ltr"></label>
+            <label>پیلوت<input name="{{ key }}_pilotis" value="{{ f.pilotis }}" dir="ltr"></label>
+            <label>انباری<input name="{{ key }}_storage" value="{{ f.storage }}" dir="ltr"></label>
+            <label>خرپشته<input name="{{ key }}_penthouse" value="{{ f.penthouse }}" dir="ltr"></label>
+            <label>پیش‌آمدگی به معبر<input name="{{ key }}_overhang" value="{{ f.overhang }}" dir="ltr"></label>
+            <label>پیش‌آمدگی مشرف به حیاط (۲/۳ حساب می‌شود)<input name="{{ key }}_over_yard" value="{{ f.over_yard }}" dir="ltr"></label>
+            <label>حیاط خلوت محاسبه‌شده<input name="{{ key }}_yard" value="{{ f.yard }}" dir="ltr"></label>
+            <label>ارتفاع (م)<input name="{{ key }}_height" value="{{ f.height }}" dir="ltr"></label>
+          </div>
+          {% endfor %}
+          <p class="pf-hint">اگر عرض حیاط خلوت کمتر از ۲ متر یا مساحتش کمتر از ۱۲ مترمربع باشد، آن مساحت در سطح اشغال و تراکم لحاظ می‌شود؛ اگر پیش‌آمدگی دو یا سه طرف بسته باشد، ۲/۳ مساحتش جزو زیربناست.</p>
+        </details>
+
+        <details><summary><b>پیش‌آمدگی روی معبر (برای نامه‌ی اداره برق)</b></summary>
+          <div class="pff-checks">
+            <label><input type="radio" name="overhang_built" value="built" {% if v.overhang_built %}checked{% endif %}> پیش‌آمدگی احداث شده است</label>
+            <label><input type="radio" name="overhang_built" value="planned" {% if not v.overhang_built %}checked{% endif %}> هنوز احداث نشده (درخواست احداث)</label>
+          </div>
+          {% for side, label, lim, oh in rows.sides %}
+          <h3>ضلع {{ label }}</h3>
+          <div class="pff-fields">
+            <label>عرض معبر (م)<input name="oh_{{ side }}_passage" value="{{ oh.passage }}" dir="ltr"></label>
+            <label>عرض مفید پیاده‌رو (م)<input name="oh_{{ side }}_sidewalk" value="{{ oh.sidewalk }}" dir="ltr"></label>
+            <label>میزان بالکن (با احتساب نماسازی، م)<input name="oh_{{ side }}_balcony" value="{{ oh.balcony }}" dir="ltr"></label>
+            <label>فاصله از شبکه‌ی موجود (م)<input name="oh_{{ side }}_network" value="{{ oh.network }}" dir="ltr"></label>
+          </div>
+          {% endfor %}
+        </details>
+
+        <details open><summary><b>مصالح و توضیحات</b></summary>
+          <div class="pff-checks"><label><input type="checkbox" name="materials" {% if v.materials %}checked{% endif %}> در معبر مصالح هست؛ مالک باید جمع کند (پرونده تا آن وقت جلو نمی‌رود)</label></div>
+          <label class="wide">توضیحات مصالح<input name="materials_note" value="{{ v.materials_note }}" maxlength="200"></label>
+          <label class="wide">توضیحات گزارش<input name="notes" value="{{ v.notes }}" maxlength="200"></label>
+          <label>نام مسئول فنی (امضاکننده)<input name="signer" value="{{ v.signer }}"></label>
+        </details>
+
+        <div class="pff-actions">
+          <button class="pf-btn" type="submit"><i class="fas fa-floppy-disk" aria-hidden="true"></i>ذخیره‌ی پیش‌نویس</button>
+          <button class="pf-btn pf-btn-main" type="submit" formaction="{% url 'main:permit_report_file' permit.pk %}" onclick="return confirm('گزارش در پرونده‌ی متقاضی گذاشته شود؟')"><i class="fas fa-folder-plus" aria-hidden="true"></i>ثبت در پرونده‌ی متقاضی</button>
+        </div>
+      </form>
+      {% endif %}
+
+      {# ---------- the electricity office ---------- #}
+      {% if permit.report_state == 'filed' and needs_power %}
+      <section class="pf-card" id="prp-power">
+        <h2><i class="fas fa-bolt" aria-hidden="true"></i>پیش‌آمدگی: مجوز اداره برق</h2>
+        <p>وضعیت: <b>{{ permit.get_overhang_state_display }}</b></p>
+        {% if mine %}<p class="pf-hint">«درخواست مجوز» و «نامه‌ی دهیاری به اداره برق» را از کنار صفحه چاپ کنید؛ دهیار نامه را امضا می‌کند، نامه را به اداره برق ببرید و پاسخ را به دهیاری تحویل دهید و اینجا بارگذاری کنید.</p>{% endif %}
+        {% if ov.letter_no %}<p>نامه‌ی پاسخ: شماره <bdi dir="ltr">{{ ov.letter_no|persian_numbers }}</bdi> · تاریخ <bdi dir="ltr">{{ ov.letter_date|persian_numbers }}</bdi> · {% for code, label in verdicts %}{% if code == ov.verdict %}{{ label }}{% endif %}{% endfor %}</p>{% endif %}
+        <ul class="pf-docs">{% for doc in power_docs %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-image" aria-hidden="true"></i>{{ doc.original_name }}</a></li>{% empty %}<li class="pf-none">هنوز پاسخی بارگذاری نشده.</li>{% endfor %}</ul>
+        {% if owner_power %}
+        <form method="post" action="{% url 'main:permit_power_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form" data-once>{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>تصویر نامه‌ی پاسخ اداره برق (pdf، jpg یا png)<input type="file" name="scan" multiple accept=".pdf,.jpg,.jpeg,.png" {% if not power_docs %}required{% endif %}></label>
+          <div class="pff-fields">
+            <label>شماره‌ی نامه<input name="letter_no" dir="ltr" required value="{{ ov.letter_no|default:'' }}"></label>
+            <label>تاریخ نامه<input name="letter_date" dir="ltr" required value="{{ ov.letter_date|default:'' }}" placeholder="۱۴۰۵/۰۶/۲۲"></label>
+            <label>نظر اداره برق<select name="verdict" required>{% for code, label in verdicts %}<option value="{{ code }}" {% if ov.verdict == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          </div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال پاسخ</button>
+        </form>
+        {% endif %}
+        {% if decide_power %}
+        <form method="post" action="{% url 'main:permit_power_verify' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> پاسخ اداره برق را با اصل نامه مقایسه و بررسی کردم</label></div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید پاسخ اداره برق</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_power_return' permit.pk %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>مشکل پاسخ چیست؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {# ---------- the materials ---------- #}
+      {% if permit.report_state == 'filed' and permit.materials_state %}
+      <section class="pf-card" id="prp-materials">
+        <h2><i class="fas fa-trowel-bricks" aria-hidden="true"></i>جمع‌آوری مصالح از معبر</h2>
+        <p>وضعیت: <b>{{ permit.get_materials_state_display }}</b>{% if v.materials_note %} · {{ v.materials_note }}{% endif %}</p>
+        {% if mine and permit.materials_state == 'required' or mine and permit.materials_state == 'returned' %}<p class="pf-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> مصالح را از معبر جمع کنید و عکس بگیرید؛ تا تایید دهیاری، پرونده به مرحله‌ی بعد نمی‌رود.</p>{% endif %}
+        <ul class="pf-docs">{% for doc in photos %}<li><a href="{% url 'main:permit_document' doc.pk %}" target="_blank" rel="noopener"><i class="fas fa-image" aria-hidden="true"></i>{{ doc.original_name }}</a></li>{% empty %}<li class="pf-none">هنوز عکسی نیست.</li>{% endfor %}</ul>
+        {% if owner_photos %}
+        <form method="post" action="{% url 'main:permit_materials_upload' permit.pk %}" enctype="multipart/form-data" class="pf-form pff-form" data-once>{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>عکس معبر پس از جمع‌آوری مصالح (jpg یا png؛ چندتایی)<input type="file" name="photo" multiple accept=".jpg,.jpeg,.png" {% if not photos %}required{% endif %}></label>
+          <label>توضیح (اختیاری)<input name="note" maxlength="300"></label>
+          <div class="pff-checks"><label><input type="checkbox" name="cleared"> مصالح را از معبر جمع کرده‌ام</label></div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i>ارسال عکس‌ها</button>
+        </form>
+        {% endif %}
+        {% if decide_photos %}
+        <form method="post" action="{% url 'main:permit_materials_verify' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> در عکس‌ها معبر از مصالح خالی است</label></div>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید جمع‌آوری</button>
+        </form>
+        <form method="post" action="{% url 'main:permit_materials_return' permit.pk %}" class="pf-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <label>مشکل عکس‌ها چیست؟<textarea name="notes" rows="2" maxlength="2000" required></textarea></label>
+          <button class="pf-btn" type="submit"><i class="fas fa-rotate-left" aria-hidden="true"></i>برگشت به متقاضی</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {# ---------- the end of the step ---------- #}
+      {% if can_finish %}
+      <section class="pf-card" id="prp-finish">
+        <h2><i class="fas fa-circle-check" aria-hidden="true"></i>تایید مرحله‌ی ۴</h2>
+        {% if blocking %}<ul class="pf-checks">{% for b in blocking %}<li class="warn">{{ b }}</li>{% endfor %}</ul>
+        {% else %}
+        <form method="post" action="{% url 'main:permit_step4_finish' permit.pk %}" class="pf-form pff-form">{% csrf_token %}
+          {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+          <div class="pff-checks"><label><input type="checkbox" name="confirm"> گزارش و مدارک این مرحله را بررسی کردم</label></div>
+          <label>یادداشت (اختیاری)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+          <button class="pf-btn pf-btn-main" type="submit"><i class="fas fa-circle-check" aria-hidden="true"></i>تایید و رفتن به مرحله‌ی ۵</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    {% if shown %}
+    <aside class="pff-view">
+      <div class="pff-tabs" role="tablist">
+        <button type="button" class="is-on" data-page="report" role="tab">گزارش بازدید</button>
+        {% if needs_power or fill %}<button type="button" data-page="request" role="tab">درخواست مجوز</button><button type="button" data-page="letter" role="tab">نامه‌ی اداره برق</button>{% endif %}
+      </div>
+      <div class="pff-canvas"><canvas id="pff-canvas" width="1400" height="2000" aria-label="پیش‌نمایش"></canvas><p class="pff-loading" id="pff-loading">در حال آماده‌سازی…</p></div>
+      <div class="pff-actions">
+        <button type="button" class="pf-btn pf-btn-main" id="prp-dl"><i class="fas fa-download" aria-hidden="true"></i>دانلود این برگه (PDF)</button>
+        <button type="button" class="pf-btn" id="prp-print"><i class="fas fa-print" aria-hidden="true"></i>چاپ این برگه</button>
+      </div>
+      <p class="pf-hint">پیش‌نمایش با تغییر اطلاعات همزمان عوض می‌شود. گزارش را مسئول فنی امضا می‌کند؛ «نامه‌ی اداره برق» را دهیار مهر و امضا می‌کند.</p>
+    </aside>
+    {% endif %}
+  </div>
+</div>
+{% if shown %}
+{{ payload|json_script:"prp-data" }}
+<script src="{% static 'js/pdf-lite.js' %}" defer></script>
+<script src="{% static 'js/permit-report-form.js' %}" defer></script>
+{% endif %}
+<script src="{% static 'js/office.js' %}" defer></script>
+{% endblock %}
