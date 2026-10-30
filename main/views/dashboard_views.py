@@ -309,6 +309,8 @@ def dashboard_download_document(request, document_id):
     user_role = role_of(request.user) or 'citizen'
     is_owner = (document.request.user == request.user)
     is_staff = (user_role in ['dehyari', 'council', 'engineer', 'inspector', 'admin'])
+    from main.request_scope import in_scope
+    is_staff = is_staff and in_scope(request.user, document.request)
     
     if not (is_owner or is_staff):
         return HttpResponseForbidden("شما دسترسی لازم برای دریافت این مدرک را ندارید.")

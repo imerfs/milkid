@@ -72,7 +72,7 @@
                                                 <input type="hidden" name="user_id" value="{{ user_profile.id }}">
                                                 <button type="submit" name="action" value="approve" 
                                                         class="btn btn-sm btn-success"
-                                                        onclick="return confirm('آیا از تایید درخواست {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                        onclick="return confirm('آیا از تایید درخواست {{ user_profile.user.get_full_name|escapejs }} اطمینان دارید؟')">
                                                     <i class="fas fa-check me-1"></i>تایید
                                                 </button>
                                             </form>
@@ -81,7 +81,7 @@
                                                 <input type="hidden" name="user_id" value="{{ user_profile.id }}">
                                                 <button type="submit" name="action" value="reject" 
                                                         class="btn btn-sm btn-outline-danger"
-                                                        onclick="return confirm('آیا از رد درخواست {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                        onclick="return confirm('آیا از رد درخواست {{ user_profile.user.get_full_name|escapejs }} اطمینان دارید؟')">
                                                     <i class="fas fa-times me-1"></i>رد
                                                 </button>
                                             </form>
@@ -165,7 +165,7 @@
                                                     <input type="hidden" name="user_id" value="{{ user_profile.id }}">
                                                     <button type="submit" name="action" value="freeze" 
                                                             class="btn btn-sm btn-outline-warning"
-                                                            onclick="return confirm('آیا از مسدود کردن {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                            onclick="return confirm('آیا از مسدود کردن {{ user_profile.user.get_full_name|escapejs }} اطمینان دارید؟')">
                                                         <i class="fas fa-ban me-1"></i>مسدود
                                                     </button>
                                                 </form>
@@ -176,7 +176,7 @@
                                                     <input type="hidden" name="user_id" value="{{ user_profile.id }}">
                                                     <button type="submit" name="action" value="unfreeze" 
                                                             class="btn btn-sm btn-outline-success"
-                                                            onclick="return confirm('آیا از فعال کردن {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                            onclick="return confirm('آیا از فعال کردن {{ user_profile.user.get_full_name|escapejs }} اطمینان دارید؟')">
                                                         <i class="fas fa-unlock me-1"></i>فعال
                                                     </button>
                                                 </form>
@@ -188,7 +188,7 @@
                                                 <input type="hidden" name="user_id" value="{{ user_profile.id }}">
                                                 <button type="submit" name="action" value="delete" 
                                                         class="btn btn-sm btn-outline-danger"
-                                                        onclick="return confirm('هشدار: این عمل برگشت‌پذیر نیست. آیا از حذف کامل {{ user_profile.user.get_full_name }} اطمینان دارید؟')">
+                                                        onclick="return confirm('هشدار: این عمل برگشت‌پذیر نیست. آیا از حذف کامل {{ user_profile.user.get_full_name|escapejs }} اطمینان دارید؟')">
                                                     <i class="fas fa-trash me-1"></i>حذف
                                                 </button>
                                             </form>

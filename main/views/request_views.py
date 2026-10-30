@@ -108,7 +108,9 @@ def request_detail(request, request_id):
         return redirect('main:permit_file', file_id=service_request.permit_file.pk)
 
     # Check if user has permission to view this request
-    if request.user != service_request.user and not request.user.profile.is_staff_member():
+    from main.request_scope import in_scope
+    if request.user != service_request.user and not (
+            request.user.profile.is_staff_member() and in_scope(request.user, service_request)):
         messages.error(request, 'شما اجازه مشاهده این درخواست را ندارید.')
         return redirect('main:dashboard')
 
@@ -119,9 +121,11 @@ def request_detail(request, request_id):
 
 
 @policy_required('request.update_status')
+@require_http_methods(['POST'])
 def update_request_status(request, request_id):
     """Update service request status"""
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    from main.request_scope import scoped_request_or_404
+    service_request = scoped_request_or_404(request.user, request_id)
     try:
         lifecycle.set_status(service_request, request.user, request.POST.get('status'),
                              request.POST.get('admin_notes', ''))

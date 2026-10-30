@@ -925,13 +925,20 @@
             return token || '';
         }
 
+        // HTML-escape server/user text before it goes into innerHTML.
+        function escapeHtml(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+            });
+        }
+
         // Toast Notification System
         function showToast(type, message) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `notification-toast ${type}`;
             const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-            toast.innerHTML = `<i class="fas ${icon} text-lg"></i><span>${message}</span>`;
+            toast.innerHTML = `<i class="fas ${icon} text-lg"></i><span>${escapeHtml(message)}</span>`;
             container.appendChild(toast);
 
             setTimeout(() => toast.classList.add('show'), 20);
@@ -1073,7 +1080,7 @@
                     if (req.form_data && Object.keys(req.form_data).length > 0) {
                         formBox.classList.remove('hidden');
                         for (const [k, v] of Object.entries(req.form_data)) {
-                            formContent.innerHTML += `<div><span class="text-indigo-600 font-bold">${k}:</span> <span class="text-slate-800">${v}</span></div>`;
+                            formContent.innerHTML += `<div><span class="text-indigo-600 font-bold">${escapeHtml(k)}:</span> <span class="text-slate-800">${escapeHtml(v)}</span></div>`;
                         }
                     } else {
                         formBox.classList.add('hidden');
@@ -1092,11 +1099,11 @@
                                     <div class="flex items-center gap-2 overflow-hidden">
                                         <i class="fas fa-file-pdf text-rose-500 text-lg"></i>
                                         <div class="truncate">
-                                            <p class="font-bold text-slate-800 truncate">${doc.name}</p>
-                                            <span class="text-[10px] text-slate-400">${doc.uploaded_at}</span>
+                                            <p class="font-bold text-slate-800 truncate">${escapeHtml(doc.name)}</p>
+                                            <span class="text-[10px] text-slate-400">${escapeHtml(doc.uploaded_at)}</span>
                                         </div>
                                     </div>
-                                    <a href="${doc.url}" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0">
+                                    <a href="${escapeHtml(doc.url)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0">
                                         <i class="fas fa-download text-[10px]"></i><span>دریافت</span>
                                     </a>
                                 </div>
@@ -1116,11 +1123,11 @@
                                     <div class="absolute -right-[23px] top-1 w-3.5 h-3.5 rounded-full bg-indigo-600 border-2 border-white"></div>
                                     <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl">
                                         <div class="flex items-center justify-between">
-                                            <span class="font-bold text-slate-800">${item.action}</span>
-                                            <span class="text-[10px] text-slate-400 font-mono">${item.date_shamsi || ''}</span>
+                                            <span class="font-bold text-slate-800">${escapeHtml(item.action)}</span>
+                                            <span class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.date_shamsi || '')}</span>
                                         </div>
-                                        <p class="text-[11px] text-slate-500 mt-0.5">توسط: ${item.from_user || 'سیستم'}</p>
-                                        ${item.notes ? `<p class="mt-2 text-xs text-slate-700 p-2 bg-white rounded-lg border border-slate-200">دستور: ${item.notes}</p>` : ''}
+                                        <p class="text-[11px] text-slate-500 mt-0.5">توسط: ${escapeHtml(item.from_user || 'سیستم')}</p>
+                                        ${item.notes ? `<p class="mt-2 text-xs text-slate-700 p-2 bg-white rounded-lg border border-slate-200">دستور: ${escapeHtml(item.notes)}</p>` : ''}
                                     </div>
                                 </div>
                             `;
@@ -1137,11 +1144,11 @@
                             reportsList.innerHTML += `
                                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
                                     <div class="flex justify-between items-center">
-                                        <span class="font-bold text-indigo-700">${r.title} (${r.report_type})</span>
-                                        <span class="text-[10px] text-slate-400 font-mono">${r.created_at}</span>
+                                        <span class="font-bold text-indigo-700">${escapeHtml(r.title)} (${escapeHtml(r.report_type)})</span>
+                                        <span class="text-[10px] text-slate-400 font-mono">${escapeHtml(r.created_at)}</span>
                                     </div>
-                                    <p class="text-slate-700 text-xs">${r.content}</p>
-                                    ${r.recommendations ? `<p class="text-amber-800 bg-amber-50 p-2 rounded-lg text-[11px]">توصیه‌ها: ${r.recommendations}</p>` : ''}
+                                    <p class="text-slate-700 text-xs">${escapeHtml(r.content)}</p>
+                                    ${r.recommendations ? `<p class="text-amber-800 bg-amber-50 p-2 rounded-lg text-[11px]">توصیه‌ها: ${escapeHtml(r.recommendations)}</p>` : ''}
                                 </div>
                             `;
                         });
@@ -1149,10 +1156,10 @@
                             reportsList.innerHTML += `
                                 <div class="p-4 bg-blue-50/60 border border-blue-200 rounded-2xl space-y-2">
                                     <div class="flex justify-between items-center">
-                                        <span class="font-bold text-blue-900">بازرسی میدانی توسط ${insp.inspector_name}</span>
-                                        <span class="text-[10px] font-bold ${insp.is_approved ? 'text-emerald-700' : 'text-amber-700'}">${insp.status}</span>
+                                        <span class="font-bold text-blue-900">بازرسی میدانی توسط ${escapeHtml(insp.inspector_name)}</span>
+                                        <span class="text-[10px] font-bold ${insp.is_approved ? 'text-emerald-700' : 'text-amber-700'}">${escapeHtml(insp.status)}</span>
                                     </div>
-                                    <p class="text-slate-700 text-xs">${insp.report || 'بدون گزارش مکتوب'}</p>
+                                    <p class="text-slate-700 text-xs">${escapeHtml(insp.report || 'بدون گزارش مکتوب')}</p>
                                 </div>
                             `;
                         });
@@ -1161,7 +1168,7 @@
                     // Quick Actions
                     const qa = document.getElementById('modal-quick-actions');
                     qa.innerHTML = `
-                        <button type="button" onclick="closeDetailsModal(); openForwardModal(${req.id}, '${req.title.replace(/'/g, "\\'")}', '${req.workflow_stage}')" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold transition flex items-center gap-1">
+                        <button type="button" onclick="closeDetailsModal(); openForwardModal(${req.id}, ${escapeHtml(JSON.stringify(req.title))}, ${escapeHtml(JSON.stringify(req.workflow_stage))})" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold transition flex items-center gap-1">
                             <i class="fas fa-share text-xs"></i><span>ارجاع پرونده</span>
                         </button>
                         <button type="button" onclick="closeDetailsModal(); approveRequest(${req.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition flex items-center gap-1">
@@ -1213,7 +1220,7 @@
 
             if (activePeers.length > 0) {
                 activePeers.forEach(p => {
-                    select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                    select.innerHTML += `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`;
                 });
                 container.classList.remove('hidden');
             } else {

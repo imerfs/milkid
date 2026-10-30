@@ -68,7 +68,7 @@
                     <div style="max-height: 400px; overflow-y: auto;">
                         {% if available_users %}
                             {% for user in available_users %}
-                            <div class="user-card p-3 border-bottom" onclick="selectUser({{ user.id }}, '{{ user.get_full_name }}', '{{ user.profile.get_role_display }}')">
+                            <div class="user-card p-3 border-bottom" onclick="selectUser({{ user.id }}, '{{ user.get_full_name|escapejs }}', '{{ user.profile.get_role_display|escapejs }}')">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-shrink-0 me-3">
                                         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
@@ -279,6 +279,12 @@ let selectedUserName = '';
 let selectedUserRole = '';
 
 // انتخاب کاربر
+function escapeHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+}
+
 function selectUser(userId, userName, userRole) {
     selectedUserId = userId;
     selectedUserName = userName;
@@ -296,12 +302,12 @@ function selectUser(userId, userName, userRole) {
             <div class="flex-shrink-0 me-3">
                 <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" 
                      style="width: 32px; height: 32px;">
-                    ${userName.charAt(0)}
+                    ${escapeHtml(userName.charAt(0))}
                 </div>
             </div>
             <div>
-                <h6 class="mb-0">${userName}</h6>
-                <small class="text-muted">${userRole}</small>
+                <h6 class="mb-0">${escapeHtml(userName)}</h6>
+                <small class="text-muted">${escapeHtml(userRole)}</small>
             </div>
         </div>
     `;

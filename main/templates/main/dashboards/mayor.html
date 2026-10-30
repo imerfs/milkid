@@ -2236,6 +2236,12 @@
             });
             
             // Helper function to show messages
+            function escapeHtml(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+                });
+            }
+
             function showMessage(message, type = 'success') {
                 const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
                 const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
@@ -2244,7 +2250,7 @@
                 messageDiv.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center animate-slide-up`;
                 messageDiv.innerHTML = `
                     <i class="fas ${icon} ml-2"></i>
-                    <span>${message}</span>
+                    <span>${escapeHtml(message)}</span>
                 `;
                 document.body.appendChild(messageDiv);
                 

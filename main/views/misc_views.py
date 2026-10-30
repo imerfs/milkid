@@ -97,6 +97,7 @@ def payments_debts(request):
 
 
 @login_required
+@require_POST
 def process_payment(request, property_id):
     """Process payment for property"""
     property_obj = get_object_or_404(Property, id=property_id)
@@ -677,6 +678,10 @@ def api_request_city_village(request):
         requester_name = (data.get('requester_name') or '').strip()
         requester_phone = (data.get('requester_phone') or '').strip()
         description = (data.get('description') or '').strip()
+        name, requester_name, requester_phone = name[:100], requester_name[:100], requester_phone[:20]
+        description = description[:1000]
+        if settlement_type not in ('city', 'village'):
+            settlement_type = 'village'
         
         if not name:
             return JsonResponse({'success': False, 'message': 'نام شهر یا روستا الزامی است.'}, status=400)
@@ -729,8 +734,8 @@ def api_request_city_village(request):
         })
     except District.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'بخش مورد نظر یافت نشد.'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': f'خطا: {str(e)}'}, status=500)
+    except Exception:
+        return JsonResponse({'success': False, 'message': 'خطا در ثبت درخواست.'}, status=500)
 
 
 def get_counties(request):

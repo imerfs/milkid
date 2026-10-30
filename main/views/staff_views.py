@@ -19,6 +19,7 @@ import os
 
 from .common import role_required
 from main.access import policy_required
+from main.request_scope import scoped_request_or_404
 from main import lifecycle
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -348,7 +349,7 @@ def technical_report_create(request):
         document = request.FILES.get('document')
         
         if request_id and report_type and title and content:
-            service_request = get_object_or_404(ServiceRequest, id=request_id)
+            service_request = scoped_request_or_404(request.user, request_id)
             
             TechnicalReport.objects.create(
                 request=service_request,
@@ -483,7 +484,7 @@ def technical_report_export(request):
 @policy_required('request.update_status')
 def assign_request_to_engineer(request, request_id):
     """Assign a request to an engineer"""
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = scoped_request_or_404(request.user, request_id)
     
     if request.method == 'POST':
         engineer_id = request.POST.get('engineer_id')
@@ -508,7 +509,7 @@ def assign_request_to_engineer(request, request_id):
 @policy_required('staff.any')
 def create_inspection(request, request_id):
     """Create a new inspection for a request"""
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = scoped_request_or_404(request.user, request_id)
     
     if request.method == 'POST':
         inspector_id = request.POST.get('inspector_id')

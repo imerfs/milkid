@@ -1,5 +1,12 @@
 // Modern Interactions for MelkID
 
+// HTML-escape text before it goes into innerHTML.
+function escapeHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+}
+
 /* ========== THEME SYSTEM ========== */
 class ThemeManager {
     constructor() {
@@ -393,7 +400,7 @@ class SmartForms {
 
             if (matches.length > 0 && value.length > 0) {
                 dropdown.innerHTML = matches.map(match => 
-                    `<div class="autocomplete-item" style="padding: 0.5rem; cursor: pointer; border-bottom: 1px solid var(--border-light);">${match}</div>`
+                    `<div class="autocomplete-item" style="padding: 0.5rem; cursor: pointer; border-bottom: 1px solid var(--border-light);">${escapeHtml(match)}</div>`
                 ).join('');
                 dropdown.style.display = 'block';
             } else {
@@ -587,7 +594,7 @@ class DragDropManager {
         preview.innerHTML = `
             <span style="font-size: 1.5rem;">${icon}</span>
             <div>
-                <div style="font-weight: 600; color: var(--text-primary);">${file.name}</div>
+                <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(file.name)}</div>
                 <small style="color: var(--text-muted);">${this.formatFileSize(file.size)}</small>
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="this.parentElement.remove()">
@@ -889,7 +896,7 @@ class ModernUI {
             <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <div style="font-size: 1.5rem;">${fileIcon}</div>
                 <div style="flex: 1;">
-                    <div style="font-weight: 500; color: #1e293b;">${file.name}</div>
+                    <div style="font-weight: 500; color: #1e293b;">${escapeHtml(file.name)}</div>
                     <div style="font-size: 0.75rem; color: #64748b;">${fileSize} MB</div>
                 </div>
                 <button type="button" onclick="this.closest('.file-input-wrapper').querySelector('input').value=''; this.closest('.file-preview').style.display='none';" 
@@ -1099,7 +1106,7 @@ class ModernUI {
         
         notification.innerHTML = `
             <span style="font-size: 1.2rem;">${icons[type] || icons.info}</span>
-            <span style="flex: 1;">${message}</span>
+            <span style="flex: 1;">${escapeHtml(message)}</span>
             <button onclick="this.parentElement.remove()" style="
                 background: none;
                 border: none;

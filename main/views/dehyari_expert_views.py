@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseForbidden
+import logging
+from django.http import Http404, JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.paginator import Paginator
@@ -20,7 +21,10 @@ from main.models import (
 from .common import role_required
 from main import lifecycle
 from main.access import policy_required
+from main.request_scope import scoped_request_or_404
 from main.gis.access import maps_for
+
+logger = logging.getLogger(__name__)
 
 
 def _json_body(request):
@@ -148,7 +152,7 @@ def dehyari_expert_dashboard(request):
 def api_expert_request_details(request, request_id):
     """دریافت جزییات کامل پرونده، فرم‌ها، مدارک و سوابق جهت نمایش در مدال کارشناس"""
     try:
-        service_request = get_object_or_404(ServiceRequest, id=request_id)
+        service_request = scoped_request_or_404(request.user, request_id)
         u = service_request.user
         prof = getattr(u, 'profile', None)
 
@@ -232,8 +236,11 @@ def api_expert_request_details(request, request_id):
             'technical_reports': reports,
             'council_votes': votes,
         })
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    except Http404:
+        raise
+    except Exception:
+        logger.exception('expert request api failed')
+        return JsonResponse({'success': False, 'message': 'خطای داخلی سرور.'}, status=500)
 
 
 @login_required
@@ -244,7 +251,7 @@ def api_expert_forward_request(request, request_id):
     ارجاع درخواست توسط کارشناس دهیاری به پنل مقصد:
     شورا (council)، ناظر فنی (inspector)، مسئول مالی (accountant)، دهیار (dehyari)
     """
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = scoped_request_or_404(request.user, request_id)
     body = _json_body(request)
     target_role = body.get('target_role') or body.get('referral_target')
     notes = (body.get('notes') or '').strip()
@@ -271,7 +278,7 @@ def api_expert_forward_request(request, request_id):
 @policy_required('request.update_status', api=True)
 def api_expert_approve_direct(request, request_id):
     """تایید مستقیم پرونده یا تایید مرحله کارشناسی"""
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = scoped_request_or_404(request.user, request_id)
     body = _json_body(request)
     completed = bool(body.get('mark_as_completed', False))
     try:
@@ -289,7 +296,7 @@ def api_expert_approve_direct(request, request_id):
 @policy_required('request.update_status', api=True)
 def api_expert_request_documents(request, request_id):
     """اعلام نیاز به تکمیل مدارک به متقاضی"""
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = scoped_request_or_404(request.user, request_id)
     notes = (_json_body(request).get('notes') or '').strip()
     if not notes:
         return JsonResponse({'success': False, 'message': 'لطفاً مدارک مورد نیاز یا توضیحات نقص پرونده را درج نمایید.'}, status=400)
@@ -305,7 +312,7 @@ def api_expert_request_documents(request, request_id):
 @policy_required('request.update_status', api=True)
 def api_expert_reject_request(request, request_id):
     """رد درخواست توسط کارشناس با ذکر دلیل"""
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
+    service_request = scoped_request_or_404(request.user, request_id)
     reason = (_json_body(request).get('reason') or '').strip()
     if not reason:
         return JsonResponse({'success': False, 'message': 'لطفاً دلیل رد درخواست را وارد نمایید.'}, status=400)
@@ -322,7 +329,7 @@ def api_expert_reject_request(request, request_id):
 def api_expert_add_technical_report(request, request_id):
     """ثبت گزارش فنی کارشناسی برای پرونده"""
     try:
-        service_request = get_object_or_404(ServiceRequest, id=request_id)
+        service_request = scoped_request_or_404(request.user, request_id)
         try:
             body = json.loads(request.body)
         except Exception:
@@ -360,5 +367,8 @@ def api_expert_add_technical_report(request, request_id):
             'message': 'گزارش فنی کارشناسی با موفقیت ثبت گردید.',
             'report_id': rep.id
         })
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    except Http404:
+        raise
+    except Exception:
+        logger.exception('expert request api failed')
+        return JsonResponse({'success': False, 'message': 'خطای داخلی سرور.'}, status=500)
