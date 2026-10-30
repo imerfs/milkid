@@ -125,6 +125,14 @@ def tail_log(name, lines=300):
     return '\n'.join(data.splitlines()[-lines:])
 
 
+def tail_all(lines=120):
+    """The end of every log file under one heading each, newest file first."""
+    parts = []
+    for name in sorted(list_logs(), key=lambda n: (logs_dir() / n).stat().st_mtime, reverse=True):
+        parts.append(f'===== {name} =====\n{tail_log(name, lines)}')
+    return '\n\n'.join(parts)
+
+
 def resolve_media(root_key, rel=''):
     """Resolve ``rel`` inside the chosen media root, or None if it escapes it or the root is unknown."""
     root = media_roots().get(root_key)

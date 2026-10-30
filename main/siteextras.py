@@ -51,7 +51,26 @@ class PageViewMiddleware:
         if (request.method == 'GET' and response.status_code == 200 and not request.path.startswith(SKIP_PREFIXES)
                 and response.get('Content-Type', '').startswith('text/html')):
             self.count(request.path[:200])
+            self.visit(request)
         return response
+
+    @staticmethod
+    def visit(request):
+        """One row per page view with the address and device; old rows are pruned now and then. Never breaks the page."""
+        import random                                           # pylint: disable=import-outside-toplevel
+        from datetime import timedelta                         # pylint: disable=import-outside-toplevel
+        from main import devices                               # pylint: disable=import-outside-toplevel
+        from main.models import SiteVisit                      # pylint: disable=import-outside-toplevel
+        try:
+            info = devices.parse(request.META.get('HTTP_USER_AGENT', ''))
+            user = getattr(request, 'user', None)
+            SiteVisit.objects.create(ip=request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR') or None,
+                                     user=user if user is not None and user.is_authenticated else None, path=request.path[:200],
+                                     kind=info['kind'], device=info['label'][:120], model_name=info['model'][:80])
+            if random.random() < 0.002:
+                SiteVisit.objects.filter(at__lt=timezone.now() - timedelta(days=90)).delete()
+        except Exception:                                      # pylint: disable=broad-except
+            logger.warning('visit not recorded', exc_info=True)
 
     @staticmethod
     def count(path):

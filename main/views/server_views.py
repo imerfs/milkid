@@ -24,14 +24,14 @@ from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.views.decorators.http import require_POST
 
-from main import hostinfo, ipblock, serverops, siteextras, twofactor
+from main import hostinfo, ipblock, serverops, siteextras, twofactor, visitstats
 from main.access import policy_required
 from main.views.admin_views import admin_dashboard
 from main.models import BlockedIP, DailyPageView, SiteRedirect, TwoFactorDevice
 from main.ratelimit import client_ip
 
 audit = logging.getLogger('django.security.serverpanel')
-TABS = ('resources', 'stats', 'database', 'backups', 'logs', 'ips', 'redirects', 'services', 'cache', 'sms', 'security')
+TABS = ('resources', 'stats', 'visitors', 'logins', 'heatmap', 'database', 'backups', 'logs', 'ips', 'redirects', 'services', 'cache', 'sms', 'security')
 
 
 def _back(tab, **query):
@@ -64,6 +64,12 @@ def _panel_context(request, tab):
         ctx.update(days=views.values('day').annotate(total=Sum('views')).order_by('-day'),
                    top_pages=views.values('path').annotate(total=Sum('views')).order_by('-total')[:20],
                    month_total=views.aggregate(total=Sum('views'))['total'] or 0)
+    elif tab == 'visitors':
+        ctx.update(v=visitstats.visitors())
+    elif tab == 'logins':
+        ctx.update(l=visitstats.logins())
+    elif tab == 'heatmap':
+        ctx.update(heat=visitstats.heatmap())
     elif tab == 'services':
         ctx.update(email=hostinfo.email_settings(), runtime=hostinfo.runtime(), domains=hostinfo.site_domains())
         if request.GET.get('check') == '1':      # network lookups only on demand: they can take seconds
@@ -80,8 +86,9 @@ def _panel_context(request, tab):
         ctx['backups'] = serverops.list_backups()
     elif tab == 'logs':
         logs = serverops.list_logs()
-        chosen = request.GET.get('file') if request.GET.get('file') in logs else (logs[0] if logs else None)
-        ctx.update(logs=logs, chosen=chosen, content=serverops.tail_log(chosen) if chosen else '')
+        everything = request.GET.get('file') == '__all__'
+        chosen = '__all__' if everything else (request.GET.get('file') if request.GET.get('file') in logs else (logs[0] if logs else None))
+        ctx.update(logs=logs, chosen=chosen, content=serverops.tail_all() if everything else (serverops.tail_log(chosen) if chosen else ''))
     elif tab == 'ips':
         ctx.update(blocked=BlockedIP.objects.select_related('created_by'), my_ip=client_ip(request))
     elif tab == 'security':
