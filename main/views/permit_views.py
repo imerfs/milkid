@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from main import lifecycle
 from main.access import policy_required, role_of
 from main.models import PermitDocument, PermitFile, PermitPerson
-from main.office import fee_tables, permit_commission, permit_commit, permit_dues, permit_reply, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
+from main.office import permit_bonyad, fee_tables, permit_commission, permit_commit, permit_dues, permit_reply, permit_defence, permit_notice, permit_report, permit_site, permit_sketch, permit_form, permit_step2, permit_step3, permit_step4, permit_step5, permit_extension, permit_step6, permit_step7, permit_endwork, permit_services, permit_supervision, permits
 from main.access import can
 from main.office.directory import village_of
 from main.office.errors import OfficeError
@@ -1601,4 +1601,91 @@ def permit_cheques_return(request, file_id):
 @require_POST
 def permit_step7_finish(request, file_id):
     return _dues_action(request, file_id, lambda p: permit_dues.finish(request.user, p, request.POST), 'مرحله‌ی ۷ تایید شد و پرونده به مرحله‌ی ۸ رفت.')
+
+
+# ---------- construction without a permit, step 8: the Bonyad's visit list and the Bonyad's letter ----------
+
+@login_required
+def permit_bonyad_page(request, file_id):
+    permit = permit_bonyad.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    embed = bool(request.GET.get('embed'))
+    if permit.stage_no < 8 or permit.state != 'done':
+        messages.error(request, 'این بخش پس از تایید مرحله‌ی ۷ در دسترس است.')
+        return redirect(_file_url(permit, embed))
+    mine = permit.request.user_id == request.user.id
+    staff = permits.may_open(request.user, permit)
+    at_step = permit_bonyad.at_step(permit)
+    state = permit.bonyad_list_state
+    shown = state in ('released', 'uploaded', 'returned', 'verified') or (staff and at_step)
+    return render(request, 'main/permits/bonyad.html', {
+        'permit': permit, 'embed': embed, 'mine': mine, 'staff': staff, 'owner_name': permit.people.first().full_name, 'state': state,
+        'data': permit.bonyad_list or {}, 'pack': permit_bonyad.package(permit) if shown else None, 'shown': shown,
+        'letters': permit_bonyad.documents(permit, permit_bonyad.LETTER_KIND),
+        'can_request': at_step and mine and state == '',
+        'can_release': at_step and permit_bonyad.may_visit(request.user, permit) and state == 'requested',
+        'can_upload': at_step and mine and state in ('released', 'returned'),
+        'can_decide': at_step and staff and state == 'uploaded', 'can_finish': at_step and staff,
+        'blocking': permit_bonyad.blocking(permit) if at_step else [], 'today': permit_step2.today()})
+
+
+@login_required
+def permit_bonyad_letter(request, file_id):
+    """The dehyari's letter to the Bonyad (printable): shown to the owner once the package is released."""
+    permit = permit_bonyad.find(request.user, file_id)
+    if permit is None:
+        raise Http404('نامه پیدا نشد.')
+    mine = permit.request.user_id == request.user.id
+    if permit.stage_no < 8 or (mine and permit.bonyad_list_state in ('', 'requested') and permit.stage_no == 8):
+        raise Http404('نامه هنوز آماده نیست.')
+    return render(request, 'main/permits/bonyad_letter.html', {'permit': permit, 'L': permit_bonyad.letter_payload(permit), 'pack': permit_bonyad.package(permit)})
+
+
+def _bonyad_action(request, file_id, action, ok):
+    permit = permit_bonyad.find(request.user, file_id)
+    if permit is None:
+        raise Http404('پرونده پیدا نشد.')
+    try:
+        action(permit)
+        messages.success(request, ok)
+    except (OfficeError, lifecycle.TransitionError) as exc:
+        messages.error(request, str(exc))
+    return redirect(reverse('main:permit_bonyad', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+
+
+@login_required
+@require_POST
+def permit_bonyad_request(request, file_id):
+    return _bonyad_action(request, file_id, lambda p: permit_bonyad.request_visit(request.user, p, request.POST), 'درخواست شما برای لیست بازدید بنیاد ثبت شد.')
+
+
+@login_required
+@require_POST
+def permit_bonyad_release(request, file_id):
+    return _bonyad_action(request, file_id, lambda p: permit_bonyad.release(request.user, p, request.POST), 'بازدید ثبت شد؛ مدارک به متقاضی نشان داده شد و پیامک رفت.')
+
+
+@login_required
+@require_POST
+def permit_bonyad_upload(request, file_id):
+    return _bonyad_action(request, file_id, lambda p: permit_bonyad.upload_letter(request.user, p, request.POST, request.FILES), 'نامه‌ی بنیاد فرستاده شد؛ دهیاری بررسی می‌کند.')
+
+
+@login_required
+@require_POST
+def permit_bonyad_verify(request, file_id):
+    return _bonyad_action(request, file_id, lambda p: permit_bonyad.verify(request.user, p, request.POST), 'نامه‌ی بنیاد تایید شد.')
+
+
+@login_required
+@require_POST
+def permit_bonyad_return(request, file_id):
+    return _bonyad_action(request, file_id, lambda p: permit_bonyad.send_back(request.user, p, request.POST.get('notes', '')), 'نامه برای اصلاح به متقاضی برگشت داده شد.')
+
+
+@login_required
+@require_POST
+def permit_step8_finish(request, file_id):
+    return _bonyad_action(request, file_id, lambda p: permit_bonyad.finish(request.user, p, request.POST), 'مرحله‌ی ۸ تایید شد و پرونده به مرحله‌ی ۹ رفت.')
 

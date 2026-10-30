@@ -231,7 +231,7 @@ undertaking is unchanged (its monthly occupation rate stays a dotted blank for t
 `permits/<id>/report/` (`permit_report.py`, `permit_site.py`, `permits/report.html`, `static/js/permit-report-form.js`), open once the technical expert's
 visit is recorded (file at stage 4). The stages of this track are now: 1 initial file (with the defence form), 2 request form and undertaking, 3 notice
 and visit request, 4 visit report / overhang / materials, 5 introduction to a judiciary expert and the undertakings, 6 the expert's reply and the strength of the building,
-7 fees and the price of the services (payment, instalments, cheques), 8 ruling, fine and end of work (8 is not built yet).
+7 fees and the price of the services (payment, instalments, cheques), 8 the Bonyad's visit list and letter, 9 ruling, fine and end of work (9 is not built yet).
 - **The visit report** («گزارش بازدید», from the dehyari's sheet `گزارش نهایی 404.xlsx`) is filled by the **technical expert or the dehyari**
   (policy `permit.report`). Prefilled from the file: the owner, the address, the four limits measured on the village map, the areas, the built area the owner
   gave (spread over the floors he declared). The staff add the measurements, the floors (residential, commercial, parking, pilotis, storage, penthouse,
@@ -288,4 +288,15 @@ the file shows in the officer's permit list (`fee_rows_for`, `needs_accountant_d
   (`registered` → `confirmed`) or sends it back. No new slips after the registration.
 - **Ending the step:** when the fees are settled (paid in full, or the plan confirmed) any of the clerk / technical expert / dehyari / officer confirms; the file goes to stage 8.
   The cheques are kept in the file (`dues.plan.cheques`), not yet in the accounting module's instalment plans.
+
+## Construction without a permit: step 8 (the Bonyad's visit list and letter)
+`permits/<id>/bonyad/` (`permit_bonyad.py`, `permits/bonyad.html`, printable `bonyad/letter/`), open at stage 8 (`bonyad_list_state`).
+- The owner ticks and asks to be put on the Bonyad-e Maskan's visit list (`requested`; the staff are told).
+- The **technical expert or the dehyari** (policy `permit.report`) records the Bonyad's visit (date, tick): the package is shown to the owner (`released`), an SMS
+  goes through `main.sms.send_sms` (a failing or unconfigured gateway never stops the flow; the result is kept in `bonyad_list.visit` and a notification is always made).
+- The package: the shamim sketch files to download, the expert's reply (letter and table 2), the technical expert's report (page + print), the fee sheet and the
+  confirmed payments / cheques, and the dehyari's letter to the Bonyad typeset from the file with the attachment list (the dehyari stamps and signs it). Hidden from the
+  owner until the visit is confirmed.
+- The owner uploads the Bonyad's letter (scan, number, past date; `bonyad_letter`); **any of the three staff** confirms it with a tick or sends it back with a reason
+  and then ends the step; the file goes to stage 9.
 

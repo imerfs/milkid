@@ -79,7 +79,12 @@
           <p><b>وضعیت:</b> {{ permit.status_text }}</p>
           {% endif %}
           {% if permit.stage_no >= 7 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_dues' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-coins" aria-hidden="true"></i>عوارض، پرداخت و تقسیط</a>{% endif %}
-          {% if permit.stage_no >= 8 %}<p class="pf-hint">مرحله‌ی ۸ (رأی کمیسیون، جریمه و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>{% endif %}
+          {% if permit.stage_no == 8 %}
+          <p>مرحله‌ی ۸: درخواست قرار گرفتن در لیست بازدید بنیاد مسکن را بدهید. پس از بازدید و تایید کارشناس فنی، مدارک (کروکی شمیم، جوابیه‌ی کارشناس دادگستری، گزارش کارشناس فنی، پرداخت‌ها و نامه‌ی دهیاری به بنیاد) به شما نشان داده می‌شود و پیامک می‌رسد؛ سپس نامه‌ی بنیاد را بارگذاری کنید.</p>
+          <p><b>وضعیت:</b> {{ permit.status_text }}</p>
+          {% endif %}
+          {% if permit.stage_no >= 8 %}<a class="pf-btn pf-btn-main" href="{% url 'main:permit_bonyad' permit.pk %}{% if embed %}?embed=1{% endif %}"><i class="fas fa-building-columns" aria-hidden="true"></i>بازدید و نامه‌ی بنیاد</a>{% endif %}
+          {% if permit.stage_no >= 9 %}<p class="pf-hint">مرحله‌ی ۹ (رأی کمیسیون، جریمه و پایان کار) هنوز در سامانه راه‌اندازی نشده؛ پرونده‌ی شما با همین اطلاعات نگه داشته می‌شود.</p>{% endif %}
           {% else %}
           {% if permit.stage_no == 2 %}
           <p>مرحله‌ی ۲: فرم ۱ (استعلام از بنیاد مسکن) را دهیاری و فرم ۲ (تقاضای پروانه) را متقاضی پر می‌کند؛ هر دو را دانلود و چاپ کنید، فرم ۱ مهر و امضای دهیار می‌گیرد و با نقشه‌ی ملک به بنیاد مسکن می‌روید.</p>
