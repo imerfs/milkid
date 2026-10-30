@@ -30,7 +30,7 @@ def village_of(user):
         municipality = Municipality.objects.filter(admin_user=user).first()
         if municipality:
             return municipality.city_village
-    return (profile.city_village or '') if profile is not None else ''
+    return (profile.city_village or profile.city_village_name or '') if profile is not None else ''
 
 
 def org_of(user):
@@ -111,6 +111,11 @@ def people_of(user, org):
 
 
 def requests_for(village):
-    """Q for service requests addressed to ``village``: filed with it directly, or by its own citizens without another target."""
+    """THE rule for "which requests belong to ``village``" (every list, panel, file and download check goes through it).
+
+    A request addressed to a municipality belongs to that municipality's village and to nobody else's. A request without a target belongs to the village
+    it was filed under, or else to the home village of its applicant (profile village, by id or by name).
+    """
     return (Q(target_municipality__city_village=village) |
-            Q(target_municipality__isnull=True, user__profile__city_village=village))
+            Q(target_municipality__isnull=True) & (Q(city_village__name=village) | Q(user__profile__city_village=village) |
+                                                   Q(user__profile__city_village_name=village)))
