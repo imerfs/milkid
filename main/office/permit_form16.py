@@ -1,11 +1,11 @@
-"""Construction without a permit, step 9: form 16 and the file summary for the Article 99 commission.
+"""Construction without a permit, steps 10 and 11: form 16 with the governor's signature, then the file summary sent to the Article 99 commission.
 
 The dehyari's staff (any of the clerk / technical expert / dehyari) fill **form 16** («گزارش تخلف به کمیسیون ماده ۹۹», the report of the violation) from the file:
 the owner and the village, the land use, whether the building was built or only started without a permit, the violations ticked on the form, what the commission
 is asked for, the notice number and date and how it was served. They also fill the **file summary** («خلاصه‌ی پرونده», table 5, the covering letter to the
 members of the commission): the owner, the built area, the judiciary expert's confirmation of the strength, the structure and the year. Both are typeset in the
-browser, printed, signed by the dehyari (and the governor's office for form 16) and added to the file (with the signed scan when there is one). Any of the three
-staff then confirms the step and the file goes on to step 10.
+browser and printed. Step 10: the signed form 16 (dehyari and governor; the scan is required) is added to the file and any of the three staff confirms the
+step. Step 11: the summary, signed, is sent to the commission (letter number, date, optional scan) and the step confirmed; the file goes on to step 12.
 """
 from django.db import transaction
 from django.utils import timezone
@@ -18,6 +18,7 @@ from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
 SCAN_KIND = 'form16_scan'
+SUMMARY_KIND = 'summary_scan'
 USES = (('residential', 'مسکونی'), ('commercial', 'تجاری'), ('mixed', 'مسکونی - تجاری'), ('industrial', 'صنعتی'), ('administrative', 'اداری'),
         ('agricultural', 'کشاورزی'), ('other', 'سایر'))
 LAND_USE_MAP = {'residential': 'residential', 'commercial': 'commercial', 'administrative': 'administrative', 'services': 'other'}
@@ -38,16 +39,17 @@ def _text(value, limit=150):
     return ' '.join(str(value or '').split())[:limit]
 
 
-def at_step(permit):
-    return permit.unlicensed and permit.stage_no == 9 and permit.state == 'done'
+def at_step(permit, stage=None):
+    """Stage 10 is form 16 with the governor's signature, stage 11 the summary sent to the commission."""
+    return permit.unlicensed and permit.state == 'done' and permit.stage_no in ((stage,) if stage else (10, 11))
 
 
 def find(user, file_id):
     return permit_commit.find(user, file_id)
 
 
-def documents(permit):
-    return list(permit.documents.filter(kind=SCAN_KIND))
+def documents(permit, kind=SCAN_KIND):
+    return list(permit.documents.filter(kind=kind))
 
 
 def defaults(permit, actor=None):
@@ -130,49 +132,90 @@ def save(actor, permit, post):
     return permit
 
 
+def _replace_scans(permit, actor, found, kind):
+    for old in documents(permit, kind):
+        old.document.delete(save=False)
+        old.delete()
+    for upload in found[:4]:
+        PermitDocument.objects.create(file=permit, kind=kind, document=upload, original_name=upload.name[:200], size=upload.size, uploaded_by=actor)
+
+
 @transaction.atomic
 def file_form(actor, permit, post, files=None):
-    """Put form 16 and the summary in the file (with the signed scan when there is one); the staff of the village are told."""
+    """Step 10: put form 16, signed by the governor, in the file; the scan of the signed form is required."""
+    if not at_step(permit, 10):
+        raise Conflict('پرونده در مرحله‌ی فرم ۱۶ نیست.')
     save(actor, permit, post)
     found, error = permit_form._uploads(files or {}, 'scan', permit_form.ID_EXTENSIONS)         # pylint: disable=protected-access
     if error:
         raise Invalid(error)
+    if not found and not documents(permit):
+        raise Invalid('تصویر فرم ۱۶ امضاشده‌ی بخشدار را بارگذاری کنید.')
     if found:
-        for old in documents(permit):
-            old.document.delete(save=False)
-            old.delete()
-        for upload in found[:4]:
-            PermitDocument.objects.create(file=permit, kind=SCAN_KIND, document=upload, original_name=upload.name[:200], size=upload.size, uploaded_by=actor)
+        _replace_scans(permit, actor, found, SCAN_KIND)
     form = dict(permit.form16 or {})
     form['filed'] = {'by': actor.get_full_name() or actor.username, 'at': timezone.localtime().strftime('%Y/%m/%d %H:%M')}
     permit.form16, permit.form16_state = form, 'filed'
     permit.save(update_fields=['form16', 'form16_state', 'updated_at'])
     sr = permit.request
-    sr.add_workflow_step(action='افزودن فرم ۱۶ و خلاصه‌ی پرونده به پرونده (مرحله ۹)', from_user=actor, to_role='clerk')
+    sr.add_workflow_step(action='افزودن فرم ۱۶ امضاشده‌ی بخشدار به پرونده (مرحله ۱۰)', from_user=actor, to_role='clerk')
+    sr.save(update_fields=['workflow_history', 'updated_at'])
+    return permit
+
+
+@transaction.atomic
+def send_summary(actor, permit, post, files=None):
+    """Step 11: the dehyari's office sends the file summary to the Article 99 commission (letter number, date and an optional signed scan)."""
+    if not at_step(permit, 11):
+        raise Conflict('پرونده در مرحله‌ی ارسال خلاصه‌ی پرونده نیست.')
+    save(actor, permit, post)
+    found, error = permit_form._uploads(files or {}, 'scan', permit_form.ID_EXTENSIONS)         # pylint: disable=protected-access
+    if error:
+        raise Invalid(error)
+    if found:
+        _replace_scans(permit, actor, found, SUMMARY_KIND)
+    summary = data(permit, actor)['summary']
+    if not summary['number']:
+        raise Invalid('شماره‌ی نامه‌ی خلاصه‌ی پرونده را وارد کنید.')
+    form = dict(permit.form16 or {})
+    form['sent'] = {'by': actor.get_full_name() or actor.username, 'at': timezone.localtime().strftime('%Y/%m/%d %H:%M'),
+                    'number': summary['number'], 'date': summary['date'], 'to': _text(post.get('sent_to'), 120) or 'کمیسیون ماده ۹۹'}
+    permit.form16, permit.summary_state = form, 'sent'
+    permit.save(update_fields=['form16', 'summary_state', 'updated_at'])
+    sr = permit.request
+    sr.add_workflow_step(action=f'ارسال خلاصه‌ی پرونده به کمیسیون ماده ۹۹ (مرحله ۱۱)، نامه {summary["number"]}', from_user=actor, to_role='clerk')
     sr.save(update_fields=['workflow_history', 'updated_at'])
     return permit
 
 
 def blocking(permit):
-    return [] if permit.form16_state == 'filed' else ['فرم ۱۶ هنوز به پرونده افزوده نشده است.']
+    if permit.stage_no == 11:
+        return [] if permit.summary_state == 'sent' else ['خلاصه‌ی پرونده هنوز به کمیسیون فرستاده نشده است.']
+    return [] if permit.form16_state == 'filed' else ['فرم ۱۶ امضاشده هنوز به پرونده افزوده نشده است.']
 
 
 @transaction.atomic
 def finish(actor, permit, post):
+    """Confirm the step the file is at (10 → 11, 11 → 12)."""
     if not may_open(actor, permit):
         raise Forbidden('اجازه‌ی تایید این مرحله را ندارید.')
     if not at_step(permit):
-        raise Conflict('پرونده در مرحله‌ی فرم ۱۶ نیست.')
+        raise Conflict('پرونده در مرحله‌ی فرم ۱۶ یا خلاصه‌ی پرونده نیست.')
     waiting = blocking(permit)
     if waiting:
         raise Conflict(waiting[0])
     if post.get('confirm') != 'on':
-        raise Invalid('تیک «فرم ۱۶ و خلاصه‌ی پرونده را بررسی کردم» لازم است.')
-    permit.stage_no = 10
+        raise Invalid('تیک «مدارک این مرحله را بررسی کردم» لازم است.')
+    done = permit.stage_no
+    permit.stage_no = done + 1
     permit.staff_notes = (post.get('notes') or '')[:2000]
     permit.save()
     sr = permit.request
-    sr.add_workflow_step(action='تایید مرحله ۹ (فرم ۱۶ و خلاصه‌ی پرونده)', from_user=actor, to_role='citizen', notes=permit.staff_notes)
+    what = 'فرم ۱۶' if done == 10 else 'ارسال خلاصه‌ی پرونده به کمیسیون'
+    sr.add_workflow_step(action=f'تایید مرحله {done} ({what})', from_user=actor, to_role='citizen', notes=permit.staff_notes)
     sr.save(update_fields=['workflow_history', 'updated_at'])
-    notify(sr.user, 'پرونده‌ی شما برای کمیسیون آماده شد', f'فرم ۱۶ و خلاصه‌ی پرونده {permit.pk} در پرونده قرار گرفت؛ پرونده به مرحله‌ی ۱۰ (کمیسیون ماده ۹۹) رفت.', request=sr)
+    if done == 10:
+        notify(sr.user, 'فرم ۱۶ امضا شد', f'فرم ۱۶ پرونده {permit.pk} با امضای بخشدار در پرونده قرار گرفت؛ دهیاری خلاصه‌ی پرونده را به کمیسیون می‌فرستد (مرحله‌ی ۱۱).', request=sr)
+    else:
+        notify(sr.user, 'پرونده‌ی شما برای کمیسیون فرستاده شد', f'خلاصه‌ی پرونده {permit.pk} به کمیسیون ماده ۹۹ فرستاده شد؛ پرونده به مرحله‌ی ۱۲ (رأی کمیسیون) رفت.', request=sr)
     return permit

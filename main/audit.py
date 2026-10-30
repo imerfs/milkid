@@ -136,13 +136,21 @@ def _after_delete(sender, instance, **kwargs):
         record('delete', instance=instance)
 
 
+def _device(request):
+    """The device behind a sign-in, appended to the event's summary (`` | label``) so the server panel can list it."""
+    if request is None:
+        return ''
+    from main import devices                       # pylint: disable=import-outside-toplevel
+    return ' | ' + devices.parse(request.META.get('HTTP_USER_AGENT', ''))['label']
+
+
 def _login(sender, request, user, **kwargs):
     from main.accounting.ledger import municipality_of
     try:
         muni_id = municipality_of(user).id
     except Exception:
         muni_id = None
-    record('login', user=user, municipality_id=muni_id, summary='ورود به سامانه',
+    record('login', user=user, municipality_id=muni_id, summary='ورود به سامانه' + _device(request),
            ip=(request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR')) if request is not None else None)
 
 
@@ -153,7 +161,7 @@ def _logout(sender, request, user, **kwargs):
 
 
 def _login_failed(sender, credentials, request=None, **kwargs):
-    record('login_failed', username=str(credentials.get('username', ''))[:150], summary='ورود ناموفق',
+    record('login_failed', username=str(credentials.get('username', ''))[:150], summary='ورود ناموفق' + _device(request),
            ip=(request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR')) if request is not None else None)
 
 

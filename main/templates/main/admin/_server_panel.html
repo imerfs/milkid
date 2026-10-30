@@ -6,6 +6,9 @@
   <ul class="nav nav-tabs mb-3 srv-tabs">
     <li class="nav-item"><a class="nav-link {% if tab == 'resources' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=resources">منابع</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'stats' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=stats">آمار بازدید</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'visitors' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=visitors">بازدیدکنندگان و دستگاه‌ها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'logins' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=logins">ورودها</a></li>
+    <li class="nav-item"><a class="nav-link {% if tab == 'heatmap' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=heatmap">نقشه‌ی حرارتی</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'database' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=database">پایگاه داده</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'backups' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=backups">پشتیبان‌گیری</a></li>
     <li class="nav-item"><a class="nav-link {% if tab == 'logs' %}active{% endif %}" href="{% url 'main:admin_server' %}?tab=logs">گزارش خطاها</a></li>
@@ -49,6 +52,45 @@
         <table class="table table-sm"><thead><tr><th>صفحه</th><th>بازدید</th></tr></thead>
         {% for p in top_pages %}<tr><td dir="ltr" class="text-end">{{ p.path }}</td><td>{{ p.total }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">—</td></tr>{% endfor %}</table></div>
     </div>
+
+  {% elif tab == 'visitors' %}
+    <p>{{ v.days }} روز اخیر: <strong>{{ v.total }}</strong> بازدید از <strong>{{ v.unique_ips }}</strong> نشانی IP
+      {% for k, n in v.kinds.items %}· {{ k }}: {{ n }} {% endfor %}
+      <span class="small text-muted">(فقط صفحه‌های عمومی و داشبوردها؛ بازدیدها ۹۰ روز نگه داشته می‌شود)</span></p>
+    <div class="row g-4">
+      <div class="col-lg-7"><h2 class="h6">نشانی‌های IP</h2>
+        <table class="table table-sm"><thead><tr><th>IP</th><th>بازدید</th><th>آخرین</th><th>دستگاه</th><th>کاربر</th></tr></thead>
+        {% for r in v.ips %}<tr><td dir="ltr" class="text-end">{{ r.ip|default:"—" }}</td><td>{{ r.hits }}</td><td>{{ r.last|jalali_datetime }}</td><td class="small">{{ r.devices|join:"، " }}</td><td class="small">{{ r.users|join:"، " }}</td></tr>{% empty %}<tr><td colspan="5" class="text-muted">هنوز بازدیدی ثبت نشده است.</td></tr>{% endfor %}</table></div>
+      <div class="col-lg-5"><h2 class="h6">دستگاه‌ها</h2>
+        <table class="table table-sm"><thead><tr><th>دستگاه</th><th>بازدید</th><th>IP</th></tr></thead>
+        {% for d in v.devices %}<tr><td>{{ d.device }}</td><td>{{ d.hits }}</td><td>{{ d.ips }}</td></tr>{% empty %}<tr><td colspan="3" class="text-muted">—</td></tr>{% endfor %}</table></div>
+    </div>
+    <h2 class="h6 mt-3">آخرین بازدیدها</h2>
+    <table class="table table-sm"><thead><tr><th>زمان</th><th>IP</th><th>دستگاه</th><th>صفحه</th><th>کاربر</th></tr></thead>
+      {% for x in v.recent %}<tr><td>{{ x.at|jalali_datetime }}</td><td dir="ltr" class="text-end">{{ x.ip|default:"—" }}</td><td class="small">{{ x.device }}</td><td dir="ltr" class="text-end small">{{ x.path }}</td><td>{{ x.user.username }}</td></tr>{% endfor %}</table>
+
+  {% elif tab == 'logins' %}
+    <h2 class="h6">از چه نشانی‌هایی وارد شده‌اند</h2>
+    <table class="table table-sm"><thead><tr><th>IP</th><th>ورود موفق</th><th>ناموفق</th><th>کاربران</th><th>آخرین</th></tr></thead>
+      {% for r in l.summary %}<tr><td dir="ltr" class="text-end">{{ r.ip }}</td><td>{{ r.ok }}</td><td>{% if r.failed %}<span class="text-danger">{{ r.failed }}</span>{% else %}0{% endif %}</td><td class="small">{{ r.users|join:"، " }}</td><td>{{ r.last|jalali_datetime }}</td></tr>{% empty %}<tr><td colspan="5" class="text-muted">ورودی ثبت نشده است.</td></tr>{% endfor %}</table>
+    <h2 class="h6 mt-3">آخرین ورودها</h2>
+    <table class="table table-sm"><thead><tr><th>زمان</th><th>کاربر</th><th>IP</th><th>دستگاه</th><th></th></tr></thead>
+      {% for e in l.events %}<tr><td>{{ e.at|jalali_datetime }}</td><td>{{ e.username }}</td><td dir="ltr" class="text-end">{{ e.ip|default:"—" }}</td><td class="small">{{ e.device|default:"—" }}</td><td>{% if e.ok %}موفق{% else %}<span class="text-danger">ناموفق</span>{% endif %}</td></tr>{% endfor %}</table>
+    <p class="small text-muted">دستگاه ورودهای پیش از فعال شدن این بخش نامشخص است. برای مسدود کردن یک نشانی به بخش «مسدودسازی IP» بروید.</p>
+
+  {% elif tab == 'heatmap' %}
+    <p>{{ heat.days }} روز اخیر، {{ heat.total }} بازدید انسانی. هرچه رنگ پررنگ‌تر، بازدید بیشتر.</p>
+    <h2 class="h6">ساعت‌های شلوغ (روز هفته × ساعت)</h2>
+    <div class="table-responsive"><table class="table table-sm text-center align-middle" style="font-size:.75rem">
+      <thead><tr><th></th>{% for c in heat.rows.0.cells %}<th>{{ c.hour }}</th>{% endfor %}<th>جمع</th></tr></thead>
+      {% for r in heat.rows %}<tr><th class="text-nowrap">{{ r.day }}</th>{% for c in r.cells %}<td title="{{ r.day }} ساعت {{ c.hour }}: {{ c.count }}" style="background:rgba(220,38,38,{{ c.alpha }})">{% if c.count %}{{ c.count }}{% endif %}</td>{% endfor %}<td>{{ r.total }}</td></tr>{% endfor %}</table></div>
+    <h2 class="h6 mt-3">بخش‌هایی که کاربران بیشتر با آن‌ها کار دارند</h2>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% for s in heat.sections %}<div class="rounded p-2 text-center" style="min-width:8rem;background:rgba(220,38,38,{{ s.alpha }})"><div>{{ s.name }}</div><strong>{{ s.count }}</strong> <small>({{ s.pct }}٪)</small></div>{% empty %}<span class="text-muted">هنوز داده‌ای نیست.</span>{% endfor %}
+    </div>
+    <h2 class="h6">صفحه‌های داغ</h2>
+    <table class="table table-sm"><thead><tr><th>صفحه</th><th style="width:40%"></th><th>بازدید</th></tr></thead>
+      {% for p in heat.pages %}<tr><td dir="ltr" class="text-end small">{{ p.path }}</td><td><div style="height:.9rem;width:{{ p.width }}%;background:rgba(220,38,38,{{ p.alpha }});border-radius:3px"></div></td><td>{{ p.count }}</td></tr>{% endfor %}</table>
 
   {% elif tab == 'sms' %}
     <h2 class="h6">اتصال به پنل پیامک (API)</h2>
@@ -179,7 +221,7 @@
   {% elif tab == 'logs' %}
     {% if logs %}
     <form method="get" action="{% url 'main:admin_server' %}" class="mb-2 d-flex gap-2"><input type="hidden" name="tab" value="logs">
-      <select name="file" class="form-select w-auto" onchange="this.form.submit()">{% for l in logs %}<option {% if l == chosen %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <select name="file" class="form-select w-auto" onchange="this.form.submit()"><option value="__all__" {% if chosen == '__all__' %}selected{% endif %}>همه‌ی گزارش‌ها</option>{% for l in logs %}<option {% if l == chosen %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
     </form>
     <pre dir="ltr" class="border rounded p-3 small" style="max-height:60vh;overflow:auto;white-space:pre-wrap">{{ content }}</pre>
     {% else %}<p class="text-muted">فایل گزارشی وجود ندارد.</p>{% endif %}

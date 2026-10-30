@@ -4,7 +4,7 @@
   'use strict';
   var data = JSON.parse(document.getElementById('f16-data').textContent), v = data.v;
   var canvas = document.getElementById('pff-canvas'), ctx = canvas.getContext('2d');
-  var W = 1400, H = 2000, INK = '#0a1f6e', BLACK = '#111827', GREY = '#6b7280', FONT = 'Vazirmatn, Tahoma, sans-serif', FA = '۰۱۲۳۴۵۶۷۸۹', page = 'form16';
+  var W = 1400, H = 2000, INK = '#0a1f6e', BLACK = '#111827', GREY = '#6b7280', FONT = 'Vazirmatn, Tahoma, sans-serif', FA = '۰۱۲۳۴۵۶۷۸۹', page = data.part || 'form16';
   function fa(t) { return String(t == null ? '' : t).replace(/(\d)\.(?=\d)/g, '$1٫').replace(/\d/g, function (d) { return FA[d]; }); }
   function label(list, key) { var f = list.filter(function (p) { return p[0] === key; })[0]; return f ? f[1] : ''; }
 
