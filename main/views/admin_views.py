@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
@@ -643,7 +644,8 @@ def admin_api_users_list(request):
             }
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -679,7 +681,8 @@ def admin_api_user_change_role(request, user_id):
             'new_role': user_profile.get_role_display()
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -708,7 +711,8 @@ def admin_api_user_toggle_active(request, user_id):
             'is_active': user_profile.is_active
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 INLINE_DECREE_TYPES = {'.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png'}
@@ -776,7 +780,8 @@ def admin_api_municipalities_list(request):
             'count': len(data)
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -829,7 +834,8 @@ def admin_api_municipality_action(request, municipality_id):
 
             
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -854,7 +860,8 @@ def admin_api_services_list(request):
             'services': data
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -873,7 +880,8 @@ def admin_api_service_toggle_active(request, service_id):
             'is_active': service.is_active
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -901,7 +909,8 @@ def admin_api_service_create(request):
             'service_id': service.id
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -925,7 +934,8 @@ def admin_api_service_update(request, service_id):
             'message': 'خدمت با موفقیت به‌روز شد'
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -941,7 +951,8 @@ def admin_api_service_delete(request, service_id):
             'message': f'خدمت {service_name} با موفقیت حذف شد'
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -1016,7 +1027,8 @@ def admin_api_reports_chart_data(request):
             }, status=400)
             
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -1095,7 +1107,8 @@ def admin_api_reports_export_excel(request):
         return response
         
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -1117,7 +1130,8 @@ def admin_api_system_settings(request):
             'settings': settings
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -1132,7 +1146,8 @@ def admin_api_update_system_settings(request):
             'message': 'تنظیمات با موفقیت به‌روز شد'
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -1292,7 +1307,8 @@ def api_toggle_user_access(request, user_id):
     except User.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'کاربر مورد نظر یافت نشد.'}, status=404)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f'خطا: {str(e)}'}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': f'خطا: خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @policy_required('admin.manage', api=True)
@@ -1361,7 +1377,8 @@ def api_delete_user(request, user_id):
     except User.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'کاربر مورد نظر یافت نشد.'}, status=404)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f'خطا در حذف کاربر: {str(e)}'}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': f'خطا در حذف کاربر: خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 

@@ -67,13 +67,17 @@ def dehyari_expert_dashboard(request):
                 Q(user__profile__city_village=user_profile.city_village))
         )
 
+    unscoped = user_profile.role == 'admin' or request.user.is_superuser
+    if not unscoped and not user_village:       # staff without a village in the profile see no request until an admin sets one
+        village_filter = Q(pk__in=[])
+
     # پایگاه کلی درخواست‌های شهروندان
     requests_qs = ServiceRequest.objects.filter(village_filter).select_related(
         'user', 'user__profile', 'service', 'city_village', 'assigned_to'
     ).prefetch_related('documents', 'technical_reports', 'inspections').order_by('-created_at')
 
     # در صورتی که فیلتر حوزه اختصاصی رکوردی نداشت، کلیه درخواست‌ها را برای دیده‌شدن نمایش می‌دهیم
-    if not requests_qs.exists() and village_filter != Q():
+    if unscoped and not requests_qs.exists() and village_filter != Q():
         requests_qs = ServiceRequest.objects.all().select_related(
             'user', 'user__profile', 'service', 'city_village', 'assigned_to'
         ).prefetch_related('documents', 'technical_reports', 'inspections').order_by('-created_at')

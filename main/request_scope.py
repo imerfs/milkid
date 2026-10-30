@@ -1,7 +1,7 @@
 """Village scope of a staff member over service requests.
 
 A dehyari / expert / inspector may only open and act on requests of his own village (the same match the expert dashboard
-lists). Admins see everything. Staff whose profile names no village keep the old unscoped behaviour.
+lists). Admins see everything. Staff whose profile names no village see no request at all.
 """
 from django.http import Http404
 
@@ -35,8 +35,8 @@ def in_scope(user, sr):
     if profile is not None and profile.role == 'admin':
         return True
     village = _village_of(user)
-    if not village:
-        return True
+    if not village:             # staff whose profile names no village see nothing until an admin sets one
+        return False
     return village in request_villages(sr)
 
 

@@ -26,8 +26,8 @@ class RequestStatusAccess(TestCase):
         self.assertEqual(sr.status, 'pending')
 
     def test_dehyari_can_change_status(self):
-        sr = make_request()
-        self.post_status(make_user('dehyari'), sr, 'in_review')
+        sr = make_request(make_user('citizen', city_village='روستای آزمون'))
+        self.post_status(make_user('dehyari', city_village='روستای آزمون'), sr, 'in_review')
         sr.refresh_from_db()
         self.assertEqual(sr.status, 'in_review')
 
@@ -67,8 +67,8 @@ class ExpertEndpointsAccess(TestCase):
                 self.assertEqual(sr.status, 'pending', f'{name} as {user}')
 
     def test_engineer_can_approve_directly(self):
-        sr = make_request()
-        response = client_for(make_user('engineer')).post(
+        sr = make_request(make_user('citizen', city_village='روستای آزمون'))
+        response = client_for(make_user('engineer', city_village='روستای آزمون')).post(
             reverse('main:api_expert_approve_direct', args=[sr.id]), {'notes': 'ok'})
         self.assertEqual(response.status_code, 200)
         sr.refresh_from_db()

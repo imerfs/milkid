@@ -141,6 +141,7 @@ location = /_media-auth/ {
     proxy_set_header Host \$host;
     proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_set_header X-Original-URI \$request_uri;
 }
 location ^~ /media/property_ads/ { alias $APP_DIR/media/property_ads/; add_header X-Content-Type-Options nosniff; }
 location /media/ {

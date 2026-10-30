@@ -8,6 +8,9 @@ from main.models import Notification
 from main.tests.helpers import client_for, make_municipality, make_request, make_user
 
 
+VILLAGE = 'روستای آزمون'       # staff only act on requests of their own village
+
+
 class LifecycleCase(TestCase):
     def post_json(self, user, url_name, sr, **body):
         return client_for(user).post(
@@ -25,8 +28,8 @@ class LifecycleCase(TestCase):
 
 class ExpertTransitions(LifecycleCase):
     def setUp(self):
-        self.expert = make_user('engineer')
-        self.sr = make_request()
+        self.expert = make_user('engineer', city_village=VILLAGE)
+        self.sr = make_request(make_user('citizen', city_village=VILLAGE))
 
     def test_approve_records_history_and_notifies_owner(self):
         r = self.post_json(self.expert, 'api_expert_approve_direct', self.sr, notes='خوب')
@@ -118,8 +121,8 @@ class StatusUpdateRules(LifecycleCase):
         self.assertEqual(sr.status, 'completed')
 
     def test_status_change_is_logged_and_notified(self):
-        sr = make_request()
-        client_for(make_user('dehyari')).post(
+        sr = make_request(make_user('citizen', city_village=VILLAGE))
+        client_for(make_user('dehyari', city_village=VILLAGE)).post(
             reverse('main:update_request_status', args=[sr.id]), {'status': 'in_review'})
         self.assertRecorded(sr, 'in_review')
 

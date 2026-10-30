@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
@@ -474,7 +475,8 @@ def technical_report_export(request):
             response['Content-Disposition'] = 'attachment; filename=technical_reports.xlsx'
             return response
         except Exception as e:
-            messages.error(request, f'خطا در ایجاد فایل اکسل: {str(e)}')
+            logging.getLogger(__name__).exception('request failed')
+            messages.error(request, f'خطا در ایجاد فایل اکسل: خطایی رخ داد؛ دوباره تلاش کنید.')
             return redirect('main:technical_report_list')
     
     messages.error(request, 'فرمت export نامعتبر است.')

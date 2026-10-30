@@ -77,7 +77,14 @@ def update_profile(request):
 
 
 def logout_view(request):
-    """Logout user"""
+    """Logout user. A GET that comes from another site (an image tag, a link on a foreign page) only shows a confirmation form, so a third party cannot sign people out."""
+    if request.method != 'POST':
+        from urllib.parse import urlparse
+        site = request.META.get('HTTP_SEC_FETCH_SITE', '')
+        referer = request.META.get('HTTP_REFERER', '')
+        own_site = site in ('same-origin', 'same-site', 'none') if site else (not referer or urlparse(referer).netloc == request.get_host())
+        if not own_site:
+            return render(request, 'main/logout_confirm.html')
     if hasattr(request, 'user') and request.user.is_authenticated:
         from django.core.cache import cache
         cache.delete(f'user_last_seen_{request.user.id}')

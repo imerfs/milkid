@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
@@ -232,9 +233,10 @@ def autocad_upload(request):
 
                 return redirect('main:autocad_result', pk=autocad_obj.pk)
             except Exception as e:
+                logging.getLogger(__name__).exception('request failed')
                 autocad_obj.status = 'failed'
                 autocad_obj.save()
-                messages.error(request, f'خطا در پردازش فایل: {str(e)}')
+                messages.error(request, f'خطا در پردازش فایل: خطایی رخ داد؛ دوباره تلاش کنید.')
 
     return render(request, 'main/autocad/upload.html')
 
@@ -345,7 +347,8 @@ def export_transactions_excel(request):
         return response
 
     except Exception as e:
-        messages.error(request, f'خطا در ایجاد فایل اکسل: {str(e)}')
+        logging.getLogger(__name__).exception('request failed')
+        messages.error(request, f'خطا در ایجاد فایل اکسل: خطایی رخ داد؛ دوباره تلاش کنید.')
         return redirect('main:accountant_dashboard')
 
 
@@ -378,7 +381,8 @@ def api_notifications_list(request):
             'unread_count': Notification.objects.filter(user=request.user, is_read=False).count()
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -394,7 +398,8 @@ def api_notification_mark_read(request, notification_id):
             'message': 'اعلان به عنوان خوانده شده علامت‌گذاری شد'
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -408,7 +413,8 @@ def api_notifications_mark_all_read(request):
             'message': 'همه اعلان‌ها به عنوان خوانده شده علامت‌گذاری شدند'
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -423,7 +429,8 @@ def api_notification_delete(request, notification_id):
             'message': 'اعلان حذف شد'
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -457,7 +464,8 @@ def api_messages_list(request):
             'conversations': data
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -493,7 +501,8 @@ def api_conversation_messages(request, conversation_id):
             'subject': conversation.subject
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -542,7 +551,8 @@ def api_message_send(request):
             'conversation_id': conversation.id
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -593,7 +603,8 @@ def api_conversation_reply(request, conversation_id):
             'message_id': message.id
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 @login_required
@@ -615,7 +626,8 @@ def api_message_mark_read(request, message_id):
             'message': 'پیام به عنوان خوانده شده علامت‌گذاری شد'
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logging.getLogger(__name__).exception('request failed')
+        return JsonResponse({'success': False, 'message': 'خطایی رخ داد؛ دوباره تلاش کنید.'}, status=500)
 
 
 def api_get_provinces(request):
@@ -756,5 +768,16 @@ def test_jalali_dates(request):
 
 
 def media_auth(request):
-    """Subrequest target for nginx ``auth_request``: 204 for signed-in users, 401 otherwise."""
-    return HttpResponse(status=204 if request.user.is_authenticated else 401)
+    """Subrequest target for nginx ``auth_request``: 401 when signed out, 403 when the file belongs to someone else, 204 otherwise.
+
+    nginx passes the requested address in ``X-Original-URI``; without it (an nginx config from before this check) only the signed-in rule applies.
+    """
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+    original = request.META.get('HTTP_X_ORIGINAL_URI')
+    if original:
+        from main import media_access                   # pylint: disable=import-outside-toplevel
+        rel = media_access.relative_path(original)
+        if rel is None or not media_access.can_read(request.user, rel):
+            return HttpResponse(status=403)
+    return HttpResponse(status=204)
