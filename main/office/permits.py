@@ -11,6 +11,7 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.accounting.parse import jalali_str
 from main.access import can, role_of
@@ -21,7 +22,8 @@ from main.models_permit import STAGES
 from main.notifications import notify
 from main.office import permit_form
 from main.roles import CITIZEN_ROLES
-from main.office.directory import requests_for, village_of
+from main import request_scope
+from main.office.directory import village_of
 from main.office.errors import Conflict, Forbidden, Invalid, NotFound
 from main.office.roles import is_admin
 
@@ -147,7 +149,7 @@ def supplement(user, permit, kind, uploads):
                                           size=upload.size, uploaded_by=user)
         permit.state = 'submitted'
         permit.save(update_fields=['state', 'updated_at'])
-        lifecycle.permit_resubmitted(permit.request, user)
+        permit_request.resubmitted(permit.request, user)
     for staff in _staff_to_tell((permit.request.city_village.name if permit.request.city_village else '') or village_of(user)):
         notify(staff, 'مدارک تازه‌ی پرونده', f'متقاضی مدارک پرونده {permit.pk} را دوباره فرستاد.', request=permit.request)
 
@@ -161,10 +163,7 @@ def files_for(user):
         return rows
     if role_of(user) in CITIZEN_ROLES:         # an applicant opens only their own files (see ``find``), never the village's list
         return rows.none()
-    village = village_of(user)
-    if not village:
-        return rows.none()
-    return rows.filter(request__in=ServiceRequest.objects.filter(requests_for(village)))
+    return rows.filter(request__in=request_scope.visible_requests(user))
 
 
 def find(user, file_id, any_track=False):
@@ -276,7 +275,7 @@ def open_file(actor, permit, *, code, parcel_id=None, notes=''):
     permit.state, permit.stage_no = 'done', 2
     permit.opened_by, permit.opened_at, permit.staff_notes = actor, timezone.now(), notes[:2000]
     permit.save()
-    lifecycle.permit_opened(permit.request, actor, code=code, notes=notes)
+    permit_request.opened(permit.request, actor, code=code, notes=notes)
     sync_parcel(permit, actor)
     return permit
 
@@ -290,7 +289,7 @@ def send_back(actor, permit, notes):
     if not notes:
         raise Invalid('بنویسید چه مدرکی ناقص است.')
     with transaction.atomic():
-        lifecycle.request_documents(permit.request, actor, notes)
+        permit_request.ask_for_documents(permit, actor, notes)
         permit.state, permit.staff_notes = 'needs_docs', notes[:2000]
         permit.save(update_fields=['state', 'staff_notes', 'updated_at'])
 
@@ -304,7 +303,7 @@ def refuse(actor, permit, reason):
     if not reason:
         raise Invalid('دلیل رد را بنویسید.')
     with transaction.atomic():
-        lifecycle.reject(permit.request, actor, reason, by_file=True)
+        permit_request.reject(permit, actor, reason)
         permit.state, permit.staff_notes = 'rejected', reason[:2000]
         permit.save(update_fields=['state', 'staff_notes', 'updated_at'])
 

@@ -13,6 +13,7 @@ Every part is confirmed, or sent back with a reason, by any of the three staff (
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.models import PermitDocument
 from main.notifications import notify
@@ -26,11 +27,10 @@ MAX_FILES = 8
 
 
 def _staff(permit):
-    return permits._staff_to_tell(permit_step2._village(permit))       # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def documents(permit, kind):
@@ -111,7 +111,7 @@ def upload_power_reply(user, permit, post, files):
     permit.save(update_fields=['overhang', 'overhang_state', 'updated_at'])
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال پاسخ اداره برق توسط متقاضی (مرحله ۴)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -145,7 +145,7 @@ def return_power(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل پاسخ چیست.')
-    lifecycle.request_documents(permit.request, actor, f'پاسخ اداره برق: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'پاسخ اداره برق: {notes}')
     permit.overhang_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['overhang_state', 'staff_notes', 'updated_at'])
     return permit
@@ -176,7 +176,7 @@ def upload_materials(user, permit, post, files):
     permit.save(update_fields=['materials', 'materials_state', 'updated_at'])
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال عکس جمع‌آوری مصالح توسط متقاضی (مرحله ۴)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -210,7 +210,7 @@ def return_materials(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل عکس‌ها چیست.')
-    lifecycle.request_documents(permit.request, actor, f'جمع‌آوری مصالح: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'جمع‌آوری مصالح: {notes}')
     permit.materials_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['materials_state', 'staff_notes', 'updated_at'])
     return permit

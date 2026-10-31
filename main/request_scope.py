@@ -1,49 +1,35 @@
-"""Village scope of a staff member over service requests.
+"""Village scope of a staff member over service requests: the one place that answers "may this person see this request?".
 
-A dehyari / expert / inspector may only open and act on requests of his own village (the same match the expert dashboard
-lists). Admins see everything. Staff whose profile names no village see no request at all.
+The rule itself is ``directory.requests_for``; here it is applied to a user. A dehyari / expert / inspector sees only the requests of their own village,
+an admin sees everything, and staff whose profile names no village see none. Lists (``visible_requests``), single requests (``in_scope``) and permit
+files (``main.office.permits.files_for``) all use the same rule, so they cannot disagree.
 """
 from django.http import Http404
 
 from main.models import ServiceRequest
+from main.office.directory import requests_for, village_of
 
 
-def _village_of(user):
+def is_unscoped(user):
     profile = getattr(user, 'profile', None)
-    if profile is None:
-        return ''
-    return (profile.city_village or profile.city_village_name or '').strip()
+    return user.is_superuser or (profile is not None and profile.role == 'admin')
 
 
-def request_villages(sr):
-    """Every village name the request is filed under (target municipality, chosen village, requester's village)."""
-    names = set()
-    if sr.target_municipality_id:
-        names.add(sr.target_municipality.city_village)
-    if sr.city_village_id:
-        names.add(sr.city_village.name)
-    owner = getattr(sr.user, 'profile', None)
-    if owner is not None:
-        names.update([owner.city_village, owner.city_village_name])
-    return {n.strip() for n in names if n}
+def visible_requests(user):
+    """Queryset of the requests ``user`` may see as staff."""
+    if is_unscoped(user):
+        return ServiceRequest.objects.all()
+    village = village_of(user)
+    return ServiceRequest.objects.filter(requests_for(village)) if village else ServiceRequest.objects.none()
 
 
 def in_scope(user, sr):
-    if user.is_superuser:
-        return True
-    profile = getattr(user, 'profile', None)
-    if profile is not None and profile.role == 'admin':
-        return True
-    village = _village_of(user)
-    if not village:             # staff whose profile names no village see nothing until an admin sets one
-        return False
-    return village in request_villages(sr)
+    return is_unscoped(user) or visible_requests(user).filter(pk=sr.pk).exists()
 
 
 def scoped_request_or_404(user, request_id):
     """The service request, or 404 when it belongs to another village than the staff member's."""
-    sr = ServiceRequest.objects.select_related('user__profile', 'target_municipality', 'city_village').filter(
-        pk=request_id).first()
+    sr = ServiceRequest.objects.select_related('user__profile', 'target_municipality', 'city_village').filter(pk=request_id).first()
     if sr is None or not in_scope(user, sr):
         raise Http404('Request not found')
     return sr

@@ -16,7 +16,7 @@ from django.utils import timezone
 from main.access import can
 from main.accounting.parse import digits
 from main.notifications import notify
-from main.office import permit_step2, permits
+from main.office import permit_step2, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
@@ -46,7 +46,7 @@ def _num(value, label='', maximum=1_000_000, allow_blank=True):
 
 
 def _text(value, limit=120):
-    return ' '.join(str(value or '').split())[:limit]
+    return step_flow.clean(value, limit)
 
 
 def _fmt(number):

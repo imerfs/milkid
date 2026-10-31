@@ -15,6 +15,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.access import can
 from main.accounting.instalments import add_jalali_months, split
@@ -30,12 +31,10 @@ MAX_CHEQUES = 24
 RECEIPT_EXTENSIONS = ('.pdf', '.jpg', '.jpeg', '.png')
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
-def _now():
-    return timezone.localtime().strftime('%Y/%m/%d %H:%M')
+_now = step_flow.now
 
 
 def at_step(permit):
@@ -78,7 +77,7 @@ def tell_the_officer(permit):
 
 
 def _staff(permit):
-    return permits._staff_to_tell(permit_step2._village(permit))       # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
 # ---------- the sheet ----------
@@ -358,7 +357,7 @@ def return_plan(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید چرا تقسیط برگشت داده می‌شود.')
-    lifecycle.request_documents(permit.request, actor, f'درخواست تقسیط: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'درخواست تقسیط: {notes}')
     permit.plan_state, permit.staff_notes = 'returned', notes[:2000]
     permit.save(update_fields=['plan_state', 'staff_notes', 'updated_at'])
     return permit
@@ -466,7 +465,7 @@ def return_cheques(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل ثبت چک‌ها چیست.')
-    lifecycle.request_documents(permit.request, actor, f'ثبت چک‌ها: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'ثبت چک‌ها: {notes}')
     data = dict(permit.dues or {})
     plan_ = dict(data.get('plan') or {})
     plan_['note'] = notes[:300]

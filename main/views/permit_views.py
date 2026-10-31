@@ -33,6 +33,35 @@ FORM_LABELS = (('f04', 'فرم ۰۴ (دستور تهیه‌ی نقشه)'), ('f05
 SIDE_LABELS = (('length', 'طول موجود'), ('after', 'ابعاد پس از اصلاح'), ('passage', 'عرض گذر موجود'), ('approved', 'عرض گذر مصوب'))
 
 
+def action_runner(find, page):
+    """The runner of one step's POST actions: find the file (404 when the user may not open it), run the action, flash its message or the refusal, and
+    go back to the step's page (keeping the embed flag). One definition for every step instead of one copy per step."""
+    def run(request, file_id, action, ok):
+        permit = find(request.user, file_id)
+        if permit is None:
+            raise Http404('پرونده پیدا نشد.')
+        try:
+            action(permit)
+            messages.success(request, ok)
+        except (OfficeError, lifecycle.TransitionError) as exc:
+            messages.error(request, str(exc))
+        return redirect(reverse(f'main:{page}', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+    return run
+
+
+def post_view(runner, handler, ok, *, files=False, notes=False):
+    """A login-required POST view whose whole job is ``handler(user, permit, POST[, FILES])`` (or ``handler(user, permit, notes)``) through ``runner``."""
+    @login_required
+    @require_POST
+    def view(request, file_id):
+        if notes:
+            return runner(request, file_id, lambda p: handler(request.user, p, request.POST.get('notes', '')), ok)
+        if files:
+            return runner(request, file_id, lambda p: handler(request.user, p, request.POST, request.FILES), ok)
+        return runner(request, file_id, lambda p: handler(request.user, p, request.POST), ok)
+    return view
+
+
 def _file_url(permit, embed=False):
     return reverse('main:permit_file', args=[permit.pk]) + ('?embed=1' if embed else '')
 
@@ -216,16 +245,10 @@ def _step2_action(request, file_id, action, ok, page='permit_forms'):
     return redirect(target)
 
 
-@login_required
-@require_POST
-def permit_form1_save(request, file_id):
-    return _step2_action(request, file_id, lambda p: permit_step2.save_form1(request.user, p, request.POST), 'فرم ۱ ذخیره شد.')
+permit_form1_save = post_view(_step2_action, permit_step2.save_form1, 'فرم ۱ ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_form2_save(request, file_id):
-    return _step2_action(request, file_id, lambda p: permit_step2.save_form2(request.user, p, request.POST), 'فرم ۲ ذخیره شد.')
+permit_form2_save = post_view(_step2_action, permit_step2.save_form2, 'فرم ۲ ذخیره شد.')
 
 
 @login_required
@@ -304,16 +327,10 @@ def _design_action(request, file_id, action, ok):
     return _step2_action(request, file_id, action, ok, page='permit_design')
 
 
-@login_required
-@require_POST
-def permit_design_people(request, file_id):
-    return _design_action(request, file_id, lambda p: permit_step4.save_people(request.user, p, request.POST), 'مشخصات مهندسان ذخیره شد.')
+permit_design_people = post_view(_design_action, permit_step4.save_people, 'مشخصات مهندسان ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_design_forms(request, file_id):
-    return _design_action(request, file_id, lambda p: permit_step4.save_forms(request.user, p, request.POST), 'اطلاعات فرم‌ها ذخیره شد.')
+permit_design_forms = post_view(_design_action, permit_step4.save_forms, 'اطلاعات فرم‌ها ذخیره شد.')
 
 
 @login_required
@@ -337,22 +354,13 @@ def permit_design_submit(request, file_id):
     return _design_action(request, file_id, lambda p: permit_step4.submit(request.user, p), 'نقشه‌ها برای بررسی فرستاده شد.')
 
 
-@login_required
-@require_POST
-def permit_design_return(request, file_id):
-    return _design_action(request, file_id, lambda p: permit_step4.send_back(request.user, p, request.POST.get('notes', '')), 'نقشه‌ها برای اصلاح برگشت داده شد.')
+permit_design_return = post_view(_design_action, permit_step4.send_back, 'نقشه‌ها برای اصلاح برگشت داده شد.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_design_review(request, file_id):
-    return _design_action(request, file_id, lambda p: permit_step4.review(request.user, p, request.POST), 'نقشه‌ها بررسی شد و منتظر امضای دهیار است.')
+permit_design_review = post_view(_design_action, permit_step4.review, 'نقشه‌ها بررسی شد و منتظر امضای دهیار است.')
 
 
-@login_required
-@require_POST
-def permit_design_sign(request, file_id):
-    return _design_action(request, file_id, lambda p: permit_step4.sign(request.user, p, request.POST), 'نقشه‌ها امضا شد و پرونده به مرحله‌ی ۵ رفت.')
+permit_design_sign = post_view(_design_action, permit_step4.sign, 'نقشه‌ها امضا شد و پرونده به مرحله‌ی ۵ رفت.')
 
 
 # ---------- steps 5 and 6: the fees, the payments and the introduction letter ----------
@@ -403,35 +411,16 @@ def _group_rows(rows):
     return groups
 
 
-def _fees_action(request, file_id, action, ok):
-    permit = permit_step5.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_fees', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_fees_action = action_runner(permit_step5.find, 'permit_fees')
 
 
-@login_required
-@require_POST
-def permit_fees_save(request, file_id):
-    return _fees_action(request, file_id, lambda p: permit_step5.save_fees(request.user, p, request.POST), 'ردیف‌های عوارض ذخیره شد.')
+permit_fees_save = post_view(_fees_action, permit_step5.save_fees, 'ردیف‌های عوارض ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_fees_offer(request, file_id):
-    return _fees_action(request, file_id, lambda p: permit_step5.offer(request.user, p, request.POST), 'عوارض برای تایید متقاضی فرستاده شد.')
+permit_fees_offer = post_view(_fees_action, permit_step5.offer, 'عوارض برای تایید متقاضی فرستاده شد.')
 
 
-@login_required
-@require_POST
-def permit_fees_object(request, file_id):
-    return _fees_action(request, file_id, lambda p: permit_step5.object_to(request.user, p, request.POST.get('notes', '')),
-                        'اعتراض شما برای مسئول مالی فرستاده شد.')
+permit_fees_object = post_view(_fees_action, permit_step5.object_to, 'اعتراض شما برای مسئول مالی فرستاده شد.', notes=True)
 
 
 @login_required
@@ -458,10 +447,7 @@ def permit_pay_remove(request, file_id, pay_id):
     return _fees_action(request, file_id, lambda p: permit_step5.remove_payment(request.user, p, pay_id), 'پرداخت حذف شد.')
 
 
-@login_required
-@require_POST
-def permit_letter_issue(request, file_id):
-    return _fees_action(request, file_id, lambda p: permit_step5.issue_letter(request.user, p, request.POST), 'معرفی‌نامه‌ی تامین اجتماعی صادر شد.')
+permit_letter_issue = post_view(_fees_action, permit_step5.issue_letter, 'معرفی‌نامه‌ی تامین اجتماعی صادر شد.')
 
 
 @login_required
@@ -471,16 +457,10 @@ def permit_cert_submit(request, file_id):
                         'گواهی فرستاده شد؛ اصل آن را به دهیاری ببرید تا صحت آن بررسی شود.')
 
 
-@login_required
-@require_POST
-def permit_cert_verify(request, file_id):
-    return _fees_action(request, file_id, lambda p: permit_step6.verify(request.user, p, request.POST), 'گواهی تایید شد و پرونده به مرحله‌ی ۷ (صدور پروانه) رفت.')
+permit_cert_verify = post_view(_fees_action, permit_step6.verify, 'گواهی تایید شد و پرونده به مرحله‌ی ۷ (صدور پروانه) رفت.')
 
 
-@login_required
-@require_POST
-def permit_cert_return(request, file_id):
-    return _fees_action(request, file_id, lambda p: permit_step6.send_back(request.user, p, request.POST.get('notes', '')), 'گواهی برای اصلاح به متقاضی برگشت داده شد.')
+permit_cert_return = post_view(_fees_action, permit_step6.send_back, 'گواهی برای اصلاح به متقاضی برگشت داده شد.', notes=True)
 
 
 # ---------- step 7: the building permit form ----------
@@ -542,28 +522,13 @@ def permit_licence(request, file_id):
     })
 
 
-def _licence_action(request, file_id, action, ok):
-    permit = permits.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_licence', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_licence_action = action_runner(permits.find, 'permit_licence')
 
 
-@login_required
-@require_POST
-def permit_licence_save(request, file_id):
-    return _licence_action(request, file_id, lambda p: permit_step7.save(request.user, p, request.POST), 'اطلاعات فرم پروانه ذخیره شد.')
+permit_licence_save = post_view(_licence_action, permit_step7.save, 'اطلاعات فرم پروانه ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_licence_issue(request, file_id):
-    return _licence_action(request, file_id, lambda p: permit_step7.issue(request.user, p, request.POST), 'صدور پروانه ثبت شد.')
+permit_licence_issue = post_view(_licence_action, permit_step7.issue, 'صدور پروانه ثبت شد.')
 
 
 # ---------- renewal of the permit's one-year term ----------
@@ -590,16 +555,7 @@ def permit_extension_page(request, file_id):
     })
 
 
-def _extension_action(request, file_id, action, ok):
-    permit = permits.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_extension', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_extension_action = action_runner(permits.find, 'permit_extension')
 
 
 @login_required
@@ -608,16 +564,10 @@ def permit_extension_request(request, file_id):
     return _extension_action(request, file_id, lambda p: permit_extension.request(request.user, p), 'درخواست تمدید باز شد؛ فرم را چاپ، امضا و با اثر انگشت به دهیاری بدهید.')
 
 
-@login_required
-@require_POST
-def permit_extension_save(request, file_id):
-    return _extension_action(request, file_id, lambda p: permit_extension.save(request.user, p, request.POST), 'فرم تمدید ذخیره شد.')
+permit_extension_save = post_view(_extension_action, permit_extension.save, 'فرم تمدید ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_extension_issue(request, file_id):
-    return _extension_action(request, file_id, lambda p: permit_extension.issue(request.user, p, request.POST), 'تمدید ثبت شد.')
+permit_extension_issue = post_view(_extension_action, permit_extension.issue, 'تمدید ثبت شد.')
 
 
 # ---------- supervision: forms 8-13, the technical supervisor, messages ----------
@@ -662,16 +612,7 @@ def permit_supervision_page(request, file_id):
     })
 
 
-def _sup_action(request, file_id, action, ok):
-    permit = permits.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_supervision', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_sup_action = action_runner(permits.find, 'permit_supervision')
 
 
 @login_required
@@ -723,10 +664,7 @@ def permit_sup_message(request, file_id):
     return _sup_action(request, file_id, lambda p: permit_supervision.post_message(request.user, p, request.POST.get('text', '')), 'پیام فرستاده شد.')
 
 
-@login_required
-@require_POST
-def permit_licence_amend(request, file_id):
-    return _licence_action(request, file_id, lambda p: permit_step7.save_amendment(request.user, p, request.POST), 'فرم اصلاحات و تغییرات ذخیره شد.')
+permit_licence_amend = post_view(_licence_action, permit_step7.save_amendment, 'فرم اصلاحات و تغییرات ذخیره شد.')
 
 
 # ---------- services: letters for electricity, gas and water ----------
@@ -837,16 +775,7 @@ def permit_endwork_page(request, file_id):
     })
 
 
-def _end_action(request, file_id, action, ok):
-    permit = permits.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_endwork', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_end_action = action_runner(permits.find, 'permit_endwork')
 
 
 @login_required
@@ -855,16 +784,10 @@ def permit_endwork_request(request, file_id):
     return _end_action(request, file_id, lambda p: permit_endwork.request(request.user, p), 'درخواست پایان کار ثبت شد؛ دهیاری پاسخ می‌دهد.')
 
 
-@login_required
-@require_POST
-def permit_endwork_save(request, file_id):
-    return _end_action(request, file_id, lambda p: permit_endwork.save(request.user, p, request.POST), 'اطلاعات گواهی ذخیره شد.')
+permit_endwork_save = post_view(_end_action, permit_endwork.save, 'اطلاعات گواهی ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_endwork_approve(request, file_id):
-    return _end_action(request, file_id, lambda p: permit_endwork.approve(request.user, p, request.POST), 'درخواست تایید شد؛ گواهی قابل چاپ است.')
+permit_endwork_approve = post_view(_end_action, permit_endwork.approve, 'درخواست تایید شد؛ گواهی قابل چاپ است.')
 
 
 @login_required
@@ -873,10 +796,7 @@ def permit_endwork_reject(request, file_id):
     return _end_action(request, file_id, lambda p: permit_endwork.reject(request.user, p, request.POST.get('reason', '')), 'درخواست رد شد.')
 
 
-@login_required
-@require_POST
-def permit_endwork_issue(request, file_id):
-    return _end_action(request, file_id, lambda p: permit_endwork.issue(request.user, p, request.POST), 'صدور گواهی پایان ساخت ثبت شد.')
+permit_endwork_issue = post_view(_end_action, permit_endwork.issue, 'صدور گواهی پایان ساخت ثبت شد.')
 
 
 # ---------- construction without a permit, step 2: the request form and the undertaking ----------
@@ -906,43 +826,19 @@ def permit_commission_page(request, file_id):
     })
 
 
-def _commission_action(request, file_id, action, ok):
-    permit = permit_commission.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_commission', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_commission_action = action_runner(permit_commission.find, 'permit_commission')
 
 
-@login_required
-@require_POST
-def permit_commission_save(request, file_id):
-    return _commission_action(request, file_id, lambda p: permit_commission.save_form(request.user, p, request.POST), 'اطلاعات فرم‌ها ذخیره شد.')
+permit_commission_save = post_view(_commission_action, permit_commission.save_form, 'اطلاعات فرم‌ها ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_commission_upload(request, file_id):
-    return _commission_action(request, file_id, lambda p: permit_commission.upload(request.user, p, request.POST, request.FILES),
-                              'فرم‌های امضاشده فرستاده شد؛ دهیاری آن‌ها را بررسی می‌کند.')
+permit_commission_upload = post_view(_commission_action, permit_commission.upload, 'فرم‌های امضاشده فرستاده شد؛ دهیاری آن‌ها را بررسی می‌کند.', files=True)
 
 
-@login_required
-@require_POST
-def permit_commission_verify(request, file_id):
-    return _commission_action(request, file_id, lambda p: permit_commission.verify(request.user, p, request.POST),
-                              'فرم‌ها تایید شد و پرونده به مرحله‌ی ۳ رفت.')
+permit_commission_verify = post_view(_commission_action, permit_commission.verify, 'فرم‌ها تایید شد و پرونده به مرحله‌ی ۳ رفت.')
 
 
-@login_required
-@require_POST
-def permit_commission_return(request, file_id):
-    return _commission_action(request, file_id, lambda p: permit_commission.send_back(request.user, p, request.POST.get('notes', '')),
-                              'فرم‌ها برای اصلاح به متقاضی برگشت داده شد.')
+permit_commission_return = post_view(_commission_action, permit_commission.send_back, 'فرم‌ها برای اصلاح به متقاضی برگشت داده شد.', notes=True)
 
 
 # ---------- construction without a permit, step 3: the warning notice the owner received ----------
@@ -980,37 +876,16 @@ def permit_notice_page(request, file_id):
     })
 
 
-def _notice_action(request, file_id, action, ok):
-    permit = permit_notice.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_notice', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_notice_action = action_runner(permit_notice.find, 'permit_notice')
 
 
-@login_required
-@require_POST
-def permit_notice_upload(request, file_id):
-    return _notice_action(request, file_id, lambda p: permit_notice.upload(request.user, p, request.POST, request.FILES),
-                          'اخطاریه فرستاده شد؛ دهیاری آن را بررسی می‌کند.')
+permit_notice_upload = post_view(_notice_action, permit_notice.upload, 'اخطاریه فرستاده شد؛ دهیاری آن را بررسی می‌کند.', files=True)
 
 
-@login_required
-@require_POST
-def permit_notice_verify(request, file_id):
-    return _notice_action(request, file_id, lambda p: permit_notice.verify(request.user, p, request.POST),
-                          'اخطاریه تایید شد و پرونده به مرحله‌ی ۴ رفت.')
+permit_notice_verify = post_view(_notice_action, permit_notice.verify, 'اخطاریه تایید شد و پرونده به مرحله‌ی ۴ رفت.')
 
 
-@login_required
-@require_POST
-def permit_notice_return(request, file_id):
-    return _notice_action(request, file_id, lambda p: permit_notice.send_back(request.user, p, request.POST.get('notes', '')),
-                          'اخطاریه برای اصلاح به متقاضی برگشت داده شد.')
+permit_notice_return = post_view(_notice_action, permit_notice.send_back, 'اخطاریه برای اصلاح به متقاضی برگشت داده شد.', notes=True)
 
 
 # ---------- construction without a permit, step 1: the defence form and the shamim sketch ----------
@@ -1049,10 +924,7 @@ def _defence_action(request, file_id, action, ok):
     return _step1_redirect(request, permit, 'permit_defence')
 
 
-@login_required
-@require_POST
-def permit_defence_save(request, file_id):
-    return _defence_action(request, file_id, lambda p: permit_defence.save_form(request.user, p, request.POST), 'اطلاعات فرم دفاعیه ذخیره شد.')
+permit_defence_save = post_view(_defence_action, permit_defence.save_form, 'اطلاعات فرم دفاعیه ذخیره شد.')
 
 
 @login_required
@@ -1098,22 +970,13 @@ def permit_sketch_request(request, file_id):
     return _sketch_action(request, file_id, lambda p: permit_sketch.request(request.user, p), 'درخواست کروکی ثبت شد؛ مسئول فنی هزینه را تعیین می‌کند.')
 
 
-@login_required
-@require_POST
-def permit_sketch_fee(request, file_id):
-    return _sketch_action(request, file_id, lambda p: permit_sketch.set_fee(request.user, p, request.POST), 'هزینه‌ی کروکی تعیین و به متقاضی اطلاع داده شد.')
+permit_sketch_fee = post_view(_sketch_action, permit_sketch.set_fee, 'هزینه‌ی کروکی تعیین و به متقاضی اطلاع داده شد.')
 
 
-@login_required
-@require_POST
-def permit_sketch_pay(request, file_id):
-    return _sketch_action(request, file_id, lambda p: permit_sketch.pay(request.user, p, request.POST, request.FILES), 'فیش ثبت شد؛ منتظر تایید پرداخت و تحویل کروکی باشید.')
+permit_sketch_pay = post_view(_sketch_action, permit_sketch.pay, 'فیش ثبت شد؛ منتظر تایید پرداخت و تحویل کروکی باشید.', files=True)
 
 
-@login_required
-@require_POST
-def permit_sketch_deliver(request, file_id):
-    return _sketch_action(request, file_id, lambda p: permit_sketch.deliver(request.user, p, request.POST, request.FILES), 'پرداخت تایید و کروکی تحویل شد.')
+permit_sketch_deliver = post_view(_sketch_action, permit_sketch.deliver, 'پرداخت تایید و کروکی تحویل شد.', files=True)
 
 
 @login_required
@@ -1123,32 +986,16 @@ def permit_notice_request(request, file_id):
                           'درخواست اخطاریه ثبت شد؛ حضوری به دهیاری مراجعه کنید تا اخطاریه صادر و امضا شود.')
 
 
-@login_required
-@require_POST
-def permit_notice_issue(request, file_id):
-    return _notice_action(request, file_id, lambda p: permit_notice.issue(request.user, p, request.POST),
-                          'اخطاریه ثبت شد؛ آن را چاپ کنید، مهر و امضای دهیار و امضای مالک را بگیرید و تصویر را بارگذاری کنید.')
+permit_notice_issue = post_view(_notice_action, permit_notice.issue, 'اخطاریه ثبت شد؛ آن را چاپ کنید، مهر و امضای دهیار و امضای مالک را بگیرید و تصویر را بارگذاری کنید.')
 
 
-@login_required
-@require_POST
-def permit_visit_request(request, file_id):
-    return _notice_action(request, file_id, lambda p: permit_notice.request_visit(request.user, p, request.POST),
-                          'درخواست بازدید ثبت شد؛ کارشناس فنی زمان را مشخص می‌کند.')
+permit_visit_request = post_view(_notice_action, permit_notice.request_visit, 'درخواست بازدید ثبت شد؛ کارشناس فنی زمان را مشخص می‌کند.')
 
 
-@login_required
-@require_POST
-def permit_visit_schedule(request, file_id):
-    return _notice_action(request, file_id, lambda p: permit_notice.schedule_visit(request.user, p, request.POST),
-                          'زمان بازدید تعیین و به متقاضی اطلاع داده شد.')
+permit_visit_schedule = post_view(_notice_action, permit_notice.schedule_visit, 'زمان بازدید تعیین و به متقاضی اطلاع داده شد.')
 
 
-@login_required
-@require_POST
-def permit_visit_complete(request, file_id):
-    return _notice_action(request, file_id, lambda p: permit_notice.complete_visit(request.user, p, request.POST),
-                          'بازدید ثبت شد و پرونده به مرحله‌ی ۴ رفت.')
+permit_visit_complete = post_view(_notice_action, permit_notice.complete_visit, 'بازدید ثبت شد و پرونده به مرحله‌ی ۴ رفت.')
 
 
 # ---------- construction without a permit, step 4: the visit report, the electricity office, the materials ----------
@@ -1196,75 +1043,34 @@ def permit_report_page(request, file_id):
     })
 
 
-def _report_action(request, file_id, action, ok):
-    permit = permit_report.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_report', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_report_action = action_runner(permit_report.find, 'permit_report')
 
 
-@login_required
-@require_POST
-def permit_report_save(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_report.save(request.user, p, request.POST), 'گزارش بازدید به‌صورت پیش‌نویس ذخیره شد.')
+permit_report_save = post_view(_report_action, permit_report.save, 'گزارش بازدید به‌صورت پیش‌نویس ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_report_file(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_report.file_report(request.user, p, request.POST),
-                          'گزارش بازدید در پرونده‌ی متقاضی قرار گرفت.')
+permit_report_file = post_view(_report_action, permit_report.file_report, 'گزارش بازدید در پرونده‌ی متقاضی قرار گرفت.')
 
 
-@login_required
-@require_POST
-def permit_power_upload(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_site.upload_power_reply(request.user, p, request.POST, request.FILES),
-                          'پاسخ اداره برق فرستاده شد؛ دهیاری بررسی می‌کند.')
+permit_power_upload = post_view(_report_action, permit_site.upload_power_reply, 'پاسخ اداره برق فرستاده شد؛ دهیاری بررسی می‌کند.', files=True)
 
 
-@login_required
-@require_POST
-def permit_power_verify(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_site.verify_power(request.user, p, request.POST), 'پاسخ اداره برق تایید شد.')
+permit_power_verify = post_view(_report_action, permit_site.verify_power, 'پاسخ اداره برق تایید شد.')
 
 
-@login_required
-@require_POST
-def permit_power_return(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_site.return_power(request.user, p, request.POST.get('notes', '')),
-                          'پاسخ برای اصلاح به متقاضی برگشت داده شد.')
+permit_power_return = post_view(_report_action, permit_site.return_power, 'پاسخ برای اصلاح به متقاضی برگشت داده شد.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_materials_upload(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_site.upload_materials(request.user, p, request.POST, request.FILES),
-                          'عکس‌ها فرستاده شد؛ دهیاری بررسی می‌کند.')
+permit_materials_upload = post_view(_report_action, permit_site.upload_materials, 'عکس‌ها فرستاده شد؛ دهیاری بررسی می‌کند.', files=True)
 
 
-@login_required
-@require_POST
-def permit_materials_verify(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_site.verify_materials(request.user, p, request.POST), 'جمع‌آوری مصالح تایید شد.')
+permit_materials_verify = post_view(_report_action, permit_site.verify_materials, 'جمع‌آوری مصالح تایید شد.')
 
 
-@login_required
-@require_POST
-def permit_materials_return(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_site.return_materials(request.user, p, request.POST.get('notes', '')),
-                          'عکس‌ها برای اصلاح به متقاضی برگشت داده شد.')
+permit_materials_return = post_view(_report_action, permit_site.return_materials, 'عکس‌ها برای اصلاح به متقاضی برگشت داده شد.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_step4_finish(request, file_id):
-    return _report_action(request, file_id, lambda p: permit_site.finish(request.user, p, request.POST), 'مرحله‌ی ۴ تایید شد و پرونده به مرحله‌ی ۵ رفت.')
+permit_step4_finish = post_view(_report_action, permit_site.finish, 'مرحله‌ی ۴ تایید شد و پرونده به مرحله‌ی ۵ رفت.')
 
 
 # ---------- construction without a permit, step 5: the judiciary expert, the neighbours' consent, the notarial undertaking ----------
@@ -1301,48 +1107,22 @@ def permit_commit_page(request, file_id):
     })
 
 
-def _commit_action(request, file_id, action, ok):
-    permit = permit_commit.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_commit', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_commit_action = action_runner(permit_commit.find, 'permit_commit')
 
 
-@login_required
-@require_POST
-def permit_commit_introduce(request, file_id):
-    return _commit_action(request, file_id, lambda p: permit_commit.introduce(request.user, p, request.POST), 'مالک به کارشناس دادگستری معرفی شد.')
+permit_commit_introduce = post_view(_commit_action, permit_commit.introduce, 'مالک به کارشناس دادگستری معرفی شد.')
 
 
-@login_required
-@require_POST
-def permit_consent_save(request, file_id):
-    return _commit_action(request, file_id, lambda p: permit_commit.save_consent(request.user, p, request.POST), 'مشخصات همسایگان ذخیره شد.')
+permit_consent_save = post_view(_commit_action, permit_commit.save_consent, 'مشخصات همسایگان ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_consent_upload(request, file_id):
-    return _commit_action(request, file_id, lambda p: permit_commit.upload_consent(request.user, p, request.POST, request.FILES),
-                          'تعهدنامه‌ی همسایگان فرستاده شد؛ دهیاری بررسی می‌کند.')
+permit_consent_upload = post_view(_commit_action, permit_commit.upload_consent, 'تعهدنامه‌ی همسایگان فرستاده شد؛ دهیاری بررسی می‌کند.', files=True)
 
 
-@login_required
-@require_POST
-def permit_deed_save(request, file_id):
-    return _commit_action(request, file_id, lambda p: permit_commit.save_deed(request.user, p, request.POST), 'متن تعهد ذخیره شد.')
+permit_deed_save = post_view(_commit_action, permit_commit.save_deed, 'متن تعهد ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_deed_upload(request, file_id):
-    return _commit_action(request, file_id, lambda p: permit_commit.upload_deed(request.user, p, request.POST, request.FILES),
-                          'تعهد محضری فرستاده شد؛ دهیاری بررسی می‌کند.')
+permit_deed_upload = post_view(_commit_action, permit_commit.upload_deed, 'تعهد محضری فرستاده شد؛ دهیاری بررسی می‌کند.', files=True)
 
 
 @login_required
@@ -1358,10 +1138,7 @@ def permit_commit_return(request, file_id, part):
                           'مدرک برای اصلاح به متقاضی برگشت داده شد.')
 
 
-@login_required
-@require_POST
-def permit_step5_finish(request, file_id):
-    return _commit_action(request, file_id, lambda p: permit_commit.finish(request.user, p, request.POST), 'مرحله‌ی ۵ تایید شد و پرونده به مرحله‌ی ۶ رفت.')
+permit_step5_finish = post_view(_commit_action, permit_commit.finish, 'مرحله‌ی ۵ تایید شد و پرونده به مرحله‌ی ۶ رفت.')
 
 
 @login_required
@@ -1419,42 +1196,19 @@ def permit_reply_page(request, file_id):
         'owner_name': permit.people.first().full_name})
 
 
-def _reply_action(request, file_id, action, ok):
-    permit = permit_reply.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_reply', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_reply_action = action_runner(permit_reply.find, 'permit_reply')
 
 
-@login_required
-@require_POST
-def permit_reply_upload(request, file_id):
-    return _reply_action(request, file_id, lambda p: permit_reply.upload(request.user, p, request.POST, request.FILES),
-                         'جوابیه‌های کارشناس فرستاده شد؛ دهیاری بررسی می‌کند.')
+permit_reply_upload = post_view(_reply_action, permit_reply.upload, 'جوابیه‌های کارشناس فرستاده شد؛ دهیاری بررسی می‌کند.', files=True)
 
 
-@login_required
-@require_POST
-def permit_reply_verify(request, file_id):
-    return _reply_action(request, file_id, lambda p: permit_reply.verify(request.user, p, request.POST), 'جوابیه‌های کارشناس تایید شد.')
+permit_reply_verify = post_view(_reply_action, permit_reply.verify, 'جوابیه‌های کارشناس تایید شد.')
 
 
-@login_required
-@require_POST
-def permit_reply_return(request, file_id):
-    return _reply_action(request, file_id, lambda p: permit_reply.send_back(request.user, p, request.POST.get('notes', '')),
-                         'جوابیه‌ها برای اصلاح به متقاضی برگشت داده شد.')
+permit_reply_return = post_view(_reply_action, permit_reply.send_back, 'جوابیه‌ها برای اصلاح به متقاضی برگشت داده شد.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_step6_finish(request, file_id):
-    return _reply_action(request, file_id, lambda p: permit_reply.finish(request.user, p, request.POST), 'مرحله‌ی ۶ تایید شد و پرونده به مرحله‌ی ۷ رفت.')
+permit_step6_finish = post_view(_reply_action, permit_reply.finish, 'مرحله‌ی ۶ تایید شد و پرونده به مرحله‌ی ۷ رفت.')
 
 
 # ---------- construction without a permit, step 7: the fees, the payments, the instalments ----------
@@ -1519,22 +1273,10 @@ def permit_dues_sheet(request, file_id):
         'schedule': permit_dues.schedule(permit) if permit.plan_state in ('signed', 'registered', 'confirmed') else []})
 
 
-def _dues_action(request, file_id, action, ok):
-    permit = permit_dues.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_dues', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_dues_action = action_runner(permit_dues.find, 'permit_dues')
 
 
-@login_required
-@require_POST
-def permit_dues_issue(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.issue_sheet(request.user, p, request.POST), 'عوارض اعلام شد و متقاضی خبردار شد.')
+permit_dues_issue = post_view(_dues_action, permit_dues.issue_sheet, 'عوارض اعلام شد و متقاضی خبردار شد.')
 
 
 @login_required
@@ -1555,52 +1297,28 @@ def permit_dues_pay_remove(request, file_id, payment_id):
     return _dues_action(request, file_id, lambda p: permit_dues.remove_payment(request.user, p, payment_id), 'پرداخت حذف شد.')
 
 
-@login_required
-@require_POST
-def permit_plan_request(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.request_plan(request.user, p, request.POST), 'درخواست تقسیط ثبت شد.')
+permit_plan_request = post_view(_dues_action, permit_dues.request_plan, 'درخواست تقسیط ثبت شد.')
 
 
-@login_required
-@require_POST
-def permit_plan_approve(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.approve_plan(request.user, p, request.POST), 'تقسیط تایید شد؛ منتظر امضای مسئول مالی.')
+permit_plan_approve = post_view(_dues_action, permit_dues.approve_plan, 'تقسیط تایید شد؛ منتظر امضای مسئول مالی.')
 
 
-@login_required
-@require_POST
-def permit_plan_return(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.return_plan(request.user, p, request.POST.get('notes', '')), 'درخواست تقسیط برگشت داده شد.')
+permit_plan_return = post_view(_dues_action, permit_dues.return_plan, 'درخواست تقسیط برگشت داده شد.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_plan_sign(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.sign_plan(request.user, p, request.POST), 'تقسیط امضا شد.')
+permit_plan_sign = post_view(_dues_action, permit_dues.sign_plan, 'تقسیط امضا شد.')
 
 
-@login_required
-@require_POST
-def permit_cheques_register(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.register_cheques(request.user, p, request.POST), 'چک‌ها ثبت شد؛ منتظر تایید مسئول مالی.')
+permit_cheques_register = post_view(_dues_action, permit_dues.register_cheques, 'چک‌ها ثبت شد؛ منتظر تایید مسئول مالی.')
 
 
-@login_required
-@require_POST
-def permit_cheques_confirm(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.confirm_cheques(request.user, p, request.POST), 'ثبت چک‌ها تایید شد.')
+permit_cheques_confirm = post_view(_dues_action, permit_dues.confirm_cheques, 'ثبت چک‌ها تایید شد.')
 
 
-@login_required
-@require_POST
-def permit_cheques_return(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.return_cheques(request.user, p, request.POST.get('notes', '')), 'ثبت چک‌ها برگشت داده شد.')
+permit_cheques_return = post_view(_dues_action, permit_dues.return_cheques, 'ثبت چک‌ها برگشت داده شد.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_step7_finish(request, file_id):
-    return _dues_action(request, file_id, lambda p: permit_dues.finish(request.user, p, request.POST), 'مرحله‌ی ۷ تایید شد و پرونده به مرحله‌ی ۸ رفت.')
+permit_step7_finish = post_view(_dues_action, permit_dues.finish, 'مرحله‌ی ۷ تایید شد و پرونده به مرحله‌ی ۸ رفت.')
 
 
 # ---------- construction without a permit, step 8: the Bonyad's visit list and the Bonyad's letter ----------
@@ -1642,52 +1360,25 @@ def permit_bonyad_letter(request, file_id):
     return render(request, 'main/permits/bonyad_letter.html', {'permit': permit, 'L': permit_bonyad.letter_payload(permit), 'pack': permit_bonyad.package(permit)})
 
 
-def _bonyad_action(request, file_id, action, ok):
-    permit = permit_bonyad.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_bonyad', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_bonyad_action = action_runner(permit_bonyad.find, 'permit_bonyad')
 
 
-@login_required
-@require_POST
-def permit_bonyad_request(request, file_id):
-    return _bonyad_action(request, file_id, lambda p: permit_bonyad.request_visit(request.user, p, request.POST), 'درخواست شما برای لیست بازدید بنیاد ثبت شد.')
+permit_bonyad_request = post_view(_bonyad_action, permit_bonyad.request_visit, 'درخواست شما برای لیست بازدید بنیاد ثبت شد.')
 
 
-@login_required
-@require_POST
-def permit_bonyad_release(request, file_id):
-    return _bonyad_action(request, file_id, lambda p: permit_bonyad.release(request.user, p, request.POST), 'بازدید ثبت شد؛ مدارک به متقاضی نشان داده شد و پیامک رفت.')
+permit_bonyad_release = post_view(_bonyad_action, permit_bonyad.release, 'بازدید ثبت شد؛ مدارک به متقاضی نشان داده شد و پیامک رفت.')
 
 
-@login_required
-@require_POST
-def permit_bonyad_upload(request, file_id):
-    return _bonyad_action(request, file_id, lambda p: permit_bonyad.upload_letter(request.user, p, request.POST, request.FILES), 'نامه‌ی بنیاد فرستاده شد؛ دهیاری بررسی می‌کند.')
+permit_bonyad_upload = post_view(_bonyad_action, permit_bonyad.upload_letter, 'نامه‌ی بنیاد فرستاده شد؛ دهیاری بررسی می‌کند.', files=True)
 
 
-@login_required
-@require_POST
-def permit_bonyad_verify(request, file_id):
-    return _bonyad_action(request, file_id, lambda p: permit_bonyad.verify(request.user, p, request.POST), 'نامه‌ی بنیاد تایید شد.')
+permit_bonyad_verify = post_view(_bonyad_action, permit_bonyad.verify, 'نامه‌ی بنیاد تایید شد.')
 
 
-@login_required
-@require_POST
-def permit_bonyad_return(request, file_id):
-    return _bonyad_action(request, file_id, lambda p: permit_bonyad.send_back(request.user, p, request.POST.get('notes', '')), 'نامه برای اصلاح به متقاضی برگشت داده شد.')
+permit_bonyad_return = post_view(_bonyad_action, permit_bonyad.send_back, 'نامه برای اصلاح به متقاضی برگشت داده شد.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_step8_finish(request, file_id):
-    return _bonyad_action(request, file_id, lambda p: permit_bonyad.finish(request.user, p, request.POST), 'مرحله‌ی ۸ تایید شد و پرونده به مرحله‌ی ۹ رفت.')
+permit_step8_finish = post_view(_bonyad_action, permit_bonyad.finish, 'مرحله‌ی ۸ تایید شد و پرونده به مرحله‌ی ۹ رفت.')
 
 
 # ---------- construction without a permit, step 9: the package of forms and the property undertaking ----------
@@ -1722,46 +1413,22 @@ def permit_pack_health(request, file_id):
     return render(request, 'main/permits/health_undertaking.html', {'permit': permit, 'L': permit_pack.health_payload(permit)})
 
 
-def _pack_action(request, file_id, action, ok):
-    permit = permit_pack.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_pack', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_pack_action = action_runner(permit_pack.find, 'permit_pack')
 
 
-@login_required
-@require_POST
-def permit_pack_commit(request, file_id):
-    return _pack_action(request, file_id, lambda p: permit_pack.give_undertaking(request.user, p, request.POST), 'تعهد شما ثبت شد؛ تعهدنامه‌ی ملک را بارگذاری کنید.')
+permit_pack_commit = post_view(_pack_action, permit_pack.give_undertaking, 'تعهد شما ثبت شد؛ تعهدنامه‌ی ملک را بارگذاری کنید.')
 
 
-@login_required
-@require_POST
-def permit_pack_upload(request, file_id):
-    return _pack_action(request, file_id, lambda p: permit_pack.upload_deed(request.user, p, request.POST, request.FILES), 'تعهدنامه‌ی ملک برای دهیاری فرستاده شد.')
+permit_pack_upload = post_view(_pack_action, permit_pack.upload_deed, 'تعهدنامه‌ی ملک برای دهیاری فرستاده شد.', files=True)
 
 
-@login_required
-@require_POST
-def permit_pack_verify(request, file_id):
-    return _pack_action(request, file_id, lambda p: permit_pack.verify(request.user, p, request.POST), 'تعهدنامه‌ی ملک تایید شد.')
+permit_pack_verify = post_view(_pack_action, permit_pack.verify, 'تعهدنامه‌ی ملک تایید شد.')
 
 
-@login_required
-@require_POST
-def permit_pack_return(request, file_id):
-    return _pack_action(request, file_id, lambda p: permit_pack.send_back(request.user, p, request.POST.get('notes')), 'تعهدنامه‌ی ملک به متقاضی برگشت.')
+permit_pack_return = post_view(_pack_action, permit_pack.send_back, 'تعهدنامه‌ی ملک به متقاضی برگشت.', notes=True)
 
 
-@login_required
-@require_POST
-def permit_step9_finish(request, file_id):
-    return _pack_action(request, file_id, lambda p: permit_pack.finish(request.user, p, request.POST), 'مرحله‌ی ۹ تایید شد و پرونده به مرحله‌ی ۱۰ رفت.')
+permit_step9_finish = post_view(_pack_action, permit_pack.finish, 'مرحله‌ی ۹ تایید شد و پرونده به مرحله‌ی ۱۰ رفت.')
 
 
 # ---------- construction without a permit, steps 10 and 11: form 16 with the governor's signature, the summary sent to the commission ----------
@@ -1788,43 +1455,19 @@ def permit_form16_page(request, file_id):
                     'others': permit_form16.OTHER_VIOLATIONS, 'requests': permit_form16.REQUESTS, 'served': permit_form16.SERVED}})
 
 
-def _form16_action(request, file_id, action, ok):
-    permit = permit_form16.find(request.user, file_id)
-    if permit is None:
-        raise Http404('پرونده پیدا نشد.')
-    try:
-        action(permit)
-        messages.success(request, ok)
-    except (OfficeError, lifecycle.TransitionError) as exc:
-        messages.error(request, str(exc))
-    return redirect(reverse('main:permit_form16', args=[permit.pk]) + ('?embed=1' if request.POST.get('embed') else ''))
+_form16_action = action_runner(permit_form16.find, 'permit_form16')
 
 
-@login_required
-@require_POST
-def permit_form16_save(request, file_id):
-    return _form16_action(request, file_id, lambda p: permit_form16.save(request.user, p, request.POST), 'پیش‌نویس ذخیره شد.')
+permit_form16_save = post_view(_form16_action, permit_form16.save, 'پیش‌نویس ذخیره شد.')
 
 
-@login_required
-@require_POST
-def permit_form16_file(request, file_id):
-    return _form16_action(request, file_id, lambda p: permit_form16.file_form(request.user, p, request.POST, request.FILES), 'فرم ۱۶ امضاشده به پرونده افزوده شد.')
+permit_form16_file = post_view(_form16_action, permit_form16.file_form, 'فرم ۱۶ امضاشده به پرونده افزوده شد.', files=True)
 
 
-@login_required
-@require_POST
-def permit_summary_send(request, file_id):
-    return _form16_action(request, file_id, lambda p: permit_form16.send_summary(request.user, p, request.POST, request.FILES), 'ارسال خلاصه‌ی پرونده به کمیسیون ثبت شد.')
+permit_summary_send = post_view(_form16_action, permit_form16.send_summary, 'ارسال خلاصه‌ی پرونده به کمیسیون ثبت شد.', files=True)
 
 
-@login_required
-@require_POST
-def permit_step10_finish(request, file_id):
-    return _form16_action(request, file_id, lambda p: permit_form16.finish(request.user, p, request.POST), 'مرحله‌ی ۱۰ تایید شد و پرونده به مرحله‌ی ۱۱ رفت.')
+permit_step10_finish = post_view(_form16_action, permit_form16.finish, 'مرحله‌ی ۱۰ تایید شد و پرونده به مرحله‌ی ۱۱ رفت.')
 
 
-@login_required
-@require_POST
-def permit_step11_finish(request, file_id):
-    return _form16_action(request, file_id, lambda p: permit_form16.finish(request.user, p, request.POST), 'مرحله‌ی ۱۱ تایید شد و پرونده به مرحله‌ی ۱۲ رفت.')
+permit_step11_finish = post_view(_form16_action, permit_form16.finish, 'مرحله‌ی ۱۱ تایید شد و پرونده به مرحله‌ی ۱۲ رفت.')

@@ -7,6 +7,7 @@ the workflow history entry and notifies the people involved.
 ``authority`` selects the wording used for the municipality head ('mayor') or
 for the municipal expert ('expert').
 """
+import contextvars
 from django.utils import timezone
 
 from main.models import CityVillage, County, Inspection, Province, ServiceRequest
@@ -33,12 +34,32 @@ def _ensure_open(sr):
         raise TransitionError('درخواست تکمیل شده است و قابل تغییر نیست.')
 
 
+_GUARDS = []
+_unguarded = contextvars.ContextVar('lifecycle_unguarded', default=False)
+
+
+def register_guard(fn):
+    """A guard is called before the generic approve / reject / refer / assign / status actions and raises TransitionError to refuse (the permit module
+    uses it to keep requests that have a permit file out of the old panels)."""
+    if fn not in _GUARDS:
+        _GUARDS.append(fn)
+
+
+class unguarded:  # pylint: disable=invalid-name
+    """``with lifecycle.unguarded():`` for the module that owns a request's own flow (see main/office/permit_request.py)."""
+
+    def __enter__(self):
+        self._token = _unguarded.set(True)
+
+    def __exit__(self, *exc):
+        _unguarded.reset(self._token)
+
+
 def ensure_plain(sr):
-    """A request that has a permit file moves only through the file's own steps (main/office/permit_*.py): the generic approve / reject / refer / status
-    actions of the old panels would close or re-route the request while the file stays at its step."""
-    from main.models import PermitFile      # pylint: disable=import-outside-toplevel
-    if PermitFile.objects.filter(request=sr).exists():
-        raise TransitionError('این درخواست پرونده‌ی ساختمانی است؛ مراحل آن را از صفحه‌ی خود پرونده انجام دهید.')
+    """Refuse the generic action when a registered guard says the request is handled elsewhere."""
+    if not _unguarded.get():
+        for guard in _GUARDS:
+            guard(sr)
 
 
 def _ensure_not_locked(sr):
@@ -116,9 +137,8 @@ def approve(sr, actor, *, notes='', completed=False, authority='expert'):
            f'درخواست شما توسط کارشناس دهیاری تایید گردید. {notes}', request=sr)
 
 
-def reject(sr, actor, reason, *, authority='expert', by_file=False):
-    if not by_file:
-        ensure_plain(sr)
+def reject(sr, actor, reason, *, authority='expert'):
+    ensure_plain(sr)
     _ensure_open(sr)
     if authority == 'mayor':
         sr.staff_comments = reason
@@ -135,6 +155,7 @@ def reject(sr, actor, reason, *, authority='expert', by_file=False):
 
 
 def request_documents(sr, actor, notes):
+    ensure_plain(sr)
     _ensure_open(sr)
     sr.staff_comments = (sr.staff_comments or '') + f"\n[نیاز به مدارک: {notes}]"
     _finish(sr, actor, status='requires_documents', stage='requires_documents',
@@ -225,20 +246,7 @@ def record_inspection(sr, inspector, *, approved, reason=''):
                f'بازرسی درخواست {sr.title} رد شد. دلیل: {reason}', request=sr)
 
 
-def permit_opened(sr, actor, *, code, notes=''):
-    """Step 1 of a building permit (افتتاح پرونده) is done: the file has its renewal code and moves on."""
-    _ensure_open(sr)
-    sr.parcel_number = code
-    _ensure_not_locked(sr)
-    _finish(sr, actor, status='in_review', stage='expert_review',
-            action=f'افتتاح پرونده پروانه و ثبت کد نوسازی {code}', notes=notes, to_role='engineer')
-    what = 'ساخت‌وساز بدون پروانه' if sr.request_type == 'no_permit' else 'پروانه ساختمان'
-    notify(sr.user, f'پرونده شما تایید شد: {sr.title}' if sr.request_type == 'no_permit' else f'پرونده شما افتتاح شد: {sr.title}',
-           f'مرحله‌ی ۱ پرونده‌ی {what} شما تایید شد و کد نوسازی ملک شما {code} است. مرحله‌ی بعد را در پرونده ببینید.', request=sr)
-
-
-def permit_resubmitted(sr, actor):
-    """The applicant added the missing papers: the file is waiting for the staff again."""
-    _ensure_open(sr)
-    _finish(sr, actor, status='pending', stage='expert_review', action='ارسال مجدد مدارک توسط متقاضی',
-            to_role='engineer')
+# public names for the modules that own a request's own flow (main/office/permit_request.py)
+ensure_open = _ensure_open
+ensure_not_locked = _ensure_not_locked
+finish = _finish

@@ -12,6 +12,7 @@ both papers are confirmed, any of them confirms the step and the file goes on to
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.access import can
 from main.accounting.parse import digits
@@ -33,12 +34,11 @@ def _now():
     return timezone.now().strftime('%Y-%m-%d %H:%M')
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
 def _staff(permit):
-    return permits._staff_to_tell(permit_step2._village(permit))       # pylint: disable=protected-access
+    return step_flow.staff_of(permit)
 
 
 def find(user, file_id):
@@ -300,7 +300,7 @@ def _upload(user, permit, kind, state, label, files):
 def _announce(permit, user, label, was_returned):
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action=f'ارسال {label} توسط متقاضی (مرحله ۵)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -385,7 +385,7 @@ def send_back(actor, permit, name, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل مدرک چیست.')
-    lifecycle.request_documents(permit.request, actor, f'{label}: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'{label}: {notes}')
     setattr(permit, state, 'returned')
     permit.staff_notes = notes[:2000]
     permit.save(update_fields=[state, 'staff_notes', 'updated_at'])

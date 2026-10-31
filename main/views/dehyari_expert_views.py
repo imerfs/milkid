@@ -21,6 +21,7 @@ from main.models import (
 from .common import role_required
 from main import lifecycle
 from main.access import policy_required
+from main import request_scope
 from main.request_scope import scoped_request_or_404
 from main.gis.access import maps_for
 
@@ -54,33 +55,11 @@ def dehyari_expert_dashboard(request):
     if user_profile.role not in allowed_roles and not request.user.is_staff and not request.user.is_superuser:
         return HttpResponseForbidden("شما دسترسی لازم برای مشاهده پنل کارشناس دهیاری را ندارید.")
 
-    # فیلتر جغرافیایی براساس حوزه دهیاری کاربر
-    village_filter = Q()
+    # the requests of the user's village (an admin sees all; staff without a village see none): one rule, main.request_scope
     user_village = user_profile.city_village or user_profile.city_village_name
-    if user_village and user_profile.role != 'admin':
-        # filed with this village directly, or by its own citizens without another target
-        village_filter = (
-            Q(target_municipality__city_village=user_village) |
-            Q(target_municipality__isnull=True) & (
-                Q(city_village__name=user_village) |
-                Q(user__profile__city_village_name=user_village) |
-                Q(user__profile__city_village=user_profile.city_village))
-        )
-
-    unscoped = user_profile.role == 'admin' or request.user.is_superuser
-    if not unscoped and not user_village:       # staff without a village in the profile see no request until an admin sets one
-        village_filter = Q(pk__in=[])
-
-    # پایگاه کلی درخواست‌های شهروندان
-    requests_qs = ServiceRequest.objects.filter(village_filter).select_related(
+    requests_qs = request_scope.visible_requests(request.user).select_related(
         'user', 'user__profile', 'service', 'city_village', 'assigned_to'
     ).prefetch_related('documents', 'technical_reports', 'inspections').order_by('-created_at')
-
-    # در صورتی که فیلتر حوزه اختصاصی رکوردی نداشت، کلیه درخواست‌ها را برای دیده‌شدن نمایش می‌دهیم
-    if unscoped and not requests_qs.exists() and village_filter != Q():
-        requests_qs = ServiceRequest.objects.all().select_related(
-            'user', 'user__profile', 'service', 'city_village', 'assigned_to'
-        ).prefetch_related('documents', 'technical_reports', 'inspections').order_by('-created_at')
 
     # آمار تفکیکی
     total_count = requests_qs.count()
@@ -305,7 +284,6 @@ def api_expert_request_documents(request, request_id):
     if not notes:
         return JsonResponse({'success': False, 'message': 'لطفاً مدارک مورد نیاز یا توضیحات نقص پرونده را درج نمایید.'}, status=400)
     try:
-        lifecycle.ensure_plain(service_request)
         lifecycle.request_documents(service_request, request.user, notes)
     except lifecycle.TransitionError as exc:
         return JsonResponse({'success': False, 'message': str(exc)}, status=409)

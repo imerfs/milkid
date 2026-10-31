@@ -12,7 +12,7 @@ from django.utils import timezone
 from main.accounting.parse import digits
 from main.models import Municipality, UserProfile
 from main.notifications import notify
-from main.office import permit_form, permit_step2, permit_step4, permits
+from main.office import permit_form, permit_step2, permit_step4, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
@@ -48,7 +48,7 @@ CHOICE_KEYS = ('ownership', 'existing', 'land', 'usage', 'position', 'structure'
 
 
 def _clean(value, limit=120):
-    return ' '.join(str(value or '').split())[:limit]
+    return step_flow.clean(value, limit)
 
 
 def _plain(number):

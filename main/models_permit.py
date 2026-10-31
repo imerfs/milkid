@@ -7,6 +7,7 @@ in the private storage (never served by /media/) and are shown only to the owner
 from django.conf import settings
 from django.db import models
 
+from . import stages
 from .storage import PrivateStorage
 
 # The nine steps of the permit process (the pages in main/templates/main/services/building-permits/). Only step 1 is
@@ -25,20 +26,7 @@ STAGES = [
 
 # Construction without a permit (ساخت‌وساز بدون پروانه) follows the Article 99 commission instead (the pages in
 # main/templates/main/services/construction-without-permit/). Only step 1 is handled by the system so far.
-UNLICENSED_STAGES = [
-    (1, 'ایجاد پرونده اولیه'),
-    (2, 'فرم درخواست و تعهدنامه'),
-    (3, 'اخطاریه و درخواست بازدید'),
-    (4, 'گزارش بازدید، پیش‌آمدگی و مصالح'),
-    (5, 'معرفی به کارشناس دادگستری و تعهدات'),
-    (6, 'پاسخ کارشناس دادگستری و استحکام بنا'),
-    (7, 'پرداخت عوارض و بهای خدمات'),
-    (8, 'لیست بازدید بنیاد و نامه‌ی بنیاد'),
-    (9, 'بسته‌ی فرم‌ها و تعهدنامه‌ی ملک'),
-    (10, 'فرم ۱۶ و امضای بخشدار'),
-    (11, 'خلاصه‌ی پرونده و ارسال به کمیسیون'),
-    (12, 'رأی کمیسیون، جریمه و پایان کار'),
-]
+UNLICENSED_STAGES = stages.TITLES        # the table (main/stages.py) is the single description of the track
 
 
 class PermitFile(models.Model):
@@ -245,37 +233,11 @@ class PermitFile(models.Model):
         if self.state != 'done':
             return self.get_state_display()
         if self.unlicensed:
-            if self.stage_no == 2:
-                return {'': 'منتظر فرم درخواست و تعهدنامه‌ی امضاشده (از متقاضی)', 'uploaded': 'فرم درخواست و تعهدنامه منتظر تایید',
-                        'returned': 'فرم‌های امضاشده برگشت خورد'}.get(self.commission_state, '')
-            if self.stage_no == 3:
-                if self.notice_state == 'verified':
-                    return {'': 'منتظر درخواست بازدید (از متقاضی)', 'requested': 'درخواست بازدید منتظر کارشناس فنی',
-                            'scheduled': 'بازدید زمان‌بندی شد'}.get(self.visit_state, '')
-                return {'': 'منتظر اخطاریه‌ی قبلی یا درخواست صدور اخطاریه (از متقاضی)', 'requested': 'درخواست اخطاریه منتظر صدور (دهیاری)',
-                        'issued': 'اخطاریه صادر شد؛ متقاضی حضوری امضا کند', 'uploaded': 'اخطاریه منتظر تایید',
-                        'returned': 'اخطاریه برگشت خورد'}.get(self.notice_state, '')
-            if self.stage_no == 4:
-                return self.step4_text()
-            if self.stage_no == 5:
-                return self.step5_text()
-            if self.stage_no == 9:
-                return {'': 'منتظر تعهد مالک و تعهدنامه‌ی ملک (از متقاضی)', 'committed': 'تعهد ثبت شد؛ منتظر تعهدنامه‌ی ملک (از متقاضی)',
-                        'uploaded': 'تعهدنامه‌ی ملک منتظر تایید', 'returned': 'تعهدنامه‌ی ملک برگشت خورد',
-                        'verified': 'تعهدنامه‌ی ملک تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.pack_state, '')
-            if self.stage_no == 10:
-                return 'فرم ۱۶ امضاشده در پرونده است؛ منتظر تایید نهایی مرحله' if self.form16_state == 'filed' else 'منتظر فرم ۱۶ و امضای بخشدار (دهیاری)'
-            if self.stage_no == 11:
-                return 'خلاصه‌ی پرونده به کمیسیون فرستاده شد؛ منتظر تایید نهایی مرحله' if self.summary_state == 'sent' else 'منتظر ارسال خلاصه‌ی پرونده به کمیسیون (دهیاری)'
-            if self.stage_no == 8:
-                return {'': 'منتظر درخواست قرار گرفتن در لیست بازدید بنیاد (از متقاضی)', 'requested': 'در لیست بازدید بنیاد؛ منتظر تایید انجام بازدید (کارشناس فنی)',
-                        'released': 'مدارک به متقاضی نشان داده شد؛ منتظر نامه‌ی بنیاد (از متقاضی)', 'uploaded': 'نامه‌ی بنیاد منتظر تایید',
-                        'returned': 'نامه‌ی بنیاد برگشت خورد', 'verified': 'نامه‌ی بنیاد تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.bonyad_list_state, '')
-            if self.stage_no == 7:
-                return self.step7_text()
-            if self.stage_no == 6:
-                return {'': 'منتظر دو جوابیه‌ی کارشناس دادگستری (از متقاضی)', 'uploaded': 'جوابیه‌های کارشناس منتظر تایید', 'returned': 'جوابیه‌ها برگشت خورد',
-                        'verified': 'جوابیه‌ها تایید شد؛ منتظر تایید نهایی مرحله'}.get(self.reply_state, '')
+            rule = stages.BY_NUMBER.get(self.stage_no)
+            if rule is not None and rule.state_field:
+                return rule.texts.get(getattr(self, rule.state_field), '')
+            if rule is not None and rule.custom:
+                return getattr(self, f'{rule.custom}_text')()
             return f'مرحله‌ی {str(self.stage_no - 1).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))} تایید شد؛ مرحله‌های بعدی در دست راه‌اندازی است'
         if self.stage_no >= 9:
             return {'': 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی', 'requested': 'درخواست پایان کار منتظر دهیاری', 'approved': 'گواهی پایان کار تایید شد؛ منتظر مهر و امضا',
@@ -310,18 +272,16 @@ class PermitFile(models.Model):
     def needs_staff(self):
         """True while the village staff (clerk / expert / dehyari) have something to decide on this file."""
         if self.unlicensed:
-            return (self.state == 'submitted' or self.sketch_state in ('requested', 'paid') or (self.stage_no == 2 and self.commission_state == 'uploaded')
-                    or (self.stage_no == 3 and (self.notice_state in ('requested', 'uploaded') or self.visit_state in ('requested', 'scheduled')))
-                    or (self.stage_no == 4 and (self.report_state != 'filed' or self.overhang_state == 'replied' or self.materials_state == 'uploaded'
-                                                or (self.overhang_state in ('', 'verified') and self.materials_state in ('', 'verified'))))
-                    or (self.stage_no == 5 and (self.expert_state == '' or self.consent_state == 'uploaded' or self.deed_state == 'uploaded'
-                                                or (self.consent_state == 'verified' and self.deed_state == 'verified')))
-                    or (self.stage_no == 6 and self.reply_state in ('uploaded', 'verified'))
-                    or (self.stage_no == 9 and self.pack_state in ('uploaded', 'verified'))
-                    or self.stage_no in (10, 11)
-                    or (self.stage_no == 8 and self.bonyad_list_state in ('requested', 'uploaded', 'verified'))
-                    or (self.stage_no == 7 and (self.plan_state == 'requested' or self.dues_settled
-                                                or any(not p.get('ok') for p in (self.dues or {}).get('payments') or []))))
+            if self.state == 'submitted' or self.sketch_state in ('requested', 'paid'):
+                return True
+            rule = stages.BY_NUMBER.get(self.stage_no)
+            if rule is None:
+                return False
+            if rule.staff_always:
+                return True
+            if rule.state_field:
+                return getattr(self, rule.state_field) in rule.staff_states
+            return bool(rule.custom) and getattr(self, f'{rule.custom}_needs')()
         return (self.state == 'submitted' or (self.stage_no == 3 and self.bonyad_state == 'uploaded')
                 or (self.stage_no == 4 and self.design_state in ('submitted', 'reviewed'))
                 or (self.stage_no == 6 and self.insurance_state == 'uploaded')
@@ -346,6 +306,28 @@ class PermitFile(models.Model):
         if not self.documents.filter(kind='defence_form').exists():
             return 'منتظر فرم دفاعیه‌ی امضاشده (از متقاضی)'
         return 'در انتظار بررسی'
+
+    def step3_text(self):
+        if self.notice_state == 'verified':
+            return {'': 'منتظر درخواست بازدید (از متقاضی)', 'requested': 'درخواست بازدید منتظر کارشناس فنی',
+                    'scheduled': 'بازدید زمان‌بندی شد'}.get(self.visit_state, '')
+        return {'': 'منتظر اخطاریه‌ی قبلی یا درخواست صدور اخطاریه (از متقاضی)', 'requested': 'درخواست اخطاریه منتظر صدور (دهیاری)',
+                'issued': 'اخطاریه صادر شد؛ متقاضی حضوری امضا کند', 'uploaded': 'اخطاریه منتظر تایید',
+                'returned': 'اخطاریه برگشت خورد'}.get(self.notice_state, '')
+
+    def step3_needs(self):
+        return self.notice_state in ('requested', 'uploaded') or self.visit_state in ('requested', 'scheduled')
+
+    def step4_needs(self):
+        return (self.report_state != 'filed' or self.overhang_state == 'replied' or self.materials_state == 'uploaded'
+                or (self.overhang_state in ('', 'verified') and self.materials_state in ('', 'verified')))
+
+    def step5_needs(self):
+        return (self.expert_state == '' or self.consent_state == 'uploaded' or self.deed_state == 'uploaded'
+                or (self.consent_state == 'verified' and self.deed_state == 'verified'))
+
+    def step7_needs(self):
+        return self.plan_state == 'requested' or self.dues_settled or any(not p.get('ok') for p in (self.dues or {}).get('payments') or [])
 
     def step4_text(self):
         """Where an unlicensed file stands in step 4: the report, the electricity office's answer, the materials, the confirmation."""

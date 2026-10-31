@@ -13,6 +13,7 @@ import jdatetime
 from django.db import transaction
 from django.utils import timezone
 
+from main.office import permit_request
 from main import lifecycle
 from main.accounting.parse import digits
 from main.models import ParcelArchive, PermitDocument, PermitFile
@@ -182,7 +183,7 @@ def submit_answer(user, permit, post, files):
     permit.save(update_fields=['bonyad', 'bonyad_state', 'bonyad_at', 'updated_at'])
     sr = permit.request
     if was_sent_back:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال پاسخ بنیاد مسکن توسط متقاضی (مرحله ۳)', from_user=user, to_role='engineer')
         sr.save(update_fields=['workflow_history', 'updated_at'])
@@ -226,7 +227,7 @@ def verify(actor, permit, post):
     if data['verdict'] == 'denied':
         permit.bonyad_state, permit.state = 'verified', 'rejected'
         permit.save()
-        lifecycle.reject(sr, actor, f'پاسخ بنیاد مسکن (نامه {data["letter_no"]}) غیرمجاز است.', by_file=True)
+        permit_request.reject(permit, actor, f'پاسخ بنیاد مسکن (نامه {data["letter_no"]}) غیرمجاز است.')
         _sync_parcel(permit, actor)
         return permit
     permit.bonyad_state, permit.stage_no = 'verified', 4
@@ -249,7 +250,7 @@ def send_back(actor, permit, notes):
     notes = (notes or '').strip()
     if not notes:
         raise Invalid('بنویسید مشکل پاسخ چیست.')
-    lifecycle.request_documents(permit.request, actor, f'پاسخ بنیاد مسکن: {notes}')
+    permit_request.ask_for_documents(permit, actor, f'پاسخ بنیاد مسکن: {notes}')
     permit.bonyad_state, permit.staff_notes = 'rejected', notes[:2000]
     permit.save(update_fields=['bonyad_state', 'staff_notes', 'updated_at'])
     return permit

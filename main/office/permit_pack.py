@@ -9,6 +9,8 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from main.office import step_flow
+from main.office import permit_request, step_flow
 from main import lifecycle
 from main.models import PermitDocument
 from main.notifications import notify
@@ -20,20 +22,14 @@ DEED_KIND = 'property_deed'
 MAX_FILES = 6
 
 
-def _clean(value, limit=150):
-    return ' '.join(str(value or '').split())[:limit]
+_clean = step_flow.clean
 
 
-def _now():
-    return timezone.localtime().strftime('%Y/%m/%d %H:%M')
+_now = step_flow.now
 
 
 def find(user, file_id):
     return permit_commit.find(user, file_id)
-
-
-def at_step(permit):
-    return permit.unlicensed and permit.stage_no == 9 and permit.state == 'done'
 
 
 def documents(permit, *kinds):
@@ -111,66 +107,22 @@ def upload_deed(user, permit, post, files):
     permit.save(update_fields=['pack', 'pack_state', 'updated_at'])
     sr = permit.request
     if was_returned:
-        lifecycle.permit_resubmitted(sr, user)
+        permit_request.resubmitted(sr, user)
     else:
         sr.add_workflow_step(action='ارسال تعهدنامه‌ی ملک توسط متقاضی (مرحله ۹)', from_user=user, to_role='clerk')
         sr.save(update_fields=['workflow_history', 'updated_at'])
-    for staff in permits._staff_to_tell(permit_step2._village(permit)):          # pylint: disable=protected-access
-        notify(staff, 'تعهدنامه‌ی ملک رسید', f'متقاضی پرونده {permit.pk} تعهدنامه‌ی ملک را فرستاد؛ منتظر تایید است.', request=sr)
+    step_flow.notify_staff(permit, 'تعهدنامه‌ی ملک رسید', f'متقاضی پرونده {permit.pk} تعهدنامه‌ی ملک را فرستاد؛ منتظر تایید است.')
     return permit
 
 
-@transaction.atomic
-def verify(actor, permit, post):
-    if not may_open(actor, permit):
-        raise Forbidden('اجازه‌ی تایید را ندارید.')
-    if not at_step(permit) or permit.pack_state != 'uploaded':
-        raise Conflict('تعهدنامه‌ای برای تایید نیست.')
-    if post.get('confirm') != 'on':
-        raise Invalid('تیک «تعهدنامه‌ی ملک را با اصل مقایسه و بررسی کردم» لازم است.')
-    data = dict(permit.pack or {})
-    data['checked'] = {'by': actor.get_full_name() or actor.username, 'at': _now()}
-    permit.pack, permit.pack_state = data, 'verified'
-    permit.save(update_fields=['pack', 'pack_state', 'updated_at'])
-    notify(permit.request.user, 'تعهدنامه‌ی ملک تایید شد', f'تعهدنامه‌ی ملک پرونده {permit.pk} تایید شد.', request=permit.request)
-    return permit
-
-
-@transaction.atomic
-def send_back(actor, permit, notes):
-    if not may_open(actor, permit):
-        raise Forbidden('اجازه‌ی این کار را ندارید.')
-    if not at_step(permit) or permit.pack_state != 'uploaded':
-        raise Conflict('تعهدنامه‌ای برای برگرداندن نیست.')
-    notes = (notes or '').strip()
-    if not notes:
-        raise Invalid('بنویسید مشکل تعهدنامه چیست.')
-    lifecycle.request_documents(permit.request, actor, f'تعهدنامه‌ی ملک: {notes}')
-    permit.pack_state, permit.staff_notes = 'returned', notes[:2000]
-    permit.save(update_fields=['pack_state', 'staff_notes', 'updated_at'])
-    return permit
-
-
-def blocking(permit):
-    return [] if permit.pack_state == 'verified' else ['تعهدنامه‌ی ملک هنوز تایید نشده است.']
-
-
-@transaction.atomic
-def finish(actor, permit, post):
-    if not may_open(actor, permit):
-        raise Forbidden('اجازه‌ی تایید این مرحله را ندارید.')
-    if not at_step(permit):
-        raise Conflict('پرونده در مرحله‌ی بسته‌ی فرم‌ها نیست.')
-    waiting = blocking(permit)
-    if waiting:
-        raise Conflict(waiting[0])
-    if post.get('confirm') != 'on':
-        raise Invalid('تیک «فرم‌ها و تعهدنامه‌ی ملک را بررسی کردم» لازم است.')
-    permit.stage_no = 10
-    permit.staff_notes = (post.get('notes') or '')[:2000]
-    permit.save()
-    sr = permit.request
-    sr.add_workflow_step(action='تایید مرحله ۹ (بسته‌ی فرم‌ها و تعهدنامه‌ی ملک)', from_user=actor, to_role='clerk', notes=permit.staff_notes)
-    sr.save(update_fields=['workflow_history', 'updated_at'])
-    notify(sr.user, 'مرحله‌ی ۹ تایید شد', f'تعهدنامه‌ی ملک پرونده {permit.pk} تایید شد؛ دهیاری فرم ۱۶ را تنظیم و به امضای بخشدار می‌رساند (مرحله‌ی ۱۰).', request=sr)
-    return permit
+STEP = step_flow.Step(
+    stage=9, state_field='pack_state', data_path=('pack',),
+    not_here='پرونده در مرحله‌ی بسته‌ی فرم‌ها نیست.', nothing_to_verify='تعهدنامه‌ای برای تایید نیست.',
+    verify_tick='تیک «تعهدنامه‌ی ملک را با اصل مقایسه و بررسی کردم» لازم است.',
+    verified_title='تعهدنامه‌ی ملک تایید شد', verified_text='تعهدنامه‌ی ملک پرونده {pk} تایید شد.',
+    nothing_to_send_back='تعهدنامه‌ای برای برگرداندن نیست.', reason_needed='بنویسید مشکل تعهدنامه چیست.', back_prefix='تعهدنامه‌ی ملک',
+    blocking_text='تعهدنامه‌ی ملک هنوز تایید نشده است.', history='تایید مرحله ۹ (بسته‌ی فرم‌ها و تعهدنامه‌ی ملک)',
+    done_title='مرحله‌ی ۹ تایید شد',
+    done_text='تعهدنامه‌ی ملک پرونده {pk} تایید شد؛ دهیاری فرم ۱۶ را تنظیم و به امضای بخشدار می‌رساند (مرحله‌ی ۱۰).',
+    finish_tick='تیک «فرم‌ها و تعهدنامه‌ی ملک را بررسی کردم» لازم است.')
+at_step, verify, send_back, blocking, finish = STEP.at_step, STEP.verify, STEP.send_back, STEP.blocking, STEP.finish

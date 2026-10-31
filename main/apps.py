@@ -7,4 +7,5 @@ class MainConfig(AppConfig):
 
     def ready(self):
         from main import audit
+        from main.office import permit_request      # pylint: disable=unused-import  (registers the permit guard in main.lifecycle)
         audit.connect()

@@ -13,7 +13,7 @@ from django.utils import timezone
 from main.accounting.parse import digits, parse_amount
 from main.models import PermitDocument, PermitFile
 from main.notifications import notify
-from main.office import permit_form, permit_step2, permit_step3, permits
+from main.office import permit_form, permit_step2, permit_step3, permits, step_flow
 from main.office.errors import Conflict, Forbidden, Invalid
 from main.office.permits import may_open
 
@@ -24,7 +24,7 @@ OPEN_STATES = ('introduced', 'returned')
 
 
 def _text(value, limit=80):
-    return ' '.join(str(value or '').split())[:limit]
+    return step_flow.clean(value, limit)
 
 
 def clean(post):
@@ -135,8 +135,7 @@ def submit(user, permit, post, uploads):
     sr = permit.request
     sr.add_workflow_step(action='ارسال گواهی تامین اجتماعی توسط متقاضی', from_user=user, to_role='clerk')
     sr.save(update_fields=['workflow_history', 'updated_at'])
-    for staff in permits._staff_to_tell(permit_step2._village(permit)):           # pylint: disable=protected-access
-        notify(staff, 'گواهی تامین اجتماعی رسید', f'متقاضی پرونده {permit.pk} گواهی تامین اجتماعی را فرستاد؛ صحت آن را بررسی کنید.', request=sr)
+    step_flow.notify_staff(permit, 'گواهی تامین اجتماعی رسید', f'متقاضی پرونده {permit.pk} گواهی تامین اجتماعی را فرستاد؛ صحت آن را بررسی کنید.')
     return permit
 
 
