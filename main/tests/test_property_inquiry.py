@@ -139,7 +139,7 @@ class Flags(Base):
 @skipUnless(HAVE_SHAPELY, 'shapely is installed only where a map is rebuilt')
 class FlagBuilder(TestCase):
     def test_a_plot_is_flagged_when_enough_of_it_lies_in_the_frame(self):
-        from shapely.geometry import box
+        from shapely.geometry import box  # pylint: disable=import-error
         from scripts.gis import build_plan_flags as build
         parcels = [('inside', box(0, 0, 1, 1)), ('half', box(2, 0, 3, 1)), ('out', box(5, 5, 6, 6))]
         frame = [box(-1, -1, 1.5, 2), box(2, -1, 2.6, 2)]

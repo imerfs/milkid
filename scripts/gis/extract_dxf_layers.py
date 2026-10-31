@@ -27,7 +27,7 @@ def layer_colours(path, wanted):
                 else:
                     record = None
             elif record is not None and code in ('62', '420', '6'):
-                record[code] = value
+                record[code] = value  # pylint: disable=unsupported-assignment-operation
     return found
 
 
