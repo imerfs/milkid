@@ -256,3 +256,27 @@ python scripts/gis/build_plan_flags.py layers.json dastgerd
 
 Deploy: `python manage.py migrate` then `python manage.py load_village_map dastgerd` (keeps archives, locks, payments).
 Map icons are Keyline Icons (MIT).
+
+### How the inquiry map is drawn
+
+- **Street map without a tile server.** The ground is a plain light colour; streets are the gaps between plots, street names come from the
+  drawing's text (`<slug>_context.geojson`, shown from zoom 16) and each plot's number is written inside it (from zoom 18). Nothing is fetched from
+  CARTO/OSM, which refuse or key-gate requests from Iran.
+- **Land use by colour.** Each plot is filled with the colour of its land-use class and the legend lists the classes with the names the staff gave
+  them on the staff map (an unnamed colour is shown as «کاربری N (نام ثبت نشده)»); clicking a legend row shows only that land use. «داخل طرح» and
+  «مستثنیات» are outlines, so both can be read at once.
+- The number written inside a plot in the drawing is the *plot number* (شماره قطعه); the card shows it as such.
+
+### Satellite imagery served by this site
+
+Esri and Google refuse requests from Iran (the server and the visitors' browsers), so the village's picture is stored with the code:
+`main/data/gis/tiles/<slug>/satellite/<z>/<x>/<y>.jpg`, served by `gis/<slug>/tiles/satellite/{z}/{x}/{y}.jpg` (login required, `main/gis/tiles.py`).
+Both the staff map and the inquiry map use it; the staff map's dated-imagery timeline (Wayback, hosted abroad) is off while stored tiles exist.
+
+```
+python scripts/gis/cache_tiles.py dastgerd                      # Esri World Imagery, zoom 13-18, run once from a machine that can reach it
+python scripts/gis/cache_tiles.py dastgerd --url 'https://…/{z}/{x}/{y}.jpg' --max-zoom 19   # another provider (mind its terms)
+```
+
+Only the village's own area is fetched (about 600 tiles, a few MB). Esri has no real picture beyond zoom 18, so deeper zoom stretches it; the
+attribution is shown on the map. Setting `GIS_SATELLITE_TILE_URL` (an Iranian provider) makes the site use that instead of the stored tiles.

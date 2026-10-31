@@ -6,8 +6,8 @@ from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
-from main.gis import inquiry, plan_flags
-from main.models import MapParcel, ParcelArchive, ParcelLock, VillageMap
+from main.gis import inquiry, plan_flags, tiles
+from main.models import LandUseClass, MapParcel, ParcelArchive, ParcelLock, VillageMap
 from main.tests.helpers import client_for, make_user
 
 try:
@@ -53,7 +53,29 @@ class WhatIsShown(Base):
     def test_the_map_data_has_only_the_light_fields(self):
         data = self.get('main:inquiry_data').json()
         self.assertEqual(len(data['features']), self.map.parcels.count())
-        self.assertEqual(set(data['features'][0]['properties']), {'n', 'b', 'c', 'z', 'a', 'u', 'p', 'x', 'e'})
+        self.assertEqual(set(data['features'][0]['properties']), {'n', 'b', 'c', 'z', 'a', 'l', 'p', 'x', 'e'})
+
+    def test_the_map_data_carries_the_land_uses_streets_and_village_limit(self):
+        data = self.get('main:inquiry_data').json()
+        self.assertTrue(data['land_uses'])
+        self.assertTrue(all(u['name'] and u['color'].startswith('#') for u in data['land_uses']))
+        ids = {u['id'] for u in data['land_uses']}
+        self.assertTrue({f['properties']['l'] for f in data['features']} <= ids | {0})
+        self.assertTrue(data['streets'])
+        self.assertEqual(set(data['streets'][0]), {'t', 'x', 'y', 'r', 'h'})
+        self.assertIn('limit', data)
+
+    def test_a_land_use_shows_the_name_the_staff_gave_its_colour_and_an_unnamed_one_a_number(self):
+        use = self.parcel.land_use
+        LandUseClass.objects.filter(pk=use.pk).update(name='تجاری ویژه')
+        card = self.get('main:inquiry_parcel', args=[SLUG, self.parcel.pk]).json()['parcel']
+        self.assertEqual(card['land_use'], 'تجاری ویژه')
+        self.assertEqual(card['land_use_color'], use.color)
+        LandUseClass.objects.filter(pk=use.pk).update(name='')
+        card = self.get('main:inquiry_parcel', args=[SLUG, self.parcel.pk]).json()['parcel']
+        self.assertIn('نام ثبت نشده', card['land_use'])
+        names = {u['name'] for u in self.get('main:inquiry_data').json()['land_uses']}
+        self.assertIn(card['land_use'], names)                         # the map legend and the card say the same thing
 
     def test_the_card_never_carries_private_data(self):
         ParcelArchive.objects.create(parcel=self.parcel, owner_name='مالک خصوصی', permit_number='123')
@@ -71,6 +93,8 @@ class WhatIsShown(Base):
         self.assertIn('داخل طرح', texts)
         self.assertIn('جزو مستثنیات', texts)
         self.assertEqual(card['code'], self.parcel.renewal_code)
+        self.assertEqual(card['number'], self.parcel.number)
+        self.assertNotIn('lot', card)                                # the number written inside the plot IS the plot number
         self.assertIn('استعلام رسمی', card['notice'])
         MapParcel.objects.filter(pk=self.parcel.pk).update(in_plan=False, exempt=False)
         texts = ' '.join(s['text'] for s in self.get('main:inquiry_parcel', args=[SLUG, self.parcel.pk]).json()['parcel']['status'])
@@ -80,6 +104,35 @@ class WhatIsShown(Base):
     def test_a_plot_asked_for_through_another_village_is_not_found(self):
         VillageMap.objects.create(slug='other', name='دیگر')
         self.assertEqual(self.get('main:inquiry_parcel', args=['other', self.parcel.pk]).status_code, 404)
+
+
+class Tiles(Base):
+    def url(self, layer='satellite', z=15, x=0, y=0):
+        return reverse('main:gis_tile', args=[SLUG, layer, z, x, y])
+
+    def stored(self):
+        base = tiles.root(SLUG, 'satellite')
+        path = next(base.rglob('*.jpg'))
+        z, x, y = int(path.parts[-3]), int(path.parts[-2]), int(path.stem)
+        return z, x, y
+
+    def test_a_stored_tile_is_served_to_a_signed_in_user_and_kept_by_the_browser(self):
+        z, x, y = self.stored()
+        page = client_for(self.citizen).get(self.url(z=z, x=x, y=y))
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page['Content-Type'], 'image/jpeg')
+        self.assertIn('max-age', page['Cache-Control'])
+        self.assertEqual(b''.join(page.streaming_content)[:2], bytes([0xFF, 0xD8]))      # a JPEG
+
+    def test_the_stored_imagery_needs_a_login_and_unknown_tiles_are_404(self):
+        z, x, y = self.stored()
+        self.assertEqual(client_for().get(self.url(z=z, x=x, y=y)).status_code, 401)
+        self.assertEqual(client_for(self.citizen).get(self.url(z=z, x=x + 5000, y=y)).status_code, 404)
+        self.assertEqual(client_for(self.citizen).get(self.url(layer='secret', z=z, x=x, y=y)).status_code, 404)
+
+    def test_the_village_has_its_satellite_picture_for_the_whole_village_at_street_level(self):
+        zooms = {int(p.name) for p in tiles.root(SLUG, 'satellite').iterdir()}
+        self.assertTrue({13, 16, 18} <= zooms)
 
 
 class Search(Base):
@@ -155,8 +208,9 @@ class Panel(Base):
 
     def test_the_page_renders_the_map_with_the_village_and_the_icons(self):
         page = self.get('main:property_inquiry', args=[])
-        for needle in ('id="pi-map"', 'property-inquiry.js', 'روستای دستگرد', 'Keyline Icons', 'id="i-search"'):
+        for needle in ('id="pi-map"', 'property-inquiry.js', 'روستای دستگرد', 'Keyline Icons', 'id="i-search"', 'data-base="satellite"', 'id="pi-uses"'):
             self.assertContains(page, needle)
+        self.assertNotIn('cartocdn', page.content.decode())                      # no foreign tile server: the street map is drawn from the village's own data
         self.assertEqual(page.context['chosen'].slug, SLUG)
 
     def test_without_any_map_the_page_says_so(self):

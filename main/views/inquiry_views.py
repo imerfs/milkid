@@ -1,13 +1,12 @@
 """The citizen's property inquiry map («استعلام خرید ملک»): a light map of a village's plots and a search by renewal code or plot number."""
-from django.conf import settings
 from django.core.cache import cache
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from main.access import policy_required
-from main.gis import inquiry
+from main.gis import inquiry, tiles
 from main.models import MapParcel, VillageMap
 from main.ratelimit import client_ip
 
@@ -51,7 +50,7 @@ def inquiry_page(request, slug=None):
         chosen = next((m for m in maps if m.name == village), maps[0])
     config = {
         'slug': chosen.slug, 'name': chosen.name, 'disclaimer': inquiry.DISCLAIMER,
-        'basemap': next((b for b in settings.GIS_BASEMAPS if b['id'] == 'carto'), None),
+        'satellite': tiles.local_satellite(chosen.slug),
         'urls': {'data': reverse('main:inquiry_data', args=[chosen.slug]), 'search': reverse('main:inquiry_search', args=[chosen.slug]),
                  'parcel': reverse('main:inquiry_parcel', args=[chosen.slug, 0])},
     }
@@ -83,4 +82,16 @@ def inquiry_parcel(request, slug, parcel_id):
     parcel = MapParcel.objects.select_related('land_use').filter(village_map=village_map, pk=parcel_id).first()
     if parcel is None:
         raise Http404('قطعه پیدا نشد.')
-    return _json({'parcel': inquiry.card(parcel, inquiry._zone_names(village_map))})       # pylint: disable=protected-access
+    return _json({'parcel': inquiry.card(parcel, inquiry._zone_names(village_map), inquiry.land_use_table(village_map))})       # pylint: disable=protected-access
+
+
+@require_GET
+@policy_required('inquiry.view', api=True)
+def gis_tile(request, slug, layer, z, x, y):          # pylint: disable=unused-argument
+    """One stored map tile of the village (see main/gis/tiles.py); the pictures never change between releases, so browsers may keep them."""
+    path = tiles.tile_path(slug, layer, z, x, y)
+    if path is None:
+        raise Http404('تصویر پیدا نشد.')
+    response = FileResponse(path.open('rb'), content_type='image/jpeg')
+    response['Cache-Control'] = 'private, max-age=604800'
+    return response

@@ -4,7 +4,7 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from unittest import skipUnless
+from unittest import mock, skipUnless
 
 from django.test import TestCase
 from django.urls import reverse
@@ -955,12 +955,22 @@ class MapBackgroundsAndTimeline(TestCase):
         self.assertEqual(years, list(range(1370, years[-1] + 1)))
         self.assertContains(self.page, 'min="1370"')
 
-    def test_satellite_is_first_and_follows_the_timeline_with_better_street_maps_next_to_it(self):
+    def test_satellite_is_first_with_the_street_map_next_to_it(self):
         maps = self.config()['basemaps']
-        self.assertEqual([m['id'] for m in maps][:3], ['satellite', 'carto', 'osm'])
-        self.assertTrue(maps[0]['wayback'])
-        self.assertTrue(self.config()['waybackConfig'].startswith('https://'))
+        self.assertEqual([m['id'] for m in maps][:2], ['satellite', 'osm'])
         self.assertTrue(all(m['maxZoom'] >= m['nativeZoom'] for m in maps))      # zooming past the last real tile stretches it
+
+    def test_a_village_with_stored_imagery_serves_it_from_its_own_server(self):
+        satellite = self.config()['basemaps'][0]
+        self.assertEqual(satellite['url'], f'/gis/{SLUG}/tiles/satellite/{{z}}/{{x}}/{{y}}.jpg')
+        self.assertFalse(satellite['wayback'])                                      # the dated releases live on a server Iran cannot reach
+
+    def test_without_stored_imagery_the_foreign_provider_and_its_timeline_stay(self):
+        with mock.patch('main.gis.tiles.available', return_value=False):
+            page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
+        config = json.loads(re.search(r'<script id="vm-config" type="application/json">(.*?)</script>', page.content.decode(), re.S).group(1))
+        self.assertTrue(config['basemaps'][0]['wayback'])
+        self.assertTrue(config['waybackConfig'].startswith('https://'))
 
     def test_the_drawing_layers_urls_change_with_the_file(self):
         urls = self.config()['urls']

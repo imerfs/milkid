@@ -17,7 +17,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from main.access import policy_required
 from main.accounting.parse import digits, jalali_str, parse_amount, parse_jalali
-from main.gis import data as gis_data, rules
+from main.gis import data as gis_data, rules, tiles
 from main.gis.access import may_use
 from main.models import MapEasement, MapParcel, ParcelArchive, ParcelFeePayment, ParcelLock, VillageMap
 from main.office import permits
@@ -59,7 +59,7 @@ def map_page(request, slug):
         'csrf': get_token(request),
         'canEdit': may_use(request.user, village_map, 'gis.edit'),
         'canLock': may_use(request.user, village_map, 'gis.lock'),
-        'basemaps': settings.GIS_BASEMAPS,
+        'basemaps': tiles.basemaps(village_map.slug),
         'waybackConfig': settings.GIS_WAYBACK_CONFIG_URL,
         'trafficUrl': settings.GIS_TRAFFIC_TILE_URL,
         'years': years,
@@ -76,7 +76,7 @@ def map_page(request, slug):
         'easementRules': {kind: rules.rule(kind) for kind, _ in MapEasement.KINDS},
     }
     return render(request, 'main/gis/village_map.html', {
-        'village_map': village_map, 'config': config, 'basemaps': settings.GIS_BASEMAPS,
+        'village_map': village_map, 'config': config, 'basemaps': tiles.basemaps(village_map.slug),
         'traffic_url': settings.GIS_TRAFFIC_TILE_URL,
         'easement_kinds': [(kind, rules.label(kind), rules.rule(kind)) for kind, _ in MapEasement.KINDS],
         'lock_reasons': ParcelLock.REASONS, 'years': years,
