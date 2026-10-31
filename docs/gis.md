@@ -280,3 +280,23 @@ python scripts/gis/cache_tiles.py dastgerd --url 'https://…/{z}/{x}/{y}.jpg' -
 
 Only the village's own area is fetched (about 600 tiles, a few MB). Esri has no real picture beyond zoom 18, so deeper zoom stretches it; the
 attribution is shown on the map. Setting `GIS_SATELLITE_TILE_URL` (an Iranian provider) makes the site use that instead of the stored tiles.
+
+## Plot-number series (دسته‌ی شماره‌ی قطعه)
+
+Besides the village's own block-and-plot numbering, a village may have **series**: subdivisions whose plots are numbered 1, 2, 3 ... on their own (the first is the
+«بیست هکتاری», 533 plots, numbers 1 to 539). A bare plot number is therefore ambiguous, so every search takes the series with it.
+
+- A series plot is an ordinary `MapParcel` with `series = '<key>'` (empty for the village's own plots), no block, no neighbourhood and no renewal code. The registry
+  is `main/gis/series.py` (`SERIES[slug][key]`: name, search aliases, outline file); a second and third series are one more entry and one more file.
+- The outlines and numbers come from a drawing with `scripts/gis/build_plot_series.py <file.dxf> <slug> <key> --layer … --box xmin ymin xmax ymax`: the lines of one
+  layer inside the box (a drawing may hold the same plan several times side by side) are closed into outlines, and every outline holding exactly one number text is a
+  plot. The «بیست هکتاری» came from `اصلاحات93.dwg` (layer `tafkek`, the copy at x 713400-714300). Numbers whose outline could not be closed are left out (11 here: 49, 105,
+  358, 380, 383, 407, 413, 419, 430, 522, 527); a number written on two plots keeps both (517, 518, 529, one more).
+- `load_village_map` loads the series after the village (`series.load`), never deletes a series plot that has an archive, payments or a lock, and never touches the
+  village's own plots when a series file changes (migration 0092 loaded the first one).
+- Search (citizen inquiry map and the staff map): name the series («بیست هکتاری ۱۲» or «۲۰ هکتاری-۱۲») or choose it in the inquiry map's menu
+  (`همه‌ی دسته‌ها / روستا (قطعه و بلوک) / بیست هکتاری`, `?series=` on the search URL). A number alone lists the series' plot first, then the village's plots. Choosing a series also
+  shows only its plots on the inquiry map and zooms to them.
+- Cards and lists say «قطعه‌ی شماره‌ی N» with the series name instead of block and neighbourhood; the staff map's plot labels and archive panel show the same.
+
+Deploy: `git pull`, `python manage.py migrate` (adds the column and loads the series), restart.

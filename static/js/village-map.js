@@ -569,7 +569,7 @@
     $('vm-empty').hidden = true;
     $('vm-parcel').hidden = false;
     $('vm-parcel').dataset.id = parcel.id;
-    $('vm-code').textContent = parcel.code || '— بدون کد —';
+    $('vm-code').textContent = parcel.series ? `قطعه‌ی ${fa(parcel.number)} · ${parcel.series_name}` : (parcel.code || '— بدون کد —');
     $('vm-block').textContent = parcel.block || '—';
     $('vm-number').textContent = parcel.number || '—';
     $('vm-zone').textContent = parcel.zone ? `محله ${fa(parcel.zone)}` : '—';
@@ -785,7 +785,7 @@
   }
   function announce(parcel) {
     if (!parcel) return;
-    const bits = [parcel.code || 'قطعه بدون کد'];
+    const bits = [parcel.series ? `قطعه‌ی ${fa(parcel.number)} ${parcel.series_name}` : (parcel.code || 'قطعه بدون کد')];
     if (parcel.easements.length) bits.push(`حریم رعایت نشده: ${parcel.easements.map((e) => e.label).join('، ')}`);
     if (parcel.locked) bits.push('قفل است و از خدمات محروم شده');
     notice(bits.join(' — '), parcel.easements.length > 0 || parcel.locked);
@@ -793,6 +793,19 @@
 
   // several plots share what was typed (a repeated code, a plot number): list them and let the user pick
   function hideResults() { const box = $('vm-results'); box.hidden = true; box.replaceChildren(); }
+  // a plot-number series (the «بیست هکتاری»): its plots are numbered 1, 2, 3 ... on their own, so a search names it («بیست هکتاری 12») to mean those
+  const seriesList = cfg.series || [];
+  const seriesName = (key) => (seriesList.find((s) => s.key === key) || {}).name || key;
+  function matchSeries(text) {
+    for (const s of seriesList) {
+      for (const alias of [...s.aliases].sort((a, b) => b.length - a.length)) {
+        const word = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(`(?:^|[\\s-])${word}(?=$|[\\s-]|\\d)`);
+        if (re.test(text)) return { key: s.key, rest: text.replace(re, ' ').replace(/\s+/g, ' ').trim().replace(/^-+|-+$/g, '') };
+      }
+    }
+    return null;
+  }
   function showResults(ids, text) {
     const box = $('vm-results');
     box.replaceChildren();
@@ -811,7 +824,7 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       const use = landUses.get(props.lu);
-      btn.textContent = `${props.code || 'بدون کد'} · ${fa(props.a)} م²${use ? ` · ${use.name}` : ''}${props.e ? ' · تقریبی' : ''}`;
+      btn.textContent = `${props.sr ? `قطعه‌ی ${fa(props.n)} ${seriesName(props.sr)}` : (props.code || 'بدون کد')} · ${fa(props.a)} م²${use ? ` · ${use.name}` : ''}${props.e ? ' · تقریبی' : ''}`;
       btn.addEventListener('click', async () => { hideResults(); announce(await select(id, true)); });
       box.appendChild(btn);
     });
@@ -835,6 +848,18 @@
       if (b > 100000 && a > 1000000) { const [lat, lng] = UTM.toLatLng(b, a); return goTo(lat, lng, `X ${b}، Y ${a}`); }
       if (a > 20 && a < 45 && b > 40 && b < 70) return goTo(a, b, `${a}, ${b}`);
       if (b > 20 && b < 45 && a > 40 && a < 70) return goTo(b, a, `${b}, ${a}`);
+    }
+    const named = matchSeries(raw);
+    if (named) {
+      const hit = [];
+      plots.forEach(({ props }, id) => { if (props.sr === named.key && props.n === named.rest) hit.push(id); });
+      hideResults();
+      if (hit.length === 1) { announce(await select(hit[0], true)); return; }
+      if (hit.length) { showResults(hit, raw); return; }
+      $('vm-search-input').setCustomValidity('پیدا نشد');
+      $('vm-search-input').reportValidity();
+      setTimeout(() => $('vm-search-input').setCustomValidity(''), 1500);
+      return;
     }
     // words in front of the numbers: "قطعه 25 بلوک 182 محله 2", "ملک 25", "قطعه تفکیکی 432", "t432"
     const labelled = {};

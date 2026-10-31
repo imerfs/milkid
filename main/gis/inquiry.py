@@ -9,7 +9,7 @@ import zlib
 
 from django.core.cache import cache
 
-from main.gis import rules
+from main.gis import rules, series as plot_series
 from main.models import MapZone
 
 DISCLAIMER = 'این اطلاعات راهنما است و جایگزین استعلام رسمی نیست؛ پیش از خرید، پاسخ رسمی را از دهیاری بگیرید.'
@@ -50,6 +50,7 @@ def card(parcel, zone_names, land_uses):
         'id': parcel.pk, 'number': parcel.number, 'block': parcel.block_no, 'code': parcel.renewal_code,
         'zone': parcel.zone, 'zone_name': zone_names.get(parcel.zone, ''), 'area': round(parcel.area_m2, 1),
         'land_use': land_uses.get(parcel.land_use_id, {}).get('name', ''), 'land_use_color': land_uses.get(parcel.land_use_id, {}).get('color', ''),
+        'series': parcel.series, 'series_name': plot_series.name(parcel.village_map.slug, parcel.series) if parcel.series else '',
         'in_plan': parcel.in_plan, 'exempt': parcel.exempt, 'estimated': parcel.kind == 'estimated',
         'status': [{'key': k, 'text': t, 'state': s} for k, t, s in statuses(parcel)],
         'notice': DISCLAIMER,
@@ -86,17 +87,17 @@ def collection(village_map):
     stamp = int(village_map.loaded_at.timestamp()) if village_map.loaded_at else 0
     uses = land_use_table(village_map)
     names = zlib.crc32(repr(sorted((u['id'], u['name'], u['color']) for u in uses.values())).encode())      # a renamed colour changes the answer
-    key = f'inquiry:{village_map.slug}:{stamp}:{flags[0]}-{flags[1]}:{names}'
+    key = f'inquiry:{village_map.slug}:{stamp}:{flags[0]}-{flags[1]}:{names}:s'
     hit = cache.get(key)
     if hit is not None:
         return hit
     features = []
-    for p in village_map.parcels.only('id', 'number', 'block_no', 'renewal_code', 'zone', 'area_m2', 'in_plan', 'exempt', 'kind', 'geometry', 'land_use_id'):
+    for p in village_map.parcels.only('id', 'number', 'block_no', 'renewal_code', 'zone', 'area_m2', 'in_plan', 'exempt', 'kind', 'geometry', 'land_use_id', 'series'):
         features.append({'type': 'Feature', 'id': p.pk, 'geometry': {**p.geometry, 'coordinates': _round(p.geometry['coordinates'])},
                          'properties': {'n': p.number, 'b': p.block_no, 'c': p.renewal_code, 'z': p.zone, 'a': round(p.area_m2), 'l': p.land_use_id or 0,
-                                        'p': int(p.in_plan), 'x': int(p.exempt), 'e': int(p.kind == 'estimated')}})
+                                        'p': int(p.in_plan), 'x': int(p.exempt), 'e': int(p.kind == 'estimated'), 'r': p.series}})
     payload = {'type': 'FeatureCollection', 'features': features, 'centre': [village_map.centre_lat, village_map.centre_lng],
-               'land_uses': list(uses.values()), **_surroundings(village_map)}
+               'land_uses': list(uses.values()), 'series': plot_series.table(village_map.slug), **_surroundings(village_map)}
     cache.set(key, payload, 3600)
     return payload
 
@@ -104,13 +105,23 @@ def collection(village_map):
 _CODE = re.compile(r'^\d+(-\d+){4}$')
 
 
-def search(village_map, query):
-    """Plots matching a renewal code (0-0-12-69-3), a lot number, plot-block(-neighbourhood) or just a plot number. At most ``MAX_RESULTS``."""
-    text = normalise(query)
+def search(village_map, query, series=None):
+    """Plots matching a renewal code (0-0-12-69-3), a lot number, plot-block(-neighbourhood) or just a plot number. At most ``MAX_RESULTS``.
+
+    A plot number alone is ambiguous between the village's own numbering and each plot-number series: name the series in the text («بیست هکتاری 12») or pass
+    ``series`` (a key, ``'main'`` for the village's own numbering, None or ``'all'`` for every one).
+    """
+    named, text = plot_series.split_query(village_map.slug, query)
+    series = named or series
+    text = normalise(text)
     if not text:
         return []
     text = re.sub(r'[\s/_.\\]+', '-', text)
-    parcels = village_map.parcels.select_related('land_use')
+    parcels = village_map.parcels.select_related('land_use', 'village_map')
+    if series == 'main':
+        parcels = parcels.filter(series='')
+    elif series and series != 'all':
+        parcels = parcels.filter(series=series)
     if _CODE.match(text):
         found = parcels.filter(renewal_code=text)
     else:
@@ -125,4 +136,5 @@ def search(village_map, query):
             found = parcels.filter(number=parts[0], block_no=parts[1], zone=parts[2])
     zones = _zone_names(village_map)
     uses = land_use_table(village_map)
-    return [card(p, zones, uses) for p in found.distinct().order_by('zone', 'block_no', 'number')[:MAX_RESULTS]]
+    # series plots first: a number alone matches a plot in every block of the village, and those must not push the series' one (1 or 2 per number) off the list
+    return [card(p, zones, uses) for p in found.distinct().order_by('-series', 'zone', 'block_no', 'number')[:MAX_RESULTS]]

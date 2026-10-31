@@ -10,17 +10,20 @@
     var map = L.map('pi-map', { zoomControl: true, preferCanvas: true, maxZoom: 21, minZoom: 12, zoomSnap: 0.5, attributionControl: true });
     map.attributionControl.setPrefix(false);
     var canvas = L.canvas({ padding: 0.5 });
-    var layer = null, byId = {}, uses = {}, selected = null, filter = 'all', useFilter = null, satellite = null, base = 'street';
+    var layer = null, byId = {}, uses = {}, selected = null, filter = 'all', useFilter = null, seriesFilter = 'all', satellite = null, base = 'street';
     var labels = L.layerGroup(), streetLabels = L.layerGroup(), context = L.layerGroup().addTo(map);
 
     if (config.satellite) {
         satellite = L.tileLayer(config.satellite.url, { maxZoom: 21, maxNativeZoom: config.satellite.nativeZoom || 18, attribution: config.satellite.attribution || '' });
     }
 
+    var seriesName = {};
+    (config.series || []).forEach(function (s) { seriesName[s.key] = s.name; });
     var RING = { exempt: ['#16a34a', 3], plan: ['#ea580c', 2.6] };
     function kind(p) { return p.x ? 'exempt' : (p.p ? 'plan' : 'plain'); }
     function visible(p) {
         if (useFilter !== null && p.l !== useFilter) return false;
+        if (seriesFilter !== 'all' && (p.r || 'main') !== seriesFilter) return false;
         if (filter === 'plan') return !!p.p;
         if (filter === 'exempt') return !!p.x;
         if (filter === 'clear') return !p.p && !p.x;
@@ -89,8 +92,8 @@
         var rows = c.status.map(function (s) { return '<li class="is-' + s.state + '">' + icon(s.state) + '<span>' + esc(fa(s.text)) + '</span></li>'; }).join('');
         var use = '<div class="pi-use"><dt>کاربری</dt><dd>' + (c.land_use_color ? '<i class="pi-sw" style="background:' + esc(c.land_use_color) + '"></i>' : '') + esc(fa(c.land_use || '—')) + '</dd></div>';
         var el = document.getElementById('pi-card');
-        el.innerHTML = '<h2>قطعه‌ی شماره‌ی ' + esc(fa(c.number || 'بدون شماره')) + '</h2><span class="pi-code">' + esc(fa(c.code || '')) + '</span>' +
-            '<dl class="pi-facts">' + fact('بلوک', c.block) + fact('محله', c.zone_name) + fact('مساحت (مترمربع)', c.area) + fact('شماره‌ی قطعه', c.number) + use + '</dl>' +
+        el.innerHTML = '<h2>قطعه‌ی شماره‌ی ' + esc(fa(c.number || 'بدون شماره')) + '</h2>' + (c.series_name ? '<span class="pi-series-tag">' + esc(c.series_name) + '</span>' : '') + '<span class="pi-code">' + esc(fa(c.code || '')) + '</span>' +
+            '<dl class="pi-facts">' + (c.series ? fact('دسته‌ی شماره‌ی قطعه', c.series_name) : fact('بلوک', c.block) + fact('محله', c.zone_name)) + fact('مساحت (مترمربع)', c.area) + fact('شماره‌ی قطعه', c.number) + use + '</dl>' +
             '<ul class="pi-status">' + rows + '</ul><p class="pi-notice">' + esc(c.notice) + '</p>' +
             '<button type="button" class="pi-back" id="pi-clear">بازگشت</button>';
         show('pi-card');
@@ -155,12 +158,24 @@
         });
     });
 
+    var seriesBox = document.getElementById('pi-series');
+    if (seriesBox) {
+        seriesBox.addEventListener('change', function () {
+            seriesFilter = seriesBox.value;
+            restyle();
+            if (seriesFilter === 'all' || !layer) return;
+            var bounds = null;
+            layer.eachLayer(function (lyr) { if ((lyr.feature.properties.r || 'main') === seriesFilter) { var b = lyr.getBounds(); bounds = bounds ? bounds.extend(b) : L.latLngBounds(b.getSouthWest(), b.getNorthEast()); } });
+            if (bounds) map.fitBounds(bounds.pad(0.1));
+        });
+    }
     // ---------- search ----------
     document.getElementById('pi-search').addEventListener('submit', function (e) {
         e.preventDefault();
         var q = document.getElementById('pi-q').value.trim();
         if (!q) return;
-        fetch(config.urls.search + '?q=' + encodeURIComponent(q), { credentials: 'same-origin' }).then(function (r) {
+        var chosen = document.getElementById('pi-series');
+        fetch(config.urls.search + '?q=' + encodeURIComponent(q) + (chosen && chosen.value !== 'all' ? '&series=' + encodeURIComponent(chosen.value) : ''), { credentials: 'same-origin' }).then(function (r) {
             if (r.status === 429) throw new Error('limit');
             return r.json();
         }).then(function (d) {
@@ -168,7 +183,7 @@
             if (!d.results.length) { list.innerHTML = '<li class="pi-hint">ملکی با این مشخصات پیدا نشد. کد نوسازی را به شکل ۰-۰-۱۲-۶۹-۳ یا شماره‌ی قطعه را وارد کنید.</li>'; show('pi-results'); return; }
             if (d.results.length === 1) { select(d.results[0].id, true); return; }
             list.innerHTML = d.results.map(function (c) {
-                return '<li><button type="button" data-id="' + c.id + '">قطعه ' + esc(fa(c.number)) + ' · بلوک ' + esc(fa(c.block)) + '<small>' + esc(fa(c.code)) + ' · ' + esc(fa(c.land_use || '')) + '</small></button></li>';
+                return '<li><button type="button" data-id="' + c.id + '">قطعه ' + esc(fa(c.number)) + (c.series ? ' · ' + esc(c.series_name) : ' · بلوک ' + esc(fa(c.block))) + '<small>' + esc(fa(c.code || '')) + (c.land_use ? ' · ' + esc(fa(c.land_use)) : '') + '</small></button></li>';
             }).join('');
             show('pi-results');
             list.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () { select(+b.getAttribute('data-id'), true); }); });

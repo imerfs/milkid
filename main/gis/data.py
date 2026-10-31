@@ -38,14 +38,14 @@ def static_parcels(village_map):
         rows = []
         for p in village_map.parcels.only('id', 'renewal_code', 'block_no', 'number', 'zone', 'kind', 'area_m2',
                                           'land_use_id', 'building_area_m2', 'easement_hits', 'first_year',
-                                          'last_year', 'duplicate_code', 'lot_no', 'permit_in_drawing', 'geometry'):
+                                          'last_year', 'duplicate_code', 'lot_no', 'permit_in_drawing', 'series', 'geometry'):
             rows.append({
                 'type': 'Feature',
                 'properties': {'id': p.pk, 'code': p.renewal_code, 'b': p.block_no, 'n': p.number, 'z': p.zone,
                                'e': p.kind == 'estimated', 'a': round(p.area_m2), 'lu': p.land_use_id or 0,
                                'ba': round(p.building_area_m2), 'h': sorted({h['k'] for h in p.easement_hits}),
                                'fy': p.first_year, 'ly': p.last_year, 'd': p.duplicate_code, 'lt': p.lot_no,
-                               'pm': p.permit_in_drawing},
+                               'pm': p.permit_in_drawing, 'sr': p.series},
                 'geometry': p.geometry,
             })
         return rows
