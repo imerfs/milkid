@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 {% include 'partials/jalali_date_assets.html' %}
+    {% load static %}<script src="{% static 'js/geographic_cascade.js' %}" defer></script>
 </head>
 <body class="text-gray-800 mk-tw">
 
@@ -67,42 +68,7 @@
                     </div>
                 </fieldset>
 
-                <!-- 2. Geographic Location -->
-                <fieldset class="mb-8">
-                    <legend class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۲. موقعیت جغرافیایی</legend>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <label class="block font-medium mb-2">استان</label>
-                            <input type="text" name="province" value="{% if user_profile %}{{ user_profile.province|default:'' }}{% endif %}" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
-                        </div>
-                        <div>
-                            <label class="block font-medium mb-2">شهرستان</label>
-                            <input type="text" name="county" value="{% if user_profile %}{{ user_profile.county|default:'' }}{% endif %}" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
-                        </div>
-                        <div>
-                            <label class="block font-medium mb-2">بخش</label>
-                            <input type="text" name="district" value="{% if user_profile %}{{ user_profile.district|default:'' }}{% endif %}" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: مرکزی">
-                        </div>
-                        <div>
-                            <label class="block font-medium mb-2">شهر/روستا</label>
-                            <input type="text" name="city_village" value="{% if user_profile %}{{ user_profile.city_village|default:'' }}{% endif %}" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
-                        </div>
-                    </div>
-
-                    <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-6">
-                        <input type="checkbox" name="is_village" id="is_village" class="ml-3">
-                        <label for="is_village" class="flex items-center cursor-pointer">
-                            <i class="fas fa-tree text-green-600 ml-2"></i>
-                            <span class="text-gray-700 font-medium">در روستا قرار دارد</span>
-                        </label>
-                    </div>
-
-                    <div id="dehestan-field" class="{% if not user_profile.dehestan_name %}hidden{% endif %}">
-                        <label class="block font-medium mb-2">دهستان</label>
-                        <input type="text" name="dehestan" value="{% if user_profile %}{{ user_profile.dehestan_name|default:'' }}{% endif %}" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="نام دهستان">
-                    </div>
-                </fieldset>
+                {% include 'main/services/_geo_fields.html' with sfx='sr' %}
 
                 <!-- 3. Role in Property -->
                 <fieldset class="mb-8">
@@ -261,16 +227,6 @@
             window.location.href = '/services/residence-confirmation/step3/';
         });
 
-        // Show/hide dehestan field based on village checkbox
-        document.getElementById('is_village').addEventListener('change', function() {
-            const dehestanField = document.getElementById('dehestan-field');
-            if (this.checked) {
-                dehestanField.classList.remove('hidden');
-            } else {
-                dehestanField.classList.add('hidden');
-            }
-        });
-
         // Extract Shamim function
         function extractShamim() {
             const shamimInput = document.getElementById('shamim-upload');
@@ -386,6 +342,14 @@
             toggleRoleView();
             toggleIncomeSection();
             toggleOfficeNameField();
+        });
+    
+        // the same province -> county -> district -> city / village cascade as the registration form
+        document.addEventListener('DOMContentLoaded', function () {
+            new GeographicCascade({
+                provinceId: 'id_province_sr', countyId: 'id_county_sr', districtId: 'id_district_sr',
+                dehestanId: 'id_dehestan_sr', cityVillageId: 'id_city_village_sr', isVillageId: 'is_village_sr'
+            });
         });
     </script>
 </body>

@@ -86,53 +86,7 @@
                             </div>
                         </div>
 
-                        <!-- 2. Geographic Location -->
-                        <div class="mb-8">
-                            <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۲. موقعیت جغرافیایی</h2>
-                            {% if profile.city_village %}<p class="text-sm text-gray-600 mb-4"><i class="fas fa-location-dot ml-1 text-green-600"></i>اگر چیزی انتخاب نکنید، روستای ثبت‌شده در پروفایل شما («{{ profile.city_village }}») در نظر گرفته می‌شود.</p>{% endif %}
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div>
-                                    <label class="block font-medium mb-2">استان</label>
-                                    <select name="province" id="id_province_bp" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                                        <option value="">انتخاب کنید</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block font-medium mb-2">شهرستان</label>
-                                    <select name="county" id="id_county_bp" class="w-full p-3 border border-gray-300 rounded-lg bg-white" disabled>
-                                        <option value="">ابتدا استان را انتخاب کنید</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block font-medium mb-2">بخش</label>
-                                    <select name="district" id="id_district_bp" class="w-full p-3 border border-gray-300 rounded-lg bg-white" disabled>
-                                        <option value="">ابتدا شهرستان را انتخاب کنید</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block font-medium mb-2">شهر/روستا</label>
-                                    <select name="city_village" id="id_city_village_bp" class="w-full p-3 border border-gray-300 rounded-lg bg-white" disabled>
-                                        <option value="">ابتدا بخش را انتخاب کنید</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-6">
-                                <input type="checkbox" name="is_village" id="is_village_bp" class="ml-3">
-                                <label for="is_village_bp" class="flex items-center cursor-pointer">
-                                    <i class="fas fa-tree text-green-600 ml-2"></i>
-                                    <span class="text-gray-700 font-medium">در روستا قرار دارد</span>
-                                </label>
-                            </div>
-
-                            <div id="dehestan-field">
-                                <label class="block font-medium mb-2">دهستان</label>
-                                <select name="dehestan" id="id_dehestan_bp" class="w-full p-3 border border-gray-300 rounded-lg bg-white" disabled>
-                                    <option value="">ابتدا بخش را انتخاب کنید</option>
-                                </select>
-                            </div>
-                        </div>
+                        {% include 'main/services/_geo_fields.html' with sfx='bp' %}
 
                         <!-- 3. Property Information -->
                         <div class="mb-8">
@@ -253,10 +207,43 @@
                                 {% include 'main/permits/_field.html' with name='doc_date' label='تاریخ سند / قرارداد' value=v.doc_date error=errors.doc_date ltr=1 hint='۱۴۰۴/۰۳/۰۵' %}
                                 {% include 'main/permits/_field.html' with name='doc_issuer' label='مرجع صدور (دفترخانه / بنیاد مسکن شهرستان)' value=v.doc_issuer error=errors.doc_issuer %}
                                 {% include 'main/permits/_field.html' with name='share_dang' label='سهم (دانگ)' value=v.share_dang error=errors.share_dang ltr=1 mode='numeric' hint='۶' %}
-                                {% include 'main/permits/_field.html' with name='limit_north' label='حد شمالی' value=v.limit_north %}
-                                {% include 'main/permits/_field.html' with name='limit_south' label='حد جنوبی' value=v.limit_south %}
-                                {% include 'main/permits/_field.html' with name='limit_east' label='حد شرقی' value=v.limit_east %}
-                                {% include 'main/permits/_field.html' with name='limit_west' label='حد غربی' value=v.limit_west %}
+                                <div class="md:col-span-2 border border-gray-200 rounded-lg p-4" data-limit="north">
+                                    <label for="f-limit_north" class="block font-medium mb-2">حد شمالی</label>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                        <input type="text" data-part="length" inputmode="decimal" dir="ltr" placeholder="طول (متر)" aria-label="طول حد شمالی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="name" placeholder="منتهی به (معبر، قطعه، ملک …)" aria-label="منتهی به در حد شمالی" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="width" inputmode="decimal" dir="ltr" placeholder="عرض معبر (متر) — اختیاری" aria-label="عرض معبر در حد شمالی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <input type="text" id="f-limit_north" name="limit_north" value="{{ v.limit_north|default:'' }}" maxlength="120" placeholder="به طول … متر منتهی به … متری" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                                <div class="md:col-span-2 border border-gray-200 rounded-lg p-4" data-limit="south">
+                                    <label for="f-limit_south" class="block font-medium mb-2">حد جنوبی</label>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                        <input type="text" data-part="length" inputmode="decimal" dir="ltr" placeholder="طول (متر)" aria-label="طول حد جنوبی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="name" placeholder="منتهی به (معبر، قطعه، ملک …)" aria-label="منتهی به در حد جنوبی" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="width" inputmode="decimal" dir="ltr" placeholder="عرض معبر (متر) — اختیاری" aria-label="عرض معبر در حد جنوبی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <input type="text" id="f-limit_south" name="limit_south" value="{{ v.limit_south|default:'' }}" maxlength="120" placeholder="به طول … متر منتهی به … متری" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                                <div class="md:col-span-2 border border-gray-200 rounded-lg p-4" data-limit="east">
+                                    <label for="f-limit_east" class="block font-medium mb-2">حد شرقی</label>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                        <input type="text" data-part="length" inputmode="decimal" dir="ltr" placeholder="طول (متر)" aria-label="طول حد شرقی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="name" placeholder="منتهی به (معبر، قطعه، ملک …)" aria-label="منتهی به در حد شرقی" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="width" inputmode="decimal" dir="ltr" placeholder="عرض معبر (متر) — اختیاری" aria-label="عرض معبر در حد شرقی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <input type="text" id="f-limit_east" name="limit_east" value="{{ v.limit_east|default:'' }}" maxlength="120" placeholder="به طول … متر منتهی به … متری" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                                <div class="md:col-span-2 border border-gray-200 rounded-lg p-4" data-limit="west">
+                                    <label for="f-limit_west" class="block font-medium mb-2">حد غربی</label>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                        <input type="text" data-part="length" inputmode="decimal" dir="ltr" placeholder="طول (متر)" aria-label="طول حد غربی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="name" placeholder="منتهی به (معبر، قطعه، ملک …)" aria-label="منتهی به در حد غربی" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <input type="text" data-part="width" inputmode="decimal" dir="ltr" placeholder="عرض معبر (متر) — اختیاری" aria-label="عرض معبر در حد غربی (متر)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <input type="text" id="f-limit_west" name="limit_west" value="{{ v.limit_west|default:'' }}" maxlength="120" placeholder="به طول … متر منتهی به … متری" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                                <p class="md:col-span-2 text-xs text-gray-500 -mt-3">متن هر حد از خانه‌های بالایش به شکل «به طول ۲۰ متر منتهی به معبر ۸ متری» ساخته می‌شود؛ آن را می‌توانید مستقیم هم ویرایش کنید.</p>
                             </div>
                             <!-- Shamim Upload Section -->
                             <div class="mt-6 border-t pt-6">
@@ -363,6 +350,27 @@
             };
             xhr.send(formData);
         }
+
+        // The four limits: the parts build the sentence «به طول x متر منتهی به … متری»; the sentence stays editable
+        (function () {
+            var FA = '۰۱۲۳۴۵۶۷۸۹';
+            function fa(t) { return String(t).replace(/\d/g, function (d) { return FA[d]; }); }
+            function en(t) { return String(t).replace(/[۰-۹]/g, function (d) { return FA.indexOf(d); }).replace(/٫/g, '.').trim(); }
+            document.querySelectorAll('[data-limit]').forEach(function (box) {
+                var length = box.querySelector('[data-part=length]'), name = box.querySelector('[data-part=name]'), width = box.querySelector('[data-part=width]');
+                var sentence = box.querySelector('input[name^=limit_]');
+                function compose() {
+                    var l = en(length.value), n = name.value.trim(), w = en(width.value);
+                    var text = '';
+                    if (l) text += 'به طول ' + l + ' متر';
+                    if (n || w) text += (text ? ' ' : '') + 'منتهی به ' + [n, w ? w + ' متری' : ''].filter(Boolean).join(' ');
+                    sentence.value = fa(text);
+                }
+                [length, name, width].forEach(function (el) { el.addEventListener('input', compose); });
+                var m = en(sentence.value).match(/^به طول ([\d.]+) متر(?: منتهی به (.*?)(?: ([\d.]+) متری)?)?$/);      // a sentence we wrote earlier: fill the parts back in
+                if (m) { length.value = fa(m[1]); name.value = fa(m[2] || ''); width.value = fa(m[3] || ''); }
+            });
+        })();
 
         // Geographic Cascade
         document.addEventListener('DOMContentLoaded', function () {
