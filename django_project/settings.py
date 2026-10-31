@@ -483,16 +483,15 @@ init_sentry(os.environ.get('SENTRY_DSN', ''))
 
 
 # Village web-GIS base maps (main/gis). Tile providers decide who may use them: Esri and Google refuse requests from
-# Iran, so a village inside Iran usually needs an Iranian provider's tile URL here (or in the environment).
+# Iran, so a village's satellite picture is stored on the server (scripts/gis/cache_tiles.py, main/gis/tiles.py) and replaces
+# the Esri entry below; an Iranian provider's tile URL can still be set in the environment.
 _SATELLITE_URL = os.environ.get('GIS_SATELLITE_TILE_URL', '')
+GIS_SATELLITE_TILE_URL = _SATELLITE_URL          # when set, the village's stored picture does not replace it (main/gis/tiles.py)
 GIS_BASEMAPS = [
     # newest imagery; with Esri's own service the timeline picks the dated "Wayback" release of the chosen year (2014 on)
     {'id': 'satellite', 'label': 'ماهواره‌ای (جدیدترین تصویر؛ سال‌های قبل با خط زمان)', 'maxZoom': 21, 'nativeZoom': 18,        # Esri has no real picture of a village beyond z18 (z19 is a grey placeholder)
      'attribution': 'Imagery © Esri, Maxar, Earthstar Geographics', 'wayback': not _SATELLITE_URL,
      'url': _SATELLITE_URL or 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'},
-    {'id': 'carto', 'label': 'نقشه‌ی خیابانی روشن (CARTO)', 'maxZoom': 21, 'nativeZoom': 20, 'subdomains': 'abcd',
-     'attribution': '© OpenStreetMap contributors © CARTO',
-     'url': os.environ.get('GIS_STREET_TILE_URL', 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png')},
     {'id': 'osm', 'label': 'نقشه‌ی خیابانی (OpenStreetMap)', 'maxZoom': 21, 'nativeZoom': 19, 'attribution': '© OpenStreetMap',
      'url': os.environ.get('GIS_OSM_TILE_URL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png')},
 ]
