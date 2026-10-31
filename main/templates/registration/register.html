@@ -40,6 +40,7 @@
     {% include 'partials/seo_head.html' %}
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+{% include 'partials/jalali_date_assets.html' %}
 </head>
 <body class="bg-slate-100 min-h-screen mk-tw">
 
@@ -111,6 +112,11 @@
                             <div>
                                 <label for="{{ form.mobile_number.id_for_label }}" class="block text-gray-700 font-medium mb-3">شماره موبایل <span class="text-red-500">*</span></label>
                                 <input type="text" name="mobile_number" id="{{ form.mobile_number.id_for_label }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value="{{ form.mobile_number.value|default:'' }}" maxlength="11" placeholder="09123456789" required>
+                            </div>
+                            <div>
+                                <label for="{{ form.birth_date.id_for_label }}" class="block text-gray-700 font-medium mb-3">تاریخ تولد <span class="text-red-500">*</span></label>
+                                <input type="text" name="birth_date" id="{{ form.birth_date.id_for_label }}" class="jalali-date w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value="{{ form.birth_date.value|default:'' }}" placeholder="۱۳۷۶/۰۴/۱۲" required>
+                                {% for error in form.birth_date.errors %}<p class="text-red-600 text-xs mt-1.5 font-medium">{{ error }}</p>{% endfor %}
                             </div>
                         </div>
                     </div>

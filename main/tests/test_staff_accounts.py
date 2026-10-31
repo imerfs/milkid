@@ -6,7 +6,7 @@ from main.models import RoleGrant
 from main.tests.helpers import client_for, make_municipality, make_user
 
 VALID = {'username': 'ali.fani', 'first_name': 'علی', 'last_name': 'فنی',
-         'national_id': '0012345678', 'mobile_number': '09121234567', 'role': 'engineer'}
+         'national_id': '0012345678', 'mobile_number': '09121234567', 'birth_date': '1370/05/17', 'role': 'engineer'}
 
 
 class StaffAccountCreation(TestCase):
@@ -96,3 +96,17 @@ class StaffAccountCreation(TestCase):
     def test_form_is_on_the_roles_page(self):
         html = client_for(self.dehyari).get(reverse('main:mayor_panel', args=['employees'])).content.decode()
         self.assertIn(self.url, html)
+
+
+class StaffBirthDate(StaffAccountCreation):
+    """The date of birth is asked for like the other personal data: Jalali, in Persian or Latin digits, never in the future."""
+
+    def test_the_birth_date_is_saved_normalised(self):
+        r = self.create(birth_date='۱۳۷۰/۵/۷')
+        self.assertLess(r.status_code, 400)
+        self.assertEqual(User.objects.get(username=VALID['username']).profile.birth_date, '1370/05/07')
+
+    def test_a_missing_future_or_impossible_birth_date_is_refused(self):
+        for bad in ('', '1370/13/01', '1370/07/31', '1500/01/01', 'abc', '1200/01/01'):
+            self.assertEqual(self.create(birth_date=bad).status_code, 400, bad)
+        self.assertFalse(User.objects.filter(username=VALID['username']).exists())

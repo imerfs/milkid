@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load jalali_tags %}
 {% load static %}
 
 {% block title %}آپلود فایل اتوکد - ملک آیدی{% endblock %}
@@ -188,7 +189,7 @@
                 <tbody>
                     {% for file in user_files %}
                     <tr>
-                        <td>{{ file.upload_date|date:"Y/m/d H:i" }}</td>
+                        <td>{{ file.upload_date|jalali_datetime }}</td>
                         <td>{{ file.original_file.name|slice:"-30:" }}</td>
                         <td>{{ file.file_type|upper }}</td>
                         <td>

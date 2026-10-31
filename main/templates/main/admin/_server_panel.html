@@ -210,7 +210,7 @@
     <table class="table align-middle">
       <thead><tr><th>نام</th><th>حجم</th><th>زمان</th><th></th></tr></thead>
       {% for b in backups %}
-      <tr><td dir="ltr" class="text-end">{{ b.name }}</td><td>{{ b.size|filesizeformat }}</td><td>{{ b.mtime|date:'Y-m-d H:i' }}</td>
+      <tr><td dir="ltr" class="text-end">{{ b.name }}</td><td>{{ b.size|filesizeformat }}</td><td>{{ b.mtime|jalali_datetime }}</td>
         <td class="d-flex gap-2">
           <a class="btn btn-sm btn-outline-primary" href="{% url 'main:admin_server_backup_download' b.name %}">دانلود</a>
           <form method="post" action="{% url 'main:admin_server_backup_delete' b.name %}" onsubmit="return confirm('این نسخه حذف شود؟')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form>

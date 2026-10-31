@@ -11,6 +11,7 @@
     {% block framework %}<link rel="stylesheet" href="{% static 'css/tailwind.css' %}">{% endblock %}
     <link rel="stylesheet" href="{% static 'css/auth-pages.css' %}">
     {% block head_extra %}{% endblock %}
+{% include 'partials/jalali_date_assets.html' %}
 </head>
 <body class="au {% block body_class %}mk-tw{% endblock %}">
 {% include 'registration/_au_icons.html' %}

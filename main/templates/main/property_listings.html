@@ -1,3 +1,4 @@
+{% load jalali_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -1564,7 +1565,7 @@
                             <div class="flex items-center justify-between pt-3 border-t border-gray-200 mt-4">
                                 <div class="text-sm text-gray-500">
                                     <div class="font-medium text-gray-700">{{ ad.contact_name }}</div>
-                                    <div>{{ ad.created_at|date:"j F Y" }}</div>
+                                    <div>{{ ad.created_at|jalali_short }}</div>
                                 </div>
                                 <div class="flex gap-2">
                                     <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition-colors">

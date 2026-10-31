@@ -133,6 +133,19 @@
                                 {% endif %}
                             </div>
 
+                            <!-- تاریخ تولد -->
+                            <div>
+                                <label for="{{ form.birth_date.id_for_label }}" class="block font-medium mb-3 {% if form.birth_date.errors %}text-red-700 font-bold{% else %}text-gray-700{% endif %}">
+                                    تاریخ تولد <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="birth_date" id="{{ form.birth_date.id_for_label }}"
+                                       class="jalali-date w-full px-4 py-3 border rounded-lg transition-all {% if form.birth_date.errors %}border-red-500 bg-red-50/50 text-red-900 focus:ring-2 focus:ring-red-400 focus:border-red-500{% else %}border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500{% endif %}"
+                                       value="{{ form.birth_date.value|default:'' }}" placeholder="۱۳۷۶/۰۴/۱۲" required>
+                                {% for error in form.birth_date.errors %}
+                                    <p class="text-red-600 text-xs mt-1.5 flex items-center font-medium"><i class="fas fa-exclamation-circle ml-1"></i> {{ error }}</p>
+                                {% endfor %}
+                            </div>
+
                             <!-- کد ملی -->
                             <div>
                                 <div class="flex items-center justify-between mb-3">

@@ -6,7 +6,9 @@ endpoints, so access rules are unchanged. Old page URLs deep-link to the matchin
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.validators import RegexValidator, validate_email
+from django import forms
 from django.core.exceptions import ValidationError
+from main.widgets import BirthDateField
 from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
@@ -110,11 +112,16 @@ def _save_profile(request):
         _MOBILE(mobile)
     except ValidationError as exc:
         errors.extend(exc.messages)
+    birth = ''
+    try:
+        birth = BirthDateField(required=False).clean(post.get('birth_date'))
+    except forms.ValidationError as exc:
+        errors.extend(exc.messages)
     if errors:
         return JsonResponse({'success': False, 'errors': errors}, status=400)
     user.first_name, user.last_name, user.email = first, last, email
     user.save(update_fields=['first_name', 'last_name', 'email'])
-    UserProfile.objects.filter(user=user).update(mobile_number=mobile)
+    UserProfile.objects.filter(user=user).update(mobile_number=mobile, **({'birth_date': birth} if birth else {}))
     return JsonResponse({'success': True, 'message': 'پروفایل ذخیره شد.', 'full_name': user.get_full_name()})
 
 

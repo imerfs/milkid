@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load jalali_tags %}
 {% load static %}
 
 {% block title %}{{ announcement.title }} - ملک آیدی{% endblock %}
@@ -60,7 +61,7 @@
                                 <i class="fas fa-user me-2"></i>
                                 <span class="me-4">{{ announcement.created_by.get_full_name }}</span>
                                 <i class="fas fa-calendar me-2"></i>
-                                <span>{{ announcement.created_at|date:"Y/m/d H:i" }}</span>
+                                <span>{{ announcement.created_at|jalali_datetime }}</span>
                             </div>
                         </div>
                         <div>
@@ -109,7 +110,7 @@
                                     <i class="fas fa-clock me-1"></i>
                                     تاریخ انقضا:
                                 </h6>
-                                <span class="text-warning">{{ announcement.expires_at|date:"Y/m/d H:i" }}</span>
+                                <span class="text-warning">{{ announcement.expires_at|jalali_datetime }}</span>
                                 {% else %}
                                 <h6 class="text-muted mb-2">
                                     <i class="fas fa-infinity me-1"></i>
@@ -200,7 +201,7 @@
                     {% for item in related_announcements %}
                     <a href="{% url 'main:announcement_detail' item.id %}" class="d-block p-3 border-bottom text-decoration-none">
                         <div class="fw-bold text-dark">{{ item.title }}</div>
-                        <div class="small text-muted">{{ item.created_at|date:"Y/m/d" }} · {{ item.get_priority_display }}</div>
+                        <div class="small text-muted">{{ item.created_at|jalali_date }} · {{ item.get_priority_display }}</div>
                     </a>
                     {% empty %}
                     <div class="p-3 text-center text-muted">

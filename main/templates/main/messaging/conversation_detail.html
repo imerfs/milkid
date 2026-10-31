@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load jalali_tags %}
 {% load static %}
 
 {% block title %}{{ conversation.subject }} - ملک آیدی{% endblock %}
@@ -119,7 +120,7 @@
                                     {% endfor %}
                                 </span>
                                 <i class="fas fa-calendar me-2"></i>
-                                <span>{{ conversation.created_at|date:"Y/m/d H:i" }}</span>
+                                <span>{{ conversation.created_at|jalali_datetime }}</span>
                             </div>
                         </div>
                         {% if conversation.related_request %}
@@ -153,7 +154,7 @@
                                 {{ message.body|linebreaks }}
                             </div>
                             <div class="message-time text-muted {% if message.sender == user %}text-end{% endif %}">
-                                {{ message.created_at|date:"Y/m/d H:i" }}
+                                {{ message.created_at|jalali_datetime }}
                                 {% if message.sender == user %}
                                     <i class="fas fa-check text-success ms-1" title="ارسال شده"></i>
                                 {% endif %}
@@ -249,11 +250,11 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <strong>تاریخ شروع:</strong>
-                        <div class="text-muted">{{ conversation.created_at|date:"Y/m/d H:i" }}</div>
+                        <div class="text-muted">{{ conversation.created_at|jalali_datetime }}</div>
                     </div>
                     <div class="mb-3">
                         <strong>آخرین فعالیت:</strong>
-                        <div class="text-muted">{{ conversation.updated_at|date:"Y/m/d H:i" }}</div>
+                        <div class="text-muted">{{ conversation.updated_at|jalali_datetime }}</div>
                     </div>
                     <div class="mb-3">
                         <strong>تعداد پیام‌ها:</strong>

@@ -1,3 +1,4 @@
+{% load jalali_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -227,11 +228,11 @@
                         <div class="text-sm text-gray-600">بازدید</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600">{{ property.created_at|date:"Y/m/d" }}</div>
+                        <div class="text-2xl font-bold text-blue-600">{{ property.created_at|jalali_date }}</div>
                         <div class="text-sm text-gray-600">تاریخ انتشار</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600">{{ property.updated_at|date:"Y/m/d" }}</div>
+                        <div class="text-2xl font-bold text-blue-600">{{ property.updated_at|jalali_date }}</div>
                         <div class="text-sm text-gray-600">به‌روزرسانی</div>
                     </div>
                 </div>

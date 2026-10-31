@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load jalali_tags %}
 {% load static %}
 
 {% block title %}تاریخچه فایل‌های اتوکد - ملک آیدی{% endblock %}
@@ -194,7 +195,7 @@
                 <tr>
                     <td>
                         <i class="far fa-calendar"></i>
-                        {{ file.upload_date|date:"Y/m/d" }}
+                        {{ file.upload_date|jalali_date }}
                         <br>
                         <small class="text-muted">{{ file.upload_date|date:"H:i" }}</small>
                     </td>
@@ -226,7 +227,7 @@
                     </td>
                     <td>
                         {% if file.processed_date %}
-                            {{ file.processed_date|date:"Y/m/d H:i" }}
+                            {{ file.processed_date|jalali_datetime }}
                         {% else %}
                             -
                         {% endif %}

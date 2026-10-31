@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     {% block head_late %}{% endblock %}
+{% include 'partials/jalali_date_assets.html' %}
 </head>
 <body class="{% block body_class %}text-gray-800 mk-tw{% endblock %}">
 {% block content %}{% endblock %}

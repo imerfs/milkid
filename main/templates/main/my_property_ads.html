@@ -1,3 +1,4 @@
+{% load jalali_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -180,7 +181,7 @@
                                     {{ ad.get_status_display }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ ad.created_at|date:"Y/m/d" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ ad.created_at|jalali_date }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2 space-x-reverse">
                                     <a href="{% url 'main:view_property_ad' ad.id %}" class="text-blue-600 hover:text-blue-900" title="مشاهده">
