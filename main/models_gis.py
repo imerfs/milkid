@@ -122,6 +122,10 @@ class MapParcel(models.Model):
     duplicate_code = models.BooleanField(default=False)
     lot_no = models.CharField(max_length=10, blank=True, verbose_name='شماره قطعه‌ی تفکیکی')
     permit_in_drawing = models.BooleanField(default=False, verbose_name='طبق نقشه پروانه صادر شده')
+    # what a buyer is told (main/gis/inquiry.py): from the plan drawing by ``main.gis.plan_flags`` ("in the plan" = inside the plan's reserved areas, "exempt" =
+    # the green-framed «مستثنیات» of the technical unit's drawing), never typed by citizens
+    in_plan = models.BooleanField(default=False, db_index=True, verbose_name='داخل طرح')
+    exempt = models.BooleanField(default=False, db_index=True, verbose_name='مستثنیات')
     # the renewal code is guild - apartment - plot - block - neighbourhood (صنف - آپارتمان - ملک - بلوک - محله)
     zone = models.CharField(max_length=3, blank=True, db_index=True, verbose_name='محله')
     guild_no = models.PositiveSmallIntegerField(default=0, verbose_name='صنف')

@@ -73,6 +73,9 @@
                         <div class="flex items-center"><i class="fas fa-calendar-check ml-3"></i>گرفتن وقت ملاقات</div>
                     </a>
                     {% endif %}
+                    <a href="?tab=inquiry" data-tab="inquiry" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('inquiry', this); return false;">
+                        <div class="flex items-center"><i class="fas fa-map-location-dot ml-3"></i>استعلام خرید ملک</div>
+                    </a>
                     <a href="?tab=ads" data-tab="ads" class="sidebar-link flex items-center justify-between rounded-lg mx-3 my-1" onclick="showTab('ads', this); return false;">
                         <div class="flex items-center"><i class="fas fa-home ml-3"></i>آگهی‌های ملک من</div>
                     </a>
@@ -214,6 +217,10 @@
 
                     <div id="visits-tab" class="tab-content">
                         {% include 'partials/visits_panel.html' %}
+                    </div>
+
+                    <div id="inquiry-tab" class="tab-content">
+                        <iframe class="panel-frame" title="استعلام خرید ملک" data-frame-src="{% url 'main:property_inquiry' %}"></iframe>
                     </div>
 
                     <div id="ads-tab" class="tab-content">

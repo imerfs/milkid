@@ -229,3 +229,30 @@ neighbourhoods.
 
 Add an entry to `VILLAGES` in `main/gis/loader.py`, build its GeoJSON, and run `load_village_map`; the sidebar link
 appears in the panels of that village's technical expert, administrative expert and dehyari.
+
+## Property inquiry (citizen panel, «استعلام خرید ملک»)
+
+A lighter map for buyers: the citizen sees plot number, block, renewal code, land use, area, whether the plot is
+inside the plan («داخل طرح») and whether it is exempt («مستثنیات»), and nothing private (no owner, permit, lock,
+payment or archive data). Every card carries a disclaimer that the answer is guidance, not the official inquiry.
+
+- Routes: `inquiry/`, `inquiry/<slug>/` (page), `…/data/` (light GeoJSON, cached), `…/search/?q=`, `…/parcels/<id>/`.
+  Action `inquiry.view` in `main/access.py`; light per-user throttling (HTTP 429) in `main/views/inquiry_views.py`.
+- Search accepts a renewal code (`0-0-12-69-3`), a plot number, plot-block in either order, or plot-block-zone;
+  Persian digits are normalised.
+- Flags live on `MapParcel.in_plan` / `MapParcel.exempt` (migration 0090) and are applied by `load_village_map` from
+  `main/data/gis/<slug>_flags.json`.
+- Flags are derived from the Technical-unit drawing: layer `mostsniat` (phosphor-green boxes) → exempt when ≥ 50 % of
+  the plot lies inside; layer `l.karbari.p` (proposed public land use) → in the plan when ≥ 30 % does. Both thresholds
+  are constants in `scripts/gis/build_plan_flags.py`; the definition of «داخل طرح» is an assumption to be confirmed
+  by the dehyari.
+
+Rebuilding the flags (DWG → DXF with AutoCAD batch mode, then):
+
+```
+python scripts/gis/extract_dxf_layers.py technical.dxf layers.json mostsniat l.karbari.p
+python scripts/gis/build_plan_flags.py layers.json dastgerd
+```
+
+Deploy: `python manage.py migrate` then `python manage.py load_village_map dastgerd` (keeps archives, locks, payments).
+Map icons are Keyline Icons (MIT).

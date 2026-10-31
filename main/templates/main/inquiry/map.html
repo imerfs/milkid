@@ -1,0 +1,83 @@
+{% load static persian_filters %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>استعلام خرید ملک - ملک آیدی</title>
+    <link rel="stylesheet" href="{% static 'css/vazirmatn.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/property-inquiry.css' %}">
+</head>
+<body class="pi-body">
+{% if not maps %}
+<main class="pi-empty">
+    <h1>استعلام خرید ملک</h1>
+    <p>هنوز نقشه‌ای برای هیچ روستایی بارگذاری نشده است. پس از آماده شدن نقشه‌ی روستا، اینجا می‌توانید وضعیت ملک را ببینید.</p>
+</main>
+{% else %}
+{{ config|json_script:"pi-config" }}
+<!-- Icons: Keyline Icons (MIT, https://keylineicons.com) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10ZM15 15L21 21"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M17.962848 15.333333L12 22L6.037152 15.333333C4.725272 13.866607 4 11.96782 4 10C4 5.581722 7.581722 2 12 2C16.418278 2 20 5.581722 20 10C20 11.96782 19.274728 13.866607 17.962848 15.333333ZM15 10C15 11.6569 13.6569 13 12 13C10.3431 13 9 11.6569 9 10C9 8.3431 10.3431 7 12 7C13.6569 7 15 8.3431 15 10Z"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z"/><path d="M8 12L10.6667 15L16 9"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M22 12C22 17.52285 17.52285 22 12 22C6.47715 22 2 17.52285 2 12C2 6.47715 6.47715 2 12 2C17.52285 2 22 6.47715 22 12Z"/><path d="M12 7V13"/><path d="M13 17C13 17.55228 12.55228 18 12 18C11.44772 18 11 17.55228 11 17C11 16.44772 11.44772 16 12 16C12.55228 16 13 16.44772 13 17Z" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<div class="pi-app">
+    <header class="pi-top">
+        <div class="pi-title">
+            <span class="pi-ic"><svg class="pi-svg"><use href="#i-pin"/></svg></span>
+            <div>
+                <h1>استعلام خرید ملک</h1>
+                <p>وضعیت ملک را پیش از خرید ببینید</p>
+            </div>
+        </div>
+        <form class="pi-village" method="get" action="{% url 'main:property_inquiry' %}">
+            {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
+            <label for="pi-village-select" class="pi-sr">روستا</label>
+            <select id="pi-village-select" onchange="location.href=this.value">
+                {% for m in maps %}<option value="{% url 'main:property_inquiry_map' m.slug %}{% if embed %}?embed=1{% endif %}" {% if m.slug == chosen.slug %}selected{% endif %}>روستای {{ m.name }}</option>{% endfor %}
+            </select>
+        </form>
+    </header>
+
+    <section class="pi-controls">
+        <form id="pi-search" class="pi-search" role="search" autocomplete="off">
+            <button type="submit" class="pi-go" aria-label="جستجو"><svg class="pi-svg"><use href="#i-search"/></svg></button>
+            <input id="pi-q" type="text" inputmode="text" dir="ltr" placeholder="کد نوسازی، شماره قطعه یا قطعه-بلوک (مثلاً ۱۲-۶۹)" aria-label="جستجوی ملک">
+        </form>
+        <div class="pi-chips" role="group" aria-label="نمایش">
+            <button type="button" class="pi-chip is-on" data-filter="all">همه <b id="pi-n-all">۰</b></button>
+            <button type="button" class="pi-chip" data-filter="plan"><i class="pi-dot pi-dot-plan"></i>داخل طرح <b id="pi-n-plan">۰</b></button>
+            <button type="button" class="pi-chip" data-filter="exempt"><i class="pi-dot pi-dot-exempt"></i>مستثنیات <b id="pi-n-exempt">۰</b></button>
+            <button type="button" class="pi-chip" data-filter="clear"><i class="pi-dot pi-dot-clear"></i>بدون محدودیت <b id="pi-n-clear">۰</b></button>
+        </div>
+    </section>
+
+    <div class="pi-stage">
+        <div id="pi-map" class="pi-map" aria-label="نقشه‌ی روستا"></div>
+        <div id="pi-loading" class="pi-loading">در حال بارگذاری نقشه…</div>
+
+        <aside id="pi-panel" class="pi-panel" aria-live="polite">
+            <div id="pi-hint" class="pi-hint">
+                <svg class="pi-svg"><use href="#i-pin"/></svg>
+                <p>روی یک ملک بزنید یا کد نوسازی و شماره قطعه را جستجو کنید.</p>
+                <ul class="pi-legend">
+                    <li><i class="pi-sw pi-sw-plain"></i>ملک عادی</li>
+                    <li><i class="pi-sw pi-sw-plan"></i>داخل طرح (کاربری پیشنهادی عمومی)</li>
+                    <li><i class="pi-sw pi-sw-exempt"></i>مستثنیات</li>
+                </ul>
+            </div>
+            <ol id="pi-results" class="pi-results" hidden></ol>
+            <article id="pi-card" class="pi-card" hidden></article>
+        </aside>
+    </div>
+</div>
+
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'js/property-inquiry.js' %}"></script>
+{% endif %}
+</body>
+</html>

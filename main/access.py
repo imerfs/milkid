@@ -47,6 +47,8 @@ POLICY = {
     'gis.view': {'engineer', 'dehyari', 'clerk'},
     'gis.edit': {'engineer', 'dehyari', 'clerk'},
     'gis.lock': {'engineer', 'dehyari'},          # lock a plot out of municipal services / release it
+    # the buyer's inquiry map (main/gis/inquiry.py): any signed-in citizen or staff member, for every village that has a map
+    'inquiry.view': {'citizen', 'owner', 'resident', 'dehyari', 'engineer', 'clerk', 'inspector', 'accountant', 'council'},
     # technical staff dashboards and tools
     'staff.engineer': {'engineer', 'dehyari'},
     'staff.inspector': {'inspector', 'dehyari'},
