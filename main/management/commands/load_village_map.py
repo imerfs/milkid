@@ -8,7 +8,7 @@ Run it again after loading the geography fixture to link the map to the village 
 from django.core.management.base import BaseCommand, CommandError
 
 from main import geography, models
-from main.gis import loader
+from main.gis import loader, plan_flags
 
 
 class Command(BaseCommand):
@@ -26,3 +26,6 @@ class Command(BaseCommand):
             raise CommandError(str(exc)) from exc
         for key, value in result.items():
             self.stdout.write(f'{key:18} {value}')
+        flags = plan_flags.apply(options['slug'])
+        if flags is not None:
+            self.stdout.write(f"{'plan flags':18} {flags['in_plan']} in the plan, {flags['exempt']} exempt")

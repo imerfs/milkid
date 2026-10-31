@@ -16,6 +16,7 @@ from .letter_views import *
 from .appointment_views import *
 from .clerk_panel import *
 from .permit_views import *
+from .inquiry_views import *
 from .messenger_views import *
 from .monitoring_views import *
 from .server_views import *

@@ -1,0 +1,67 @@
+/* The citizen's property inquiry map. Icons: Keyline Icons (MIT). */
+:root { --pi-ink: #0f172a; --pi-muted: #64748b; --pi-line: #e2e8f0; --pi-bg: #f8fafc; --pi-brand: #1e3a8a; --pi-plan: #f59e0b; --pi-exempt: #39ff14; --pi-clear: #38bdf8; }
+* { box-sizing: border-box; }
+.pi-body { margin: 0; font-family: Vazirmatn, Tahoma, sans-serif; color: var(--pi-ink); background: var(--pi-bg); height: 100vh; overflow: hidden; }
+.pi-svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.pi-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.pi-empty { max-width: 32rem; margin: 18vh auto; padding: 0 1.25rem; text-align: center; color: var(--pi-muted); }
+.pi-app { display: flex; flex-direction: column; height: 100vh; }
+
+.pi-top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem 1rem; background: #fff; border-bottom: 1px solid var(--pi-line); }
+.pi-title { display: flex; align-items: center; gap: .65rem; }
+.pi-title h1 { margin: 0; font-size: 1.05rem; }
+.pi-title p { margin: 0; font-size: .78rem; color: var(--pi-muted); }
+.pi-ic { display: inline-flex; width: 2.4rem; height: 2.4rem; align-items: center; justify-content: center; border-radius: .8rem; background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff; }
+.pi-village select { height: 2.3rem; padding: 0 .7rem; border: 1px solid var(--pi-line); border-radius: .7rem; background: #fff; font: inherit; color: inherit; }
+
+.pi-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .6rem 1rem; background: #fff; border-bottom: 1px solid var(--pi-line); }
+.pi-search { position: relative; flex: 1 1 16rem; max-width: 26rem; }
+.pi-search input { width: 100%; height: 2.6rem; padding: 0 2.9rem 0 .9rem; border: 1px solid var(--pi-line); border-radius: .8rem; background: var(--pi-bg); font: inherit; font-size: .9rem; text-align: right; direction: ltr; }
+.pi-search input::placeholder { direction: rtl; text-align: right; color: #94a3b8; }
+.pi-search input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .15); background: #fff; }
+.pi-go { position: absolute; inset-inline-start: auto; right: .35rem; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 0; border-radius: .6rem; background: transparent; color: var(--pi-muted); cursor: pointer; }
+.pi-go:hover { background: #e2e8f0; color: var(--pi-ink); }
+.pi-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.pi-chip { display: inline-flex; align-items: center; gap: .4rem; height: 2.2rem; padding: 0 .8rem; border: 1px solid var(--pi-line); border-radius: 999px; background: #fff; color: #334155; font: inherit; font-size: .82rem; cursor: pointer; }
+.pi-chip b { font-weight: 600; color: var(--pi-muted); }
+.pi-chip.is-on { background: var(--pi-brand); border-color: var(--pi-brand); color: #fff; }
+.pi-chip.is-on b { color: #dbeafe; }
+.pi-dot { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
+.pi-dot-plan { background: var(--pi-plan); } .pi-dot-exempt { background: var(--pi-exempt); box-shadow: 0 0 0 1px #16a34a; } .pi-dot-clear { background: var(--pi-clear); }
+
+.pi-stage { position: relative; flex: 1; min-height: 0; display: flex; }
+.pi-map { flex: 1; min-width: 0; background: #e8eef5; }
+.pi-loading { position: absolute; inset: 0 auto auto 50%; transform: translateX(-50%); margin-top: 1rem; padding: .45rem .9rem; border-radius: 999px; background: #fff; box-shadow: 0 4px 14px rgba(15, 23, 42, .15); font-size: .82rem; z-index: 500; }
+.pi-loading[hidden] { display: none; }
+
+.pi-panel { width: 22rem; max-width: 100%; overflow: auto; background: #fff; border-inline-start: 1px solid var(--pi-line); padding: 1rem; }
+.pi-hint { text-align: center; color: var(--pi-muted); font-size: .86rem; }
+.pi-hint .pi-svg { width: 36px; height: 36px; color: #94a3b8; margin-bottom: .4rem; }
+.pi-legend { list-style: none; margin: 1rem 0 0; padding: 0; text-align: right; display: grid; gap: .5rem; }
+.pi-legend li { display: flex; align-items: center; gap: .55rem; }
+.pi-sw { display: inline-block; width: 1.3rem; height: .9rem; border-radius: .25rem; border: 1.5px solid #2563eb; background: rgba(37, 99, 235, .18); }
+.pi-sw-plan { border-color: #d97706; background: rgba(245, 158, 11, .45); }
+.pi-sw-exempt { border-color: #16a34a; background: rgba(57, 255, 20, .55); }
+.pi-results { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.pi-results button { width: 100%; text-align: right; padding: .7rem .8rem; border: 1px solid var(--pi-line); border-radius: .8rem; background: #fff; font: inherit; cursor: pointer; }
+.pi-results button:hover { border-color: #2563eb; background: #eff6ff; }
+.pi-results small { display: block; color: var(--pi-muted); margin-top: .15rem; }
+
+.pi-card h2 { margin: 0 0 .15rem; font-size: 1.05rem; }
+.pi-card .pi-code { direction: ltr; display: inline-block; font-size: .85rem; color: var(--pi-muted); }
+.pi-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: .9rem 0; }
+.pi-facts div { padding: .55rem .65rem; border-radius: .7rem; background: var(--pi-bg); }
+.pi-facts dt { font-size: .74rem; color: var(--pi-muted); } .pi-facts dd { margin: .1rem 0 0; font-weight: 600; }
+.pi-status { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.pi-status li { display: flex; align-items: flex-start; gap: .5rem; padding: .55rem .65rem; border-radius: .7rem; font-size: .86rem; }
+.pi-status .pi-svg { width: 18px; height: 18px; margin-top: .1rem; }
+.pi-status .is-ok { background: #f0fdf4; color: #166534; } .pi-status .is-warn { background: #fffbeb; color: #92400e; } .pi-status .is-info { background: #ecfeff; color: #155e75; }
+.pi-notice { margin-top: .9rem; padding: .65rem .75rem; border-radius: .7rem; background: #f1f5f9; color: #475569; font-size: .78rem; line-height: 1.9; }
+.pi-card .pi-back { margin-top: .8rem; display: inline-block; font-size: .82rem; color: #2563eb; cursor: pointer; background: none; border: 0; padding: 0; font-family: inherit; }
+
+.leaflet-container { font-family: Vazirmatn, Tahoma, sans-serif; }
+@media (max-width: 760px) {
+  .pi-stage { flex-direction: column; }
+  .pi-panel { width: 100%; max-height: 42%; border-inline-start: 0; border-top: 1px solid var(--pi-line); }
+  .pi-title p { display: none; }
+}
