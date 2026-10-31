@@ -234,7 +234,7 @@ class BirthDateField(forms.CharField):
         super().__init__(**kwargs)
 
     def clean(self, value):
-        value = super().clean(value)
+        value = super().clean(value)  # pylint: disable=no-member
         if not value:
             return ''
         import re
