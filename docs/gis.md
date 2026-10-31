@@ -8,7 +8,7 @@ in the sidebar) or at `/gis/<slug>/`, e.g. `/gis/dastgerd/`.
 
 The **three staff of that village**: the technical expert (`engineer`), the administrative expert (`clerk`) and the dehyari (`dehyari`), whose village is the
 map's village (the profile's village, or for a dehyari without one the municipality they administer), and admins. The map link is in each of the three
-panels. They all open the map and edit plots; locking a plot stays with the technical expert and the dehyari. Every other role, other villages' staff and
+panels. They all open the map, edit plots and lock or release a plot (`gis.lock`). Every other role, other villages' staff and
 anonymous visitors get 403/redirect on the page and on every JSON endpoint (`main/gis/access.py`, `gis.view` / `gis.edit` / `gis.lock` in `main/access.py`).
 Nothing about the map is in `/static/`. Dastgerd is the first map; every later village works the same way with no code change.
 

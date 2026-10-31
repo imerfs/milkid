@@ -43,10 +43,10 @@ POLICY = {
     # the admin panel (pages and JSON endpoints): admins only, so no other role is listed
     'admin.manage': set(),
     # village web-GIS map and plot archives: the village's technical expert, dehyari and administrative expert (the village match is
-    # in main/gis/access.py); locking a plot out of the municipal services stays with the technical expert and the dehyari
+    # in main/gis/access.py); locking a plot out of the municipal services is open to the same three
     'gis.view': {'engineer', 'dehyari', 'clerk'},
     'gis.edit': {'engineer', 'dehyari', 'clerk'},
-    'gis.lock': {'engineer', 'dehyari'},          # lock a plot out of municipal services / release it
+    'gis.lock': {'engineer', 'dehyari', 'clerk'},          # lock a plot out of municipal services / release it
     # technical staff dashboards and tools
     'staff.engineer': {'engineer', 'dehyari'},
     'staff.inspector': {'inspector', 'dehyari'},

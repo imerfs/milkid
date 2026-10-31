@@ -82,9 +82,9 @@ class MapAccess(TestCase):
         self.assertFalse(ParcelArchive.objects.exists())
         self.assertFalse(ParcelLock.objects.exists())
 
-    def test_the_dehyari_and_the_clerk_open_the_map_and_edit_plots_but_only_the_dehyari_locks(self):
+    def test_the_dehyari_and_the_clerk_open_the_map_edit_plots_and_lock_them(self):
         urls = self.urls(self.parcel)
-        for role, may_lock in (('dehyari', True), ('clerk', False)):
+        for role, may_lock in (('dehyari', True), ('clerk', True)):
             client = client_for(make_user(role, **LOCAL))
             with self.subTest(role=role):
                 self.assertEqual(client.get(urls['page']).status_code, 200)
