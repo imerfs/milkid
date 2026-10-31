@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 {% include 'partials/jalali_date_assets.html' %}
+    {% load static %}<script src="{% static 'js/geographic_cascade.js' %}" defer></script>
 </head>
 <body class="text-gray-800 mk-tw">
 
@@ -59,42 +60,7 @@
                         </div>
                     </div>
 
-                    <!-- 2. Geographic Location -->
-                    <div class="mb-8">
-                        <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4">۲. موقعیت جغرافیایی</h2>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label class="block font-medium mb-2">استان</label>
-                                <input type="text" name="province" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-2">شهرستان</label>
-                                <input type="text" name="county" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-2">بخش</label>
-                                <input type="text" name="district" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: مرکزی">
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-2">شهر/روستا</label>
-                                <input type="text" name="city_village" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="مثال: تهران">
-                            </div>
-                        </div>
-
-                        <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-6">
-                            <input type="checkbox" name="is_village" id="is_village" class="ml-3">
-                            <label for="is_village" class="flex items-center cursor-pointer">
-                                <i class="fas fa-tree text-green-600 ml-2"></i>
-                                <span class="text-gray-700 font-medium">در روستا قرار دارد</span>
-                            </label>
-                        </div>
-
-                        <div id="dehestan-field" class="hidden">
-                            <label class="block font-medium mb-2">دهستان</label>
-                            <input type="text" name="dehestan" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="نام دهستان">
-                        </div>
-                    </div>
+                    {% include 'main/services/_geo_fields.html' with sfx='sr' %}
 
                     <!-- 3. Property Information -->
                     <div class="mb-8">
@@ -337,18 +303,16 @@
                 window.location.href = '/services/land-use-change/step2/';
             });
 
-            // Show/hide dehestan field based on village checkbox
-            document.getElementById('is_village').addEventListener('change', function() {
-                const dehestanField = document.getElementById('dehestan-field');
-                if (this.checked) {
-                    dehestanField.classList.remove('hidden');
-                } else {
-                    dehestanField.classList.add('hidden');
-                }
-            });
-
             // Initial check in case the 'not-deeded' is pre-selected
             updateFormState();
+        });
+    
+        // the same province -> county -> district -> city / village cascade as the registration form
+        document.addEventListener('DOMContentLoaded', function () {
+            new GeographicCascade({
+                provinceId: 'id_province_sr', countyId: 'id_county_sr', districtId: 'id_district_sr',
+                dehestanId: 'id_dehestan_sr', cityVillageId: 'id_city_village_sr', isVillageId: 'is_village_sr'
+            });
         });
     </script>
 </body>

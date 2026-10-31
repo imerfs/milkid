@@ -1,0 +1,78 @@
+{# The geographic block of the service forms (province -> county -> district -> city / village, dehestan), laid out like the registration form. Pass sfx=... for the element ids; wire it with GeographicCascade (static/js/geographic_cascade.js). #}
+                        <!-- 2. Geographic Location (the same layout as the registration form) -->
+                        <div class="mb-8">
+                            <h2 class="text-xl font-semibold mb-6 border-r-4 border-green-500 pr-4"><i class="fas fa-map-marker-alt ml-2 text-green-600"></i>۲. موقعیت جغرافیایی</h2>
+                            {% if profile.city_village %}<p class="text-sm text-gray-600 mb-4"><i class="fas fa-location-dot ml-1 text-green-600"></i>اگر چیزی انتخاب نکنید، روستای ثبت‌شده در پروفایل شما («{{ profile.city_village }}») در نظر گرفته می‌شود.</p>{% endif %}
+
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                <div class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 ml-2 mt-1"></i>
+                                    <div>
+                                        <p class="text-blue-800 font-medium mb-1">راهنما:</p>
+                                        <p class="text-blue-700 text-sm">ابتدا استان را انتخاب کنید، سپس به ترتیب شهرستان، بخش و شهر یا روستا.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label for="id_province_{{ sfx }}" class="block font-medium mb-3 text-gray-700">
+                                        <i class="fas fa-map text-emerald-600 ml-1"></i>
+                                        استان
+                                    </label>
+                                    <select name="province" id="id_province_{{ sfx }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white">
+                                        <option value="">انتخاب کنید</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">ابتدا استان ملک را انتخاب کنید</p>
+                                </div>
+                                <div>
+                                    <label for="id_county_{{ sfx }}" class="block font-medium mb-3 text-gray-700">
+                                        <i class="fas fa-city text-emerald-600 ml-1"></i>
+                                        شهرستان
+                                    </label>
+                                    <select name="county" id="id_county_{{ sfx }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white" disabled>
+                                        <option value="">ابتدا استان را انتخاب کنید</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">پس از انتخاب استان فعال می‌شود</p>
+                                </div>
+                                <div>
+                                    <label for="id_district_{{ sfx }}" class="block font-medium mb-3 text-gray-700">
+                                        <i class="fas fa-map-signs text-emerald-600 ml-1"></i>
+                                        بخش
+                                    </label>
+                                    <select name="district" id="id_district_{{ sfx }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white" disabled>
+                                        <option value="">ابتدا شهرستان را انتخاب کنید</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">پس از انتخاب شهرستان فعال می‌شود</p>
+                                </div>
+                                <div>
+                                    <label for="id_city_village_{{ sfx }}" class="block font-medium mb-3 text-gray-700">
+                                        <i class="fas fa-map-marker-alt text-emerald-600 ml-1"></i>
+                                        شهر / روستا
+                                    </label>
+                                    <select name="city_village" id="id_city_village_{{ sfx }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white" disabled>
+                                        <option value="">ابتدا بخش را انتخاب کنید</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">شهر یا روستای ملک را از لیست انتخاب کنید</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-6">
+                                <input type="checkbox" name="is_village" id="is_village_{{ sfx }}" class="ml-3">
+                                <label for="is_village_{{ sfx }}" class="flex items-center cursor-pointer">
+                                    <i class="fas fa-tree text-green-600 ml-2"></i>
+                                    <span class="text-gray-700 font-medium">در روستا قرار دارد</span>
+                                </label>
+                            </div>
+
+                            <div id="dehestan-field">
+                                <label for="id_dehestan_{{ sfx }}" class="block font-medium mb-3 text-gray-700">
+                                    <i class="fas fa-mountain-sun text-emerald-600 ml-1"></i>
+                                    دهستان
+                                </label>
+                                <select name="dehestan" id="id_dehestan_{{ sfx }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white" disabled>
+                                    <option value="">ابتدا بخش را انتخاب کنید</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">پس از انتخاب بخش فعال می‌شود</p>
+                            </div>
+                        </div>
