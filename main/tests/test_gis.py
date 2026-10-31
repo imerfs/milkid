@@ -977,3 +977,30 @@ class PlanHasNoFrame(TestCase):
         items = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_cad', args=[SLUG])).json()['items']
         numbers = [i['s'] for i in items if i['k'] == 't' and re.fullmatch(r'\d{6,7}', i['s'])]
         self.assertEqual(numbers, [])                              # 3645800, 713200 ... of the sheet's coordinate grid
+
+
+class TheThreeStaffOfTheVillageSeeTheMapInTheirPanels(TestCase):
+    """The technical expert, the administrative expert and the dehyari of a village each find the map in their own panel; staff of another village do not."""
+    PANELS = {'engineer': 'main:dehyari_expert_dashboard', 'clerk': 'main:clerk_dashboard', 'dehyari': 'main:dehyari_dashboard'}
+
+    def test_each_role_has_the_link_in_its_panel(self):
+        link = reverse('main:gis_map', args=[SLUG])
+        for role, panel in self.PANELS.items():
+            with self.subTest(role=role):
+                page = client_for(make_user(role, **LOCAL)).get(reverse(panel))
+                self.assertContains(page, link)
+
+    def test_staff_of_another_village_do_not_get_the_link(self):
+        link = reverse('main:gis_map', args=[SLUG])
+        for role, panel in self.PANELS.items():
+            with self.subTest(role=role):
+                page = client_for(make_user(role, province='خراسان جنوبی', county='بیرجند', city_village='ولدآباد')).get(reverse(panel))
+                self.assertNotContains(page, link)
+
+    def test_a_dehyari_whose_profile_names_no_village_gets_it_through_the_municipality(self):
+        from main.tests.helpers import make_municipality
+        dehyari = make_user('dehyari')
+        make_municipality(dehyari, 'دستگرد').__class__.objects.filter(admin_user=dehyari).update(county='بیرجند')
+        link = reverse('main:gis_map', args=[SLUG])
+        self.assertContains(client_for(dehyari).get(reverse('main:dehyari_dashboard')), link)
+        self.assertEqual(client_for(dehyari).get(link).status_code, 200)

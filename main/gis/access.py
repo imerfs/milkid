@@ -1,12 +1,19 @@
-"""Who may open a village's map: that village's technical expert (role engineer) and admins."""
+"""Who may open a village's map: the village's technical expert, administrative expert (clerk) and dehyari, and admins."""
 from main.access import can, role_of
 from main.geography import norm
 
 
 def village_of(user):
-    """(CityVillage id or None, village name, county name) the user's profile belongs to."""
+    """(CityVillage id or None, village name, county name) the user belongs to: the profile's village, or for a dehyari whose profile names none, the village
+    of the municipality they administer."""
     profile = user.profile
-    return (profile.city_village_fk_id, profile.city_village_name or profile.city_village, profile.county)
+    link, name, county = profile.city_village_fk_id, profile.city_village_name or profile.city_village, profile.county
+    if not link and not name and profile.role == 'dehyari':
+        from main.models import Municipality     # pylint: disable=import-outside-toplevel
+        municipality = Municipality.objects.filter(admin_user=user).first()
+        if municipality is not None:
+            name, county = municipality.city_village, municipality.county
+    return (link, name, county)
 
 
 def may_use(user, village_map, action='gis.view'):
