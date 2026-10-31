@@ -351,7 +351,7 @@ function previewMessage() {
     document.getElementById('modalSubject').textContent = subject;
     document.getElementById('modalMessageBody').textContent = messageBody;
     document.getElementById('modalRecipient').textContent = selectedUserName;
-    document.getElementById('modalSendDate').textContent = new Date().toLocaleDateString('fa-IR');
+    document.getElementById('modalSendDate').textContent = (window.JalaliDatePicker ? JalaliDatePicker.formatDate(new Date()) : new Date().toLocaleDateString('fa-IR'));
     
     new bootstrap.Modal(document.getElementById('previewModal')).show();
 }

@@ -1,3 +1,4 @@
+{% load jalali_tags %}
 {% load static %}
 <!doctype html>
 <html lang="fa" dir="rtl">
@@ -42,6 +43,7 @@
     {% include 'partials/seo_head.html' %}
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+{% include 'partials/jalali_date_assets.html' %}
 </head>
 <body class="text-gray-800 mk-tw">
     <div class="min-h-screen p-4">
@@ -135,7 +137,7 @@
                             <p><i class="fas fa-user ml-2"></i>{{ ad.user.get_full_name }}</p>
                             <p><i class="fas fa-map-marker-alt ml-2"></i>{{ ad.city_village }}</p>
                             <p><i class="fas fa-expand-arrows-alt ml-2"></i>{{ ad.total_area }} متر مربع</p>
-                            <p><i class="fas fa-calendar ml-2"></i>{{ ad.created_at|date:"Y/m/d" }}</p>
+                            <p><i class="fas fa-calendar ml-2"></i>{{ ad.created_at|jalali_date }}</p>
                         </div>
                         
                         {% if ad.sale_price %}
@@ -187,7 +189,7 @@
                     <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
                         <div>
                             <h4 class="font-semibold">{{ ad.get_property_type_display }} - {{ ad.address|truncatechars:40 }}</h4>
-                            <p class="text-sm text-gray-600">{{ ad.user.get_full_name }} | {{ ad.updated_at|date:"Y/m/d" }}</p>
+                            <p class="text-sm text-gray-600">{{ ad.user.get_full_name }} | {{ ad.updated_at|jalali_date }}</p>
                         </div>
                         <div class="flex items-center space-x-2 space-x-reverse">
                             <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">تایید شده</span>
@@ -214,7 +216,7 @@
                     <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
                         <div>
                             <h4 class="font-semibold">{{ ad.get_property_type_display }} - {{ ad.address|truncatechars:40 }}</h4>
-                            <p class="text-sm text-gray-600">{{ ad.user.get_full_name }} | {{ ad.updated_at|date:"Y/m/d" }}</p>
+                            <p class="text-sm text-gray-600">{{ ad.user.get_full_name }} | {{ ad.updated_at|jalali_date }}</p>
                             {% if ad.admin_notes %}
                             <p class="text-sm text-red-600 mt-1">{{ ad.admin_notes }}</p>
                             {% endif %}
@@ -249,7 +251,7 @@
                                     <i class="fas fa-user ml-1"></i>درخواست از: {{ edit.user.get_full_name }}
                                 </p>
                                 <p class="text-sm text-gray-600">
-                                    <i class="fas fa-calendar ml-1"></i>تاریخ درخواست: {{ edit.created_at|date:"Y/m/d H:i" }}
+                                    <i class="fas fa-calendar ml-1"></i>تاریخ درخواست: {{ edit.created_at|jalali_datetime }}
                                 </p>
                                 <p class="text-sm text-orange-700 mt-2">
                                     <i class="fas fa-comment ml-1"></i>دلیل ویرایش: {{ edit.edit_reason }}
@@ -336,7 +338,7 @@
 
     <script>
         // Set current date
-        document.getElementById('current-date').textContent = new Intl.DateTimeFormat('fa-IR').format(new Date());
+        document.getElementById('current-date').textContent = (window.JalaliDatePicker ? JalaliDatePicker.formatDate(new Date()) : new Intl.DateTimeFormat('fa-IR').format(new Date()));
         
         // Tab functionality
         function showTab(tabName) {

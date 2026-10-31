@@ -19,10 +19,18 @@ PERSIAN_WEEKDAYS = [
     'شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'
 ]
 
+def _local(value):
+    """An aware datetime is shown in the site's time zone (Tehran), not in UTC."""
+    from django.utils import timezone       # pylint: disable=import-outside-toplevel
+    if timezone.is_aware(value):
+        return timezone.localtime(value).replace(tzinfo=None)
+    return value
+
+
 @register.filter
 def jalali_date(value, format_string='%Y/%m/%d'):
     """
-    Convert Gregorian date to Jalali/Persian date
+    Convert Gregorian date to Jalali/Persian date (always YYYY/MM/DD with Persian digits unless another format is given)
     Usage: {{ date_field|jalali_date }}
     Usage: {{ date_field|jalali_date:"%Y/%m/%d" }}
     """
@@ -41,11 +49,11 @@ def jalali_date(value, format_string='%Y/%m/%d'):
                     return value
         
         if isinstance(value, datetime):
-            jalali_dt = jdatetime.datetime.fromgregorian(datetime=value)
-            return jalali_dt.strftime(format_string)
+            jalali_dt = jdatetime.datetime.fromgregorian(datetime=_local(value))
+            return persian_numbers(jalali_dt.strftime(format_string))
         elif isinstance(value, date):
             jalali_date = jdatetime.date.fromgregorian(date=value)
-            return jalali_date.strftime(format_string)
+            return persian_numbers(jalali_date.strftime(format_string))
         
         return value
     except Exception:
@@ -72,9 +80,9 @@ def jalali_datetime(value, format_string='%Y/%m/%d %H:%M'):
                     return value
         
         if isinstance(value, datetime):
-            jalali_dt = jdatetime.datetime.fromgregorian(datetime=value)
-            return jalali_dt.strftime(format_string)
-        
+            jalali_dt = jdatetime.datetime.fromgregorian(datetime=_local(value))
+            return persian_numbers(jalali_dt.strftime(format_string))
+
         return value
     except Exception:
         return value
@@ -255,9 +263,9 @@ def jalali_now(format_string='%Y/%m/%d %H:%M'):
     Usage: {% jalali_now %}
     Usage: {% jalali_now "%Y/%m/%d" %}
     """
-    now = timezone.now()
-    jalali_now = jdatetime.datetime.fromgregorian(datetime=now)
-    return jalali_now.strftime(format_string)
+    now = timezone.localtime()
+    jalali_now = jdatetime.datetime.fromgregorian(datetime=now.replace(tzinfo=None))
+    return persian_numbers(jalali_now.strftime(format_string))
 
 @register.simple_tag
 def jalali_today(format_string='%Y/%m/%d'):
@@ -266,6 +274,6 @@ def jalali_today(format_string='%Y/%m/%d'):
     Usage: {% jalali_today %}
     Usage: {% jalali_today "%Y/%m/%d" %}
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     jalali_today = jdatetime.date.fromgregorian(date=today)
-    return jalali_today.strftime(format_string)
+    return persian_numbers(jalali_today.strftime(format_string))

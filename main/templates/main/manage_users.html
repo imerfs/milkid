@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load jalali_tags %}
 {% load persian_filters %}
 
 {% block title %}مدیریت کاربران - ملک آیدی{% endblock %}
@@ -227,7 +228,7 @@
                                     <td>{{ p.deleted_username|default:p.user.username }}</td>
                                     <td>{{ p.deleted_national_id|default:"-" }}</td>
                                     <td>{{ p.get_role_display }}</td>
-                                    <td>{{ p.deleted_at|date:"Y/m/d H:i" }}</td>
+                                    <td>{{ p.deleted_at|jalali_datetime }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr><td colspan="5" class="text-center text-muted py-4">کاربر حذف‌شده‌ای وجود ندارد</td></tr>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load jalali_tags %}
 {% load static %}
 
 {% block title %}پیام‌رسانی - ملک آیدی{% endblock %}
@@ -149,7 +150,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="text-end">
-                                    <small class="text-muted">{{ conversation.updated_at|date:"Y/m/d H:i" }}</small>
+                                    <small class="text-muted">{{ conversation.updated_at|jalali_datetime }}</small>
                                     <div class="mt-1">
                                         <span class="badge bg-light text-dark">{{ conversation.message_count }} پیام</span>
                                     </div>
@@ -233,7 +234,7 @@
                             </h6>
                             <p class="mb-1 small text-muted">{{ announcement.content|truncatechars:80 }}</p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">{{ announcement.created_at|date:"Y/m/d" }}</small>
+                                <small class="text-muted">{{ announcement.created_at|jalali_date }}</small>
                                 <span class="badge bg-{% if announcement.priority == 'urgent' %}danger{% elif announcement.priority == 'high' %}warning{% else %}success{% endif %}">
                                     {{ announcement.get_priority_display }}
                                 </span>

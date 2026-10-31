@@ -51,6 +51,7 @@
     {% include 'partials/seo_head.html' %}
     <link rel="stylesheet" href="{% static 'css/melkid-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+{% include 'partials/jalali_date_assets.html' %}
 </head>
 <body class="min-h-screen mk-tw">
     
@@ -161,6 +162,11 @@
                                     {% if form.mobile_number.errors %}
                                         <p class="text-red-600 text-sm mt-1">{{ form.mobile_number.errors.0 }}</p>
                                     {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="{{ form.birth_date.id_for_label }}">تاریخ تولد</label>
+                                    {{ form.birth_date }}
+                                    {% for error in form.birth_date.errors %}<p class="text-red-600 text-sm mt-1">{{ error }}</p>{% endfor %}
                                 </div>
                             </div>
                         </div>

@@ -1,4 +1,5 @@
 {% extends 'main/dashboards/_base.html' %}
+{% load jalali_tags %}
 {% load static %}
 {% block title %}پنل کاربری - ملک آیدی{% endblock %}
 {% block style %}
@@ -186,7 +187,7 @@
                                         <i class="fas fa-file-alt text-blue-500 text-2xl"></i>
                                         <div>
                                             <p class="font-semibold">{{ doc.document_name }}</p>
-                                            <p class="text-sm text-gray-500">{{ doc.request.title }} · {{ doc.uploaded_at|date:"Y/m/d H:i" }}</p>
+                                            <p class="text-sm text-gray-500">{{ doc.request.title }} · {{ doc.uploaded_at|jalali_datetime }}</p>
                                         </div>
                                     </div>
                                     <a href="{% url 'main:dashboard_download_document' doc.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm" aria-label="دریافت {{ doc.document_name }}"><i class="fas fa-download"></i></a>

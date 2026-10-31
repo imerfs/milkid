@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
     <link rel="stylesheet" href="{% static 'css/village-map.css' %}">
+{% include 'partials/jalali_date_assets.html' %}
 </head>
 <body class="vm-body">
 {{ config|json_script:"vm-config" }}

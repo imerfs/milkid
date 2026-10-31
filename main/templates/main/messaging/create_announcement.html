@@ -300,7 +300,7 @@ function previewAnnouncement() {
     `;
     
     // تاریخ ارسال
-    document.getElementById('sendDate').textContent = new Date().toLocaleDateString('fa-IR');
+    document.getElementById('sendDate').textContent = (window.JalaliDatePicker ? JalaliDatePicker.formatDate(new Date()) : new Date().toLocaleDateString('fa-IR'));
     
     // گروه‌های هدف
     const selectedRoles = [];

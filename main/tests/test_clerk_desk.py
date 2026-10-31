@@ -32,7 +32,7 @@ class GivingTheRole(Village):
     def test_dehyari_creates_a_clerk_account(self):
         response = client_for(self.dehyari).post(reverse('main:role_create_account'), {
             'first_name': 'سارا', 'last_name': 'احمدی', 'username': 'sara.clerk', 'national_id': '0012345678',
-            'mobile_number': '09121234567', 'role': 'clerk'})
+            'mobile_number': '09121234567', 'birth_date': '1370/05/17', 'role': 'clerk'})
         self.assertLess(response.status_code, 400)
         self.assertEqual(UserProfile.objects.get(user__username='sara.clerk').role, 'clerk')
 

@@ -214,3 +214,41 @@ class JalaliDateTimeField(forms.DateTimeField):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('help_text', 'تاریخ و زمان را به صورت شمسی وارد کنید (مثال: 1403/08/15 14:30)')
         super().__init__(*args, **kwargs)
+
+
+class BirthDateField(forms.CharField):
+    """A date of birth typed or picked as a Jalali date (۱۳۷۶/۰۴/۱۲). Cleans to 'YYYY/MM/DD' in Latin digits, as ``UserProfile.birth_date`` stores it.
+
+    Refuses a date in the future, one before 1250 and a person older than 120.
+    """
+    default_error_messages = {
+        'invalid': 'تاریخ تولد را به شکل ۱۳۷۶/۰۴/۱۲ وارد کنید.',
+        'future': 'تاریخ تولد نمی‌تواند در آینده باشد.',
+        'old': 'تاریخ تولد معتبر نیست.',
+    }
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('label', 'تاریخ تولد')
+        kwargs.setdefault('max_length', 20)
+        kwargs.setdefault('widget', forms.TextInput(attrs={'class': 'form-control jalali-date', 'dir': 'ltr', 'autocomplete': 'off', 'placeholder': '۱۳۷۶/۰۴/۱۲'}))
+        super().__init__(**kwargs)
+
+    def clean(self, value):
+        value = super().clean(value)  # pylint: disable=no-member
+        if not value:
+            return ''
+        import re
+        text = str(value).translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')).strip()
+        match = re.fullmatch(r'(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})', text)
+        if not match:
+            raise forms.ValidationError(self.error_messages['invalid'], code='invalid')
+        try:
+            born = jdatetime.date(*map(int, match.groups()))
+        except ValueError as exc:
+            raise forms.ValidationError(self.error_messages['invalid'], code='invalid') from exc
+        today = jdatetime.date.today()
+        if born > today:
+            raise forms.ValidationError(self.error_messages['future'], code='future')
+        if born.year < 1250 or today.year - born.year > 120:
+            raise forms.ValidationError(self.error_messages['old'], code='old')
+        return f'{born.year:04d}/{born.month:02d}/{born.day:02d}'

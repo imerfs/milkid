@@ -7,7 +7,7 @@ from . import geo_cascade
 from .validators import validate_file_size, validate_file_extension, validate_file_content
 from .roles import CITIZEN_ROLES
 from .models import UserProfile, ServiceRequest, RequestDocument, Service, ServiceStep, Municipality, Property, PropertyAdvertisement, PropertyImage, Province, County, District, CityVillage
-from .widgets import JalaliSelectDateWidget, JalaliDateInput, JalaliDateTimeInput, JalaliDateField, JalaliDateTimeField
+from .widgets import BirthDateField, JalaliSelectDateWidget, JalaliDateInput, JalaliDateTimeInput, JalaliDateField, JalaliDateTimeField
 
 class ContactForm(forms.Form):
     """The public contact form: a name, a way to answer (an email or a mobile number, at least one), a subject and the message."""
@@ -168,6 +168,8 @@ class CustomUserCreationForm(UserCreationForm):
         })
     )
 
+    birth_date = BirthDateField(required=True)
+
     role = forms.ChoiceField(
         # 'admin' is never self-service: admins are created/promoted by an existing admin only.
         choices=[c for c in UserProfile.USER_ROLES if c[0] != 'admin'],
@@ -321,6 +323,7 @@ class CustomUserCreationForm(UserCreationForm):
             profile.national_id = self.cleaned_data['national_id']
             profile.mobile_number = self.cleaned_data['mobile_number']
             profile.father_name = self.cleaned_data.get('father_name', '')
+            profile.birth_date = self.cleaned_data.get('birth_date', '')
             profile.role = self.cleaned_data['role']
             
             # Save geographic information
@@ -442,6 +445,8 @@ class CitizenRegistrationForm(UserCreationForm):
             'dir': 'rtl'
         })
     )
+
+    birth_date = BirthDateField(required=True)
     
     # Geographic fields
     province = forms.ModelChoiceField(
@@ -547,6 +552,7 @@ class CitizenRegistrationForm(UserCreationForm):
             profile.national_id = self.cleaned_data.get('national_id', '')
             profile.mobile_number = self.cleaned_data.get('mobile_number', '')
             profile.father_name = self.cleaned_data.get('father_name', '')
+            profile.birth_date = self.cleaned_data.get('birth_date', '')
             
             # Save geographic information
             province = self.cleaned_data.get('province')
@@ -787,6 +793,8 @@ class ProfileUpdateForm(forms.ModelForm):
         })
     )
 
+    birth_date = BirthDateField(required=False)
+
     # Geographic fields
     province = forms.ModelChoiceField(
         queryset=None,  # Will be populated in __init__
@@ -863,7 +871,7 @@ class ProfileUpdateForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['mobile_number', 'is_village']
+        fields = ['mobile_number', 'birth_date', 'is_village']
         # Note: province, county, district, dehestan, city_village are custom ModelChoiceFields
         # They are not part of the model directly, so we handle them manually in save()
 

@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django import forms
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
@@ -22,6 +23,7 @@ from main.gis.access import maps_for
 from main import lifecycle
 from main.office import roles as office_roles
 from main.office.directory import requests_for
+from main.widgets import BirthDateField
 from main.access import policy_required
 from main.messaging_views import (
     messaging_dashboard, conversation_list, conversation_detail, 
@@ -194,9 +196,16 @@ def mayor_staff_add(request):
         national_id = request.POST.get('national_id')
         mobile_number = request.POST.get('mobile_number')
         role = request.POST.get('role')
-        
+        birth_date, birth_error = None, ''
+        try:
+            birth_date = BirthDateField(required=True).clean(request.POST.get('birth_date'))
+        except forms.ValidationError as exc:
+            birth_error = exc.messages[0]
+
         if role not in office_roles.GRANTABLE:
             messages.error(request, 'نقش انتخاب‌شده معتبر نیست.')
+        elif birth_date is None:
+            messages.error(request, birth_error)
         elif User.objects.filter(username=username).exists():
             messages.error(request, 'نام کاربری تکراری است.')
         elif UserProfile.objects.filter(national_id=national_id).exists():
@@ -215,6 +224,7 @@ def mayor_staff_add(request):
             profile = user.profile
             profile.national_id = national_id
             profile.mobile_number = mobile_number
+            profile.birth_date = birth_date
             profile.role = role
             profile.province = municipality.province
             profile.county = municipality.county

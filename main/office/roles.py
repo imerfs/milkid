@@ -1,10 +1,12 @@
 """Giving and taking back staff roles. The dehyari acts inside their own village only."""
 import re
 
+from django import forms
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 
+from main.widgets import BirthDateField
 from main.models import Municipality, RoleGrant, UserProfile
 from main.notifications import notify
 from main.office.errors import Forbidden, Invalid, NotFound
@@ -122,6 +124,10 @@ def create_staff_account(actor, data):
     last = (data.get('last_name') or '').strip()
     national_id = (data.get('national_id') or '').strip()
     mobile = (data.get('mobile_number') or '').strip()
+    try:
+        birth_date = BirthDateField(required=True).clean(data.get('birth_date'))
+    except forms.ValidationError as exc:
+        raise Invalid(exc.messages[0]) from exc
     if not _USERNAME.match(username):
         raise Invalid('نام کاربری باید ۳ تا ۳۰ حرف انگلیسی، عدد، نقطه یا خط تیره باشد.')
     if not first or not last or len(first) > 30 or len(last) > 30:
@@ -138,7 +144,7 @@ def create_staff_account(actor, data):
             raise Invalid('این کد ملی قبلاً ثبت شده است.')
         user = User.objects.create_user(username=username, password=national_id, first_name=first, last_name=last)
         UserProfile.objects.filter(user=user).update(
-            role=role, national_id=national_id, mobile_number=mobile, is_verified=True, approval_status='approved', must_change_password=True,
+            role=role, national_id=national_id, mobile_number=mobile, birth_date=birth_date, is_verified=True, approval_status='approved', must_change_password=True,
             province=municipality.province, county=municipality.county, district=municipality.district,
             city_village=municipality.city_village, is_village=True)
         RoleGrant.objects.create(user=user, role=role, previous_role='citizen', granted_by=actor,

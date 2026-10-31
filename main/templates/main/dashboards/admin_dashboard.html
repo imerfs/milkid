@@ -1,4 +1,5 @@
 {% extends 'main/dashboards/_base.html' %}
+{% load jalali_tags %}
 {% load static %}
 {% block title %}پنل مدیر سیستم - ملک آیدی{% endblock %}
 {% block head_extra %}
@@ -1375,8 +1376,8 @@
                                             data-is-online="{% if item.is_online %}1{% else %}0{% endif %}"
                                             data-is-active="{% if item.is_active %}1{% else %}0{% endif %}"
                                             data-approval="{{ item.profile.approval_status }}"
-                                            data-date-joined="{{ item.user.date_joined|date:'Y/m/d' }}"
-                                            data-last-login="{{ item.user.last_login|date:'Y/m/d H:i'|default:'ثبت نشده' }}"
+                                            data-date-joined="{{ item.user.date_joined|jalali_date }}"
+                                            data-last-login="{{ item.user.last_login|jalali_datetime|default:'ثبت نشده' }}"
                                             data-email="{{ item.user.email|default:'ثبت نشده' }}"
                                         >
                                             <!-- Column 1: User Identity -->
@@ -1478,7 +1479,7 @@
                                                 </div>
                                                 <div class="text-[10px] text-gray-400 mt-0.5">
                                                     {% if item.user.last_login %}
-                                                    {{ item.user.last_login|date:"Y/m/d H:i" }}
+                                                    {{ item.user.last_login|jalali_datetime }}
                                                     {% else %}
                                                     بدون سابقه ورود
                                                     {% endif %}
@@ -1887,7 +1888,7 @@
 
                                             <!-- Date -->
                                             <td class="py-4 px-6 text-xs text-gray-500">
-                                                {{ ad.created_at|date:"Y/m/d" }}
+                                                {{ ad.created_at|jalali_date }}
                                             </td>
 
                                             <!-- Actions -->
@@ -1946,7 +1947,7 @@
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-gray-800">{{ edit.advertisement.get_property_type_display }}</span>
                                             <span class="text-xs text-gray-500">ثبت شده توسط {{ edit.user.get_full_name }}</span>
-                                            <span class="text-xs text-blue-600">({{ edit.created_at|date:"Y/m/d H:i" }})</span>
+                                            <span class="text-xs text-blue-600">({{ edit.created_at|jalali_datetime }})</span>
                                         </div>
                                         <p class="text-xs text-gray-600 mt-1"><strong>دلیل ویرایش:</strong> {{ edit.edit_reason|default:"ثبت نشده" }}</p>
                                     </div>
@@ -2106,7 +2107,7 @@
                                             </td>
 
                                             <td class="py-3.5 px-4">
-                                                <div class="text-gray-500 font-mono text-[11px]">{{ mun.created_at|date:"Y/m/d" }}</div>
+                                                <div class="text-gray-500 font-mono text-[11px]">{{ mun.created_at|jalali_date }}</div>
                                                 {% if mun.governor_decree %}
                                                 <a href="{% url 'main:municipality_decree_view' mun.id %}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-bold mt-1">
                                                     <i class="fas fa-file-pdf"></i>
