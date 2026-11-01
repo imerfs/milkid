@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from main.models import Notification, PermitDocument, PermitFile
 from main.office import permit_step4, permits
-from main.tests.helpers import client_for, make_user
+from main.tests.helpers import client_for, make_user, requires_gis_data
 from main.tests.test_permit_files import PDF, upload
 from main.tests.test_permit_step3 import AtStepThree
 
@@ -50,6 +50,7 @@ class AtStepFour(AtStepThree):
         return client_for(who or self.dehyari).post(self.url('design_sign'), {k: v for k, v in data.items() if v is not None})
 
 
+@requires_gis_data
 class Engineers(AtStepFour):
     def test_the_defaults_come_from_the_file_and_the_bonyads_answer(self):
         data = permit_step4.payload(self.permit)
@@ -85,6 +86,7 @@ class Engineers(AtStepFour):
         self.assertIn('forms/permit/form04_blank.jpg', payload['blank']['f04'])
 
 
+@requires_gis_data
 class Plans(AtStepFour):
     def test_the_owner_uploads_and_deletes_plans(self):
         self.plans('plan_arch', n=3)
@@ -124,6 +126,7 @@ class Plans(AtStepFour):
             self.assertEqual(client_for(who).get(reverse('main:permit_document', args=[doc.pk])).status_code, 404)
 
 
+@requires_gis_data
 class Submitting(AtStepFour):
     def test_it_needs_the_engineers_and_both_kinds_of_plan(self):
         self.submit()
@@ -158,6 +161,7 @@ class Submitting(AtStepFour):
         self.assertEqual(permits.panel_rows(self.clerk)['waiting'], 1)
 
 
+@requires_gis_data
 class Reviewing(AtStepFour):
     def setUp(self):
         super().setUp()
@@ -201,6 +205,7 @@ class Reviewing(AtStepFour):
         self.assertEqual((permit.design_state, permit.request.status), ('submitted', 'pending'))
 
 
+@requires_gis_data
 class Signing(AtStepFour):
     def setUp(self):
         super().setUp()
@@ -250,6 +255,7 @@ class Signing(AtStepFour):
         self.assertNotIn('forms', permit.design)
 
 
+@requires_gis_data
 class FormNumbers(AtStepFour):
     def test_the_staff_set_the_numbers_and_form_04(self):
         client_for(self.clerk).post(self.url('design_forms'), {

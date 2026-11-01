@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from main.models import Notification
 from main.office import permit_step5, permits
-from main.tests.helpers import client_for, make_user
+from main.tests.helpers import client_for, make_user, requires_gis_data
 from main.tests.test_permit_files import PDF, upload
 from main.tests.test_permit_step4 import AtStepFour
 
@@ -52,6 +52,7 @@ class AtStepFive(AtStepFour):
         return client_for(who or self.clerk).post(self.url('letter_issue'), {k: v for k, v in base.items() if v is not None})
 
 
+@requires_gis_data
 class Catalogue(AtStepFive):
     def test_the_form_has_31_numbered_rows(self):
         self.assertEqual([r['no'] for r in permit_step5.ROWS], list(range(1, 32)))
@@ -60,6 +61,7 @@ class Catalogue(AtStepFive):
         self.assertEqual(permit_step5.ROWS[27]['title'], 'بهای کارشناسی')
 
 
+@requires_gis_data
 class DefiningTheFees(AtStepFive):
     def test_the_officer_is_told_when_the_plans_are_signed(self):
         self.assertTrue(Notification.objects.filter(user=self.officer, title='عوارض پرونده‌ی پروانه').exists())
@@ -112,6 +114,7 @@ class DefiningTheFees(AtStepFive):
         self.assertFalse(self.reload().fees)
 
 
+@requires_gis_data
 class TheOwnersAnswer(AtStepFive):
     def test_the_owner_approves_and_the_file_moves_to_step_six(self):
         self.offer()
@@ -144,6 +147,7 @@ class TheOwnersAnswer(AtStepFive):
         self.assertEqual((permit.fees_state, permit.fees['total']), ('offered', 84400000))
 
 
+@requires_gis_data
 class Payments(AtStepFive):
     def setUp(self):
         super().setUp()
@@ -209,6 +213,7 @@ class Payments(AtStepFive):
         self.assertEqual(len(self.reload().insurance['payments']), 1)
 
 
+@requires_gis_data
 class TheLetter(AtStepFive):
     def setUp(self):
         super().setUp()
@@ -255,6 +260,7 @@ class TheLetter(AtStepFive):
         self.assertEqual(len(self.reload().insurance['payments']), 1)
 
 
+@requires_gis_data
 class Pages(AtStepFive):
     def test_everyone_sees_what_belongs_to_them(self):
         page = client_for(self.officer).get(self.url('fees'))

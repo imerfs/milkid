@@ -3,7 +3,7 @@ import jdatetime
 
 from main.models import Notification
 from main.office import permit_extension
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, requires_gis_data
 from main.tests.test_permit_step6 import AtStepSeven
 
 
@@ -40,6 +40,7 @@ class Issued(AtStepSeven):
         return client_for(who or self.clerk).post(self.url('extension_issue'), {'req_signed': 'on', 'signed': 'on', **self.answer(**change)})
 
 
+@requires_gis_data
 class TheTerm(Issued):
     def test_a_year_from_the_issue_date(self):
         info = permit_extension.expiry(self.permit)
@@ -61,6 +62,7 @@ class TheTerm(Issued):
         self.assertIsNone(permit_extension.expiry(self.permit))
 
 
+@requires_gis_data
 class Asking(Issued):
     def test_not_while_the_permit_is_valid(self):
         self.ask()
@@ -86,6 +88,7 @@ class Asking(Issued):
         self.assertEqual(len(self.reload().extensions), 1)
 
 
+@requires_gis_data
 class Renewing(Issued):
     def setUp(self):
         super().setUp()
@@ -149,6 +152,7 @@ class Renewing(Issued):
         self.assertEqual(client_for(self.neighbour).get(self.url('extension')).status_code, 404)
 
 
+@requires_gis_data
 class Notices(Issued):
     def test_owners_are_told_once_per_term(self):
         self.assertEqual(permit_extension.notify_expiring(), 0)

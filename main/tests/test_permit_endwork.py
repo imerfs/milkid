@@ -1,7 +1,7 @@
 """Building permit, the last step: the end-of-work request and the certificate."""
 from main.models import Notification
 from main.office import permit_endwork, permit_services, permits
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, requires_gis_data
 from main.tests.test_permit_supervision import Supervised
 from main.office import permit_supervision
 
@@ -31,6 +31,7 @@ class AtTheEnd(Supervised):
         return self.reload().endwork_state
 
 
+@requires_gis_data
 class Requesting(AtTheEnd):
     def test_the_owner_asks_and_the_staff_are_told(self):
         self.assertEqual(self.permit.status_text, 'نظارت کامل شد؛ درخواست گواهی پایان کار از متقاضی')
@@ -57,6 +58,7 @@ class Requesting(AtTheEnd):
         self.assertEqual(self.reload().endwork['req_no'], before)
 
 
+@requires_gis_data
 class Answering(AtTheEnd):
     def setUp(self):
         super().setUp()

@@ -1,7 +1,7 @@
 """Building permit, step 6 (the certificate) and step 7 (the building permit form)."""
 from main.models import Notification
 from main.office import permit_step6, permit_step7, permits
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, requires_gis_data
 from main.tests.test_permit_files import upload
 from main.tests.test_permit_step5 import AtStepFive
 
@@ -33,6 +33,7 @@ class AtStepSix(AtStepFive):
         return client_for(who or self.clerk).post(self.url('cert_verify'), {k: v for k, v in data.items() if v is not None})
 
 
+@requires_gis_data
 class TheCertificate(AtStepSix):
     def test_the_owner_sends_it_and_the_staff_are_told(self):
         self.send_cert()
@@ -116,6 +117,7 @@ class AtStepSeven(AtStepSix):
         return data
 
 
+@requires_gis_data
 class TheLicenceForm(AtStepSeven):
     def test_it_is_filled_from_the_file(self):
         f = permit_step7.payload(self.permit)

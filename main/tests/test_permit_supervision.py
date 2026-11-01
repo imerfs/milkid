@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from main.models import Notification
 from main.office import permit_step4, permit_step7, permit_supervision
-from main.tests.helpers import client_for, make_user
+from main.tests.helpers import client_for, make_user, requires_gis_data
 from main.tests.test_permit_extension import Issued
 from main.tests.test_permit_files import upload
 
@@ -45,6 +45,7 @@ class Supervised(Issued):
         self.act('approve', n)
 
 
+@requires_gis_data
 class TheInspectorOfTheFile(Supervised):
     def test_the_staff_link_one_of_the_villages_inspectors(self):
         self.link_inspector()
@@ -78,6 +79,7 @@ class TheInspectorOfTheFile(Supervised):
         self.assertNotIn(self.url('supervision'), other)
 
 
+@requires_gis_data
 class TheForms(Supervised):
     def test_form_eight_is_first_and_filled_from_the_file(self):
         self.assertEqual(permit_supervision.current(self.reload()), 8)
@@ -145,6 +147,7 @@ class TheForms(Supervised):
         self.assertEqual(self.reload().status_text, 'نظارت، فرم 8: منتظر تایید دهیاری')
 
 
+@requires_gis_data
 class Violations(Supervised):
     def setUp(self):
         super().setUp()
@@ -187,6 +190,7 @@ class Violations(Supervised):
         self.assertEqual(permit_supervision.defaults(self.reload(), 13)['vote_no'], '99/12')
 
 
+@requires_gis_data
 class Talking(Supervised):
     def test_the_owner_the_inspector_and_the_staff_exchange_messages(self):
         self.link_inspector()
@@ -207,6 +211,7 @@ class Talking(Supervised):
         self.assertFalse(permit_supervision.thread(self.reload()))
 
 
+@requires_gis_data
 class TheAmendmentSheet(Supervised):
     def amend(self, who=None, **change):
         data = {f'f_{k}': v for k, v in permit_step7.am_payload(self.reload()).items()}

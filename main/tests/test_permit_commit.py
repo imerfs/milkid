@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from main.models import JudicialExpert, MapParcel, Notification, ParcelArchive, PermitDocument, VillageMap
 from main.office import permit_commit, plotmap
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, requires_gis_data
 from main.tests.test_permit_files import PNG, upload
 from main.tests.test_permit_notice import soon
 from main.tests.test_permit_report import Step4
@@ -239,6 +239,7 @@ class Ending(Step5):
             self.assertEqual(client_for(who).get(self.url('permit_commit')).status_code, 404, who.profile.role)
 
 
+@requires_gis_data
 class MapNeighbours(Step5):
     def test_the_real_map_names_the_plots_touching_each_side_and_never_the_plot_itself(self):
         parcel = plot()
