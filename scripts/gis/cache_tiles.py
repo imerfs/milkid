@@ -11,6 +11,7 @@ Re-running only fetches what is missing.
 """
 import argparse
 import json
+import os
 import math
 import sys
 import time
@@ -18,7 +19,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / 'main' / 'data' / 'gis'
+DATA = Path(os.environ.get('MELKID_GIS_DATA') or ROOT / 'main' / 'data' / 'gis')
 ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 
 

@@ -10,6 +10,7 @@ Coordinates are UTM zone 40 N, as in the drawing; the plots are matched in longi
     python scripts/gis/build_plan_flags.py layers.json dastgerd
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from shapely.ops import unary_union
 from shapely.validation import make_valid
 
 ROOT = Path(__file__).resolve().parents[2]
+DATA = Path(os.environ.get('MELKID_GIS_DATA') or ROOT / 'main' / 'data' / 'gis')
 sys.path.insert(0, str(ROOT))
 from main.gis.uids import parcel_uids        # noqa: E402  pylint: disable=wrong-import-position
 
@@ -58,7 +60,7 @@ def flag(parcels, areas, share):
 
 def main(layers_path, slug):
     entities = json.loads(Path(layers_path).read_text(encoding='utf-8'))['entities']
-    collection = json.loads((ROOT / 'main' / 'data' / 'gis' / f'{slug}.geojson').read_text(encoding='utf-8'))
+    collection = json.loads((DATA / f'{slug}.geojson').read_text(encoding='utf-8'))
     features = [f for f in collection['features'] if f['properties']['type'] == 'parcel']
     uids = parcel_uids(features)
     parcels = [(f['properties'].get('uid') or uids[i], shape(f['geometry'])) for i, f in enumerate(features)]
@@ -66,7 +68,7 @@ def main(layers_path, slug):
     in_plan = flag(parcels, closed_areas(entities, PLAN_LAYER), PLAN_SHARE)
     result = {'source': f'layers {EXEMPT_LAYER} and {PLAN_LAYER} of the technical unit drawing', 'exempt_share': EXEMPT_SHARE, 'plan_share': PLAN_SHARE,
               'exempt': sorted(exempt), 'in_plan': sorted(in_plan)}
-    out = ROOT / 'main' / 'data' / 'gis' / f'{slug}_flags.json'
+    out = DATA / f'{slug}_flags.json'
     out.write_text(json.dumps(result, ensure_ascii=False), encoding='utf-8')
     print(f'{len(parcels)} plots: {len(exempt)} exempt, {len(in_plan)} in the plan -> {out}')
 

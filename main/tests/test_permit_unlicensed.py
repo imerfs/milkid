@@ -3,7 +3,7 @@ building-permit steps stay closed to a file of this track."""
 from django.urls import reverse
 
 from main.models import MapParcel, Notification, PermitFile, VillageMap
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, requires_gis_data
 from main.tests.test_permit_files import Village, application
 
 CODE = '0-0-8-182-2'
@@ -101,6 +101,7 @@ class UnlicensedFiling(UnlicensedBase):
         self.assertEqual((permit.track, permit.request.request_type), ('permit', 'building_permit'))
 
 
+@requires_gis_data
 class UnlicensedStaff(UnlicensedBase):
     def setUp(self):
         super().setUp()

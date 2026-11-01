@@ -12,7 +12,7 @@ from django.urls import reverse
 
 from main.gis import data as gis_data, inquiry, series
 from main.models import MapParcel, ParcelArchive, VillageMap
-from main.tests.helpers import client_for, make_user
+from main.tests.helpers import client_for, make_user, requires_gis_data
 
 SLUG = 'dastgerd'
 KEY = 'hectare20'
@@ -25,6 +25,7 @@ class Base(TestCase):
         self.plots = MapParcel.objects.filter(village_map=self.map, series=KEY)
 
 
+@requires_gis_data
 class Loaded(Base):
     def test_the_series_plots_are_loaded_apart_from_the_village_numbering(self):
         self.assertGreater(self.plots.count(), 500)
@@ -63,6 +64,7 @@ class Loaded(Base):
         self.assertNotIn(gone.pk, left)
 
 
+@requires_gis_data
 class Names(Base):
     def test_a_series_name_is_taken_out_of_the_search_text(self):
         for text in ('بیست هکتاری ۱۲', '20 هکتاری 12', '12 بیست هکتاری', 'بیست‌ هکتاری-12'.replace('‌', ' '), '۲۰ هکتاری-12'):
@@ -77,6 +79,7 @@ class Names(Base):
         self.assertEqual(series.table('nowhere'), [])
 
 
+@requires_gis_data
 class Search(Base):
     def setUp(self):
         super().setUp()
@@ -111,6 +114,7 @@ class Search(Base):
         self.assertEqual({r['series'] for r in data}, {KEY})
 
 
+@requires_gis_data
 class OnTheMaps(Base):
     def test_the_inquiry_map_data_marks_each_plot_with_its_series_and_lists_them(self):
         data = client_for(make_user('citizen')).get(reverse('main:inquiry_data', args=[SLUG])).json()
@@ -123,6 +127,7 @@ class OnTheMaps(Base):
         self.assertEqual(sum(1 for r in rows if r['properties']['sr'] == KEY), self.plots.count())
 
 
+@requires_gis_data
 class StaffPanel(Base):
     def test_the_staff_card_of_a_series_plot_names_the_series(self):
         plot = self.plots.exclude(number='').first()

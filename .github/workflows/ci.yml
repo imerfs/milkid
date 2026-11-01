@@ -9,6 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
+      GIS_DATA_TOKEN: ${{ secrets.GIS_DATA_TOKEN }}
       DJANGO_SECRET_KEY: ci-only-not-a-secret
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +23,16 @@ jobs:
       - run: python manage.py check
       - name: Migrations are committed
         run: python manage.py makemigrations --check --dry-run
+      - name: Private village data (only when the repository secret GIS_DATA_TOKEN exists; otherwise the map tests are skipped)
+        if: ${{ env.GIS_DATA_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: imerfs/milkid-data
+          token: ${{ secrets.GIS_DATA_TOKEN }}
+          path: private-data
+      - name: Point the tests at the private data
+        if: ${{ env.GIS_DATA_TOKEN != '' }}
+        run: echo "MELKID_GIS_DATA=$GITHUB_WORKSPACE/private-data/gis" >> "$GITHUB_ENV"
       - run: python manage.py test
       - name: Static files collect (vendored libraries, fonts)
         run: python manage.py collectstatic --noinput
@@ -52,6 +63,7 @@ jobs:
           --health-cmd "pg_isready -U ci -d ci"
           --health-interval 5s --health-timeout 3s --health-retries 10
     env:
+      GIS_DATA_TOKEN: ${{ secrets.GIS_DATA_TOKEN }}
       DJANGO_SECRET_KEY: ci-only-not-a-secret
       USE_POSTGRES: 'True'
       PGDATABASE: ci
@@ -69,6 +81,16 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y libmagic1
       - run: pip install -r requirements.txt
       - run: python manage.py migrate --noinput
+      - name: Private village data (only when the repository secret GIS_DATA_TOKEN exists; otherwise the map tests are skipped)
+        if: ${{ env.GIS_DATA_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: imerfs/milkid-data
+          token: ${{ secrets.GIS_DATA_TOKEN }}
+          path: private-data
+      - name: Point the tests at the private data
+        if: ${{ env.GIS_DATA_TOKEN != '' }}
+        run: echo "MELKID_GIS_DATA=$GITHUB_WORKSPACE/private-data/gis" >> "$GITHUB_ENV"
       - run: python manage.py test
 
   docker:

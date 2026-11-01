@@ -7,12 +7,13 @@ to land-use classes and neighbourhoods are kept.
 import json
 from pathlib import Path
 
+from django.conf import settings
 from django.utils import timezone
 
 from main.gis import series
 from main.gis.uids import parcel_uids, renewal_code
 
-DATA_DIR = Path(__file__).resolve().parent.parent / 'data' / 'gis'
+DATA_DIR = Path(settings.GIS_DATA_DIR)         # private, see django_project/settings.py
 
 # The villages that have a map: slug -> how to find them. Dastgerd, Birjand (South Khorasan).
 VILLAGES = {

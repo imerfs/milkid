@@ -8,6 +8,7 @@ Usage: python scripts/gis/build_plot_series.py <file.dxf> <slug> <key> --layer t
 """
 import argparse
 import json
+import os
 import re
 from collections import Counter
 from pathlib import Path
@@ -18,7 +19,7 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import polygonize, unary_union
 from shapely.strtree import STRtree
 
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / 'main' / 'data' / 'gis'
+DATA_DIR = Path(os.environ.get('MELKID_GIS_DATA') or Path(__file__).resolve().parent.parent.parent / 'main' / 'data' / 'gis')
 TO_LONLAT = Transformer.from_crs('EPSG:32640', 'EPSG:4326', always_xy=True)   # UTM 40N, as in the other drawings
 GAP = 0.4                                                                      # metres a drawing may leave open between two lines of one outline
 MIN_AREA, MAX_AREA = 30.0, 4000.0                                             # square metres: neither a sliver nor a block

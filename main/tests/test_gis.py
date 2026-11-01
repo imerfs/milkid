@@ -14,7 +14,7 @@ from main.gis import data as gis_data, loader
 from main.gis.uids import parcel_uids, renewal_code
 from main.models import (CityVillage, County, District, LandUseClass, MapBuilding, MapEasement, MapParcel, MapZone,
                          ParcelArchive, ParcelFeePayment, ParcelLock, Province, VillageMap)
-from main.tests.helpers import client_for, isolate_private_media, make_service, make_user
+from main.tests.helpers import client_for, isolate_private_media, make_service, make_user, requires_gis_data
 
 try:
     import shapely  # noqa: F401  pylint: disable=unused-import
@@ -30,6 +30,7 @@ def post_json(client, url, body):
     return client.post(url, data=json.dumps(body), content_type='application/json')
 
 
+@requires_gis_data
 class MapIsLoaded(TestCase):
     def test_migration_loaded_dastgerd(self):
         village = VillageMap.objects.get(slug=SLUG)
@@ -46,6 +47,7 @@ class MapIsLoaded(TestCase):
             self.assertTrue(59.2 < lng < 59.4 and 32.85 < lat < 32.97, (parcel.pk, lng, lat))
 
 
+@requires_gis_data
 class MapAccess(TestCase):
     def urls(self, parcel):
         return {
@@ -158,6 +160,7 @@ class MapAccess(TestCase):
         self.assertNotContains(other.get(reverse('main:dehyari_expert_dashboard')), link)
 
 
+@requires_gis_data
 class ArchiveAndPayments(TestCase):
     def setUp(self):
         self.parcel = MapParcel.objects.filter(village_map__slug=SLUG).exclude(renewal_code='').first()
@@ -235,6 +238,7 @@ class ArchiveAndPayments(TestCase):
         self.assertEqual(self.client.get(self.pay_url).status_code, 405)
 
 
+@requires_gis_data
 class ReloadKeepsArchives(TestCase):
     def test_reloading_the_same_drawing_changes_nothing_and_keeps_the_archive(self):
         parcel = MapParcel.objects.filter(village_map__slug=SLUG).exclude(renewal_code='').first()
@@ -292,6 +296,7 @@ class BuildFromDrawing(TestCase):
         self.assertAlmostEqual(result[0][1].area, 100)
 
 
+@requires_gis_data
 class RenewalCode(TestCase):
     def test_code_is_guild_apartment_plot_block_zone(self):
         self.assertEqual(renewal_code(0, 0, '12', '69', '3'), '0-0-12-69-3')
@@ -317,6 +322,7 @@ class RenewalCode(TestCase):
         self.assertFalse(MapParcel.objects.filter(number='').exclude(renewal_code='').exists())
 
 
+@requires_gis_data
 class MapContents(TestCase):
     def setUp(self):
         self.village = VillageMap.objects.get(slug=SLUG)
@@ -365,6 +371,7 @@ class MapContents(TestCase):
         self.assertEqual(set(gone.values_list('last_year', flat=True)), {1404})
 
 
+@requires_gis_data
 class MapLayersEndpoints(TestCase):
     def setUp(self):
         self.client = client_for(make_user('engineer', **LOCAL))
@@ -390,6 +397,7 @@ class MapLayersEndpoints(TestCase):
         self.assertContains(page, 'name="colormode" value="use"')
 
 
+@requires_gis_data
 class ParcelDetailShowsTheNewFacts(TestCase):
     def test_area_building_zone_land_use_and_violations(self):
         client = client_for(make_user('engineer', **LOCAL))
@@ -406,6 +414,7 @@ class ParcelDetailShowsTheNewFacts(TestCase):
         self.assertEqual(detail['code'], built.renewal_code)
 
 
+@requires_gis_data
 class LockingAParcel(TestCase):
     def setUp(self):
         self.parcel = MapParcel.objects.filter(village_map__slug=SLUG).exclude(renewal_code='').first()
@@ -464,6 +473,7 @@ class LockingAParcel(TestCase):
         self.assertEqual(post_json(admin, self.lock_url, {'reason': 'debt'}).status_code, 200)
 
 
+@requires_gis_data
 class TimelineFlags(TestCase):
     def test_permit_payment_and_lock_years_reach_the_map(self):
         village = VillageMap.objects.get(slug=SLUG)
@@ -482,6 +492,7 @@ class TimelineFlags(TestCase):
         self.assertEqual((flags['f'], flags['py']), (1, None))
 
 
+@requires_gis_data
 class LoaderKeepsWhatPeopleTyped(TestCase):
     def test_a_name_given_to_a_colour_and_a_zone_survives_a_reload(self):
         village = VillageMap.objects.get(slug=SLUG)
@@ -546,6 +557,7 @@ class BuildHelpers(TestCase):
         self.assertEqual(geometry_json(MultiPolygon([box(0, 0, 1, 1), box(5, 5, 6, 6)]), shift)['type'], 'MultiPolygon')
 
 
+@requires_gis_data
 class LockedPlotsGetNoServices(TestCase):
     """A locked plot is refused new requests, and requests naming it cannot be approved."""
 
@@ -659,6 +671,7 @@ class LockedPlotsGetNoServices(TestCase):
             self.assertIn('قفل', form.errors['parcel_number'][0])
 
 
+@requires_gis_data
 class HousingAreaIsNeighbourhoodSix(TestCase):
     def setUp(self):
         self.village = VillageMap.objects.get(slug=SLUG)
@@ -710,6 +723,7 @@ class HousingAreaIsNeighbourhoodSix(TestCase):
         self.assertEqual(detail['lot_no'], parcel.lot_no)
 
 
+@requires_gis_data
 class LegendNames(TestCase):
     def names(self):
         return {c.key: c.name for c in LandUseClass.objects.filter(village_map__slug=SLUG)}
@@ -743,6 +757,7 @@ class LegendNames(TestCase):
         self.assertTrue(any(e['rule'] for e in detail['easements']))
 
 
+@requires_gis_data
 class LandAndBuildingAreHalvesOfAProperty(TestCase):
     def setUp(self):
         self.parcel = MapParcel.objects.filter(village_map__slug=SLUG, building_count__gt=0).exclude(renewal_code='').first()
@@ -825,6 +840,7 @@ class HousingAreaHelpers(TestCase):
         self.assertEqual(land_use_name('hp'), '')
 
 
+@requires_gis_data
 class MapDetails(TestCase):
     """Roads, water, power, trees, limits and street names around the plots (from the 1405 detail drawing)."""
 
@@ -864,6 +880,7 @@ class MapDetails(TestCase):
             self.assertContains(page, f'data-detail="{group}"')
 
 
+@requires_gis_data
 class BuildingsMatchTheDrawing(TestCase):
     def test_every_building_is_a_polygon_and_plot_counts_add_up(self):
         import json as _json
@@ -877,6 +894,7 @@ class BuildingsMatchTheDrawing(TestCase):
         self.assertEqual(on_plots, counted)
 
 
+@requires_gis_data
 class MapPlanLayer(TestCase):
     """The plan as drawn in AutoCAD: the map's default base layer."""
 
@@ -942,6 +960,7 @@ class MapPlanLayer(TestCase):
             self.assertContains(page, marker)
 
 
+@requires_gis_data
 class MapBackgroundsAndTimeline(TestCase):
     def setUp(self):
         self.page = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_map', args=[SLUG]))
@@ -982,6 +1001,7 @@ class MapBackgroundsAndTimeline(TestCase):
         self.assertContains(self.page, 'id="vm-imagery"')
 
 
+@requires_gis_data
 class PlanHasNoFrame(TestCase):
     def test_no_grid_numbers_or_frame_texts(self):
         items = client_for(make_user('engineer', **LOCAL)).get(reverse('main:gis_cad', args=[SLUG])).json()['items']
@@ -989,6 +1009,7 @@ class PlanHasNoFrame(TestCase):
         self.assertEqual(numbers, [])                              # 3645800, 713200 ... of the sheet's coordinate grid
 
 
+@requires_gis_data
 class TheThreeStaffOfTheVillageSeeTheMapInTheirPanels(TestCase):
     """The technical expert, the administrative expert and the dehyari of a village each find the map in their own panel; staff of another village do not."""
     PANELS = {'engineer': 'main:dehyari_expert_dashboard', 'clerk': 'main:clerk_dashboard', 'dehyari': 'main:dehyari_dashboard'}

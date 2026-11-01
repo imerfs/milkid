@@ -1,5 +1,6 @@
 """Shared builders for tests. Tests drive the app through URLs (the seam)."""
 import itertools
+import unittest
 from datetime import date
 
 from django.contrib.auth.models import User
@@ -74,3 +75,12 @@ def isolate_private_media(testcase):
     testcase.addCleanup(override.disable)
     testcase.addCleanup(folder.cleanup)
     return folder.name
+
+
+def _have_gis_data():
+    from main.gis import loader
+    return loader.VILLAGES['dastgerd']['file'].exists()
+
+
+# the village maps are private (settings.GIS_DATA_DIR): a checkout without them still runs every test that does not need a real map
+requires_gis_data = unittest.skipUnless(_have_gis_data(), 'the private village map data is not installed (docs/gis.md, "Private data")')

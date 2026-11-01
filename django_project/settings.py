@@ -485,6 +485,9 @@ init_sentry(os.environ.get('SENTRY_DSN', ''))
 # Village web-GIS base maps (main/gis). Tile providers decide who may use them: Esri and Google refuse requests from
 # Iran, so a village's satellite picture is stored on the server (scripts/gis/cache_tiles.py, main/gis/tiles.py) and replaces
 # the Esri entry below; an Iranian provider's tile URL can still be set in the environment.
+# The village maps (plot outlines, drawings, flags, satellite tiles) describe real properties and are not part of the public repository: they live in this folder,
+# by default main/data/gis (git-ignored) and on a server a folder outside the checkout (docs/gis.md, "Private data").
+GIS_DATA_DIR = Path(os.environ.get('MELKID_GIS_DATA') or BASE_DIR / 'main' / 'data' / 'gis')
 _SATELLITE_URL = os.environ.get('GIS_SATELLITE_TILE_URL', '')
 GIS_SATELLITE_TILE_URL = _SATELLITE_URL          # when set, the village's stored picture does not replace it (main/gis/tiles.py)
 GIS_BASEMAPS = [

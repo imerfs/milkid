@@ -181,3 +181,6 @@ node_modules/
 # database backups
 backups/
 private_media/
+
+# Village maps, drawings and satellite tiles: private (real properties, third-party imagery). See docs/gis.md, "Private data".
+/main/data/gis/
