@@ -279,3 +279,12 @@ gunicorn django_project.wsgi:application --bind 0.0.0.0:8000
 ---
 
 **ساخته شده با ❤️ در ایران**
+
+## License
+
+Source-available for learning and noncommercial use under the [PolyForm Noncommercial License 1.0.0](LICENSE): you may read, run and change the code for
+study, research, teaching and other noncommercial purposes; selling it, offering it as a paid service, or commercialising it or a modified copy is reserved to the
+project owner. This is not an OSI "open source" licence.
+
+The license covers the code. Third-party material keeps its own terms: the satellite tiles under `main/data/gis/tiles/` are Esri World Imagery (© Esri, Maxar,
+Earthstar Geographics), and the village drawings and plot data under `main/data/gis/` describe real properties; neither is licensed for reuse by this file.
