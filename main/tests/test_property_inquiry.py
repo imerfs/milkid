@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from main.gis import inquiry, plan_flags, tiles
 from main.models import LandUseClass, MapParcel, ParcelArchive, ParcelLock, VillageMap
-from main.tests.helpers import client_for, make_user
+from main.tests.helpers import client_for, make_user, requires_gis_data
 
 try:
     import shapely  # noqa: F401  pylint: disable=unused-import
@@ -31,6 +31,7 @@ class Base(TestCase):
         return client_for(who or self.citizen).get(reverse(name, args=[SLUG] if args is None else args), query)
 
 
+@requires_gis_data
 class Access(Base):
     def test_anonymous_is_sent_to_login_or_refused(self):
         self.assertEqual(client_for().get(reverse('main:property_inquiry')).status_code, 302)
@@ -49,6 +50,7 @@ class Access(Base):
         self.assertIn('no-store', self.get('main:inquiry_data')['Cache-Control'])
 
 
+@requires_gis_data
 class WhatIsShown(Base):
     def test_the_map_data_has_only_the_light_fields(self):
         data = self.get('main:inquiry_data').json()
@@ -106,6 +108,7 @@ class WhatIsShown(Base):
         self.assertEqual(self.get('main:inquiry_parcel', args=['other', self.parcel.pk]).status_code, 404)
 
 
+@requires_gis_data
 class Tiles(Base):
     def url(self, layer='satellite', z=15, x=0, y=0):
         return reverse('main:gis_tile', args=[SLUG, layer, z, x, y])
@@ -135,6 +138,7 @@ class Tiles(Base):
         self.assertTrue({13, 16, 18} <= zooms)
 
 
+@requires_gis_data
 class Search(Base):
     def results(self, q):
         return self.get('main:inquiry_search', q=q).json()['results']
@@ -158,6 +162,7 @@ class Search(Base):
         self.assertLessEqual(len(self.results('1')), inquiry.MAX_RESULTS)
 
 
+@requires_gis_data
 class Throttle(Base):
     def test_a_user_who_pulls_too_much_is_slowed_down(self):
         with mock.patch.dict('main.views.inquiry_views.LIMITS', {'search': (3, 3600)}):
@@ -165,6 +170,7 @@ class Throttle(Base):
         self.assertEqual(statuses, [200, 200, 200, 429, 429])
 
 
+@requires_gis_data
 class Flags(Base):
     def test_the_flags_file_is_applied_to_the_plots(self):
         path = plan_flags.path_of(SLUG)
@@ -200,6 +206,7 @@ class FlagBuilder(TestCase):
         self.assertEqual(sorted(build.flag(parcels, frame, 0.7)), ['inside'])
 
 
+@requires_gis_data
 class Panel(Base):
     def test_the_citizen_panel_has_the_inquiry_tab(self):
         page = client_for(self.citizen).get(reverse('main:owner_dashboard'))

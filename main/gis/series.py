@@ -9,7 +9,9 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parent.parent / 'data' / 'gis'      # as in main.gis.loader, which imports this module
+from django.conf import settings
+
+DATA_DIR = Path(settings.GIS_DATA_DIR)      # as in main.gis.loader, which imports this module
 
 SERIES = {
     'dastgerd': {

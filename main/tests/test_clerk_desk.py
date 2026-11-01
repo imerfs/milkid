@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from main.models import Notification, RoleGrant, UserProfile
 from main.office import desk, letters
-from main.tests.helpers import client_for, make_municipality, make_request, make_user
+from main.tests.helpers import client_for, make_municipality, make_request, make_user, requires_gis_data
 
 VILLAGE, OTHER = 'روستای الف', 'روستای ب'
 
@@ -149,6 +149,7 @@ class Tabs(Village):
         self.assertContains(page, '?tab=messages&open=l')
 
 
+@requires_gis_data
 class MapLink(TestCase):
     """The village map is in the clerk's desk and the dehyari's panel as it is in the technical expert's."""
     LOCAL = dict(province='خراسان جنوبی', county='بیرجند', city_village='دستگرد')

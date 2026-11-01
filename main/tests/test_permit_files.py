@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from main.models import (MapParcel, Notification, ParcelArchive, ParcelLock, PermitDocument, PermitFile, ServiceRequest,
                          UserProfile, VillageMap)
-from main.tests.helpers import client_for, isolate_private_media, make_municipality, make_user
+from main.tests.helpers import client_for, isolate_private_media, make_municipality, make_user, requires_gis_data
 
 VILLAGE, OTHER = 'روستای نمونه', 'روستای دیگر'
 def _png():
@@ -79,6 +79,7 @@ class Village(TestCase):
         return PermitFile.objects.latest('pk')
 
 
+@requires_gis_data
 class Filing(Village):
     def test_the_form_opens_filled_with_what_the_site_knows(self):
         UserProfile.objects.filter(user=self.citizen).update(national_id=national_id(555), mobile_number='09129999999')
@@ -236,6 +237,7 @@ class Visibility(Village):
         self.assertIn('attachment', response['Content-Disposition'])
 
 
+@requires_gis_data
 class Opening(Village):
     CODE = '0-0-8-182-2'
 
@@ -371,6 +373,7 @@ class Opening(Village):
         self.assertEqual((permit.state, permit.request.status), ('rejected', 'rejected'))
 
 
+@requires_gis_data
 class InThePanels(Village):
     def setUp(self):
         super().setUp()

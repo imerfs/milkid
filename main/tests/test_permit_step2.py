@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from main.models import MapParcel, Notification, PermitFile, VillageMap
 from main.office import geo, permit_step2, plotmap, shamim
-from main.tests.helpers import client_for, isolate_private_media, make_municipality, make_user
+from main.tests.helpers import client_for, isolate_private_media, make_municipality, make_user, requires_gis_data
 from main.tests.shamim_helpers import shamim_dxf
 from main.tests.test_permit_files import application, national_id, upload
 
@@ -48,6 +48,7 @@ class Geometry(SimpleTestCase):
         self.assertFalse(geo.contains(ring, 30, 3))
 
 
+@requires_gis_data
 class ReadingTheShamim(TestCase):
     def setUp(self):
         self.parcel = plot()
@@ -112,6 +113,7 @@ class ReadingTheShamim(TestCase):
         self.assertTrue(any('نیفتاد' in n or 'جور نیست' in n for n in info['notes']))
 
 
+@requires_gis_data
 class PlotLimits(TestCase):
     def test_the_four_sides_are_measured_and_named(self):
         village_map = VillageMap.objects.get(slug=SLUG)
@@ -164,6 +166,7 @@ class Village(TestCase):
         return client_for(who or self.citizen).post(reverse('main:permit_form2_save', args=[self.permit.pk]), data)
 
 
+@requires_gis_data
 class ShamimAtFiling(Village):
     def test_the_file_is_read_when_it_arrives(self):
         info = self.permit.shamim_info
@@ -186,6 +189,7 @@ class ShamimAtFiling(Village):
         self.assertEqual(client_for(self.neighbour).post(reverse('main:permit_shamim', args=[self.permit.pk])).status_code, 302)
 
 
+@requires_gis_data
 class TheForms(Village):
     def test_forms_wait_for_the_file_to_be_opened(self):
         self.assertEqual(self.forms(self.clerk).status_code, 302)

@@ -35,6 +35,7 @@ services:
       - static:/app/staticfiles
       - media:/app/media
       - ./backups:/app/backups
+      - ${GIS_DATA_DIR:-./gis-data}:/app/main/data/gis:ro      # private village maps, not in git (docs/gis.md)
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-H", "Host: localhost", "http://127.0.0.1:8000/healthz/"]
       interval: 15s

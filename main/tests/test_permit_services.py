@@ -2,7 +2,7 @@
 from main.models import Notification
 from main.office import permit_services, permit_supervision
 from main.tests.test_permit_supervision import Supervised
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, requires_gis_data
 from main.tests.test_permit_extension import Issued
 
 
@@ -21,6 +21,7 @@ class Letters(Issued):
         return client_for(who or self.clerk).post(self.url('service_approve', sid), data)
 
 
+@requires_gis_data
 class Asking(Letters):
     def test_the_owner_asks_and_the_staff_are_told(self):
         self.ask_letter()
@@ -60,6 +61,7 @@ class Asking(Letters):
         self.assertTrue(data['date'])
 
 
+@requires_gis_data
 class Deciding(Letters):
     def setUp(self):
         super().setUp()
@@ -124,6 +126,7 @@ class Deciding(Letters):
         self.assertEqual(client_for(self.neighbour).get(self.url('services')).status_code, 404)
 
 
+@requires_gis_data
 class Clearances(Supervised):
     """The non-violation certificates of the supervision stages."""
 

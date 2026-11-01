@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from main.models import Notification, ParcelArchive, PermitFile
 from main.office import geo, permit_step3, permits
-from main.tests.helpers import client_for
+from main.tests.helpers import client_for, requires_gis_data
 from main.tests.test_permit_files import PDF, upload
 from main.tests.test_permit_step2 import Village as FormsVillage
 
@@ -46,6 +46,7 @@ class AtStepThree(FormsVillage):
         return self.permit
 
 
+@requires_gis_data
 class SendingTheAnswer(AtStepThree):
     def test_the_owner_uploads_it_and_the_staff_are_told(self):
         self.send()
@@ -102,6 +103,7 @@ class SendingTheAnswer(AtStepThree):
         self.assertTrue(rows['rows'][0].needs_staff)
 
 
+@requires_gis_data
 class WhatTheSystemChecks(AtStepThree):
     def check(self, **override):
         self.send(**override)
@@ -143,6 +145,7 @@ class WhatTheSystemChecks(AtStepThree):
         return make_request(self.neighbour, request_type='building_permit')
 
 
+@requires_gis_data
 class Confirming(AtStepThree):
     def setUp(self):
         super().setUp()
@@ -223,6 +226,7 @@ class Confirming(AtStepThree):
         return client_for(who or self.citizen).post(reverse('main:permit_answer', args=[self.permit.pk]), answer(**override))
 
 
+@requires_gis_data
 class TheAnswerPapers(AtStepThree):
     def test_they_are_private_like_the_other_papers(self):
         self.send()

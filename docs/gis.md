@@ -207,7 +207,7 @@ provider's tile URLs. The map works without any of them.
 
 `VillageMap` → `MapBlock`, `MapZone`, `LandUseClass`, `MapEasement`, `MapBuilding`, `MapParcel` (GeoJSON geometry, WGS84)
 → `ParcelArchive` (one per plot), `ParcelFeePayment`, `ParcelLock`. Migration `0056` loads Dastgerd from
-`main/data/gis/dastgerd.geojson`, so a deploy only needs `migrate`. `main/data/gis/dastgerd_zones.json` records the
+`dastgerd.geojson` in the private data folder (below), so a deploy only needs `migrate`. `main/data/gis/dastgerd_zones.json` records the
 neighbourhoods.
 
 ## Rebuilding from new drawings
@@ -300,3 +300,24 @@ Besides the village's own block-and-plot numbering, a village may have **series*
 - Cards and lists say «قطعه‌ی شماره‌ی N» with the series name instead of block and neighbourhood; the staff map's plot labels and archive panel show the same.
 
 Deploy: `git pull`, `python manage.py migrate` (adds the column and loads the series), restart.
+
+
+## Private data (not in the repository)
+
+The repository is public and its code is under AGPL-3.0, but the village maps describe real properties and the satellite tiles are Esri imagery, so **none of
+`main/data/gis/` is tracked** (it is in `.gitignore`). The code reads that folder from `settings.GIS_DATA_DIR`: the environment variable `MELKID_GIS_DATA`, default
+`main/data/gis`. It holds `<slug>.geojson`, `<slug>_series_<key>.geojson`, `<slug>_context.geojson`, `<slug>_cad.json`, `<slug>_flags.json`, `<slug>_zones.json`, `source/` and
+`tiles/<slug>/satellite/…`. The build scripts (`scripts/gis/*.py`) write to the same folder.
+
+Without the folder the site runs, the migrations skip the map (no village maps are loaded) and the map tests are skipped (`requires_gis_data`); with it, everything works as before.
+
+- **Where the copy lives.** A private copy is kept outside this repository (the author's `melkid-data`, to be pushed to a private repository `imerfs/milkid-data` with the same
+  `gis/` folder). CI loads it only when the repository secret `GIS_DATA_TOKEN` (a token that can read that private repository) exists; pull requests from forks never see it, so
+  their map tests are skipped.
+- **Server.** `deploy/milkid-update.sh` does the following by itself: before it pulls it copies `main/data/gis` to `/opt/milkid-data/gis` (once), and after the pull links the
+  copy back as `main/data/gis`, so no setting is needed. The folder used to be tracked, so a plain `git pull` by hand would delete it from the checkout; by hand, first:
+  1. `sudo mkdir -p /opt/milkid-data && sudo cp -a /opt/milkid/main/data/gis /opt/milkid-data/gis`
+  2. set `MELKID_GIS_DATA=/opt/milkid-data/gis` in the service environment instead of the link, if you prefer (docker compose mounts `GIS_DATA_DIR`, default `./gis-data`, read-only);
+  3. then `git pull`, `python manage.py migrate`, restart. Later data updates: copy the new files into `/opt/milkid-data/gis` and run `python manage.py load_village_map dastgerd`.
+- **Git history.** The files were public until this change; they remain in older commits. Removing them from history needs a history rewrite (`git filter-repo`) and a force-push,
+  which is a separate, deliberate step.
