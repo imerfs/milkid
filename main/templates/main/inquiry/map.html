@@ -56,6 +56,16 @@
             <button type="submit" class="pi-go" aria-label="جستجو"><svg class="pi-svg"><use href="#i-search"/></svg></button>
             <input id="pi-q" type="text" inputmode="text" dir="ltr" placeholder="کد نوسازی، شماره قطعه یا قطعه-بلوک (مثلاً ۱۲-۶۹)" aria-label="جستجوی ملک">
         </form>
+        {% if config.series %}
+        <div class="pi-series">
+            <label for="pi-series" class="pi-sr">دسته‌ی شماره‌ی قطعه</label>
+            <select id="pi-series" title="هر دسته شماره‌ی قطعه‌ی خودش را دارد و از ۱ شروع می‌شود">
+                <option value="all">همه‌ی دسته‌ها</option>
+                <option value="main">روستا (قطعه و بلوک)</option>
+                {% for s in config.series %}<option value="{{ s.key }}">{{ s.name }}</option>{% endfor %}
+            </select>
+        </div>
+        {% endif %}
         <div class="pi-chips" role="group" aria-label="نمایش">
             <button type="button" class="pi-chip is-on" data-filter="all">همه <b id="pi-n-all">۰</b></button>
             <button type="button" class="pi-chip" data-filter="plan"><i class="pi-dot pi-dot-plan"></i>داخل طرح <b id="pi-n-plan">۰</b></button>

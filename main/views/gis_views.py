@@ -17,7 +17,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from main.access import policy_required
 from main.accounting.parse import digits, jalali_str, parse_amount, parse_jalali
-from main.gis import data as gis_data, rules, tiles
+from main.gis import data as gis_data, rules, series, tiles
 from main.gis.access import may_use
 from main.models import MapEasement, MapParcel, ParcelArchive, ParcelFeePayment, ParcelLock, VillageMap
 from main.office import permits
@@ -60,6 +60,7 @@ def map_page(request, slug):
         'canEdit': may_use(request.user, village_map, 'gis.edit'),
         'canLock': may_use(request.user, village_map, 'gis.lock'),
         'basemaps': tiles.basemaps(village_map.slug),
+        'series': series.table(village_map.slug, aliases=True),
         'waybackConfig': settings.GIS_WAYBACK_CONFIG_URL,
         'trafficUrl': settings.GIS_TRAFFIC_TILE_URL,
         'years': years,
@@ -189,6 +190,7 @@ def _parcel_dict(parcel):
         'easements': [{'kind': h['k'], 'label': rules.label(h['k']), 'rule': rules.rule(h['k']), 'amount': h['a'],
                        'line': h.get('line', False)} for h in parcel.easement_hits],
         'lot_no': parcel.lot_no, 'permit_in_drawing': parcel.permit_in_drawing,
+        'series': parcel.series, 'series_name': series.name(parcel.village_map.slug, parcel.series) if parcel.series else '',
         'archive': _archive_dict(parcel),
         'payments': [_payment_dict(p) for p in payments],
         'payments_total': int(sum(p.amount for p in payments)),

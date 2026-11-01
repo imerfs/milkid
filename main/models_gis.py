@@ -121,6 +121,8 @@ class MapParcel(models.Model):
     other_numbers = models.JSONField(default=list, blank=True)
     duplicate_code = models.BooleanField(default=False)
     lot_no = models.CharField(max_length=10, blank=True, verbose_name='شماره قطعه‌ی تفکیکی')
+    # '' = the village's own block-and-plot numbering; otherwise the key of a plot-number series (main/gis/series.py) whose plots are numbered 1, 2, 3 ... alone
+    series = models.CharField(max_length=20, blank=True, default='', db_index=True, verbose_name='دسته‌ی شماره‌ی قطعه')
     permit_in_drawing = models.BooleanField(default=False, verbose_name='طبق نقشه پروانه صادر شده')
     # what a buyer is told (main/gis/inquiry.py): from the plan drawing by ``main.gis.plan_flags`` ("in the plan" = inside the plan's reserved areas, "exempt" =
     # the green-framed «مستثنیات» of the technical unit's drawing), never typed by citizens

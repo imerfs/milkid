@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from main.access import policy_required
-from main.gis import inquiry, tiles
+from main.gis import inquiry, series as plot_series, tiles
 from main.models import MapParcel, VillageMap
 from main.ratelimit import client_ip
 
@@ -51,6 +51,7 @@ def inquiry_page(request, slug=None):
     config = {
         'slug': chosen.slug, 'name': chosen.name, 'disclaimer': inquiry.DISCLAIMER,
         'satellite': tiles.local_satellite(chosen.slug),
+        'series': plot_series.table(chosen.slug),
         'urls': {'data': reverse('main:inquiry_data', args=[chosen.slug]), 'search': reverse('main:inquiry_search', args=[chosen.slug]),
                  'parcel': reverse('main:inquiry_parcel', args=[chosen.slug, 0])},
     }
@@ -70,7 +71,7 @@ def inquiry_data(request, slug):
 def inquiry_search(request, slug):
     if _throttled(request, 'search'):
         return HttpResponse('Too many requests. Try again later.', status=429, content_type='text/plain; charset=utf-8')
-    return _json({'results': inquiry.search(_map(slug), request.GET.get('q', ''))})
+    return _json({'results': inquiry.search(_map(slug), request.GET.get('q', ''), request.GET.get('series') or None)})
 
 
 @require_GET

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from django.utils import timezone
 
+from main.gis import series
 from main.gis.uids import parcel_uids, renewal_code
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data' / 'gis'
@@ -73,7 +74,8 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
             row.save()
         classes[item['key']] = row
 
-    existing = {p.uid: p for p in models.MapParcel.objects.filter(village_map=village_map)}
+    keep = {'series': ''} if series.has_series(models) else {}                # the series plots are loaded below, not by this drawing
+    existing = {p.uid: p for p in models.MapParcel.objects.filter(village_map=village_map, **keep)}
     uids = parcel_uids(by_type['parcel'])
     uid_of_index = {}
     create, update = [], []
@@ -130,7 +132,8 @@ def load_village_map(slug, models, geography=None, geojson_path=None):
         models.MapBuilding(village_map=village_map, parcel_id=parcel_ids.get(f['properties']['parcel']),
                            area_m2=f['properties']['area'], geometry=f['geometry']) for f in by_type['building']],
         batch_size=500)
-    return {'parcels_created': len(create), 'parcels_updated': len(update), 'parcels_removed': removed,
+    series_plots = series.load(village_map, models) if keep else {}
+    return {'series': series_plots, 'parcels_created': len(create), 'parcels_updated': len(update), 'parcels_removed': removed,
             'blocks': len(by_type['block']), 'zones': len(by_type['zone']), 'easements': len(by_type['easement']),
             'buildings': len(by_type['building']), 'land_use_classes': len(classes),
             'linked': bool(village_map.city_village_id)}

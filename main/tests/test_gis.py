@@ -312,7 +312,7 @@ class RenewalCode(TestCase):
             self.assertEqual(parcel.renewal_code, f'{parcel.guild_no}-{parcel.apartment_no}-{parcel.number}-{parcel.block_no}-{parcel.zone}')
 
     def test_most_plots_have_a_code_and_unnumbered_ones_do_not(self):
-        total = MapParcel.objects.count()
+        total = MapParcel.objects.filter(series='').count()                      # a plot-number series has no renewal codes
         self.assertGreater(MapParcel.objects.exclude(renewal_code='').count(), 0.85 * total)
         self.assertFalse(MapParcel.objects.filter(number='').exclude(renewal_code='').exists())
 
@@ -327,9 +327,9 @@ class MapContents(TestCase):
         self.assertTrue(all(z.geometry['type'] in ('Polygon', 'MultiPolygon') and z.parcel_count > 100 for z in zones))
 
     def test_plots_belong_to_a_neighbourhood_and_a_block_has_one(self):
-        self.assertLess(MapParcel.objects.filter(village_map=self.village, zone='').count(), 20)
+        self.assertLess(MapParcel.objects.filter(village_map=self.village, zone='', series='').count(), 20)
         by_block = {}
-        village = MapParcel.objects.exclude(zone='').exclude(zone='6').exclude(block_no='')   # block numbers of zone 6 restart at 1
+        village = MapParcel.objects.filter(series='').exclude(zone='').exclude(zone='6').exclude(block_no='')   # block numbers of zone 6 restart at 1
         for block, zone in village.values_list('block_no', 'zone'):
             by_block.setdefault(block, []).append(zone)
         agree = sum(max(zs.count(z) for z in set(zs)) for zs in by_block.values())

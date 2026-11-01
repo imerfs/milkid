@@ -53,7 +53,7 @@ class WhatIsShown(Base):
     def test_the_map_data_has_only_the_light_fields(self):
         data = self.get('main:inquiry_data').json()
         self.assertEqual(len(data['features']), self.map.parcels.count())
-        self.assertEqual(set(data['features'][0]['properties']), {'n', 'b', 'c', 'z', 'a', 'l', 'p', 'x', 'e'})
+        self.assertEqual(set(data['features'][0]['properties']), {'n', 'b', 'c', 'z', 'a', 'l', 'p', 'x', 'e', 'r'})
 
     def test_the_map_data_carries_the_land_uses_streets_and_village_limit(self):
         data = self.get('main:inquiry_data').json()
